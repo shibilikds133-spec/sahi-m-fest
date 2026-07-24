@@ -1,11 +1,5 @@
-import { supabase } from '../../core/config/supabase';
+import { supabase, getSupabaseCredentials } from '../../core/config/supabase';
 import { createClient } from '@supabase/supabase-js';
-
-const DEFAULT_SUPABASE_URL = 'https://szhwkngspodujiqzblab.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kgQJRDrtXp_RZu9QzIOh8g_USfkltfc';
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 export const organisationRepository = {
   async getOrganisation(tenantId: string) {
@@ -31,7 +25,8 @@ export const organisationRepository = {
   },
 
   async signUpNewOrganisationUser(email: string, password: string, fullName: string) {
-    const isolatedSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    const { supabaseUrl, supabaseKey } = getSupabaseCredentials();
+    const isolatedSupabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
     });
     return await isolatedSupabase.auth.signUp({

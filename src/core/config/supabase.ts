@@ -1,14 +1,23 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
-
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
-const DEFAULT_SUPABASE_URL = 'https://szhwkngspodujiqzblab.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kgQJRDrtXp_RZu9QzIOh8g_USfkltfc';
+export function getSupabaseCredentials(): { supabaseUrl: string; supabaseKey: string } {
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = 
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
+    '';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      'Supabase configuration error: EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or EXPO_PUBLIC_SUPABASE_ANON_KEY) must be provided in environment variables.'
+    );
+  }
+
+  return { supabaseUrl, supabaseKey };
+}
 
 const customStorage = {
   getItem: (key: string) => {
@@ -40,11 +49,30 @@ const customStorage = {
   },
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: customStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
+let clientInstance: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient {
+  if (!clientInstance) {
+    const { supabaseUrl, supabaseKey } = getSupabaseCredentials();
+    clientInstance = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        storage: customStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+  return clientInstance;
+}
+
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop: keyof SupabaseClient) {
+    const client = getSupabaseClient();
+    const value = client[prop];
+    if (typeof value === 'function') {
+      return (value as Function).bind(client);
+    }
+    return value;
+  }
 });

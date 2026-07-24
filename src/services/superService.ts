@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseCredentials } from '../core/config/supabase';
 import { superRepository } from '../lib/repositories/superRepository';
 
 const throwIfError = (error: { message: string } | null) => {
@@ -44,9 +45,10 @@ export const superService = {
 
   async setupTenantRecords(payload: Record<string, unknown>) {
     // 1. Create isolated auth account so we don't log out the active superadmin session
+    const { supabaseUrl, supabaseKey } = getSupabaseCredentials();
     const dummyClient = createClient(
-      process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://szhwkngspodujiqzblab.supabase.co',
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kgQJRDrtXp_RZu9QzIOh8g_USfkltfc',
+      supabaseUrl,
+      supabaseKey,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     
