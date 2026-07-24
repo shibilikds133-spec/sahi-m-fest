@@ -1,0 +1,442 @@
+[
+  {
+    "name": "handle_new_user",
+    "args": "",
+    "returnType": "trigger",
+    "file": "002_auth_profiles.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "audit_participant_changes",
+    "args": "",
+    "returnType": "trigger",
+    "file": "004_phase5_participant_management.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "ssf_calculate_age",
+    "args": "p_dob date, p_festival_year int DEFAULT 2026",
+    "returnType": "int",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "ssf_get_category",
+    "args": "p_dob date, p_class_std int DEFAULT NULL, p_education_type text DEFAULT NULL, p_festival_year int DEFAULT 2026",
+    "returnType": "text",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "validate_participant_category",
+    "args": "",
+    "returnType": "trigger",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "setup_tenant_records",
+    "args": "p_org_id uuid, p_user_id uuid, p_org_name text, p_org_type text",
+    "returnType": "jsonb",
+    "file": "009_tenant_management_funcs.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "revoke_tenant_access",
+    "args": "p_org_id uuid",
+    "returnType": "jsonb",
+    "file": "010_tenant_revocation_func.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_my_tenant_id",
+    "args": "",
+    "returnType": "uuid",
+    "file": "017_fix_items_upsert.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "is_superadmin",
+    "args": "",
+    "returnType": "boolean",
+    "file": "017_fix_items_upsert.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "setup_child_organisation",
+    "args": "p_parent_id uuid, p_new_user_id uuid, p_org_name text, p_org_type text, p_username text, p_password_temp text",
+    "returnType": "jsonb",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "get_my_org_id",
+    "args": "",
+    "returnType": "uuid",
+    "file": "014_fix_org_rls.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "update_modified_column",
+    "args": "",
+    "returnType": "TRIGGER",
+    "file": "016_add_audit_fields.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "generate_judge_token",
+    "args": "p_judge_id UUID, p_schedule_id UUID, p_tenant_id UUID, p_created_by UUID",
+    "returnType": "TEXT",
+    "file": "021_generate_judge_token_rpc.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "validate_judge_token",
+    "args": "p_token TEXT",
+    "returnType": "JSON",
+    "file": "022_validate_judge_token_rpc.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "returnType": "TABLE ( organisation_id uuid, organisation_name text, organisation_type text, parent_id uuid, total_points bigint, first_place_count bigint, second_place_count bigint, third_place_count bigint, grade_a_plus_count bigint, grade_a_count bigint, grade_b_count bigint, grade_c_count bigint, result_count bigint, latest_published_at timestamptz )",
+    "file": "064_fix_public_leaderboard_visibility.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "get_schedule_readiness",
+    "args": "p_schedule_id uuid",
+    "returnType": "TABLE ( registration_id uuid, code_letter text, submitted_count bigint, pending_count bigint, expected_count int, all_submitted boolean, readiness_status text )",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_judge_submission_summary",
+    "args": "p_schedule_id uuid",
+    "returnType": "TABLE ( judge_id uuid, judge_name text, submitted_count bigint, draft_count bigint, total_",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_judge_registrations",
+    "args": "p_schedule_id uuid",
+    "returnType": "TABLE ( id uuid, item_id uuid, tenant_id uuid, code_letter text, participant_name text, chest_number text, photo_url text, category_code text )",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_visible_organisations",
+    "args": "p_tenant_id uuid",
+    "returnType": "TABLE (id uuid, name text, org_type text, parent_id uuid, tenant_id uuid)",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "is_org_visible",
+    "args": "p_org_id uuid",
+    "returnType": "boolean",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "update_updated_at_column",
+    "args": "",
+    "returnType": "TRIGGER",
+    "file": "030_leaderboard_settings.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_festival_results",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "returnType": "TABLE ( result_id uuid, registration_id uuid, schedule_id uuid, item_id uuid, item_name text, item_name_ml text, is_group boolean, organisation_id uuid, organisation_name text, participant_id uuid, participant_name text, chest_number text, rank integer, grade text, points_awarded integer, total_score numeric, published boolean, result_status text, public_visible boolean, collection_method text, published_at timestamptz, festival_id uuid, tenant_id uuid, public_result_no integer )",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "get_public_published_results",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "returnType": "TABLE ( result_id uuid, registration_id uuid, item_id uuid, item_name text, item_name_ml text, is_group boolean, item_category_codes text[], organisation_id uuid, organisation_name text, organisation_type text, participant_id uuid, participant_name text, chest_number text, participant_category_code text, rank integer, grade text, points_awarded integer, published_at timestamptz, festival_level text, public_result_no integer )",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_public_leaderboard_settings",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "returnType": "TABLE ( festival_id uuid, festival_level text, is_public_visible boolean, show_individual_rankings boolean, team_point_status text )",
+    "file": "068_add_team_point_status.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_admin_leaderboard",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "returnType": "TABLE ( organisation_id uuid, organisation_name text, organisation_type text, parent_id uuid, total_points bigint, first_place_count bigint, second_place_count bigint, third_place_count bigint, grade_a_plus_count bigint, grade_a_count bigint, grade_b_count bigint, grade_c_count bigint, result_count bigint, latest_published_at timestamptz )",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "get_admin_published_results",
+    "args": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "returnType": "TABLE ( result_id uuid, registration_id uuid, schedule_id uuid, item_id uuid, item_name text, item_name_ml text, is_group boolean, organisation_id uuid, organisation_name text, participant_id uuid, participant_name text, chest_number text, rank integer, grade text, points_awarded integer, total_score numeric, published boolean, result_status text, public_visible boolean, collection_method text, published_at timestamptz, festival_id uuid, tenant_id uuid )",
+    "file": "048_admin_festival_results_internal_published.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "slugify_candidate_name",
+    "args": "value text",
+    "returnType": "text",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "ensure_candidate_profile_slug",
+    "args": "",
+    "returnType": "trigger",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_public_candidate_profile",
+    "args": "p_slug text",
+    "returnType": "jsonb",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "assign_public_result_no",
+    "args": "",
+    "returnType": "TRIGGER",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "assign_public_result_no_insert",
+    "args": "",
+    "returnType": "TRIGGER",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "preview_bulk_unit_assignment",
+    "args": "p_participant_ids uuid[], p_target_unit_id uuid, p_tenant_id uuid",
+    "returnType": "TABLE ( id uuid, name text, chest_number text, category_code text, organisation_id uuid, is_locked boolean, lock_scope text, lock_re",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "execute_bulk_unit_assignment",
+    "args": "p_participant_ids uuid[], p_expected_hashes text[], p_target_unit_id uuid, p_batch_id uuid, p_tenant_id uuid",
+    "returnType": "jsonb",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "rollback_unit_assignment",
+    "args": "p_batch_id uuid",
+    "returnType": "jsonb",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": true
+  },
+  {
+    "name": "execute_junior_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "057_junior_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_senior_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "058_senior_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_schedule_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_schedules jsonb",
+    "returnType": "jsonb",
+    "file": "060_execute_schedule_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_upper_primary_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "069_upper_primary_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_lp_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_hs_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_hss_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "execute_general_import_chunk",
+    "args": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "returnType": "jsonb",
+    "file": "071_general_category_import.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "get_public_unit_profile",
+    "args": "p_unit_id uuid",
+    "returnType": "jsonb",
+    "file": "073_public_unit_profile.sql",
+    "isSecurityDefiner": true,
+    "hasSearchPath": true,
+    "searchPathVal": "public",
+    "hasAuthCheck": false
+  },
+  {
+    "name": "reset_schedule_notification",
+    "args": "",
+    "returnType": "TRIGGER",
+    "file": "074_communication_center.sql",
+    "isSecurityDefiner": false,
+    "hasSearchPath": false,
+    "searchPathVal": "NONE",
+    "hasAuthCheck": false
+  }
+]
