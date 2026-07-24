@@ -45,8 +45,8 @@ export const superService = {
   async setupTenantRecords(payload: Record<string, unknown>) {
     // 1. Create isolated auth account so we don't log out the active superadmin session
     const dummyClient = createClient(
-      process.env.EXPO_PUBLIC_SUPABASE_URL || '',
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+      process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://szhwkngspodujiqzblab.supabase.co',
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kgQJRDrtXp_RZu9QzIOh8g_USfkltfc',
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     

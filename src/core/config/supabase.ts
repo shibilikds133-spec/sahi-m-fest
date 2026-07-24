@@ -4,8 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 
 import { Platform } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL = 'https://szhwkngspodujiqzblab.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kgQJRDrtXp_RZu9QzIOh8g_USfkltfc';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 const customStorage = {
   getItem: (key: string) => {
