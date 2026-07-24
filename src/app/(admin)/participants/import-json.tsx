@@ -205,7 +205,8 @@ export default function ImportJuniorDataset() {
         link.click();
         document.body.removeChild(link);
       } else {
-        const fileUri = FileSystem.documentDirectory + filename;
+        const docDir = (FileSystem as any).documentDirectory || '';
+        const fileUri = docDir + filename;
         await FileSystem.writeAsStringAsync(fileUri, jsonStr);
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri);

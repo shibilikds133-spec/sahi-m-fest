@@ -1,6 +1,12 @@
-@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+*, ::before, ::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
 
 html, body, #root, #__next {
   height: 100%;
@@ -50,5 +56,3 @@ html, body, #root, #__next {
   transform: translateY(-4px) !important;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08) !important;
 }
-
-

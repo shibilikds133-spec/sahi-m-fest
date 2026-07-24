@@ -35,6 +35,7 @@ export type UnitProfileData = {
     totalPresent: number;
     totalAbsent: number;
     totalPending: number;
+    totalMissedItems?: number;
   };
 };
 
@@ -84,6 +85,9 @@ export const unitProfileService = {
       stats: {
         totalParticipants: participants.length,
         totalRegistrations,
+        totalPresent: 0,
+        totalAbsent: 0,
+        totalPending: 0,
         totalMissedItems,
       },
     };

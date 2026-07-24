@@ -26,7 +26,7 @@ export default function ScoringRulesList() {
 
   const loadRules = async () => {
     try {
-      const { data, error } = await scoringRuleRepository.listRules(tenantId);
+      const { data, error } = await scoringRuleRepository.listRules(tenantId || undefined);
       if (error) throw error;
       setRules(data || []);
     } catch (e) {

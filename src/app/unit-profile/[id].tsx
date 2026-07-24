@@ -122,7 +122,7 @@ export default function PublicUnitProfileScreen() {
       {
         id: 'absent',
         label: 'Absentee Items',
-        value: `${unitData.stats.totalMissedItems > 0 ? unitData.stats.totalMissedItems : 'View'}`,
+        value: `${(unitData.stats.totalMissedItems ?? 0) > 0 ? unitData.stats.totalMissedItems : 'View'}`,
         icon: AlertCircle,
         tone: palette.red,
         bg: palette.softRed,
@@ -811,6 +811,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
     color: '#FFFFFF',
     fontSize: 15,
+  },
+  heroChartContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
   },
   emptySectionText: {
     fontFamily: 'Poppins_400Regular',

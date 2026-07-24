@@ -83,8 +83,10 @@ export default function ImportParticipants() {
       link.click();
       document.body.removeChild(link);
     } else {
-      const fileUri = FileSystem.documentDirectory + filename;
-      await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+      const docDir = (FileSystem as any).documentDirectory || '';
+      const fileUri = docDir + filename;
+      const encType = (FileSystem as any).EncodingType?.Base64 || 'base64';
+      await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: encType });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri);
       } else {

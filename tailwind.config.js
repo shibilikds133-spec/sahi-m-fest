@@ -4,6 +4,11 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      aspectRatio: {
+        auto: 'auto',
+        square: '1 / 1',
+        video: '16 / 9',
+      },
       colors: {
         ssf: {
           primary: '#065F46',

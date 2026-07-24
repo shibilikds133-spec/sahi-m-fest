@@ -270,8 +270,8 @@ function DetailModal({ visible, onClose, onComplete, org }: {
 }
 
 // ─── Onboard Modal ────────────────────────────────────────────────────
-function OnboardModal({ visible, onClose, onComplete, org }: {
-  visible: boolean; onClose: () => void; onComplete: () => void; org: Org | null;
+function OnboardModal({ visible, onClose, onComplete, org, setupMutation }: {
+  visible: boolean; onClose: () => void; onComplete: () => void; org: Org | null; setupMutation: any;
 }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -365,8 +365,9 @@ function OnboardModal({ visible, onClose, onComplete, org }: {
 export default function TenantsManager() {
   const router = useRouter();
   
-  const { useTenantAccounts } = useSuperAdmin();
+  const { useTenantAccounts, useSetupTenantRecords } = useSuperAdmin();
   const { data: orgsData, isLoading: loading, refetch } = useTenantAccounts<Org>();
+  const setupMutation = useSetupTenantRecords();
   const orgs = orgsData || [];
   
   const [activeFilter, setActiveFilter] = useState<'all' | OrgType>('all');
@@ -475,7 +476,7 @@ export default function TenantsManager() {
         </ScrollView>
       </Animated.View>
 
-      <OnboardModal visible={!!onboardOrg} org={onboardOrg} onClose={() => setOnboardOrg(null)} onComplete={fetchOrgs} />
+      <OnboardModal visible={!!onboardOrg} org={onboardOrg} onClose={() => setOnboardOrg(null)} onComplete={fetchOrgs} setupMutation={setupMutation} />
       <DetailModal visible={!!detailOrg} org={detailOrg} onClose={() => setDetailOrg(null)} onComplete={fetchOrgs} />
     </View>
   );

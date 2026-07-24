@@ -26,18 +26,13 @@ export function DecorativeVisualPanel() {
     >
       <View
         className="relative overflow-hidden rounded-[36px] border bg-white/10 p-6"
-        style={{
-          width: '100%',
-          aspectRatio: 4 / 3,
-          borderColor: 'rgba(255,255,255,0.15)',
-          ...Platform.select({
-            web: {
-              backdropFilter: 'blur(26px)',
-              boxShadow: '0 30px 100px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
-            },
-            default: {},
-          }),
-        }}
+        style={[
+          styles.cardContainer,
+          Platform.OS === 'web' ? ({
+            backdropFilter: 'blur(26px)',
+            boxShadow: '0 30px 100px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
+          } as any) : null,
+        ]}
       >
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.03)', 'rgba(255,80,168,0.10)']}
@@ -154,6 +149,11 @@ function PatternTile({ color, pattern, wide }: { color: string; pattern: string;
 }
 
 const styles = StyleSheet.create({
+  cardContainer: {
+    width: '100%',
+    height: 480,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
   posterOrb: {
     position: 'absolute',
   },

@@ -81,7 +81,7 @@ export default function MarkEntryPage() {
         const itemNameEn = schedule.items.item_name_en || '';
         const itemNameMl = schedule.items.item_name_ml || '';
         const itemType = schedule.items.item_type || 'stage';
-        const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenant_id);
+        const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenant_id || undefined);
         setEventCriteria(formatCriteriaForUI(rules.criteria));
       }
     };

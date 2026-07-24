@@ -75,7 +75,7 @@ const Sidebar = ({
 }: {
   compact: boolean;
   onClose?: () => void;
-  activeItem: 'unit' | 'item' | 'individual' | 'poster' | 'media-center';
+  activeItem: 'unit' | 'item' | 'individual' | 'poster' | 'media-center' | 'controls';
 }) => {
   const router = useRouter();
 
