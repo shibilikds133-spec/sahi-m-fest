@@ -1008,6 +1008,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     scheduleId: string;
     tenantId: string;
     createdBy: string;
+    forceRefresh?: boolean;
   }): Promise<QueryResult<T>> {
     // Use RPC function to bypass PostgREST schema cache issues
     const { data, error } = await supabase.rpc('generate_judge_token', {
@@ -1015,6 +1016,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       p_judge_id: payload.judgeId,
       p_schedule_id: payload.scheduleId,
       p_created_by: payload.createdBy && payload.createdBy.length === 36 ? payload.createdBy : null,
+      p_force_refresh: payload.forceRefresh ?? false,
     });
 
     return { data: (data as T) ?? null, error: normalizeError(error) };

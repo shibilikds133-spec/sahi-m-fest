@@ -96,7 +96,7 @@ export interface DatabaseProvider {
   bulkUpdateResultVisibility(resultIds: string[], status: 'draft' | 'ready' | 'published' | 'hidden' | 'archived'): Promise<QueryResult<void>>;
 
   // Judge Token Methods (One-Time Access)
-  generateJudgeToken<T>(payload: { judgeId: string; scheduleId: string; tenantId: string; createdBy: string }): Promise<QueryResult<T>>;
+  generateJudgeToken<T>(payload: { judgeId: string; scheduleId: string; tenantId: string; createdBy: string; forceRefresh?: boolean }): Promise<QueryResult<T>>;
   validateJudgeToken<T>(token: string): Promise<QueryResult<T>>;
   expireJudgeToken(token: string): Promise<QueryResult<void>>;
   listJudgeTokens<T>(scheduleId: string): Promise<ListResult<T>>;

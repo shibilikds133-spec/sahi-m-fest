@@ -593,11 +593,6 @@ SELECT
 FROM public.festival_calendar
 GROUP BY festival_year ORDER BY festival_year;
 
--- PREREQUISITE: Run only if F.8 is marked ready_for_query = true in Part E
-SELECT 'F.8 Active Festivals Per Tenant' AS section;
-SELECT tenant_id, COUNT(*)::bigint AS active_festival_count
-FROM public.festival_calendar
-WHERE is_active = true GROUP BY tenant_id;
 
 -- PREREQUISITE: Run only if F.9 is marked ready_for_query = true in Part E
 SELECT 'F.9 Participants - Festival Distribution (Top 20)' AS section;
@@ -607,9 +602,6 @@ WHERE festival_id IS NOT NULL
 GROUP BY festival_id ORDER BY participant_count DESC LIMIT 20;
 
 -- PREREQUISITE: Run only if F.10 is marked ready_for_query = true in Part E
-SELECT 'F.10 Participants - NULL festival_id Count' AS section;
-SELECT COUNT(*)::bigint AS null_festival_count
-FROM public.participants WHERE festival_id IS NULL;
 
 -- PREREQUISITE: Run only if F.11 is marked ready_for_query = true in Part E
 SELECT 'F.11 Items - Festival Distribution (Top 20)' AS section;

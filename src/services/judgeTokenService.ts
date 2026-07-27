@@ -6,6 +6,7 @@ export const judgeTokenService = {
     scheduleId: string;
     tenantId: string;
     createdBy: string;
+    forceRefresh?: boolean;
   }) {
     const { data, error } = await judgeTokenRepository.generateToken<any>(payload);
     if (error) throw new Error(error.message);
@@ -18,7 +19,6 @@ export const judgeTokenService = {
     if (data && data.judge_id && data.schedule_id && data.tenant_id) {
       try {
         const maskedToken = `****${token.slice(-2)}`;
-        // Dynamic import to avoid breaking react-native vs nextjs if Platform isn't universally safe
         let platform = 'Unknown';
         try {
           const { Platform } = require('react-native');
@@ -29,7 +29,7 @@ export const judgeTokenService = {
           judgeId: data.judge_id,
           scheduleId: data.schedule_id,
           tenantId: data.tenant_id,
-          actionType: 'LOGIN',
+          actionType: 'LOGIN_REQUESTED',
           actionDetails: {
             otpMasked: maskedToken,
             platform,
@@ -41,6 +41,35 @@ export const judgeTokenService = {
       }
     }
     return data;
+  },
+
+  async requestLogin(tokenId: string) {
+    // We update the token status to pending_approval via direct update
+    // We assume the user has anon or authenticated access (RLS was updated)
+    const { supabase } = require('../core/config/supabase');
+    const { error } = await supabase
+      .from('judge_tokens')
+      .update({ status: 'pending_approval' })
+      .eq('id', tokenId);
+    if (error) throw new Error(error.message);
+  },
+
+  async approveLogin(tokenId: string) {
+    const { supabase } = require('../core/config/supabase');
+    const { error } = await supabase
+      .from('judge_tokens')
+      .update({ status: 'approved' })
+      .eq('id', tokenId);
+    if (error) throw new Error(error.message);
+  },
+
+  async rejectLogin(tokenId: string) {
+    const { supabase } = require('../core/config/supabase');
+    const { error } = await supabase
+      .from('judge_tokens')
+      .update({ status: 'rejected' })
+      .eq('id', tokenId);
+    if (error) throw new Error(error.message);
   },
 
   async expireToken(token: string) {

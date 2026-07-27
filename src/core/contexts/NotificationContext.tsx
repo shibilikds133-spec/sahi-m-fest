@@ -194,32 +194,36 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 outputRange: [-30, 0]
               })
             }],
-            backgroundColor: 'rgba(40, 55, 80, 0.65)',
+            backgroundColor: 'rgba(30, 41, 59, 0.94)',
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.15)',
-            borderRadius: 30,
+            borderColor: 'rgba(255, 255, 255, 0.16)',
+            borderRadius: 18,
             padding: 14,
             paddingHorizontal: 16,
             minWidth: Platform.OS === 'web' ? 360 : '90%',
             maxWidth: 500,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 15 },
-            shadowOpacity: 0.3,
-            shadowRadius: 30,
-            elevation: 15,
+            shadowColor: '#0F172A',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 12,
+            elevation: 4,
             flexDirection: 'row',
             alignItems: 'center',
             ...Platform.select({
-              web: { backdropFilter: 'blur(30px)' } as any,
+              web: {
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
+              } as any,
               default: {}
             })
           }}>
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255, 255, 255, 0.15)', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
               <Text style={{ fontSize: 20 }}>🔔</Text>
             </View>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={{ color: '#FFFFFF', fontSize: 15, marginBottom: 2, fontWeight: '600', letterSpacing: -0.2 }}>{toast.title}</Text>
-              <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 13, lineHeight: 18 }} numberOfLines={2}>{toast.message}</Text>
+              <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 13, lineHeight: 18 }} numberOfLines={2}>{toast.message}</Text>
             </View>
           </Animated.View>
         </View>

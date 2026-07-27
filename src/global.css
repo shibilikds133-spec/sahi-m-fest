@@ -41,18 +41,44 @@ html, body, #root, #__next {
   -ms-overflow-style: none !important;  /* IE and Edge */
   scrollbar-width: none !important;  /* Firefox */
 }
-/* Premium SaaS Hover Transitions and Shadows */
-.action-card, .metric-card, .welcome-card, .panel-card {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+/* Refined Dashboard Soft-Glass Theme */
+.welcome-card, .metric-card, .action-card {
+  background: rgba(255, 255, 255, 0.90) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.015) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
+.panel-card {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.015) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* Only interactive quick-action cards get hover effects */
 .action-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10) !important;
-  border-color: rgba(15, 118, 110, 0.15) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.025) !important;
+  border-color: rgba(71, 85, 105, 0.34) !important;
 }
 
-.metric-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08) !important;
+/* Remove hover shadow for non-interactive statistic or data panels */
+.metric-card:hover, .welcome-card:hover, .panel-card:hover {
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.015) !important;
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(6px)) {
+  .welcome-card, .metric-card, .action-card {
+    background: rgba(255, 255, 255, 0.97) !important;
+  }
+}
+@supports not (-webkit-backdrop-filter: blur(6px)) {
+  .welcome-card, .metric-card, .action-card {
+    background: rgba(255, 255, 255, 0.97) !important;
+  }
 }

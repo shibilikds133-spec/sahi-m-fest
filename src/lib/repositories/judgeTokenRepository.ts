@@ -6,6 +6,7 @@ export const judgeTokenRepository = {
     scheduleId: string;
     tenantId: string;
     createdBy: string;
+    forceRefresh?: boolean;
   }) {
     return databaseProvider.generateJudgeToken<T>(payload);
   },

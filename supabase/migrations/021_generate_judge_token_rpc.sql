@@ -57,7 +57,7 @@ BEGIN
   END IF;
 
   -- Generate a new unique token (6 characters)
-  v_token := upper(encode(gen_random_bytes(3), 'hex')); -- 6-char hex token
+  v_token := upper(encode(extensions.gen_random_bytes(3), 'hex')); -- 6-char hex token
 
   INSERT INTO public.judge_tokens (
     judge_id,

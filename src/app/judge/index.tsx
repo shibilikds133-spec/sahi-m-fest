@@ -1,23 +1,82 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ActivityIndicator, Animated, Platform,
   KeyboardAvoidingView, ScrollView, StyleSheet, useWindowDimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react-native';
+import { ShieldCheck, AlertCircle, ArrowRight, Camera, X } from 'lucide-react-native';
 import { judgeTokenService } from '../../services/judgeTokenService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { supabase } from '../../core/config/supabase';
 
 export default function JudgePortalLanding() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  
+  // New States for Scanner & Approval
+  const [isScanning, setIsScanning] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [currentTokenId, setCurrentTokenId] = useState<string | null>(null);
+  const [tokenDataObj, setTokenDataObj] = useState<any>(null);
+
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
+
+  // Auto-fill code from URL if present
+  useEffect(() => {
+    if (params.code && typeof params.code === 'string') {
+      const formatted = params.code.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 6);
+      setCode(formatted);
+      if (formatted.length === 6) {
+        // We cannot auto-submit reliably without user interaction in some environments,
+        // but since we are showing a UI, we can just pre-fill it.
+      }
+    }
+  }, [params.code]);
+
+  // Realtime subscription for Approval Wait
+  useEffect(() => {
+    if (!waitingForApproval || !currentTokenId) return;
+
+    const channel = supabase
+      .channel(`judge_token_${currentTokenId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'judge_tokens',
+          filter: `id=eq.${currentTokenId}`,
+        },
+        async (payload: any) => {
+          const newStatus = payload.new.status;
+          if (newStatus === 'approved') {
+            await AsyncStorage.setItem('judge_session_token', code);
+            await AsyncStorage.setItem('judge_session_data', JSON.stringify(tokenDataObj));
+            router.replace('/judge/marks' as any);
+          } else if (newStatus === 'rejected') {
+            setWaitingForApproval(false);
+            setCurrentTokenId(null);
+            setError('Your login request was rejected by the administrator.');
+            shake();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [waitingForApproval, currentTokenId, code, tokenDataObj]);
 
   const handleBoxChange = (text: string, index: number) => {
     setError('');
@@ -70,8 +129,10 @@ export default function JudgePortalLanding() {
     ]).start();
   };
 
-  const handleSubmit = async () => {
-    if (code.length < 6) {
+  const handleSubmit = async (codeToSubmit?: string | any) => {
+    // If called from onPress, codeToSubmit might be an event object
+    const finalCode = typeof codeToSubmit === 'string' ? codeToSubmit : code;
+    if (finalCode.length < 6) {
       setError('Please enter a complete 6-character code.');
       shake();
       return;
@@ -79,16 +140,53 @@ export default function JudgePortalLanding() {
     setIsLoading(true);
     setError('');
     try {
-      const tokenData = await judgeTokenService.validateToken(code);
-      await AsyncStorage.setItem('judge_session_token', code);
-      await AsyncStorage.setItem('judge_session_data', JSON.stringify(tokenData));
-      router.replace('/judge/marks' as any);
+      const tokenData = await judgeTokenService.validateToken(finalCode);
+      // Instead of replacing router, we request login and wait for approval
+      await judgeTokenService.requestLogin(tokenData.id);
+      setTokenDataObj(tokenData);
+      setCurrentTokenId(tokenData.id);
+      setWaitingForApproval(true);
     } catch (e: any) {
       setError(e.message ?? 'Invalid code. Please try again.');
       shake();
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+    if (!isScanning) return;
+    setIsScanning(false);
+    // Data might be a URL: http://domain.com/judge?code=ABCDEF or just ABCDEF
+    let extractedCode = data;
+    try {
+      if (data.includes('code=')) {
+        const url = new URL(data);
+        extractedCode = url.searchParams.get('code') || data;
+      }
+    } catch (e) {
+      // Not a URL, use raw data
+    }
+    const cleanCode = extractedCode.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 6);
+    if (cleanCode.length === 6) {
+      setCode(cleanCode);
+      handleSubmit(cleanCode);
+    } else {
+      setError('Invalid QR Code format.');
+      shake();
+    }
+  };
+
+  const startScanning = async () => {
+    if (!permission?.granted) {
+      const { status } = await requestPermission();
+      if (status !== 'granted') {
+        setError('Camera permission is required to scan QR code.');
+        return;
+      }
+    }
+    setError('');
+    setIsScanning(true);
   };
 
   const { width } = useWindowDimensions();
@@ -109,18 +207,65 @@ export default function JudgePortalLanding() {
           
           <View style={[styles.contentShell, isMobile && styles.contentShellMobile]}>
             <View style={[styles.landingCard, isMobile && styles.landingCardMobile]}>
-              {/* Header */}
-              <View className="items-center mb-10">
-              <View className="w-24 h-24 rounded-3xl bg-white/10 border border-white/20 items-center justify-center mb-6">
-                <ShieldCheck size={48} color="#FFF" strokeWidth={1.5} />
-              </View>
-              <Text className="text-4xl font-poppins-black text-white text-center mb-2">
-                Judge Portal
-              </Text>
-              <Text className="text-white/60 font-poppins text-center text-sm leading-5">
-                Sahithyolsav Judging System{'\n'}Enter your one-time access code to continue
-              </Text>
-            </View>
+              
+              {waitingForApproval ? (
+                <View className="items-center py-10">
+                  <ActivityIndicator size="large" color="#10B981" />
+                  <Text className="text-2xl font-poppins-black text-white text-center mt-6 mb-2">
+                    Waiting for Approval
+                  </Text>
+                  <Text className="text-white/60 font-poppins text-center text-sm leading-5 mb-8">
+                    Your request has been sent to the administrator.{'\n'}Please wait while they confirm your login.
+                  </Text>
+                  {error ? (
+                    <Text className="font-poppins text-red-500 text-sm text-center mb-6">{error}</Text>
+                  ) : null}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setWaitingForApproval(false);
+                      setCurrentTokenId(null);
+                      setError('');
+                    }}
+                    className="border border-white/20 rounded-xl px-6 py-3"
+                  >
+                    <Text className="font-poppins-bold text-white text-sm">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : isScanning ? (
+                <View className="w-full h-96 rounded-3xl overflow-hidden bg-black relative">
+                  <CameraView
+                    style={{ flex: 1 }}
+                    facing="back"
+                    onBarcodeScanned={handleBarCodeScanned}
+                    barcodeScannerSettings={{
+                      barcodeTypes: ['qr'],
+                    }}
+                  />
+                  <View className="absolute top-0 left-0 right-0 bottom-0 border-2 border-green-500/50 m-12 rounded-xl" />
+                  <TouchableOpacity
+                    onPress={() => setIsScanning(false)}
+                    className="absolute top-4 right-4 bg-black/50 p-2 rounded-full"
+                  >
+                    <X color="#FFF" size={24} />
+                  </TouchableOpacity>
+                  <Text className="absolute bottom-6 left-0 right-0 text-center font-poppins-bold text-white text-sm bg-black/50 py-2">
+                    Point camera at QR Code
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {/* Header */}
+                  <View className="items-center mb-10">
+                  <View className="w-24 h-24 rounded-3xl bg-white/10 border border-white/20 items-center justify-center mb-6">
+                    <ShieldCheck size={48} color="#FFF" strokeWidth={1.5} />
+                  </View>
+                  <Text className="text-4xl font-poppins-black text-white text-center mb-2">
+                    Judge Portal
+                  </Text>
+                  <Text className="text-white/60 font-poppins text-center text-sm leading-5">
+                    Sahithyolsav Judging System{'\n'}Enter your one-time access code to continue
+                  </Text>
+                </View>
 
               {/* Card content */}
               <View className="items-center">
@@ -158,7 +303,7 @@ export default function JudgePortalLanding() {
                           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
                           
                           <TextInput
-                            ref={(ref) => inputRefs.current[i] = ref}
+                            ref={(ref) => { inputRefs.current[i] = ref; }}
                             value={val || ''}
                             onChangeText={(text) => handleBoxChange(text, i)}
                             onKeyPress={(e) => handleKeyPress(e, i)}
@@ -171,12 +316,7 @@ export default function JudgePortalLanding() {
                             autoCapitalize="characters"
                             autoCorrect={false}
                             className="absolute w-full h-full text-center font-poppins-black text-white"
-                            style={{ 
-                              zIndex: 10, 
-                              fontSize: isMobile ? 24 : 28,
-                              // @ts-ignore
-                              outlineStyle: 'none' 
-                            }}
+                            style={[{ zIndex: 10, fontSize: isMobile ? 24 : 28 }, { outlineStyle: 'none' } as any]}
                             cursorColor="#60A5FA"
                           />
                         </View>
@@ -222,11 +362,22 @@ export default function JudgePortalLanding() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={startScanning}
+              style={{ width: '100%', maxWidth: 400, marginTop: 12 }}
+            >
+              <View className="rounded-2xl py-4 flex-row items-center justify-center gap-x-2 border border-white/20 bg-white/5">
+                <Camera size={18} color="#FFF" />
+                <Text className="font-poppins-bold text-base text-white">Scan QR Code</Text>
+              </View>
+            </TouchableOpacity>
 
             <Text className="font-poppins text-white/40 text-xs text-center mt-6 leading-4">
               This code is for single use only.{'\n'}Contact the admin if you need a new code.
             </Text>
           </View>
+          </>
+        )}
         </View>
 
         <Text className="text-white/30 font-poppins text-center text-xs mt-8">

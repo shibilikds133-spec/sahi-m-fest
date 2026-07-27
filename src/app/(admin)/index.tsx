@@ -95,80 +95,108 @@ const INFO = '#3B82F6'; // Info
 
 const categoryColors = ['#14B8A6', '#10B981', '#F97316', '#38BDF8', '#8B5CF6', '#6366F1', '#2563EB', '#F43F5E'];
 
-// Layer 1 Surface (Welcome Section)
-const welcomeSurface = {
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#D6DEE8',
-  borderRadius: 22,
-  shadowColor: '#0F172A',
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  shadowOffset: { width: 0, height: 4 },
+const dashboardBgStyle = {
+  backgroundColor: '#F4F8F7',
   ...Platform.select({
     web: {
-      boxShadow: '0 4px 16px rgba(15,23,42,0.04)',
+      backgroundImage: 'linear-gradient(135deg, #F4F8F7 0%, #F2F6FA 55%, #F7F9FB 100%)',
     },
     default: {},
+  }),
+} as any;
+
+// Layer 1 Surface (Welcome Section - Soft Glass)
+const welcomeSurface = {
+  backgroundColor: 'rgba(255, 255, 255, 0.90)',
+  borderWidth: 1,
+  borderColor: 'rgba(100, 116, 139, 0.25)',
+  borderRadius: 22,
+  shadowColor: '#0F172A',
+  shadowOpacity: 0.015,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 1 },
+  ...Platform.select({
+    web: {
+      backgroundColor: 'rgba(255, 255, 255, 0.90)',
+      backdropFilter: 'blur(6px)',
+      WebkitBackdropFilter: 'blur(6px)',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
+    },
+    default: {
+      backgroundColor: '#FFFFFF',
+    },
   }),
   elevation: 1,
 } as any;
 
-// Layer 2 Surface (Metric Cards)
+// Layer 2 Surface (Metric Cards - Soft Glass)
 const cardSurface = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: 'rgba(255, 255, 255, 0.90)',
   borderWidth: 1,
-  borderColor: '#D6DEE8',
+  borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 16,
   shadowColor: '#0F172A',
-  shadowOpacity: 0.08,
-  shadowRadius: 20,
-  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.015,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 1 },
   ...Platform.select({
     web: {
-      boxShadow: '0 8px 20px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
+      backgroundColor: 'rgba(255, 255, 255, 0.90)',
+      backdropFilter: 'blur(6px)',
+      WebkitBackdropFilter: 'blur(6px)',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
-    default: {},
+    default: {
+      backgroundColor: '#FFFFFF',
+    },
   }),
-  elevation: 2,
+  elevation: 1,
 } as any;
 
-// Layer 2.5 Surface (Quick Action Cards)
+// Layer 2.5 Surface (Quick Action Cards - Soft Glass)
 const actionCardSurface = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: 'rgba(255, 255, 255, 0.90)',
   borderWidth: 1,
-  borderColor: '#D6DEE8',
+  borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 18,
   shadowColor: '#0F172A',
-  shadowOpacity: 0.08,
-  shadowRadius: 20,
-  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.015,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 1 },
   ...Platform.select({
     web: {
-      boxShadow: '0 8px 20px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
+      backgroundColor: 'rgba(255, 255, 255, 0.90)',
+      backdropFilter: 'blur(6px)',
+      WebkitBackdropFilter: 'blur(6px)',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
-    default: {},
+    default: {
+      backgroundColor: '#FFFFFF',
+    },
   }),
-  elevation: 2,
+  elevation: 1,
 } as any;
 
-// Layer 3 Surface (Analytics & Activity Panels)
+// Layer 3 Surface (Analytics & Activity Panels - High-Readability Data Panels)
 const panelSurface = {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: 'rgba(255, 255, 255, 0.97)',
   borderWidth: 1,
-  borderColor: '#D6DEE8',
+  borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 18,
   shadowColor: '#0F172A',
-  shadowOpacity: 0.08,
-  shadowRadius: 24,
-  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.015,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 1 },
   ...Platform.select({
     web: {
-      boxShadow: '0 10px 24px rgba(15,23,42,0.08), 0 2px 4px rgba(15,23,42,0.04)',
+      backgroundColor: 'rgba(255, 255, 255, 0.97)',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
-    default: {},
+    default: {
+      backgroundColor: '#FFFFFF',
+    },
   }),
-  elevation: 4,
+  elevation: 1,
 } as any;
 
 
@@ -233,16 +261,12 @@ function SidebarItem({ label, icon: Icon, active, onPress }: NavigationItem) {
         borderRadius: 9,
         paddingHorizontal: 12,
         marginBottom: 6,
-        backgroundColor: active ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+        backgroundColor: active ? 'rgba(255, 255, 255, 0.14)' : 'transparent',
         borderWidth: active ? 1 : 0,
-        borderColor: active ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+        borderColor: active ? 'rgba(255, 255, 255, 0.20)' : 'transparent',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        ...Platform.select({
-          web: active ? { boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)' } : {},
-          default: {},
-        }),
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -438,7 +462,7 @@ export default function AdminDashboard() {
           </View>
         )}
 
-        <View style={{ flex: 1, backgroundColor: '#EDF2F7' }}>
+        <View style={[{ flex: 1 }, dashboardBgStyle]}>
           <View
             style={[
               { height: 56, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(226, 232, 240, 0.8)', paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
@@ -496,7 +520,7 @@ export default function AdminDashboard() {
           </View>
 
           <ScrollView
-            style={{ flex: 1, backgroundColor: '#EDF2F7' }}
+            style={[{ flex: 1 }, dashboardBgStyle]}
             contentContainerStyle={{
               padding: isDesktop ? 24 : 16,
               paddingBottom: 16,
