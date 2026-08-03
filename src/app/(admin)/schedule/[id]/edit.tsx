@@ -1,81 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useGoBack } from '../../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
+import { SsfSelectMenu } from '../../../../components/ui/SsfSelectMenu';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
 
-const TimeSelect = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
-  const [hour, setHour] = useState('12');
-  const [minute, setMinute] = useState('00');
-  const [ampm, setAmpm] = useState('AM');
-
-  useEffect(() => {
-    if (value) {
-      const [h, m] = value.split(':');
-      const hNum = parseInt(h, 10);
-      setAmpm(hNum >= 12 ? 'PM' : 'AM');
-      setHour((hNum % 12 || 12).toString().padStart(2, '0'));
-      setMinute(m);
-    }
-  }, [value]);
-
-  const handleChange = (newHour: string, newMinute: string, newAmpm: string) => {
-    let h = parseInt(newHour, 10);
-    if (newAmpm === 'PM' && h < 12) h += 12;
-    if (newAmpm === 'AM' && h === 12) h = 0;
-    const timeStr = `${h.toString().padStart(2, '0')}:${newMinute}`;
-    onChange(timeStr);
-  };
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.5, gap: 4 }}>
-      <select 
-        value={hour} 
-        onChange={(e) => {
-          setHour(e.target.value);
-          handleChange(e.target.value, minute, ampm);
-        }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1 }}
-      >
-        {Array.from({length: 12}, (_, i) => {
-          const v = (i + 1).toString().padStart(2, '0');
-          return <option key={v} value={v}>{v}</option>;
-        })}
-      </select>
-      <Text style={{ marginHorizontal: 2, fontWeight: 'bold', color: '#333' }}>:</Text>
-      <select 
-        value={minute} 
-        onChange={(e) => {
-          setMinute(e.target.value);
-          handleChange(hour, e.target.value, ampm);
-        }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1 }}
-      >
-        {['00', '15', '30', '45'].map(m => (
-          <option key={m} value={m}>{m}</option>
-        ))}
-      </select>
-      <select 
-        value={ampm} 
-        onChange={(e) => {
-          setAmpm(e.target.value);
-          handleChange(hour, minute, e.target.value);
-        }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1.2 }}
-      >
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
-    </View>
-  );
-};
-
 export default function EditSchedule() {
-  const router = useRouter();
   const { id } = useLocalSearchParams();
   const scheduleId = Array.isArray(id) ? id[0] : id;
   const goBack = useGoBack('/(admin)/schedule');
@@ -207,79 +141,78 @@ export default function EditSchedule() {
   const conflicts = checkForConflicts();
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
-      <View className="flex-row items-center mb-6">
-        <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
-          <ArrowLeft size={24} color="#333" />
+    <ScrollView className="flex-1 bg-ssf-bg py-3 px-3">
+      <View className="flex-row items-center mb-4">
+        <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 bg-white border border-ui-border rounded-lg items-center justify-center">
+          <ArrowLeft size={18} color="#334155" />
         </TouchableOpacity>
-        <Text className="text-2xl font-poppins-black text-ssf-text">Edit Schedule</Text>
+        <View>
+          <Text className="text-xl font-poppins-black text-ui-text">Edit Schedule</Text>
+          <Text className="font-poppins text-xs text-ui-text-muted mt-0.5">Update event, venue and judging requirements.</Text>
+        </View>
       </View>
 
-      <SsfCard className="gap-y-4">
-        <View>
-          <Text className="font-poppins text-ssf-text-muted mb-2">Select Item *</Text>
-          <View className="border border-ssf-border rounded-xl bg-ssf-surface overflow-hidden">
-            <select 
-              style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: 'transparent', outline: 'none', fontFamily: 'inherit', color: '#333' }}
+      <SsfCard className="gap-y-4 p-4 border border-ui-border shadow-none">
+        <View className="flex-row flex-wrap gap-4">
+          <View className="flex-1 min-w-[280px]">
+            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Item *</Text>
+            <SsfSelectMenu
               value={itemId}
-              onChange={(e) => setItemId(e.target.value)}
-            >
-              <option value="">-- Choose an Item --</option>
-              {items?.map((i: any) => (
-                <option key={i.id} value={i.id}>
-                  [{i.item_code}] {i.item_name_en}
-                </option>
-              ))}
-            </select>
+              onValueChange={setItemId}
+              accessibilityLabel="Select schedule item"
+              searchable
+              searchPlaceholder="Search item name or code..."
+              options={[
+                { label: 'Choose an item', value: '' },
+                ...(items ?? []).map((item: any) => ({ label: `[${item.item_code}] ${item.item_name_en}`, value: item.id })),
+              ]}
+            />
           </View>
-        </View>
 
-        <View>
-          <Text className="font-poppins text-ssf-text-muted mb-2">Select Venue *</Text>
-          <View className="border border-ssf-border rounded-xl bg-ssf-surface overflow-hidden">
-            <select 
-              style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: 'transparent', outline: 'none', fontFamily: 'inherit', color: '#333' }}
+          <View className="flex-1 min-w-[280px]">
+            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Venue *</Text>
+            <SsfSelectMenu
               value={venueId}
-              onChange={(e) => setVenueId(e.target.value)}
-            >
-              <option value="">-- Choose a Venue --</option>
-              {venues.map((v: any) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} {v.capacity ? `(Cap: ${v.capacity})` : ''}
-                </option>
-              ))}
-            </select>
+              onValueChange={setVenueId}
+              accessibilityLabel="Select schedule venue"
+              searchable
+              searchPlaceholder="Search venue..."
+              options={[
+                { label: 'Choose a venue', value: '' },
+                ...venues.map((venue: any) => ({ label: `${venue.name}${venue.capacity ? ` (Cap: ${venue.capacity})` : ''}`, value: venue.id })),
+              ]}
+            />
           </View>
         </View>
 
-        <View className="flex-row gap-x-4">
-          <View className="flex-1">
-            <Text className="font-poppins text-ssf-text-muted mb-2">Start Time *</Text>
+        <View className="flex-row flex-wrap gap-4 pt-1">
+          <View className="flex-1 min-w-[300px]">
+            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Start *</Text>
             {Platform.OS === 'web' ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
+                  style={dateTimeInputStyle}
                 />
-                <TimeSelect value={startTimeStr} onChange={setStartTimeStr} />
+                <input type="time" value={startTimeStr} onChange={(e) => setStartTimeStr(e.target.value)} style={dateTimeInputStyle} />
               </View>
             ) : (
               <Text className="text-red-500">Use Web for Date/Time picking</Text>
             )}
           </View>
-          <View className="flex-1">
-            <Text className="font-poppins text-ssf-text-muted mb-2">End Time *</Text>
+          <View className="flex-1 min-w-[300px]">
+            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">End *</Text>
             {Platform.OS === 'web' ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <input 
                   type="date" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
+                  style={dateTimeInputStyle}
                 />
-                <TimeSelect value={endTimeStr} onChange={setEndTimeStr} />
+                <input type="time" value={endTimeStr} onChange={(e) => setEndTimeStr(e.target.value)} style={dateTimeInputStyle} />
               </View>
             ) : (
               <Text className="text-red-500">Use Web for Date/Time picking</Text>
@@ -288,25 +221,33 @@ export default function EditSchedule() {
         </View>
 
         {/* Judge Count Selector */}
-        <View>
-          <Text className="font-poppins text-ssf-text-muted mb-2">Number of Judges *</Text>
-          <View className="flex-row gap-x-2">
+        <View className="pt-1">
+          <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Number of Judges *</Text>
+          <View className="flex-row gap-x-2 max-w-xl">
             {[1, 2, 3, 4, 5].map(n => (
               <TouchableOpacity
                 key={n}
                 onPress={() => setJudgeCount(n)}
-                className={`flex-1 py-3 rounded-xl border items-center ${
+                className={`h-10 flex-1 rounded-lg border items-center justify-center ${
                   judgeCount === n
                     ? 'bg-ssf-primary border-ssf-primary'
                     : 'bg-white border-ssf-border'
                 }`}
               >
-                <Text className={`font-poppins-black text-base ${
+                <Text className={`font-poppins-bold text-xs ${
                   judgeCount === n ? 'text-white' : 'text-ssf-text'
                 }`}>{n}</Text>
               </TouchableOpacity>
             ))}
           </View>
+          {schedule?.assigned_judge_ids?.length > judgeCount && (
+            <View className="bg-red-50 border border-red-200 p-3 rounded-xl mt-3">
+              <Text className="font-poppins-bold text-red-700 text-xs">
+                {schedule.assigned_judge_ids.length} judges are currently assigned, but the new requirement is {judgeCount}.
+                {' '}Remove {schedule.assigned_judge_ids.length - judgeCount} extra judge(s) from Judge Panel.
+              </Text>
+            </View>
+          )}
         </View>
 
         {conflicts && conflicts.length > 0 && (
@@ -321,13 +262,27 @@ export default function EditSchedule() {
           </View>
         )}
 
-        <SsfButton 
-          label={isUpdatingSchedule ? 'Saving...' : 'Update Schedule'} 
-          onPress={handleSave} 
-          disabled={isUpdatingSchedule || !!(conflicts && Platform.OS !== 'web')}
-          className="mt-4"
-        />
+        <View className="flex-row justify-end pt-2 border-t border-ui-border">
+          <SsfButton
+            label={isUpdatingSchedule ? 'Saving...' : 'Update Schedule'}
+            onPress={handleSave}
+            disabled={isUpdatingSchedule || !!(conflicts && Platform.OS !== 'web')}
+          />
+        </View>
       </SsfCard>
     </ScrollView>
   );
 }
+
+const dateTimeInputStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  height: 42,
+  padding: '0 12px',
+  borderRadius: 9,
+  border: '1px solid #D8E0EA',
+  background: '#FFFFFF',
+  color: '#0F172A',
+  fontFamily: 'Poppins_400Regular',
+  outline: 'none',
+};

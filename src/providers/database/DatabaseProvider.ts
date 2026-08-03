@@ -49,8 +49,19 @@ export interface DatabaseProvider {
     orgName: string;
     orgType: string;
     participantsCount: number;
+    participantsLast7Days: number;
     itemsCount: number;
     pendingRegsCount: number;
+    pendingRegsLast7Days: number;
+    activeSchedulesCount: number;
+    recentRegistrations: {
+      id: string;
+      participantName: string;
+      itemName: string;
+      organisationName: string;
+      status: string;
+      createdAt: string;
+    }[];
   }>>;
   
   // Schedule & Venue Methods
@@ -73,7 +84,9 @@ export interface DatabaseProvider {
   createJudge<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   updateJudge<T>(id: string, payload: Record<string, unknown>): Promise<QueryResult<T>>;
   deleteJudge(id: string): Promise<QueryResult<void>>;
+  listJudgeActivityLogs<T>(tenantId: string): Promise<ListResult<T>>;
   assignJudgesToSchedule(scheduleId: string, judgeIds: string[]): Promise<QueryResult<void>>;
+  removeJudgeFromSchedule(scheduleId: string, judgeId: string, force?: boolean): Promise<QueryResult<void>>;
   getScheduleJudges<T>(scheduleId: string): Promise<ListResult<T>>;
 
   // Mark Entry Methods
@@ -102,7 +115,7 @@ export interface DatabaseProvider {
   listJudgeTokens<T>(scheduleId: string): Promise<ListResult<T>>;
   getJudgeSubmissionSummary<T>(scheduleId: string): Promise<ListResult<T>>;
   getScheduleReadiness<T>(scheduleId: string): Promise<ListResult<T>>;
-  logJudgeActivity(payload: { judgeId: string; scheduleId: string; tenantId: string; actionType: string; actionDetails: Record<string, any> }): Promise<QueryResult<void>>;
+  logJudgeActivity(payload: { judgeId: string; scheduleId: string; tenantId: string; actionType: string; actionDetails: Record<string, any>; token?: string }): Promise<QueryResult<void>>;
 
 
   // Leaderboard Settings & Poster Template Methods

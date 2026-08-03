@@ -15,22 +15,23 @@ html, body, #root, #__next {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background: #F6F7F9;
 }
 
 /* Custom Scrollbars for Web */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.4);
-  border-radius: 4px;
+  background: rgba(100, 116, 139, 0.32);
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.8);
+  background: rgba(15, 118, 110, 0.62);
 }
 
 /* Hide scrollbar utility for both Webkit (Safari, Chrome) and standards (Firefox, IE) */

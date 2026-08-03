@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { ArrowLeft, CheckCircle2, XCircle, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../core/config/supabase';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 
 export default function CommunicationHistory() {
   const router = useRouter();
@@ -101,8 +102,8 @@ export default function CommunicationHistory() {
       />
 
       {loading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
+        <View className="flex-1 p-4">
+          <SsfTableSkeleton rows={8} columns={4} />
         </View>
       ) : (
         <FlatList

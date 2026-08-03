@@ -1,5 +1,7 @@
 import { judgeTokenRepository } from '../lib/repositories/judgeTokenRepository';
 import { databaseProvider } from '../providers/database';
+import { Platform } from 'react-native';
+import { supabase } from '../core/config/supabase';
 export const judgeTokenService = {
   async generateToken(payload: {
     judgeId: string;
@@ -20,16 +22,14 @@ export const judgeTokenService = {
       try {
         const maskedToken = `****${token.slice(-2)}`;
         let platform = 'Unknown';
-        try {
-          const { Platform } = require('react-native');
-          platform = Platform.OS;
-        } catch (e) {}
+        platform = Platform.OS;
 
         await databaseProvider.logJudgeActivity({
           judgeId: data.judge_id,
           scheduleId: data.schedule_id,
           tenantId: data.tenant_id,
-          actionType: 'LOGIN_REQUESTED',
+          token,
+          actionType: 'CODE_VALIDATED',
           actionDetails: {
             otpMasked: maskedToken,
             platform,
@@ -43,32 +43,33 @@ export const judgeTokenService = {
     return data;
   },
 
-  async requestLogin(tokenId: string) {
-    // We update the token status to pending_approval via direct update
-    // We assume the user has anon or authenticated access (RLS was updated)
-    const { supabase } = require('../core/config/supabase');
-    const { error } = await supabase
-      .from('judge_tokens')
-      .update({ status: 'pending_approval' })
-      .eq('id', tokenId);
+  async requestLogin(token: string) {
+    const { data, error } = await supabase.rpc('request_judge_login', {
+      p_token: token.toUpperCase().trim(),
+    });
     if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async getLoginStatus(token: string) {
+    const { data, error } = await supabase.rpc('get_judge_login_status', {
+      p_token: token.toUpperCase().trim(),
+    });
+    if (error) throw new Error(error.message);
+    return data as string;
   },
 
   async approveLogin(tokenId: string) {
-    const { supabase } = require('../core/config/supabase');
-    const { error } = await supabase
-      .from('judge_tokens')
-      .update({ status: 'approved' })
-      .eq('id', tokenId);
+    const { error } = await supabase.rpc('approve_judge_login', {
+      p_token_id: tokenId,
+    });
     if (error) throw new Error(error.message);
   },
 
   async rejectLogin(tokenId: string) {
-    const { supabase } = require('../core/config/supabase');
-    const { error } = await supabase
-      .from('judge_tokens')
-      .update({ status: 'rejected' })
-      .eq('id', tokenId);
+    const { error } = await supabase.rpc('reject_judge_login', {
+      p_token_id: tokenId,
+    });
     if (error) throw new Error(error.message);
   },
 

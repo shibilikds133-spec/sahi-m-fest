@@ -47,3 +47,6 @@ app-example
 
 .vercel
 *.log
+
+# Supabase CLI local project metadata
+supabase/.temp/

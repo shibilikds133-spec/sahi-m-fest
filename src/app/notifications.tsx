@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNotificationsInbox } from '../core/hooks/useNotificationsInbox';
+import { SsfTableSkeleton } from '../components/ui/SsfSkeleton';
 import { Bell, Clock, AlertTriangle, CheckCircle2, Megaphone, Check, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
@@ -54,7 +55,7 @@ export default function NotificationsInbox() {
         maxHeight: isDesktop ? 900 : undefined,
         marginVertical: isDesktop ? 40 : 0,
         backgroundColor: isDesktop ? 'rgba(255, 255, 255, 0.02)' : undefined,
-        borderRadius: isDesktop ? 24 : 0,
+        borderRadius: isDesktop ? 10 : 0,
         borderWidth: isDesktop ? 1 : 0,
         borderBottomWidth: isDesktop ? 6 : 0,
         borderColor: 'rgba(255,255,255,0.08)',
@@ -80,8 +81,8 @@ export default function NotificationsInbox() {
         </View>
       
       {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#10B981" />
+        <View style={{ flex: 1, padding: 16 }}>
+          <SsfTableSkeleton rows={8} columns={3} compact />
         </View>
       ) : (
         <ScrollView 
@@ -95,7 +96,7 @@ export default function NotificationsInbox() {
                 <Bell size={32} color={palette.muted} />
               </View>
               <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: palette.text }}>No notifications yet</Text>
-              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: palette.muted, marginTop: 8 }}>You're all caught up!</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: palette.muted, marginTop: 8 }}>You&apos;re all caught up!</Text>
             </View>
           ) : (
             notifications.map(item => {
@@ -110,7 +111,7 @@ export default function NotificationsInbox() {
                     backgroundColor: isUnread ? 'rgba(40, 55, 80, 0.4)' : 'rgba(255, 255, 255, 0.03)',
                     borderColor: isUnread ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255,255,255,0.06)',
                     borderWidth: 1,
-                    borderRadius: isDesktop ? 24 : 20,
+                    borderRadius: 10,
                     padding: isDesktop ? 20 : 14,
                     marginBottom: 16,
                     shadowColor: '#000',

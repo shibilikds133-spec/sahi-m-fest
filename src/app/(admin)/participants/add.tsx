@@ -7,6 +7,7 @@ import { participantService } from '../../../services/participantService';
 import { useAuthStore } from '../../../core/store/authStore';
 import { getCategory, validateParticipant, calculateAge, getCutoffDate, DEFAULT_FESTIVAL_YEAR, checkClassAgeConsistency, getCategoryDOBRange, type CategoryCode } from '../../../core/utils/participantValidation';
 import { Eye, EyeOff } from 'lucide-react-native';
+import { useFestival } from '../../../core/hooks/useFestival';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,11 +55,13 @@ function formatDOBInput(text: string): string {
 export default function AddParticipant() {
   const router = useRouter();
   const { tenant_id } = useAuthStore();
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival, isLoading: isFestivalLoading } = useActiveFestival();
   const validTenantId = tenant_id === 'test-unit-001'
     ? '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
     : tenant_id;
-  const festivalId = '550e8400-e29b-41d4-a716-446655440000';
-  const festivalYear = DEFAULT_FESTIVAL_YEAR;
+  const festivalId = activeFestival?.id;
+  const festivalYear = activeFestival?.festival_year ?? DEFAULT_FESTIVAL_YEAR;
 
   // Form state
   const [name, setName] = useState('');
@@ -185,11 +188,19 @@ export default function AddParticipant() {
     } catch {
       // Not enough info yet — that's fine
     }
-  }, [dob, classStd, educationType, manualCategory]);
+  }, [dob, classStd, educationType, manualCategory, festivalYear]);
 
   // ─── Save Handler ───────────────────────────────────────────────────────────
 
   const handleSave = async () => {
+    if (isFestivalLoading) {
+      Alert.alert('Please wait', 'Festival information is still loading.');
+      return;
+    }
+    if (!festivalId) {
+      Alert.alert('Festival Required', 'Create or activate a festival before adding participants.');
+      return;
+    }
     if (!name.trim()) {
       Alert.alert('Error', 'Full Name is required.');
       return;

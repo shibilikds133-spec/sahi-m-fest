@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   tableCard: {
     flex: 1,
     backgroundColor: colors.card,
-    borderRadius: 22,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   mobileRowCard: {
-    borderRadius: 18,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: '#FFFFFF',

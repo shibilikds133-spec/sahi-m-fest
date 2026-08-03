@@ -164,7 +164,7 @@ export default function CreateSchedule() {
   const conflicts = checkForConflicts();
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
+    <ScrollView className="flex-1 bg-ssf-bg py-3 px-3">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
           <ArrowLeft size={24} color="#333" />

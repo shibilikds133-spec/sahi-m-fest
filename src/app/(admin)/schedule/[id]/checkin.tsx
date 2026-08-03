@@ -281,21 +281,24 @@ export default function CheckIn() {
 
   return (
     <View className="flex-1 bg-ssf-bg">
-      <ScrollView className="flex-1 py-6 px-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ width: '100%', maxWidth: 960, alignSelf: 'center', padding: 12, paddingBottom: 28 }}
+      >
         {/* Header */}
-        <View className="flex-row items-center mb-4">
-          <TouchableOpacity onPress={goBackSafely} className="mr-3 p-2 bg-ssf-surface rounded-full">
-            <ArrowLeft size={24} color="#333" />
+        <View className="flex-row items-center mb-3">
+          <TouchableOpacity onPress={goBackSafely} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+            <ArrowLeft size={18} color="#0F172A" />
           </TouchableOpacity>
           <View className="flex-1">
-            <Text className="text-2xl font-poppins-black text-ssf-text">Green Room Check-In</Text>
-            <Text className="font-poppins text-ssf-text-muted">{schedule.items?.item_name_en}</Text>
+            <Text className="text-lg font-poppins-black text-ssf-text">Green Room Check-In</Text>
+            <Text className="font-poppins text-[11px] text-ssf-text-muted">{schedule.items?.item_name_en}</Text>
           </View>
-          <SsfButton label="Debug" onPress={() => Alert.alert('Debug', `Total raw registrations fetched: ${registrations?.length || 0}`)} size="sm" />
+          <SsfButton label="Debug" variant="outline" onPress={() => Alert.alert('Debug', `Total raw registrations fetched: ${registrations?.length || 0}`)} size="sm" />
         </View>
 
         {isShuffleLocked && (
-          <View className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex-row items-center gap-x-3">
+          <View className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 flex-row items-center gap-x-3">
             <Lock size={20} color="#B45309" />
             <Text className="font-poppins-bold text-amber-700 flex-1">
               🔒 Event is locked by Stage Portal. Check-in is now read-only.
@@ -304,7 +307,7 @@ export default function CheckIn() {
         )}
 
         {/* Progress Bar */}
-        <SsfCard className="mb-4">
+        <SsfCard className="mb-3 p-3">
           <View className="flex-row justify-between items-center mb-2">
             <View className="flex-row items-center gap-x-2">
               <Users size={18} color="#1B6B3A" />
@@ -312,9 +315,9 @@ export default function CheckIn() {
             </View>
             <Text className="font-poppins-bold text-ssf-primary text-lg">{verifiedCount}/{totalCount}</Text>
           </View>
-          <View className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+          <View className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
             <View
-              className="h-3 bg-ssf-primary rounded-full"
+              className="h-2 bg-ssf-primary rounded-full"
               style={{ width: totalCount > 0 ? `${(verifiedCount / totalCount) * 100}%` : '0%' }}
             />
           </View>
@@ -351,15 +354,15 @@ export default function CheckIn() {
         {!isShuffleLocked && (
           <TouchableOpacity
             onPress={startWebScanner}
-            className="bg-ssf-primary p-4 rounded-xl mb-4 flex-row justify-center items-center gap-x-3"
+            className="h-11 rounded-lg border border-emerald-200 bg-white mb-3 flex-row justify-center items-center gap-x-2"
           >
-            <QrCode size={22} color="#FFF" />
-            <Text className="font-poppins-bold text-white text-base">Scan Chest Card QR</Text>
+            <QrCode size={18} color="#0F766E" />
+            <Text className="font-poppins-bold text-emerald-700 text-sm">Scan Chest Card QR</Text>
           </TouchableOpacity>
         )}
 
         {/* Search */}
-        <View className="border border-ssf-border rounded-xl bg-white px-3 py-2 flex-row items-center mb-4">
+        <View className="h-10 border border-ssf-border rounded-lg bg-white px-3 flex-row items-center mb-3">
           <Search size={16} color="#9CA3AF" className="mr-2" />
           <input
             style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: 14, color: '#333', background: 'transparent' }}
@@ -370,18 +373,18 @@ export default function CheckIn() {
         </View>
 
         {/* List */}
-        <SsfCard className="mb-6">
+        <SsfCard className="mb-6 p-0 overflow-hidden">
           {!filteredRegs || filteredRegs.length === 0 ? (
             <Text className="font-poppins text-ssf-text-muted py-4 text-center">No participants found.</Text>
           ) : (
-            <View className="gap-y-3">
+            <View>
               {filteredRegs.map((reg: any) => {
                 const isRejected = reg.status === 'rejected';
 
                 return (
                   <View
                     key={reg.id}
-                    className={`flex-row items-center justify-between py-3 border-b border-gray-100 last:border-0 ${
+                    className={`min-h-[64px] flex-row items-center justify-between px-3 py-2 border-b border-gray-100 last:border-0 ${
                       isRejected ? 'opacity-60' : ''
                     }`}
                   >
@@ -390,24 +393,24 @@ export default function CheckIn() {
                       {/* Avatar circle */}
                       <View
                         style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 22,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
                           backgroundColor: isRejected ? '#FEE2E2' : reg.is_verified ? '#DCFCE7' : '#F3F4F6',
                           borderWidth: 2,
                           borderColor: isRejected ? '#EF4444' : reg.is_verified ? '#16A34A' : '#D1D5DB',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          marginRight: 12,
+                          marginRight: 10,
                         }}
                       >
                         <Text style={{ fontWeight: '900', fontSize: 11, color: isRejected ? '#EF4444' : reg.is_verified ? '#16A34A' : '#6B7280' }}>
                           {reg.participants?.chest_number || '?'}
                         </Text>
                       </View>
-                      <View>
+                      <View className="min-w-0 flex-1">
                         <View className="flex-row items-center gap-x-2">
-                          <Text className={`font-poppins-bold ${isRejected ? 'text-slate-400 line-through' : 'text-ssf-text'}`}>
+                          <Text numberOfLines={1} className={`font-poppins-bold text-[12px] ${isRejected ? 'text-slate-400 line-through' : 'text-ssf-text'}`}>
                             {reg.participants?.name}
                           </Text>
                           {isRejected && (

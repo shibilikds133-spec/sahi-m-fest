@@ -21,12 +21,9 @@ export function useNotificationsInbox() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
-  console.log('useNotificationsInbox hook rendered. User is:', user?.id || 'null');
-
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
-      console.log('queryFn triggered! Fetching for user:', user?.id);
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -49,12 +46,6 @@ export function useNotificationsInbox() {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      console.log('Inbox logs fetch result:', { data, error, userId: user.id });
-
-      // DEBUG: Also fetch raw notifications just to see if they exist for this tenant
-      const rawNotifs = await supabase.from('notifications').select('*').limit(5);
-      console.log('Raw notifications table:', rawNotifs.data, rawNotifs.error);
-
       if (error) {
         console.error('Error fetching notifications:', error);
         throw error;
@@ -74,14 +65,12 @@ export function useNotificationsInbox() {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (logId: string) => {
-      console.log('Marking logId as read:', logId);
       const { data, error } = await supabase
         .from('notification_logs')
         .update({ status: 'delivered', delivered_at: new Date().toISOString() })
         .eq('id', logId)
         .select();
 
-      console.log('Update result:', data, error);
       if (error) throw error;
       
       // Supabase returns an empty array if RLS blocks the update, instead of throwing an error.

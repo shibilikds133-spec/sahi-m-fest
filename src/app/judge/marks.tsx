@@ -10,9 +10,11 @@ import { useRouter } from 'expo-router';
 import { databaseProvider } from '../../providers/database';
 import { judgeTokenService } from '../../services/judgeTokenService';
 import { calculateGrade } from '../../services/judgeService';
-import { SsfCard } from '../../components/ui/SsfCard';
-import { SsfButton } from '../../components/ui/SsfButton';
-import { getScoringRulesForItem, formatCriteriaForUI } from '../../core/utils/scoringRules';
+import {
+  getScoringRulesForItem,
+  formatCriteriaForUI,
+  type ScoringEntryMode,
+} from '../../core/utils/scoringRules';
 
 export default function JudgeMarksPage() {
   const router = useRouter();
@@ -24,8 +26,12 @@ export default function JudgeMarksPage() {
   const [marks, setMarks] = useState<Record<string, Record<string, number>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [eventCriteria, setEventCriteria] = useState<any[]>([]);
+  const [entryMode, setEntryMode] = useState<ScoringEntryMode>('criteria');
+  const [eventTotalMarks, setEventTotalMarks] = useState(100);
+  const [scoringRuleId, setScoringRuleId] = useState<string | null>(null);
   const [eventGuidelines, setEventGuidelines] = useState<string | null>(null);
   const [showGuidelines, setShowGuidelines] = useState(false);
 
@@ -67,7 +73,14 @@ export default function JudgeMarksPage() {
       setSyncStatus('saving');
       const regId = syncQueue[0];
       const scores = marks[regId] ?? {};
-      const total = Object.values(scores).reduce((a, b) => a + b, 0);
+      const total = entryMode === 'total_only'
+        ? Number(scores.total ?? 0)
+        : Object.values(scores).reduce((a, b) => a + b, 0);
+      const criteriaSnapshot = eventCriteria.map(c => ({
+        key: c.key,
+        label: c.label,
+        max: c.max,
+      }));
 
       try {
         if (!session) return;
@@ -75,8 +88,11 @@ export default function JudgeMarksPage() {
           schedule_id: session.schedule_id,
           judge_id: session.judge_id,
           registration_id: regId,
-          criteria_scores: scores,
+          criteria_scores: entryMode === 'total_only' ? {} : scores,
           total_mark: total,
+          entry_mode_snapshot: entryMode,
+          max_mark_snapshot: eventTotalMarks,
+          criteria_snapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
           tenant_id: session.tenant_id,
           is_draft: true,
           is_final: false,
@@ -90,13 +106,14 @@ export default function JudgeMarksPage() {
             judgeId: session.judge_id,
             scheduleId: session.schedule_id,
             tenantId: session.tenant_id,
+            token: session.token,
             actionType: 'MARKS_UPDATED',
             actionDetails: {
               registrationId: regId,
               timestamp: new Date().toISOString()
             }
           });
-        } catch(e) {}
+        } catch {}
 
         // Success! Remove from queue
         setSyncQueue(prev => prev.filter(id => id !== regId));
@@ -112,9 +129,12 @@ export default function JudgeMarksPage() {
     };
 
     processQueue();
-  }, [syncQueue, marks, session]);
+  }, [syncQueue, marks, session, entryMode, eventCriteria, eventTotalMarks]);
 
   const loadSession = async () => {
+    setLoading(true);
+    setLoadError(null);
+
     try {
       const sessionStr = await AsyncStorage.getItem('judge_session_data');
       const token = await AsyncStorage.getItem('judge_session_token');
@@ -126,7 +146,13 @@ export default function JudgeMarksPage() {
       setSession({ ...sessionData, token });
 
       // Load registrations for this schedule
-      const { data } = await databaseProvider.getRegistrationsBySchedule<any>(sessionData.schedule_id);
+      const { data, error: registrationsError } =
+        await databaseProvider.getRegistrationsBySchedule<any>(sessionData.schedule_id);
+      if (registrationsError) {
+        throw new Error(
+          registrationsError.message || 'Could not load participants for this event.'
+        );
+      }
       const regs = data ?? [];
       setRegistrations(regs);
 
@@ -137,6 +163,9 @@ export default function JudgeMarksPage() {
       const tenantId = sessionData.tenant_id;
       const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenantId);
       setEventCriteria(formatCriteriaForUI(rules.criteria));
+      setEntryMode(rules.entry_mode);
+      setEventTotalMarks(rules.entry_mode === 'total_only' ? 100 : rules.total_marks);
+      setScoringRuleId(rules.id ?? null);
       if (rules.guidelines) {
         setEventGuidelines(rules.guidelines);
         setShowGuidelines(true); // Automatically show on first load
@@ -150,7 +179,7 @@ export default function JudgeMarksPage() {
       if (localDraftStr) {
         try {
           loadedMarks = JSON.parse(localDraftStr);
-        } catch (_) {}
+        } catch {}
       }
 
       // 2. Fetch marks from database to merge/overwrite
@@ -159,7 +188,10 @@ export default function JudgeMarksPage() {
         if (dbMarkEntries) {
           dbMarkEntries.forEach((entry: any) => {
             if (entry.judge_id === sessionData.judge_id) {
-              loadedMarks[entry.registration_id] = entry.criteria_scores || {};
+              loadedMarks[entry.registration_id] =
+                entry.entry_mode_snapshot === 'total_only'
+                  ? { total: Number(entry.total_mark ?? 0) }
+                  : entry.criteria_scores || {};
             }
           });
         }
@@ -170,7 +202,10 @@ export default function JudgeMarksPage() {
       setMarks(loadedMarks);
 
     } catch (e) {
-      router.replace('/judge' as any);
+      console.error('[JudgeMarksPage] Failed to load event:', e);
+      setLoadError(
+        e instanceof Error ? e.message : 'Could not load this judging event.'
+      );
     } finally {
       setLoading(false);
     }
@@ -219,7 +254,17 @@ export default function JudgeMarksPage() {
   };
 
   const getTotal = (regId: string) =>
-    Object.values(marks[regId] ?? {}).reduce((a, b) => a + b, 0);
+    entryMode === 'total_only'
+      ? Number(marks[regId]?.total ?? 0)
+      : Object.values(marks[regId] ?? {}).reduce((a, b) => a + b, 0);
+
+  const isRegistrationComplete = (regId: string) => {
+    if (entryMode === 'total_only') {
+      return marks[regId]?.total !== undefined;
+    }
+    return eventCriteria.length > 0
+      && eventCriteria.every(criterion => marks[regId]?.[criterion.key] !== undefined);
+  };
 
   const submitMarks = async () => {
     setSubmitting(true);
@@ -227,13 +272,21 @@ export default function JudgeMarksPage() {
       // Save each mark entry
       for (const reg of registrations) {
         const scores = marks[reg.id] ?? {};
-        const total = Object.values(scores).reduce((a, b) => a + b, 0);
+        const total = getTotal(reg.id);
+        const criteriaSnapshot = eventCriteria.map(c => ({
+          key: c.key,
+          label: c.label,
+          max: c.max,
+        }));
         const res = await databaseProvider.upsertMarkEntry({
           schedule_id: session.schedule_id,
           judge_id: session.judge_id,
           registration_id: reg.id,
-          criteria_scores: scores,
+          criteria_scores: entryMode === 'total_only' ? {} : scores,
           total_mark: total,
+          entry_mode_snapshot: entryMode,
+          max_mark_snapshot: eventTotalMarks,
+          criteria_snapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
           tenant_id: session.tenant_id,
           is_draft: false,
           is_final: true,
@@ -250,9 +303,13 @@ export default function JudgeMarksPage() {
           judgeId: session.judge_id,
           scheduleId: session.schedule_id,
           tenantId: session.tenant_id,
+          token: session.token,
           actionType: 'MARKS_SUBMITTED',
           actionDetails: {
             participantsCount: registrations.length,
+            entryMode,
+            scoringRuleId,
+            maxMark: eventTotalMarks,
             timestamp: new Date().toISOString()
           }
         });
@@ -280,16 +337,20 @@ export default function JudgeMarksPage() {
   };
 
   const handleSubmitAll = async () => {
-    const incomplete = registrations.filter(reg =>
-      Object.keys(marks[reg.id] ?? {}).length < eventCriteria.length
-    );
+    const incomplete = registrations.filter(reg => !isRegistrationComplete(reg.id));
     if (incomplete.length > 0) {
       if (Platform.OS === 'web') {
-        window.alert(`Incomplete Marks: ${incomplete.length} participant(s) still need marks in all criteria.`);
+        window.alert(
+          entryMode === 'total_only'
+            ? `Incomplete Marks: ${incomplete.length} participant(s) still need a total mark.`
+            : `Incomplete Marks: ${incomplete.length} participant(s) still need marks in all criteria.`
+        );
       } else {
         Alert.alert(
           'Incomplete Marks',
-          `${incomplete.length} participant(s) still need marks in all criteria.`
+          entryMode === 'total_only'
+            ? `${incomplete.length} participant(s) still need a total mark.`
+            : `${incomplete.length} participant(s) still need marks in all criteria.`
         );
       }
       return;
@@ -348,6 +409,34 @@ export default function JudgeMarksPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <LinearGradient colors={['#030E21', '#0B1F33', '#120E2D']} style={{ flex: 1 }}>
+        <View className="flex-1 items-center justify-center px-6">
+          <View
+            className="w-full max-w-md rounded-xl border border-red-500/30 p-5"
+            style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)' }}
+          >
+            <Text className="font-poppins-bold text-red-300 text-base text-center">
+              Unable to load participants
+            </Text>
+            <Text className="font-poppins text-white/60 text-sm text-center mt-2">
+              {loadError}
+            </Text>
+            <TouchableOpacity
+              onPress={loadSession}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading participants"
+              className="mt-5 rounded-xl bg-red-500 py-3 items-center"
+            >
+              <Text className="font-poppins-bold text-white">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    );
+  }
+
   const scheduleInfo = session?.schedules;
   const judgeName = session?.judges?.name;
   const eventName = scheduleInfo?.items?.item_name_ml ?? scheduleInfo?.items?.item_name_en ?? 'Event';
@@ -391,11 +480,10 @@ export default function JudgeMarksPage() {
   const renderMobileLayout = () => {
     const activeReg = registrations[activeRegIndex];
     const total = activeReg ? getTotal(activeReg.id) : 0;
-    const grade = activeReg ? calculateGrade(total, 100) : '—';
-    const allDone = activeReg ? Object.keys(marks[activeReg.id] ?? {}).length === eventCriteria.length : false;
-    const allMarked = registrations.length > 0 && registrations.every(reg =>
-      Object.keys(marks[reg.id] ?? {}).length === eventCriteria.length
-    );
+    const grade = activeReg ? calculateGrade(total, eventTotalMarks) : '—';
+    const allDone = activeReg ? isRegistrationComplete(activeReg.id) : false;
+    const allMarked = registrations.length > 0
+      && registrations.every(reg => isRegistrationComplete(reg.id));
 
     return (
       <View className="flex-1" style={{ backgroundColor: '#030E21' }}>
@@ -461,7 +549,7 @@ export default function JudgeMarksPage() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
             {registrations.map((reg, idx) => {
               const isCurrent = idx === activeRegIndex;
-              const isRegMarked = Object.keys(marks[reg.id] ?? {}).length === eventCriteria.length;
+              const isRegMarked = isRegistrationComplete(reg.id);
               return (
                 <TouchableOpacity
                   key={reg.id}
@@ -505,7 +593,7 @@ export default function JudgeMarksPage() {
         {/* Main Form Content */}
         <ScrollView className="flex-1 px-4 pt-3" keyboardShouldPersistTaps="handled">
           {registrations.length === 0 ? (
-            <View className="items-center py-10 rounded-2xl border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+            <View className="items-center py-10 rounded-xl border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
               <Text className="font-poppins text-white/50 text-center">
                 No participants found for this event.
               </Text>
@@ -513,7 +601,7 @@ export default function JudgeMarksPage() {
           ) : (
             <View>
               {/* Note about code letters */}
-              <View className="bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-2.5 flex-row gap-x-2 items-center mb-3">
+              <View className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 flex-row gap-x-2 items-center mb-3">
                 <AlertCircle size={14} color="#FBBF24" />
                 <Text className="font-poppins text-amber-200 text-[10px] leading-4 flex-1">
                   Confidential evaluation by Code Letter. Participant names are hidden.
@@ -522,7 +610,7 @@ export default function JudgeMarksPage() {
 
               {/* Active Participant Info Header */}
               <View 
-                className="rounded-2xl p-4 border border-white/10 shadow-sm mb-4 flex-row justify-between items-center"
+                className="rounded-xl p-4 border border-white/10 shadow-sm mb-4 flex-row justify-between items-center"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
               >
                 <View className="flex-row items-center gap-x-3">
@@ -539,20 +627,43 @@ export default function JudgeMarksPage() {
 
                 {/* Score / Grade summary */}
                 <View className="items-end">
-                  <Text className="font-poppins-black text-cyan-400 text-lg">{total} / 100</Text>
+                  <Text className="font-poppins-black text-cyan-400 text-lg">{total} / {eventTotalMarks}</Text>
                   {total > 0 ? (
                     <Text className="font-poppins-bold text-[10px] text-white/40">Grade: {grade}</Text>
                   ) : null}
                 </View>
               </View>
 
-              {/* Criteria Mark Entry Fields */}
-              {eventCriteria.map(c => {
+              {entryMode === 'total_only' ? (
+                <View className="rounded-xl p-4 border border-cyan-500/30 shadow-sm mb-3" style={{ backgroundColor: 'rgba(6, 182, 212, 0.06)' }}>
+                  <Text className="font-poppins-bold text-white text-sm mb-1">Total Mark</Text>
+                  <Text className="font-poppins text-white/50 text-[11px] mb-4">
+                    Enter the final total from the paper mark sheet.
+                  </Text>
+                  <View className="flex-row items-center justify-center">
+                    <TextInput
+                      className="border-2 rounded-xl px-3 py-3 font-poppins-black text-2xl w-28 text-center"
+                      style={{
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderColor: marks[activeReg?.id]?.total !== undefined ? '#06B6D4' : 'rgba(255, 255, 255, 0.1)',
+                        color: '#06B6D4',
+                      }}
+                      keyboardType="numeric"
+                      inputMode="numeric"
+                      placeholder="0"
+                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                      value={activeReg && marks[activeReg.id]?.total !== undefined ? String(marks[activeReg.id].total) : ''}
+                      onChangeText={(text) => activeReg && handleScoreChange(activeReg.id, 'total', text, 100)}
+                    />
+                    <Text className="font-poppins-black text-white/50 text-lg ml-3">/ 100</Text>
+                  </View>
+                </View>
+              ) : eventCriteria.map(c => {
                 const currentValStr = activeReg && marks[activeReg.id]?.[c.key] !== undefined 
                   ? String(marks[activeReg.id]?.[c.key]) 
                   : '';
                 return (
-                  <View key={c.key} className="rounded-2xl p-4 border border-white/10 shadow-sm mb-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}>
+                  <View key={c.key} className="rounded-xl p-4 border border-white/10 shadow-sm mb-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}>
                     <Text className="font-poppins-bold text-white/90 text-xs mb-3">{c.label}</Text>
                     
                     <View className="flex-row items-center justify-between">
@@ -678,76 +789,83 @@ export default function JudgeMarksPage() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#030E21' }}>
+    <View className="flex-1 bg-ui-bg">
       {/* Header */}
-      <LinearGradient colors={['#030E21', '#0B1F33', '#120E2D']} style={{ paddingTop: 56, paddingBottom: 24, paddingHorizontal: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+      <View className="bg-white border-b border-ui-border px-5 pt-5 pb-4">
         <View className="flex-row justify-between items-start mb-1">
           <View className="flex-1">
-            <Text className="text-white/60 font-poppins text-xs mb-0.5">Judge</Text>
-            <Text className="text-white font-poppins-black text-xl">{judgeName}</Text>
+            <Text className="text-ui-text-muted font-poppins text-[10px] uppercase tracking-wider mb-0.5">Judge</Text>
+            <Text className="text-ui-text font-poppins-black text-xl">{judgeName}</Text>
           </View>
           <View className="flex-row items-center gap-x-2">
             {eventGuidelines && (
               <TouchableOpacity
                 onPress={() => setShowGuidelines(true)}
-                className="p-2 bg-white/5 border border-white/10 rounded-full flex-row items-center gap-x-1"
+                className="h-9 px-3 bg-white border border-ui-border rounded-lg flex-row items-center"
               >
-                <Info size={16} color="#06B6D4" />
-                <Text className="text-cyan-400 font-poppins-bold text-xs ml-1">Guidelines</Text>
+                <Info size={15} color="#0F766E" />
+                <Text className="text-teal-700 font-poppins-bold text-xs ml-1">Guidelines</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               onPress={() => router.replace('/judge' as any)}
-              className="p-2 bg-white/5 border border-white/10 rounded-full"
+              className="h-9 w-9 bg-white border border-ui-border rounded-lg items-center justify-center"
             >
-              <LogOut size={16} color="#FFF" />
+              <LogOut size={16} color="#475569" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View className="rounded-2xl p-3 mt-3 border border-white/10" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-          <Text className="text-white font-poppins-bold text-base">{eventName}</Text>
-          {venueName ? <Text className="text-white/60 font-poppins text-xs mt-0.5">📍 {venueName}</Text> : null}
+        <View className="rounded-xl px-4 py-2.5 mt-3 border border-ui-border bg-ui-muted">
+          <Text className="text-ui-text font-poppins-bold text-sm">{eventName}</Text>
+          {venueName ? <Text className="text-ui-text-muted font-poppins text-xs mt-0.5">📍 {venueName}</Text> : null}
         </View>
 
         {/* Progress */}
-        <Text className="text-white/50 font-poppins text-xs mt-2 text-right">
+        <Text className="text-ui-text-muted font-poppins text-[10px] mt-1.5 text-right">
           {Object.keys(marks).length}/{registrations.length} participants marked
         </Text>
-      </LinearGradient>
+      </View>
 
       {/* Note about code letters */}
-      <View className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex-row gap-x-2 items-center">
-        <AlertCircle size={16} color="#FBBF24" />
-        <Text className="font-poppins text-amber-200 text-xs flex-1">
+      <View className="mx-4 mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 h-11 flex-row gap-x-2 items-center">
+        <AlertCircle size={16} color="#B45309" />
+        <Text className="font-poppins text-amber-700 text-xs flex-1">
           You are evaluating by Code Letter only. Participant identities are confidential.
         </Text>
       </View>
 
       {/* Marks entry list */}
-      <ScrollView className="flex-1 px-4 pt-4">
+      <ScrollView
+        className="flex-1 px-4 pt-3"
+        contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 100 }}
+      >
         {registrations.length === 0 ? (
-          <View className="items-center py-10 rounded-2xl border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-            <Text className="font-poppins text-white/50 text-center">
+          <View className="items-center py-10 rounded-xl border border-ui-border bg-white">
+            <Text className="font-poppins text-ui-text-muted text-center">
               No participants found for this event.
             </Text>
           </View>
         ) : (
           registrations.map(reg => {
             const total = getTotal(reg.id);
-            const grade = calculateGrade(total, 100);
-            const allDone = Object.keys(marks[reg.id] ?? {}).length === eventCriteria.length;
+            const grade = calculateGrade(total, eventTotalMarks);
+            const allDone = isRegistrationComplete(reg.id);
 
             return (
-              <View key={reg.id} className="mb-4 rounded-3xl p-5 border border-white/10" style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)' }}>
+              <View
+                key={reg.id}
+                className="rounded-xl p-3 border border-ui-border bg-white"
+                style={{ width: width >= 1200 ? '49%' : '100%' }}
+              >
                 {/* Code Letter header */}
-                <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-white/10">
+                <View className="flex-row justify-between items-center mb-2 pb-2 border-b border-ui-border">
                   <View className="flex-row items-center gap-x-3">
-                    <View className="w-12 h-12 rounded-2xl items-center justify-center" style={{ backgroundColor: '#06B6D4' }}>
-                      <Text className="font-poppins-black text-white text-xl">{reg.code_letter}</Text>
+                    <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: '#06B6D4' }}>
+                      <Text className="font-poppins-black text-white text-base">{reg.code_letter}</Text>
                     </View>
                     <View>
-                      <Text className="font-poppins-bold text-white text-base">Code: {reg.code_letter}</Text>
+                      <Text className="font-poppins-bold text-ui-text text-sm">Code: {reg.code_letter}</Text>
                       {allDone && (
                         <View className="flex-row items-center gap-x-1 mt-0.5">
                           <CheckCircle2 size={12} color="#10B981" />
@@ -757,13 +875,13 @@ export default function JudgeMarksPage() {
                     </View>
                   </View>
                   {/* Grade badge */}
-                  <View className={`px-3 py-1.5 rounded-full border ${
+                  <View className={`h-8 min-w-10 px-2 rounded-lg border items-center justify-center ${
                     grade === 'A+' ? 'bg-green-500/10 border-green-500/30' :
                     grade === 'A' ? 'bg-blue-500/10 border-blue-500/30' :
                     grade === 'B' ? 'bg-yellow-500/10 border-yellow-500/30' :
                     grade === 'C' ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/5 border-white/10'
                   }`}>
-                    <Text className={`font-poppins-black text-base ${
+                    <Text className={`font-poppins-black text-xs ${
                       grade === 'A+' ? 'text-green-400' :
                       grade === 'A' ? 'text-blue-400' :
                       grade === 'B' ? 'text-yellow-400' :
@@ -772,25 +890,49 @@ export default function JudgeMarksPage() {
                   </View>
                 </View>
 
-                {/* Criteria */}
-                {eventCriteria.map(c => (
-                  <View key={c.key} className="mb-3">
-                    <View className="flex-row justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
-                      <Text className="font-poppins text-white/90 text-sm flex-1">{c.label}</Text>
+                {entryMode === 'total_only' ? (
+                  <View className="mb-2">
+                      <View className="flex-row justify-between items-center bg-ui-muted px-3 py-2.5 rounded-lg border border-teal-200">
+                      <View className="flex-1 pr-4">
+                        <Text className="font-poppins-bold text-ui-text text-sm">Total Mark</Text>
+                        <Text className="font-poppins text-ui-text-muted text-[10px] mt-1">From the paper mark sheet</Text>
+                      </View>
                       <View className="flex-row items-center">
                         <TextInput
-                          className="border rounded-lg px-3 py-1.5 font-poppins-black text-cyan-400 text-base min-w-[60px] text-center"
+                          className="border rounded-lg px-3 py-2 font-poppins-black text-teal-700 text-lg min-w-[72px] text-center"
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            borderColor: marks[reg.id]?.total !== undefined ? '#0F766E' : '#D8E0EA',
+                          }}
+                          keyboardType="numeric"
+                          inputMode="numeric"
+                          placeholder="0"
+                          placeholderTextColor="#94A3B8"
+                          value={marks[reg.id]?.total !== undefined ? String(marks[reg.id].total) : ''}
+                          onChangeText={(text) => handleScoreChange(reg.id, 'total', text, 100)}
+                        />
+                        <Text className="font-poppins-bold text-ui-text-muted text-sm ml-3">/ 100</Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : eventCriteria.map(c => (
+                  <View key={c.key} className="mb-2">
+                    <View className="flex-row justify-between items-center bg-ui-muted px-3 py-2 rounded-lg border border-ui-border">
+                      <Text className="font-poppins text-ui-text text-xs flex-1">{c.label}</Text>
+                      <View className="flex-row items-center">
+                        <TextInput
+                          className="border rounded-lg px-3 py-1.5 font-poppins-black text-teal-700 text-base min-w-[60px] text-center"
                           style={{ 
-                            backgroundColor: 'rgba(6, 182, 212, 0.1)', 
-                            borderColor: marks[reg.id]?.[c.key] !== undefined ? '#06B6D4' : 'rgba(255, 255, 255, 0.1)'
+                            backgroundColor: '#FFFFFF',
+                            borderColor: marks[reg.id]?.[c.key] !== undefined ? '#0F766E' : '#D8E0EA'
                           }}
                           keyboardType="numeric"
                           placeholder="0"
-                          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                          placeholderTextColor="#94A3B8"
                           value={marks[reg.id]?.[c.key] !== undefined ? String(marks[reg.id]?.[c.key]) : ''}
                           onChangeText={(text) => handleScoreChange(reg.id, c.key, text, c.max)}
                         />
-                        <Text className="font-poppins-bold text-white/30 text-sm ml-3 w-10">
+                        <Text className="font-poppins-bold text-ui-text-muted text-sm ml-3 w-10">
                           / {c.max}
                         </Text>
                       </View>
@@ -799,19 +941,18 @@ export default function JudgeMarksPage() {
                 ))}
 
                 {/* Total */}
-                <View className="rounded-xl px-4 py-3 flex-row justify-between items-center mt-2 border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                  <Text className="font-poppins-bold text-white">Total</Text>
-                  <Text className="font-poppins-black text-cyan-400 text-xl">{total} / 100</Text>
+                <View className="rounded-lg px-3 h-11 flex-row justify-between items-center mt-1 border border-ui-border bg-slate-50">
+                  <Text className="font-poppins-bold text-ui-text text-xs">Total</Text>
+                  <Text className="font-poppins-black text-teal-700 text-base">{total} / {eventTotalMarks}</Text>
                 </View>
               </View>
             );
           })
         )}
-        <View className="h-32" />
       </ScrollView>
 
       {/* Submit all button */}
-      <View className="absolute bottom-6 left-4 right-4">
+      <View className="absolute bottom-4 left-4 right-4">
         <TouchableOpacity
           onPress={handleSubmitAll}
           disabled={submitting}
@@ -819,12 +960,12 @@ export default function JudgeMarksPage() {
           <LinearGradient
             colors={['#10B981', '#059669']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            className="rounded-2xl py-4 items-center shadow-xl border-t border-white/20"
+            className="rounded-xl py-3 items-center shadow-xl border-t border-white/20"
           >
             {submitting ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text className="font-poppins-black text-white text-base">
+              <Text className="font-poppins-black text-white text-sm">
                 ✅ Submit All Marks & Close Session
               </Text>
             )}

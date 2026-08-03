@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfInput } from '../../../components/ui/SsfInput';
 import { useOrganisations } from '../../../core/hooks/useOrganisations';
 import { ArrowLeft, Plus, Building2, KeyRound, User, Trash2, ExternalLink } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 
 export default function SubOrganisationsManager() {
   const router = useRouter();
@@ -94,51 +94,64 @@ export default function SubOrganisationsManager() {
 
           <View style={{ paddingHorizontal: 20 }}>
             {loading ? (
-              <ActivityIndicator color="#065F46" size="large" style={{ marginTop: 40 }} />
+              <SsfTableSkeleton rows={6} columns={3} compact />
             ) : orgs.length === 0 ? (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.5 }}>
                 <Building2 size={48} color="#64748B" />
                 <Text style={{ fontFamily: 'Poppins_400Regular', color: '#64748B', marginTop: 16 }}>No sub-organisations found.</Text>
               </View>
             ) : (
-              orgs.map((org: any, index: number) => (
-                <Animated.View key={org.id} entering={FadeInUp.delay(index * 50)}>
-                  <SsfCard style={{ marginBottom: 12, flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: '#0F172A' }}>{org.name}</Text>
-                      <View style={{ flexDirection: 'row', gap: 12, marginTop: 6, alignItems: 'center' }}>
-                        <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-                          <User size={12} color="#065F46" />
-                          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 12, color: '#065F46' }}>{org.admin_email}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={{ minWidth: 920, flex: 1, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E0EA', borderRadius: 14, overflow: 'hidden' }}>
+                  <View style={{ height: 44, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#D8E0EA' }}>
+                    <Text style={{ flex: 1.6, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Organisation</Text>
+                    <Text style={{ flex: 1.5, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>User ID</Text>
+                    <Text style={{ flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Access Key</Text>
+                    <Text style={{ width: 100, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Type</Text>
+                    <Text style={{ width: 120, textAlign: 'right', fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Actions</Text>
+                  </View>
+
+                  {orgs.map((org: any) => (
+                    <View key={org.id} style={{ minHeight: 64, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+                      <View style={{ flex: 1.6, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
+                        <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                          <Building2 size={15} color="#0F766E" />
                         </View>
-                        <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-                          <KeyRound size={12} color="#B45309" />
-                          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 12, color: '#B45309' }}>{org.admin_password_temp}</Text>
+                        <Text numberOfLines={1} style={{ flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 13, color: '#0F172A' }}>{org.name}</Text>
+                      </View>
+                      <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
+                        <User size={13} color="#0F766E" />
+                        <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#475569' }}>{org.admin_email || '—'}</Text>
+                      </View>
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
+                        <KeyRound size={13} color="#B45309" />
+                        <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_700Bold', fontSize: 12, color: '#92400E' }}>{org.admin_password_temp || '—'}</Text>
+                      </View>
+                      <View style={{ width: 100, alignItems: 'flex-start' }}>
+                        <View style={{ backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 }}>
+                          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 9, color: '#0F766E', textTransform: 'uppercase' }}>{org.org_type || 'UNIT'}</Text>
                         </View>
                       </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                        <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#065F46', textTransform: 'uppercase' }}>
-                          {org.org_type || 'UNIT'}
-                        </Text>
+                      <View style={{ width: 120, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => router.push(`/unit-profile/${org.id}`)}
+                          accessibilityLabel={`Open ${org.name}`}
+                          style={{ width: 34, height: 34, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#BFDBFE' }}
+                        >
+                          <ExternalLink size={15} color="#2563EB" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteOrg(org)}
+                          accessibilityLabel={`Delete ${org.name}`}
+                          style={{ width: 34, height: 34, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#FECACA' }}
+                        >
+                          <Trash2 size={15} color="#DC2626" />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => router.push(`/unit-profile/${org.id}`)}
-                        style={{ backgroundColor: '#EFF6FF', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#BFDBFE' }}
-                      >
-                        <ExternalLink size={16} color="#3B82F6" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteOrg(org)}
-                        style={{ backgroundColor: '#FEF2F2', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#FECACA' }}
-                      >
-                        <Trash2 size={16} color="#DC2626" />
-                      </TouchableOpacity>
                     </View>
-                  </SsfCard>
-                </Animated.View>
-              ))
+                  ))}
+                </View>
+              </ScrollView>
             )}
           </View>
         </ScrollView>

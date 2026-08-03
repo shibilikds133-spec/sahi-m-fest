@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,7 +18,6 @@ import {
   Image,
   Download,
   ListFilter,
-  Menu,
   Radio,
   ShieldCheck,
   Trophy,
@@ -217,9 +215,7 @@ export default function LeaderboardLayout() {
   const { tenant_id } = useAuthStore();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1180;
-  const isTablet = width >= 760 && width < 1180;
   const isMobile = width < 760;
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const activeItem = useMemo(() => {
     if (pathname.includes('individual-rankings')) return 'individual';
@@ -273,17 +269,6 @@ export default function LeaderboardLayout() {
 
   return (
     <View style={styles.page}>
-      {isDesktop && <Sidebar compact={false} activeItem={activeItem} />}
-      {isTablet && <Sidebar compact activeItem={activeItem} />}
-      {isMobile && drawerOpen && (
-        <View style={styles.drawerOverlay}>
-          <Pressable style={styles.drawerScrim} onPress={() => setDrawerOpen(false)} />
-          <View style={styles.drawer}>
-            <Sidebar compact={false} activeItem={activeItem} onClose={() => setDrawerOpen(false)} />
-          </View>
-        </View>
-      )}
-
       <View style={[styles.main, (activeItem === 'poster' || activeItem === 'media-center') && { padding: 0, paddingHorizontal: 0, overflow: 'hidden' }]}>
         {activeItem === 'poster' || activeItem === 'media-center' ? (
           <Slot />
@@ -291,11 +276,6 @@ export default function LeaderboardLayout() {
           <ScrollView contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth }]}>
             <View style={styles.header}>
             <View style={styles.headerTitleWrap}>
-              {isMobile && (
-                <TouchableOpacity onPress={() => setDrawerOpen(true)} style={styles.menuButton}>
-                  <Menu size={21} color={colors.navy} />
-                </TouchableOpacity>
-              )}
               <TouchableOpacity onPress={() => router.push('/(admin)')} style={styles.menuButton}>
                 <ArrowLeft size={21} color={colors.navy} />
               </TouchableOpacity>
@@ -498,19 +478,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  drawerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 20,
-    flexDirection: 'row',
-  },
-  drawerScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.38)',
-  },
-  drawer: {
-    width: 282,
-    minHeight: '100%',
-  },
   main: {
     flex: 1,
   },
@@ -618,7 +585,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 180,
     backgroundColor: colors.card,
-    borderRadius: 18,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 16,

@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   header: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: 24,
     marginBottom: 20,
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     padding: 6,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 16,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
     overflow: 'hidden',

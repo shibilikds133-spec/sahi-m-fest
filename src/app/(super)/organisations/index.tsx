@@ -540,7 +540,7 @@ export default function OrganisationsManager() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     backgroundColor: C.surface,
-                    borderRadius: 16,
+                    borderRadius: 10,
                     padding: 16,
                     marginBottom: 10,
                     borderWidth: 1,

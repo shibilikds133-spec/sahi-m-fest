@@ -58,7 +58,11 @@ export default function RootLayout() {
  ...DefaultTheme,
  colors: {
  ...DefaultTheme.colors,
- background: '#F8FAFC',
+ background: '#F6F7F9',
+ card: '#FFFFFF',
+ border: '#E2E8F0',
+ primary: '#0F766E',
+ text: '#111827',
  },
  };
 
@@ -68,7 +72,7 @@ export default function RootLayout() {
  <NotificationProvider>
  <NotificationToast />
  <LayoutContent />
- <StatusBar style="auto" />
+ <StatusBar style="dark" />
  </NotificationProvider>
  </ThemeProvider>
  </QueryClientProvider>

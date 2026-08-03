@@ -13,16 +13,13 @@ import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useJudges } from '../../../../core/hooks/useJudges';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { useFestival } from '../../../../core/hooks/useFestival';
-import { calculatePoints, calculateGrade } from '../../../../core/utils/pointCalculator';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const OFFICIAL_BRACKETS: Record<string, number[]> = {
-  '1': [6, 5, 3, 1],
-  '2': [7, 6, 4, 2],
-  '3': [10, 9, 6, 3],
-  '4-5': [18, 15, 10, 5],
-  '6-10': [25, 20, 12, 6],
-};
+import {
+  calculateFlexiblePoints,
+  calculateGradeFromConfig,
+  normalizePointsConfig,
+  resolvePointBracket,
+} from '../../../../core/utils/flexiblePointsEngine';
+import { pointsService } from '../../../../services/pointsService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RANKS = ['1st', '2nd', '3rd', '4th', '5th'] as const;
@@ -64,6 +61,10 @@ export default function ResultsPage() {
   const { data: existingResults } = useResults(scheduleId);
   const { data: pointsConfig } = usePointsConfig(resolvedFestivalId ?? undefined);
   const { data: judgeSummary } = useJudgeSubmissionSummary(scheduleId);
+  const flexiblePointsConfig = React.useMemo(
+    () => normalizePointsConfig(pointsConfig),
+    [pointsConfig],
+  );
 
   // ── Mode selection ────────────────────────────────────────────────────────
   // 'none' = not chosen, 'marks' = judges used system, 'direct' = direct entry
@@ -75,6 +76,7 @@ export default function ResultsPage() {
   const [published, setPublished] = useState(false);
   
   const [officialBracket, setOfficialBracket] = useState<string>('1');
+  const [bracketManuallyOverridden, setBracketManuallyOverridden] = useState(false);
   const [forceRepublishConfirmed, setForceRepublishConfirmed] = useState(false);
   
   const hasInitialized = React.useRef(false);
@@ -124,42 +126,72 @@ export default function ResultsPage() {
     }
   }, [registrations, existingResults, schedule]);
 
-  // ── Judge marks helper ─────────────────────────────────────────────────────
-  const getJudgeMarks = (regId: string) =>
-    (markEntries as any[])?.filter(m => m.registration_id === regId) ?? [];
+  const participantCount = Math.max((registrations as any[])?.length ?? 0, 1);
+  const isGroupEvent =
+    schedule?.items?.participation_type === 'group'
+    || (registrations as any[])?.some((registration) => registration.is_group_registration === true)
+    || false;
+  const automaticBracket = resolvePointBracket(
+    flexiblePointsConfig,
+    participantCount,
+    isGroupEvent,
+  );
+  const resolvedBracketKey =
+    flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden && !published
+      ? automaticBracket?.key ?? officialBracket
+      : officialBracket;
 
-  const getAvgMark = (regId: string) => {
+  // ── Judge marks helper ─────────────────────────────────────────────────────
+  const getJudgeMarks = React.useCallback(
+    (regId: string) =>
+      (markEntries as any[])?.filter(m => m.registration_id === regId) ?? [],
+    [markEntries],
+  );
+
+  const getMarkSummary = React.useCallback((regId: string) => {
     const entries = getJudgeMarks(regId).filter((e: any) => e.is_final);
     if (!entries.length) return null;
-    const avg = entries.reduce((sum: number, e: any) => sum + (e.total_mark ?? 0), 0) / entries.length;
-    return Math.round(avg);
-  };
+    const rawAverage = entries.reduce(
+      (sum: number, entry: any) => sum + Number(entry.total_mark ?? 0),
+      0,
+    ) / entries.length;
+    const percentageAverage = entries.reduce((sum: number, entry: any) => {
+      const maximum = Number(entry.max_mark_snapshot) || 100;
+      return sum + ((Number(entry.total_mark ?? 0) / maximum) * 100);
+    }, 0) / entries.length;
+    const maxima = [...new Set(entries.map((entry: any) => Number(entry.max_mark_snapshot) || 100))];
+
+    return {
+      rawAverage: Math.round(rawAverage * 100) / 100,
+      percentageAverage: Math.round(percentageAverage * 100) / 100,
+      commonMaximum: maxima.length === 1 ? maxima[0] : null,
+    };
+  }, [getJudgeMarks]);
+
+  const getAvgMark = React.useCallback(
+    (regId: string) => getMarkSummary(regId)?.rawAverage ?? null,
+    [getMarkSummary],
+  );
 
   const getPointsPreview = (grade: string | null, rank: string | null) => {
-    let rankPts = 0;
-    let gradePts = 0;
-
     const rankNum = typeof rank === 'string' ? parseInt(rank.replace(/\D/g, ''), 10) : null;
-    
-    // Calculate Rank points (use config from DB)
-    if (rankNum === 1) rankPts = pointsConfig?.rank_1_points ?? 5;
-    else if (rankNum === 2) rankPts = pointsConfig?.rank_2_points ?? 3;
-    else if (rankNum === 3) rankPts = pointsConfig?.rank_3_points ?? 1;
+    const calculation = calculateFlexiblePoints({
+      grade,
+      rank: Number.isFinite(rankNum) ? rankNum : null,
+      participantCount,
+      isGroup: isGroupEvent,
+      config: flexiblePointsConfig,
+      bracketOverride: resolvedBracketKey,
+    });
 
-    // Calculate Grade points (use official hardcoded table)
-    if (grade && grade !== '-') {
-      const gIndex = grade === 'A+' ? 0 : grade === 'A' ? 1 : grade === 'B' ? 2 : grade === 'C' ? 3 : -1;
-      if (gIndex !== -1 && OFFICIAL_BRACKETS[officialBracket]) {
-        gradePts = OFFICIAL_BRACKETS[officialBracket][gIndex];
-      }
-    }
-
-    return { rankPts, gradePts, total: rankPts + gradePts };
+    return {
+      ...calculation,
+      rankPts: calculation.rankPoints,
+      gradePts: calculation.gradePoints,
+    };
   };
 
-  const expectedJudges = Array.isArray(schedule?.judge_panel_id)  
-    ? Math.max(1, schedule.judge_panel_id.length) 
-    : (schedule?.expected_judge_count || 3);
+  const expectedJudges = schedule?.expected_judge_count || 3;
 
   // Overall readiness banner for the schedule
   const overallReadiness = React.useMemo(() => {
@@ -184,20 +216,23 @@ export default function ResultsPage() {
       return { label: `🟠 ${fullyReadyCount}/${regs.length} participants ready`, color: 'bg-orange-50', textColor: 'text-orange-700' };
     }
     return { label: '🟡 Waiting for judge submissions', color: 'bg-yellow-50', textColor: 'text-yellow-700' };
-  }, [registrations, markEntries, expectedJudges, published]);
+  }, [registrations, expectedJudges, published, getJudgeMarks]);
 
-  const autoFillFromMarks = () => {
+  const autoFillFromMarks = React.useCallback(() => {
     if (!registrations || !markEntries) return;
 
     // 1. Calculate avgs and grades
     const scores = (registrations as any[]).map(reg => {
-      const avg = getAvgMark(reg.id);
-      let grade = avg ? calculateGrade(avg, 100) : null;
+      const markSummary = getMarkSummary(reg.id);
+      const normalizedAverage = markSummary?.percentageAverage ?? null;
+      let grade = normalizedAverage !== null
+        ? calculateGradeFromConfig(normalizedAverage, 100, flexiblePointsConfig)
+        : null;
       // Convert null to '-'
       if (!grade) grade = '-';
       return {
         id: reg.id,
-        avg: avg ?? 0,
+        avg: normalizedAverage ?? 0,
         grade,
       };
     });
@@ -242,14 +277,14 @@ export default function ResultsPage() {
       });
       return next;
     });
-  };
+  }, [registrations, markEntries, getMarkSummary, flexiblePointsConfig]);
 
   // Run auto-calculation whenever in marks mode and data is available
   React.useEffect(() => {
     if (mode === 'marks') {
       autoFillFromMarks();
     }
-  }, [mode, registrations, markEntries]);
+  }, [mode, autoFillFromMarks]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handlePublish = async () => {
@@ -259,8 +294,6 @@ export default function ResultsPage() {
       return;
     }
 
-    const unset = [];
-    
     // Lock guard for republishing
     if (published && !forceRepublishConfirmed) {
       const warnMsg = 'Republishing will recalculate grade points using the currently selected official participant bracket. Are you sure you want to republish?';
@@ -279,12 +312,24 @@ export default function ResultsPage() {
     
     setSaving(true);
     try {
-      const payloads = Object.values(results).map(r => {
+      if (!resolvedFestivalId) {
+        throw new Error('Festival is missing for this schedule.');
+      }
+
+      const payloads = await Promise.all(Object.values(results).map(async (r) => {
         const cleanedRank = typeof r.rank === 'string' ? r.rank.replace(/\D/g, '') : '';
         const rankNum = cleanedRank && cleanedRank.length > 0 ? parseInt(cleanedRank, 10) : null;
         
-        // Full recalculation rule using newly constructed preview utility
-        const { total } = getPointsPreview(r.grade, r.rank);
+        // The server is authoritative; the shared client engine is used for preview.
+        const normalizedGrade = r.grade && r.grade !== '-' ? r.grade : null;
+        const calculation = await pointsService.calculateAward({
+          festivalId: resolvedFestivalId,
+          grade: normalizedGrade,
+          rank: rankNum,
+          participantCount,
+          isGroup: isGroupEvent,
+          bracketOverride: resolvedBracketKey,
+        });
         const avgMark = getAvgMark(r.registration_id);
 
         return {
@@ -294,20 +339,34 @@ export default function ResultsPage() {
           registration_id: r.registration_id,
           total_score: avgMark,
           rank: rankNum,
-          grade: r.grade,
-          points_awarded: total,
+          grade: normalizedGrade,
+          points_awarded: calculation.total,
+          grade_only: calculation.grade_only,
+          points_config_version: calculation.config_version,
+          points_calculation: {
+            rank_points: calculation.rank_points,
+            grade_points: calculation.grade_points,
+            bracket_key: calculation.bracket_key,
+            bracket_label: calculation.bracket_label,
+            participant_count: calculation.participant_count,
+            is_group: calculation.is_group,
+            rule12_applied: calculation.rule12_applied,
+            rule12_behavior: calculation.rule12_behavior,
+            points_mode: calculation.points_mode,
+            grade_thresholds: flexiblePointsConfig.thresholds,
+          },
           published: true,
           published_at: new Date().toISOString(),
           result_status: 'published',
           public_visible: false,
           collection_method: mode === 'direct' ? 'manual' : 'judges',
         };
-      });
+      }));
 
       // Update both results and the schedule's official bracket together
       await Promise.all([
         publishResultsMutation.mutateAsync(payloads),
-        updateSchedule({ id: scheduleId, payload: { official_participant_bracket: officialBracket } })
+        updateSchedule({ id: scheduleId, payload: { official_participant_bracket: resolvedBracketKey } })
       ]);
       
       setPublished(true);
@@ -342,21 +401,21 @@ export default function ResultsPage() {
   if (mode === 'none') {
     return (
       <View className="flex-1 bg-ssf-bg">
-        <View className="bg-ssf-primary pt-14 pb-8 px-5 rounded-b-[28px]">
+        <View className="border-b border-ui-border bg-white px-4 py-3">
           <View className="flex-row items-center mb-2">
-            <TouchableOpacity onPress={goBack} className="mr-3 p-1.5 bg-white/10 rounded-full">
-              <ArrowLeft size={20} color="#FFF" />
+            <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+              <ArrowLeft size={18} color="#0F172A" />
             </TouchableOpacity>
-            <Text className="text-xl font-poppins-black text-white flex-1" numberOfLines={1}>
+            <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
               Result Entry
             </Text>
           </View>
-          <Text className="text-white/70 font-poppins text-sm">
+          <Text className="ml-12 text-[11px] font-poppins text-ssf-text-muted">
             {schedule?.items?.item_name_ml ?? 'Event'}
           </Text>
         </View>
 
-        <View className="flex-1 px-5 pt-8 gap-y-4">
+        <View className="flex-1 px-4 pt-5 gap-y-3">
           <Text className="font-poppins-bold text-ssf-text text-lg mb-2 text-center">
             How were marks collected?
           </Text>
@@ -364,7 +423,7 @@ export default function ResultsPage() {
           {/* Mode A: Judges used the system */}
           <TouchableOpacity
             onPress={() => setMode('marks')}
-            className="bg-white border-2 border-ssf-primary rounded-2xl p-5"
+            className="bg-white border border-ssf-primary rounded-lg p-4"
           >
             <View className="flex-row items-center gap-x-3 mb-2">
               <View className="w-10 h-10 rounded-full bg-ssf-primary/10 items-center justify-center">
@@ -382,7 +441,7 @@ export default function ResultsPage() {
           {/* Mode B: Direct entry */}
           <TouchableOpacity
             onPress={() => setMode('direct')}
-            className="bg-white border-2 border-gray-200 rounded-2xl p-5"
+            className="bg-white border border-gray-200 rounded-lg p-4"
           >
             <View className="flex-row items-center gap-x-3 mb-2">
               <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
@@ -405,35 +464,35 @@ export default function ResultsPage() {
   return (
     <View className="flex-1 bg-ssf-bg">
       {/* Header */}
-      <View className="bg-ssf-primary pt-14 pb-5 px-5 rounded-b-[24px]">
+      <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-1">
-          <TouchableOpacity onPress={() => setMode('none')} className="mr-3 p-1.5 bg-white/10 rounded-full">
-            <ArrowLeft size={20} color="#FFF" />
+          <TouchableOpacity onPress={() => setMode('none')} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+            <ArrowLeft size={18} color="#0F172A" />
           </TouchableOpacity>
-          <Text className="text-lg font-poppins-black text-white flex-1" numberOfLines={1}>
+          <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
             {mode === 'marks' ? '📊 Mark-Based Result' : '✏️ Direct Entry'}
           </Text>
         </View>
-        <Text className="text-white/70 font-poppins text-xs ml-10">
+        <Text className="text-ssf-text-muted font-poppins text-[10px] ml-12">
           {schedule?.items?.item_name_ml ?? 'Event'} · {Object.keys(results).length} participants
           {published && schedule?.official_participant_bracket && ` · Official Bracket: ${schedule.official_participant_bracket}`}
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-4">
+      <ScrollView className="flex-1 px-3 pt-3" contentContainerStyle={{ width: '100%', maxWidth: 960, alignSelf: 'center' }}>
         {/* Readiness Banner (marks mode only) */}
         {mode === 'marks' && overallReadiness && (
-          <View className={`${overallReadiness.color} border border-gray-200 rounded-2xl px-4 py-3 mb-4`}>
-            <Text className={`font-poppins-bold text-sm ${overallReadiness.textColor}`}>
+          <View className={`${overallReadiness.color} border border-amber-200 rounded-lg px-3 py-2.5 mb-3`}>
+            <Text className={`font-poppins-bold text-[12px] ${overallReadiness.textColor}`}>
               {overallReadiness.label}
             </Text>
             {judgeSummary && (judgeSummary as any[]).length > 0 && (
-              <View className="mt-2 gap-y-1">
+              <View className="mt-1.5 gap-y-0.5">
                 {(judgeSummary as any[]).map((j: any, idx: number) => {
                   const submitted = Number(j.submitted_count) || 0;
                   const total = Number(j.total_assigned) || 0;
                   return (
-                    <Text key={j.judge_id} className="font-poppins text-xs text-gray-600">
+                    <Text key={j.judge_id} className="font-poppins text-[10px] text-gray-600">
                       {idx + 1}. {j.judge_name}:{' '}
                       {submitted >= total && total > 0 ? '✅ Submitted' : submitted > 0 ? `⏳ ${submitted}/${total}` : '❌ Pending'}
                     </Text>
@@ -445,24 +504,33 @@ export default function ResultsPage() {
         )}
 
         {/* Official Participant Bracket Configuration */}
-        <SsfCard className="mb-4 bg-blue-50/50 border-blue-100 p-4">
-          <Text className="font-poppins-bold text-blue-900 text-sm mb-1">
+        <SsfCard className="mb-3 border-blue-200 p-3">
+          <Text className="font-poppins-bold text-blue-900 text-[12px] mb-0.5">
             🎭 Official Participant Bracket
           </Text>
-          <Text className="font-poppins text-xs text-blue-700 mb-3 leading-relaxed">
-            Select the participant bracket for grade calculation. This will be permanently locked upon publication.
+          <Text className="font-poppins text-[10px] text-blue-700 mb-2 leading-4">
+            {flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden
+              ? `${participantCount} eligible ${isGroupEvent ? 'teams' : 'participants'} → ${resolvedBracketKey} bracket selected automatically.`
+              : 'Select the participant bracket for grade calculation. Manual overrides are stored with the result.'}
           </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {Object.keys(OFFICIAL_BRACKETS).map((bracket) => {
-              const isSelected = officialBracket === bracket;
+          <View className="flex-row flex-wrap gap-1.5">
+            {flexiblePointsConfig.brackets.filter((bracket) => bracket.enabled).map((bracket) => {
+              const isSelected = resolvedBracketKey === bracket.key;
               // If published, strictly disable other buttons unless forceRepublish is toggled
-              const isDisabled = published && !forceRepublishConfirmed && !isSelected;
+              const isDisabled =
+                (published && !forceRepublishConfirmed && !isSelected)
+                || (!flexiblePointsConfig.allowBracketOverride
+                  && flexiblePointsConfig.autoBracketSelection
+                  && !isSelected);
               return (
                 <TouchableOpacity
-                  key={bracket}
-                  onPress={() => setOfficialBracket(bracket)}
+                  key={bracket.key}
+                  onPress={() => {
+                    setOfficialBracket(bracket.key);
+                    setBracketManuallyOverridden(true);
+                  }}
                   disabled={isDisabled}
-                  className={`px-4 py-2 rounded-lg border ${
+                  className={`h-8 px-3 rounded-lg border items-center justify-center ${
                     isSelected 
                       ? 'bg-blue-600 border-blue-600' 
                       : isDisabled 
@@ -470,8 +538,8 @@ export default function ResultsPage() {
                         : 'bg-white border-blue-200'
                   }`}
                 >
-                  <Text className={`font-poppins-bold text-sm ${isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-blue-800'}`}>
-                    {bracket} {bracket === '1' ? 'Person' : 'People'}
+                  <Text className={`font-poppins-bold text-[10px] ${isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-blue-800'}`}>
+                    {bracket.label} {bracket.max === 1 ? 'Person' : 'People'}
                   </Text>
                 </TouchableOpacity>
               );
@@ -482,22 +550,23 @@ export default function ResultsPage() {
         {(registrations as any[])?.map(reg => {
           const entry = results[reg.id];
           const judgeMarks = getJudgeMarks(reg.id);
-          const avg = getAvgMark(reg.id);
+          const markSummary = getMarkSummary(reg.id);
+          const avg = markSummary?.rawAverage ?? null;
           const ptsPreview = getPointsPreview(entry?.grade ?? null, entry?.rank ?? null);
 
           return (
-            <SsfCard key={reg.id} className="mb-4 p-4">
+            <SsfCard key={reg.id} className="mb-2.5 border-emerald-100 p-3">
               {/* Code Letter + avg (if marks mode) */}
-              <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-gray-100">
+              <View className="flex-row justify-between items-center mb-2 pb-2 border-b border-gray-100">
                 <View className="flex-row items-center gap-x-2">
-                  <View className="w-10 h-10 rounded-full bg-ssf-primary items-center justify-center">
-                    <Text className="font-poppins-black text-white text-lg">
+                  <View className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-200 items-center justify-center">
+                    <Text className="font-poppins-black text-emerald-700 text-sm">
                       {reg.code_letter}
                     </Text>
                   </View>
                   <View>
-                    <Text className="font-poppins-bold text-ssf-text">Code: {reg.code_letter}</Text>
-                    <Text className="font-poppins text-xs text-ssf-text-muted">
+                    <Text className="font-poppins-bold text-[12px] text-ssf-text">Code: {reg.code_letter}</Text>
+                    <Text className="font-poppins text-[10px] text-ssf-text-muted">
                       Chest #{reg.participants?.chest_number}
                     </Text>
                   </View>
@@ -505,32 +574,34 @@ export default function ResultsPage() {
 
                 {/* Show avg only in marks mode */}
                 {mode === 'marks' && avg !== null && (
-                  <View className="bg-ssf-primary/10 px-3 py-1 rounded-full">
-                    <Text className="font-poppins-bold text-ssf-primary text-sm">
-                      Avg: {avg}/100
+                  <View className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
+                    <Text className="font-poppins-bold text-emerald-700 text-[10px]">
+                      {markSummary?.commonMaximum
+                        ? `Avg: ${avg}/${markSummary.commonMaximum}`
+                        : `Avg: ${markSummary?.percentageAverage}%`}
                     </Text>
                   </View>
                 )}
               </View>
 
               {/* Judge marks breakdown — marks mode only */}
-              {mode === 'marks' && judgeMarks.length > 0 && (
-                <View className="bg-gray-50 rounded-xl p-3 mb-3">
-                  <Text className="font-poppins-bold text-xs text-ssf-text-muted mb-2">
+              {false && mode === 'marks' && judgeMarks.length > 0 && (
+                <View className="border-l-2 border-blue-200 pl-3 py-1 mb-2">
+                  <Text className="font-poppins-bold text-[10px] text-ssf-text-muted mb-1">
                     Judge Marks:
                   </Text>
                   {judgeMarks.map((m: any, i: number) => (
                     <View key={m.id} className="flex-row justify-between mb-1">
-                      <Text className="font-poppins text-xs text-ssf-text">
+                      <Text className="font-poppins text-[10px] text-ssf-text">
                         {m.judges?.name ?? `Judge ${i + 1}`}
                       </Text>
-                      <Text className="font-poppins-bold text-xs text-ssf-primary">
-                        {m.total_mark}/100 {m.is_final ? '✓' : '(draft)'}
+                      <Text className="font-poppins-bold text-[10px] text-ssf-primary">
+                        {m.total_mark}/{m.max_mark_snapshot || 100} {m.is_final ? '✓' : '(draft)'}
                       </Text>
                     </View>
                   ))}
                   {judgeMarks.length < expectedJudges && (
-                    <Text className="font-poppins text-xs text-orange-600 mt-1">
+                    <Text className="font-poppins text-[10px] text-orange-600 mt-1">
                       ⚠️ Only {judgeMarks.length}/{expectedJudges} judges submitted
                     </Text>
                   )}
@@ -538,22 +609,30 @@ export default function ResultsPage() {
               )}
 
               {/* Rank selector */}
-              <View className="mb-3">
-                <Text className="font-poppins-bold text-ssf-text text-sm mb-2">
+              <View className="mb-2">
+                <Text className="font-poppins-bold text-ssf-text text-[11px] mb-1.5">
                   🏆 Final Rank
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
+                {mode === 'marks' ? (
+                  <View className="h-9 flex-row items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3">
+                    <Text className="font-poppins-bold text-[11px] text-emerald-800">
+                      {entry?.rank && entry.rank !== '-' ? entry.rank : 'No rank'}
+                    </Text>
+                    <Text className="font-poppins text-[9px] text-emerald-700">Calculated from judge marks</Text>
+                  </View>
+                ) : (
+                <View className="flex-row flex-wrap gap-1.5">
                   {RANKS.map(rank => (
                     <TouchableOpacity
                       key={rank}
                       onPress={() => setField(reg.id, 'rank', rank)}
-                      className={`px-4 py-2 rounded-full border ${
+                      className={`h-8 min-w-[46px] px-3 rounded-lg border items-center justify-center ${
                         entry?.rank === rank
                           ? 'bg-ssf-primary border-ssf-primary'
                           : 'bg-white border-gray-200'
                       }`}
                     >
-                      <Text className={`font-poppins-bold text-sm ${
+                      <Text className={`font-poppins-bold text-[10px] ${
                         entry?.rank === rank ? 'text-white' : 'text-gray-600'
                       }`}>
                         {rank}
@@ -562,26 +641,35 @@ export default function ResultsPage() {
                   ))}
                   <TouchableOpacity
                     onPress={() => setField(reg.id, 'rank', '-')}
-                    className={`px-4 py-2 rounded-full border ${
+                    className={`h-8 px-3 rounded-lg border items-center justify-center ${
                       (!entry?.rank || entry?.rank === '-') ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200'
                     }`}
                   >
-                    <Text className="font-poppins-bold text-sm text-gray-500">No Rank</Text>
+                    <Text className="font-poppins-bold text-[10px] text-gray-500">No Rank</Text>
                   </TouchableOpacity>
                 </View>
+                )}
               </View>
 
               {/* Grade selector */}
               <View>
-                <Text className="font-poppins-bold text-ssf-text text-sm mb-2">
+                <Text className="font-poppins-bold text-ssf-text text-[11px] mb-1.5">
                   📊 Final Grade
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
+                {mode === 'marks' ? (
+                  <View className="h-9 flex-row items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3">
+                    <Text className="font-poppins-black text-[11px] text-blue-800">
+                      {entry?.grade && entry.grade !== '-' ? entry.grade : 'No grade'}
+                    </Text>
+                    <Text className="font-poppins text-[9px] text-blue-700">Calculated from judge marks</Text>
+                  </View>
+                ) : (
+                <View className="flex-row flex-wrap gap-1.5">
                   {GRADES.map(grade => (
                     <TouchableOpacity
                       key={grade}
                       onPress={() => setField(reg.id, 'grade', grade)}
-                      className={`px-4 py-2 rounded-full border ${
+                      className={`h-8 min-w-[42px] px-3 rounded-lg border items-center justify-center ${
                         (entry?.grade === grade || (!entry?.grade && grade === '-'))
                           ? grade === 'A+' ? 'bg-green-500 border-green-500'
                           : grade === 'A' ? 'bg-blue-500 border-blue-500'
@@ -591,7 +679,7 @@ export default function ResultsPage() {
                           : 'bg-white border-gray-200'
                       }`}
                     >
-                      <Text className={`font-poppins-black text-sm ${
+                      <Text className={`font-poppins-black text-[10px] ${
                         (entry?.grade === grade || (!entry?.grade && grade === '-'))
                           ? 'text-white' : 'text-gray-600'
                       }`}>
@@ -600,38 +688,50 @@ export default function ResultsPage() {
                     </TouchableOpacity>
                   ))}
                 </View>
+                )}
               </View>
 
               {/* Point Preview per Participant for Audit Visibility */}
-              <View className="mt-4 pt-3 border-t border-gray-100 flex-row justify-between items-center">
-                <Text className="font-poppins-bold text-xs text-ssf-text-muted">
+              <View className="mt-3 pt-2 border-t border-gray-100 flex-row justify-between items-center">
+                <Text className="font-poppins-bold text-[10px] text-ssf-text-muted">
                   Points Preview:
                 </Text>
                 <View className="flex-row items-center gap-x-2">
-                  <Text className="font-poppins text-xs text-gray-600">
+                  <Text className="font-poppins text-[10px] text-gray-600">
                     Rnk: <Text className="font-poppins-bold">{ptsPreview.rankPts}</Text>
                   </Text>
-                  <Text className="font-poppins text-xs text-gray-400">+</Text>
-                  <Text className="font-poppins text-xs text-gray-600">
+                  <Text className="font-poppins text-[10px] text-gray-400">+</Text>
+                  <Text className="font-poppins text-[10px] text-gray-600">
                     Grd: <Text className="font-poppins-bold text-green-700">{ptsPreview.gradePts}</Text>
                   </Text>
-                  <Text className="font-poppins text-xs text-gray-400">=</Text>
+                  <Text className="font-poppins text-[10px] text-gray-400">=</Text>
                   <View className="bg-ssf-primary/10 px-2 py-0.5 rounded">
-                    <Text className="font-poppins-bold text-sm text-ssf-primary">
+                    <Text className="font-poppins-bold text-[11px] text-ssf-primary">
                       {ptsPreview.total} pts
                     </Text>
                   </View>
                 </View>
               </View>
+              {ptsPreview.rule12Applies && (
+                <View className="self-start bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg mt-2">
+                  <Text className="font-poppins-bold text-[10px] text-amber-700">
+                    Rule 12 applied · {flexiblePointsConfig.rule12Behavior === 'grade_only'
+                      ? 'rank points removed'
+                      : flexiblePointsConfig.rule12Behavior === 'no_points'
+                        ? 'no points awarded'
+                        : 'rank and grade points retained'}
+                  </Text>
+                </View>
+              )}
 
             </SsfCard>
           );
         })}
-        <View className="h-28" />
+        <View className="h-3" />
       </ScrollView>
 
       {/* Publish button */}
-      <View className="absolute bottom-6 left-4 right-4">
+      <View className="border-t border-ui-border bg-white px-3 py-3">
         {published && forceRepublishConfirmed && (
           <View className="bg-red-50 border border-red-200 p-2 rounded-t-xl -mb-2 z-0 flex-row items-center justify-center">
             <Text className="font-poppins-bold text-[10px] text-red-600 text-center">
@@ -643,7 +743,7 @@ export default function ResultsPage() {
           label={(published && !forceRepublishConfirmed) ? '✅ Results Published' : '🚀 Publish Results'}
           onPress={handlePublish}
           isLoading={saving}
-          className={`shadow-xl relative z-10 ${published && !forceRepublishConfirmed ? 'opacity-80' : ''}`}
+          className={`${published && !forceRepublishConfirmed ? 'opacity-80' : ''}`}
         />
       </View>
     </View>

@@ -31,6 +31,22 @@ type PointsConfigRecord = {
   grp_b_points: number;
   grp_c_points: number;
   less_than_3_teams_rule: boolean;
+  points_mode?: 'official' | 'hybrid' | 'custom';
+  grade_thresholds?: {
+    a_plus: number;
+    a: number;
+    b: number;
+    c: number;
+  };
+  point_brackets?: unknown[];
+  group_point_brackets?: unknown[];
+  separate_group_brackets?: boolean;
+  auto_bracket_selection?: boolean;
+  allow_bracket_override?: boolean;
+  rule12_min_teams?: number;
+  rule12_behavior?: 'grade_only' | 'rank_and_grade' | 'no_points';
+  config_version?: number;
+  change_reason?: string | null;
 };
 
 export const useFestival = () => {

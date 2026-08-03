@@ -399,7 +399,7 @@ export default function TenantsManager() {
                 <RefreshCw size={18} color={C.muted} />
               </TouchableOpacity>
             </View>
-            <View style={{ marginTop: 20, backgroundColor: C.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.border }}>
+            <View style={{ marginTop: 20, backgroundColor: C.surface, padding: 16, borderRadius: 10, borderWidth: 1, borderColor: C.border }}>
               <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20 }}>
                 Tap <Text style={{ color: C.green }}>Active Tenant</Text> cards to view credentials. Tap <Text style={{ color: C.danger }}>Onboard</Text> to give an organisation portal access.
               </Text>
@@ -442,7 +442,7 @@ export default function TenantsManager() {
                   <TouchableOpacity
                     onPress={() => hasAccess ? setDetailOrg(org) : setOnboardOrg(org)}
                     activeOpacity={0.8}
-                    style={{ backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: hasAccess ? '#34D39930' : C.border, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    style={{ backgroundColor: C.surface, borderRadius: 10, borderWidth: 1, borderColor: hasAccess ? '#34D39930' : C.border, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                       <View style={{ backgroundColor: cfg.bg, padding: 10, borderRadius: 12 }}>{cfg.icon}</View>

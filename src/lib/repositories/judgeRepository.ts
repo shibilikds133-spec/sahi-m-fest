@@ -13,8 +13,14 @@ export const judgeRepository = {
   async deleteJudge(id: string) {
     return databaseProvider.deleteJudge(id);
   },
+  async listJudgeActivityLogs<T>(tenantId: string) {
+    return databaseProvider.listJudgeActivityLogs<T>(tenantId);
+  },
   async assignJudgesToSchedule(scheduleId: string, judgeIds: string[]) {
     return databaseProvider.assignJudgesToSchedule(scheduleId, judgeIds);
+  },
+  async removeJudgeFromSchedule(scheduleId: string, judgeId: string, force = false) {
+    return databaseProvider.removeJudgeFromSchedule(scheduleId, judgeId, force);
   },
   async getScheduleJudges<T>(scheduleId: string) {
     return databaseProvider.getScheduleJudges<T>(scheduleId);

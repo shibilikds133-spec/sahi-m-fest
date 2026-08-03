@@ -109,7 +109,7 @@ export default function ItemActivationSettings() {
       </LinearGradient>
 
       <View className="px-5 mb-4 border-b border-slate-200 pb-2">
-        <View className="bg-white rounded-2xl flex-row items-center px-4 py-3 shadow-sm border border-slate-100">
+        <View className="bg-white rounded-xl flex-row items-center px-4 py-3 shadow-sm border border-slate-100">
           <Search size={20} color="#64748B" />
           <TextInput 
             className="flex-1 ml-3 font-poppins text-ssf-text"

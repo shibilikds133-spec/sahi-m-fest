@@ -763,7 +763,7 @@ export default function ChestCardsPage() {
 
         <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 16 }}>
           <View style={{ flex: isDesktop ? 0.9 : undefined, gap: 12 }}>
-            <View className="bg-white border border-ssf-border rounded-2xl p-4">
+            <View className="bg-white border border-ssf-border rounded-xl p-4">
               <Text className="font-poppins-black text-ssf-text text-base mb-1">Template Library</Text>
               <Text className="font-poppins text-ssf-text-muted text-xs mb-3">
                 Upload PNG/JPG artwork. Recommended: 1240x1748 A6 portrait, 300 DPI.
@@ -798,7 +798,7 @@ export default function ChestCardsPage() {
             </View>
 
             {!isMobile && (
-              <View className="bg-white border border-ssf-border rounded-2xl p-4">
+              <View className="bg-white border border-ssf-border rounded-xl p-4">
                 <Text className="font-poppins-black text-ssf-text text-base mb-3">Overlay Position Editor</Text>
                 <View className="flex-row flex-wrap gap-2 mb-4">
                   {(['chest', 'name', 'unit', 'qr'] as const).map(field => (
@@ -902,7 +902,7 @@ export default function ChestCardsPage() {
           </View>
 
           <View style={{ flex: 1.2 }}>
-            <View className="bg-white border border-ssf-border rounded-2xl p-4">
+            <View className="bg-white border border-ssf-border rounded-xl p-4">
               <Text className="font-poppins-black text-ssf-text text-base mb-3">Live Template Preview</Text>
               <View style={{ alignItems: 'center' }}>
                 <ChestCard
@@ -920,7 +920,7 @@ export default function ChestCardsPage() {
           </View>
         </View>
 
-        <View className="bg-white border border-ssf-border rounded-2xl p-4 my-5">
+        <View className="bg-white border border-ssf-border rounded-xl p-4 my-5">
           <View className="flex-row items-center bg-slate-50 border border-ssf-border rounded-xl px-3 mb-4">
             <Search size={17} color="#64748B" />
             <TextInput
@@ -1038,7 +1038,7 @@ export default function ChestCardsPage() {
             const locked = lockedIds[p.id] === true;
             const printed = printedIds[p.id] === true;
             return (
-              <View key={p.id} className="bg-white border border-ssf-border rounded-2xl p-3">
+              <View key={p.id} className="bg-white border border-ssf-border rounded-xl p-3">
                 <TouchableOpacity onPress={() => setSelectedIds(current => ({ ...current, [p.id]: !selected }))}>
                   <ChestCard participant={p} template={activeTemplate} scale={0.78} />
                 </TouchableOpacity>

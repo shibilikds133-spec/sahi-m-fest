@@ -224,7 +224,7 @@ export default function SuperadminDashboard() {
                 style={{
                   flex: 1,
                   backgroundColor: stat.color,
-                  borderRadius: 16,
+                  borderRadius: 10,
                   padding: 14,
                   borderWidth: 1,
                   borderColor: '#1E3A5F',
@@ -260,7 +260,7 @@ export default function SuperadminDashboard() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 backgroundColor: '#111E35',
-                borderRadius: 18,
+                borderRadius: 10,
                 padding: 18,
                 marginBottom: 12,
                 borderWidth: 1,
@@ -324,7 +324,7 @@ export default function SuperadminDashboard() {
             style={{
               marginTop: 12,
               padding: 16,
-              borderRadius: 14,
+              borderRadius: 10,
               borderWidth: 1,
               borderColor: '#1E3A5F',
               backgroundColor: 'rgba(251,191,36,0.04)',

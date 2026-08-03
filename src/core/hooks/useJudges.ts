@@ -36,6 +36,12 @@ export const useJudges = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['judges', tenant_id] }),
   });
 
+  const useJudgeActivityLogs = () => useQuery({
+    queryKey: ['judgeActivityLogs', tenant_id],
+    queryFn: () => judgeService.listJudgeActivityLogs<any>(tenant_id!),
+    enabled: !!tenant_id,
+  });
+
   // ── Assign judges to a schedule ───────────────────────────────────────────────
   const assignJudges = useMutation({
     mutationFn: ({ scheduleId, judgeIds }: { scheduleId: string; judgeIds: string[] }) =>
@@ -43,6 +49,24 @@ export const useJudges = () => {
     onSuccess: (_, { scheduleId }) => {
       queryClient.invalidateQueries({ queryKey: ['scheduleJudges', scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
+    },
+  });
+
+  const removeJudgeFromSchedule = useMutation({
+    mutationFn: ({
+      scheduleId,
+      judgeId,
+      force = false,
+    }: {
+      scheduleId: string;
+      judgeId: string;
+      force?: boolean;
+    }) => judgeService.removeJudgeFromSchedule(scheduleId, judgeId, force),
+    onSuccess: (_, { scheduleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['scheduleJudges', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['markEntries', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['judgeManagementStatus'] });
     },
   });
 
@@ -128,7 +152,9 @@ export const useJudges = () => {
     createJudge,
     updateJudge,
     deleteJudge,
+    useJudgeActivityLogs,
     assignJudges,
+    removeJudgeFromSchedule,
     useScheduleJudges,
     useScheduleRegistrations,
     useMarkEntries,

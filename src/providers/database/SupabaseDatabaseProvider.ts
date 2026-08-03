@@ -16,7 +16,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     return { data: (data as T) ?? null, error: normalizeError(error) };
   }
@@ -318,53 +318,140 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     orgName: string;
     orgType: string;
     participantsCount: number;
+    participantsLast7Days: number;
     itemsCount: number;
     pendingRegsCount: number;
+    pendingRegsLast7Days: number;
+    activeSchedulesCount: number;
     categoryGraph: { name: string; count: number }[];
     unitGraph: { name: string; count: number }[];
+    recentRegistrations: {
+      id: string;
+      participantName: string;
+      itemName: string;
+      organisationName: string;
+      status: string;
+      createdAt: string;
+    }[];
   }>> {
     try {
       const { data: org, error: orgErr } = await supabase
         .from('organisations')
         .select('name, org_type')
         .eq('tenant_id', tenantId)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (orgErr) throw orgErr;
 
       // Fetch active festival for the tenant
-      const { data: activeFest } = await supabase
+      const { data: activeFest, error: activeFestError } = await supabase
         .from('festival_calendar')
         .select('id')
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
+        .limit(1)
         .maybeSingle();
 
-      const isHighLevel = org?.org_type === 'sector' || org?.org_type === 'division';
+      if (activeFestError) throw activeFestError;
+
+      const { data: visibleOrganisations, error: visibleOrganisationsError } =
+        await supabase.rpc('get_visible_organisations', { p_tenant_id: tenantId });
+
+      if (visibleOrganisationsError) throw visibleOrganisationsError;
+
+      const organisationIds = ((visibleOrganisations as any[]) ?? [])
+        .map((organisation) => organisation.id)
+        .filter(Boolean);
+      const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
       let pQuery = supabase.from('participants').select('id', { count: 'exact', head: true });
+      let recentPQuery = supabase
+        .from('participants')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', last7Days);
       let iQuery = supabase.from('items').select('id', { count: 'exact', head: true }).eq('is_active', true);
       let rQuery = supabase.from('registrations').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+      let recentRQuery = supabase
+        .from('registrations')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .gte('created_at', last7Days);
       let partsQuery = supabase.from('participants').select('category_code, organisations(name)');
+      let schedulesQuery = supabase
+        .from('schedules')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['scheduled', 'ongoing', 'in_progress']);
+      let recentRegistrationsQuery = supabase
+        .from('registrations')
+        .select(`
+          id,
+          status,
+          created_at,
+          participants(name, organisations(name)),
+          items(item_name_en, item_name_ml),
+          organisations(name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      if (isHighLevel && activeFest?.id) {
+      if (activeFest?.id) {
         pQuery = pQuery.eq('festival_id', activeFest.id);
+        recentPQuery = recentPQuery.eq('festival_id', activeFest.id);
         iQuery = iQuery.eq('festival_id', activeFest.id);
         rQuery = rQuery.eq('festival_id', activeFest.id);
+        recentRQuery = recentRQuery.eq('festival_id', activeFest.id);
         partsQuery = partsQuery.eq('festival_id', activeFest.id);
+        schedulesQuery = schedulesQuery.eq('festival_id', activeFest.id);
+        recentRegistrationsQuery = recentRegistrationsQuery.eq('festival_id', activeFest.id);
       } else {
         pQuery = pQuery.eq('tenant_id', tenantId);
+        recentPQuery = recentPQuery.eq('tenant_id', tenantId);
         iQuery = iQuery.eq('tenant_id', tenantId);
         rQuery = rQuery.eq('tenant_id', tenantId);
+        recentRQuery = recentRQuery.eq('tenant_id', tenantId);
         partsQuery = partsQuery.eq('tenant_id', tenantId);
+        schedulesQuery = schedulesQuery.eq('tenant_id', tenantId);
+        recentRegistrationsQuery = recentRegistrationsQuery.eq('tenant_id', tenantId);
       }
 
-      const [pCount, iCount, rCount, allParts] = await Promise.all([
+      if (organisationIds.length > 0) {
+        pQuery = pQuery.in('organisation_id', organisationIds);
+        recentPQuery = recentPQuery.in('organisation_id', organisationIds);
+        partsQuery = partsQuery.in('organisation_id', organisationIds);
+      }
+
+      const [
+        pCount,
+        recentPCount,
+        iCount,
+        rCount,
+        recentRCount,
+        allParts,
+        schedulesCount,
+        recentRegistrationsResult,
+      ] = await Promise.all([
         pQuery,
+        recentPQuery,
         iQuery,
         rQuery,
-        partsQuery
+        recentRQuery,
+        partsQuery,
+        schedulesQuery,
+        recentRegistrationsQuery,
       ]);
+
+      const firstError = [
+        pCount.error,
+        recentPCount.error,
+        iCount.error,
+        rCount.error,
+        recentRCount.error,
+        allParts.error,
+        schedulesCount.error,
+        recentRegistrationsResult.error,
+      ].find(Boolean);
+      if (firstError) throw firstError;
 
       const partsData = allParts.data || [];
       const catCountMap: Record<string, number> = {};
@@ -379,16 +466,46 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
 
       const categoryGraph = Object.keys(catCountMap).map(k => ({ name: k, count: catCountMap[k] }));
       const unitGraph = Object.keys(unitCountMap).map(k => ({ name: k, count: unitCountMap[k] })).sort((a,b) => b.count - a.count);
+      const recentRegistrations = ((recentRegistrationsResult.data as any[]) ?? []).map((registration) => {
+        const participant = Array.isArray(registration.participants)
+          ? registration.participants[0]
+          : registration.participants;
+        const item = Array.isArray(registration.items)
+          ? registration.items[0]
+          : registration.items;
+        const organisation = Array.isArray(registration.organisations)
+          ? registration.organisations[0]
+          : registration.organisations;
+        const participantOrganisation = Array.isArray(participant?.organisations)
+          ? participant.organisations[0]
+          : participant?.organisations;
+
+        return {
+          id: registration.id,
+          participantName: participant?.name || 'Participant',
+          itemName: item?.item_name_en || item?.item_name_ml || 'Festival item',
+          organisationName:
+            organisation?.name ||
+            participantOrganisation?.name ||
+            'Organisation not assigned',
+          status: registration.status || 'registered',
+          createdAt: registration.created_at,
+        };
+      });
 
       return {
         data: {
           orgName: org?.name || 'Unknown',
           orgType: org?.org_type || 'Unknown',
           participantsCount: pCount.count || 0,
+          participantsLast7Days: recentPCount.count || 0,
           itemsCount: iCount.count || 0,
           pendingRegsCount: rCount.count || 0,
+          pendingRegsLast7Days: recentRCount.count || 0,
+          activeSchedulesCount: schedulesCount.count || 0,
           categoryGraph,
-          unitGraph
+          unitGraph,
+          recentRegistrations,
         },
         error: null
       };
@@ -440,7 +557,34 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .select('*, venues(*), items(*)')
       .eq('tenant_id', tenantId)
       .order('start_time');
-    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+
+    if (error || !data) {
+      return { data: [], error: normalizeError(error) };
+    }
+
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('schedule_judge_assignments')
+      .select('schedule_id, judge_id')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active');
+
+    if (assignmentsError) {
+      return { data: [], error: normalizeError(assignmentsError) };
+    }
+
+    const judgeIdsBySchedule = new Map<string, string[]>();
+    for (const assignment of assignments ?? []) {
+      const current = judgeIdsBySchedule.get(assignment.schedule_id) ?? [];
+      current.push(assignment.judge_id);
+      judgeIdsBySchedule.set(assignment.schedule_id, current);
+    }
+
+    const schedulesWithPanels = data.map((schedule) => ({
+      ...schedule,
+      assigned_judge_ids: judgeIdsBySchedule.get(schedule.id) ?? [],
+    }));
+
+    return { data: schedulesWithPanels as T[], error: null };
   }
 
   async createSchedule<T>(payload: Record<string, unknown>): Promise<QueryResult<T>> {
@@ -710,41 +854,107 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async deleteJudge(id: string): Promise<QueryResult<void>> {
-    const { error } = await supabase.from('judges').delete().eq('id', id);
+    const { error } = await supabase.rpc('delete_judge_safely', {
+      p_judge_id: id,
+    });
     return { data: undefined, error: normalizeError(error) };
   }
 
+  async listJudgeActivityLogs<T>(tenantId: string): Promise<ListResult<T>> {
+    const { data, error } = await supabase
+      .from('judge_activity_logs')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (error || !data) {
+      return { data: [], error: normalizeError(error) };
+    }
+
+    const judgeIds = Array.from(
+      new Set(data.map((log: any) => log.judge_id).filter(Boolean))
+    );
+    const scheduleIds = Array.from(
+      new Set(data.map((log: any) => log.schedule_id).filter(Boolean))
+    );
+
+    const [
+      { data: judgeRows, error: judgesError },
+      { data: scheduleRows, error: schedulesError },
+    ] = await Promise.all([
+      judgeIds.length > 0
+        ? supabase.from('judges').select('id, name').in('id', judgeIds)
+        : Promise.resolve({ data: [], error: null }),
+      scheduleIds.length > 0
+        ? supabase
+            .from('schedules')
+            .select('id, items(item_name_en, item_name_ml, item_code)')
+            .in('id', scheduleIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (judgesError || schedulesError) {
+      return {
+        data: [],
+        error: normalizeError(judgesError ?? schedulesError),
+      };
+    }
+
+    const judgesById = new Map(
+      (judgeRows ?? []).map((judge: any) => [judge.id, judge])
+    );
+    const schedulesById = new Map(
+      (scheduleRows ?? []).map((schedule: any) => [schedule.id, schedule])
+    );
+
+    const normalizedLogs = (data ?? []).map((log: any) => ({
+      ...log,
+      // Backward compatibility for databases that created this table with the
+      // older generic audit column names.
+      action_type: log.action_type ?? log.action ?? 'UNKNOWN',
+      action_details: log.action_details ?? log.details ?? log.new_value ?? {},
+      actor_type: log.actor_type ?? (log.user_id ? 'admin' : 'system'),
+      judges: judgesById.get(log.judge_id) ?? null,
+      schedules: schedulesById.get(log.schedule_id) ?? null,
+    }));
+
+    return { data: normalizedLogs as T[], error: normalizeError(error) };
+  }
+
   async assignJudgesToSchedule(scheduleId: string, judgeIds: string[]): Promise<QueryResult<void>> {
-    // Store judge_panel_id as a JSON array in schedules table
-    const { error } = await supabase
-      .from('schedules')
-      .update({ judge_panel_id: judgeIds as any })
-      .eq('id', scheduleId);
+    const { error } = await supabase.rpc('set_schedule_judges', {
+      p_schedule_id: scheduleId,
+      p_judge_ids: judgeIds,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async removeJudgeFromSchedule(
+    scheduleId: string,
+    judgeId: string,
+    force = false
+  ): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('remove_schedule_judge', {
+      p_schedule_id: scheduleId,
+      p_judge_id: judgeId,
+      p_force: force,
+    });
     return { data: undefined, error: normalizeError(error) };
   }
 
   async getScheduleJudges<T>(scheduleId: string): Promise<ListResult<T>> {
-    // Get judge_panel_id from schedule, then fetch those judges
-    const { data: scheduleData, error: scheduleError } = await supabase
-      .from('schedules')
-      .select('judge_panel_id')
-      .eq('id', scheduleId)
-      .single();
-
-    if (scheduleError || !scheduleData?.judge_panel_id) {
-      return { data: [], error: normalizeError(scheduleError) };
-    }
-
-    const judgeIds = Array.isArray(scheduleData.judge_panel_id)
-      ? scheduleData.judge_panel_id
-      : [scheduleData.judge_panel_id];
-
     const { data, error } = await supabase
-      .from('judges')
-      .select('*')
-      .in('id', judgeIds);
+      .from('schedule_judge_assignments')
+      .select('judges(*)')
+      .eq('schedule_id', scheduleId)
+      .eq('status', 'active');
 
-    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+    const judges = (data ?? [])
+      .map((assignment: any) => assignment.judges)
+      .filter(Boolean);
+
+    return { data: judges as T[], error: normalizeError(error) };
   }
 
   // ─── Mark Entry Methods ───────────────────────────────────────────────────────
@@ -779,10 +989,26 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async listMarkEntries<T>(scheduleId: string): Promise<ListResult<T>> {
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('schedule_judge_assignments')
+      .select('judge_id')
+      .eq('schedule_id', scheduleId)
+      .eq('status', 'active');
+
+    if (assignmentsError) {
+      return { data: [], error: normalizeError(assignmentsError) };
+    }
+
+    const activeJudgeIds = (assignments ?? []).map((assignment) => assignment.judge_id);
+    if (activeJudgeIds.length === 0) {
+      return { data: [], error: null };
+    }
+
     const { data, error } = await supabase
       .from('mark_entries')
       .select('*, judges(name)')
-      .eq('schedule_id', scheduleId);
+      .eq('schedule_id', scheduleId)
+      .in('judge_id', activeJudgeIds);
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
@@ -1049,20 +1275,20 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async expireJudgeToken(token: string): Promise<QueryResult<void>> {
-    const { error } = await supabase
-      .from('judge_tokens')
-      .update({ is_used: true, used_at: new Date().toISOString() })
-      .eq('token', token.toUpperCase().trim());
+    const { error } = await supabase.rpc('expire_judge_token', {
+      p_token: token.toUpperCase().trim(),
+    });
     return { data: undefined, error: normalizeError(error) };
   }
 
-  async logJudgeActivity(payload: { judgeId: string; scheduleId: string; tenantId: string; actionType: string; actionDetails: Record<string, any> }): Promise<QueryResult<void>> {
+  async logJudgeActivity(payload: { judgeId: string; scheduleId: string; tenantId: string; actionType: string; actionDetails: Record<string, any>; token?: string }): Promise<QueryResult<void>> {
     const { error } = await supabase.rpc('log_judge_activity', {
       p_judge_id: payload.judgeId,
       p_schedule_id: payload.scheduleId,
       p_tenant_id: payload.tenantId,
       p_action_type: payload.actionType,
-      p_action_details: payload.actionDetails
+      p_action_details: payload.actionDetails,
+      p_token: payload.token ?? null,
     });
     return { data: undefined, error: normalizeError(error) };
   }
@@ -1070,13 +1296,36 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
 
 
   async listJudgeTokens<T>(scheduleId: string): Promise<ListResult<T>> {
-    const { data, error } = await supabase
+    const { data: tokens, error } = await supabase
       .from('judge_tokens')
-      .select('*, judges(name)')
+      .select('*')
       .eq('schedule_id', scheduleId)
       .order('created_at', { ascending: false });
 
-    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+    if (error || !tokens?.length) {
+      return { data: (tokens as T[]) ?? [], error: normalizeError(error) };
+    }
+
+    const judgeIds = [...new Set(tokens.map((token: any) => token.judge_id).filter(Boolean))];
+    if (judgeIds.length === 0) {
+      return { data: tokens as T[], error: null };
+    }
+
+    const { data: judges, error: judgesError } = await supabase
+      .from('judges')
+      .select('id, name')
+      .in('id', judgeIds);
+
+    if (judgesError) {
+      return { data: [], error: normalizeError(judgesError) };
+    }
+
+    const judgesById = new Map((judges ?? []).map((judge: any) => [judge.id, judge]));
+    const joined = tokens.map((token: any) => ({
+      ...token,
+      judges: judgesById.get(token.judge_id) ?? null,
+    }));
+    return { data: joined as T[], error: null };
   }
 
   async getJudgeSubmissionSummary<T>(scheduleId: string): Promise<ListResult<T>> {

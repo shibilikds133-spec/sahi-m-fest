@@ -1,10 +1,11 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import BackgroundExportEngine from '@/components/leaderboard/BackgroundExportEngine';
+import { AdminAppShell } from '@/components/layout/AdminAppShell';
 
 export default function AdminLayout() {
   return (
-    <>
+    <AdminAppShell>
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="participants/index" />
@@ -22,12 +23,13 @@ export default function AdminLayout() {
         <Stack.Screen name="schedule/[id]/marks" />
         <Stack.Screen name="schedule/[id]/results" />
         <Stack.Screen name="judges/index" />
+        <Stack.Screen name="judges/approvals" />
+        <Stack.Screen name="judges/audit" />
         <Stack.Screen name="organisations/index" />
         <Stack.Screen name="settings/leaderboard" />
         <Stack.Screen name="settings/index" />
-        <Stack.Screen name="system/pages/index" />
       </Stack>
       <BackgroundExportEngine />
-    </>
+    </AdminAppShell>
   );
 }

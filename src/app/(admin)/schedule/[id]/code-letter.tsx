@@ -21,7 +21,14 @@ export default function CodeLetterGeneration() {
   const { data: registrations, isLoading: isLoadingRegs } = useItemRegistrations(schedule?.item_id);
 
   const activeRegistrations = React.useMemo(() => {
-    return registrations?.filter((r: any) => r.status !== 'rejected') || [];
+    return (registrations || [])
+      .filter((r: any) => r.status === 'approved' && r.is_verified === true)
+      .sort((a: any, b: any) => {
+        if (a.code_letter && b.code_letter) return a.code_letter.localeCompare(b.code_letter);
+        if (a.code_letter) return -1;
+        if (b.code_letter) return 1;
+        return (a.participants?.chest_number || '').localeCompare(b.participants?.chest_number || '');
+      });
   }, [registrations]);
 
   const participantIds = React.useMemo(() => activeRegistrations.map((r:any) => r.participant_id), [activeRegistrations]);
@@ -52,7 +59,11 @@ export default function CodeLetterGeneration() {
 
     const action = async () => {
       try {
-        const result = await generateCodeLetters({ scheduleId, itemId: schedule.item_id });
+        const result = await generateCodeLetters({
+          scheduleId,
+          itemId: schedule.item_id,
+          overwrite: hasExistingLetters,
+        });
         const isSmart = result && (result as any).smartPriorityApplied;
         const msg = isSmart 
           ? '✅ Code letters assigned successfully!\n(Smart conflict-safe priority applied)' 
@@ -90,7 +101,7 @@ export default function CodeLetterGeneration() {
       }
     } else if (hasExistingLetters) {
       // Partial assignment case
-      const msg = 'Some participants already have code letters. Do you want to assign new code letters to the remaining unassigned participants?';
+      const msg = 'Some participants already have code letters. Draw again to normalize all approved participants as A, B, C...?';
       if (Platform.OS === 'web') {
         if (window.confirm(msg)) {
           await action();
@@ -101,7 +112,7 @@ export default function CodeLetterGeneration() {
           msg,
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Assign Remaining', style: 'default', onPress: action }
+            { text: 'Normalize & Draw', style: 'default', onPress: action }
           ]
         );
       }
@@ -142,27 +153,30 @@ export default function CodeLetterGeneration() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
-      <View className="flex-row items-center mb-6">
-        <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
-          <ArrowLeft size={24} color="#333" />
+    <ScrollView
+      className="flex-1 bg-ssf-bg"
+      contentContainerStyle={{ width: '100%', maxWidth: 960, alignSelf: 'center', padding: 12, paddingBottom: 28 }}
+    >
+      <View className="flex-row items-center mb-3">
+        <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+          <ArrowLeft size={18} color="#0F172A" />
         </TouchableOpacity>
         <View>
-          <Text className="text-2xl font-poppins-black text-ssf-text">Code Letters</Text>
-          <Text className="font-poppins text-ssf-text-muted">{schedule.items?.item_name_en}</Text>
+          <Text className="text-lg font-poppins-black text-ssf-text">Code Letters</Text>
+          <Text className="font-poppins text-[11px] text-ssf-text-muted">{schedule.items?.item_name_en}</Text>
         </View>
       </View>
 
       {isShuffleLocked && (
-        <View className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex-row items-center gap-x-3">
+        <View className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 flex-row items-center gap-x-3">
           <Lock size={20} color="#B45309" />
           <Text className="font-poppins-bold text-amber-700">🔒 Code Letter Shuffle Locked by Stage Portal</Text>
         </View>
       )}
 
-      <SsfCard className="mb-6">
-        <View className="flex-row justify-between items-center mb-4">
-          <Text className="font-poppins-bold text-lg text-ssf-text">
+      <SsfCard className="mb-6 p-0 overflow-hidden">
+        <View className="flex-row justify-between items-center border-b border-ui-border p-3">
+          <Text className="font-poppins-bold text-sm text-ssf-text">
             Participants ({activeRegistrations.length})
           </Text>
           {!isShuffleLocked && (
@@ -178,8 +192,8 @@ export default function CodeLetterGeneration() {
         {activeRegistrations.length === 0 ? (
           <Text className="font-poppins text-ssf-text-muted">No active participants registered for this item yet.</Text>
         ) : (
-          <View className="border border-ssf-border rounded-xl overflow-hidden">
-            <View className="flex-row bg-ssf-surface p-3 border-b border-ssf-border">
+          <View>
+            <View className="flex-row bg-ui-muted p-3 border-b border-ssf-border">
               <Text className="flex-[3] font-poppins-bold text-xs text-ssf-text-muted uppercase">Participant</Text>
               <Text className="flex-1 font-poppins-bold text-xs text-ssf-text-muted uppercase text-center">Chest No</Text>
               <Text className="flex-1 font-poppins-bold text-xs text-ssf-text-muted uppercase text-center">Code Letter</Text>
@@ -190,7 +204,7 @@ export default function CodeLetterGeneration() {
             {activeRegistrations.map((reg: any, idx: number) => (
               <View
                 key={reg.id}
-                className={`flex-row p-3 items-center ${idx !== activeRegistrations.length - 1 ? 'border-b border-gray-100' : ''}`}
+                className={`min-h-[52px] flex-row px-3 py-2 items-center ${idx !== activeRegistrations.length - 1 ? 'border-b border-gray-100' : ''}`}
               >
                 <Text className="flex-[3] font-poppins text-sm text-ssf-text">{reg.participants?.name}</Text>
                 <Text className="flex-1 font-poppins-bold text-sm text-center text-ssf-text">{reg.participants?.chest_number}</Text>
@@ -217,7 +231,7 @@ export default function CodeLetterGeneration() {
       {/* Manual Edit Modal */}
       <Modal visible={!!editingReg} transparent animationType="fade">
         <View className="flex-1 bg-black/50 justify-center items-center p-4">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
+          <View className="bg-white rounded-xl border border-ui-border p-5 w-full max-w-sm">
             <Text className="font-poppins-bold text-xl mb-2">Edit Code Letter</Text>
             <Text className="font-poppins text-ssf-text-muted mb-4">{editingReg?.participants?.name}</Text>
             

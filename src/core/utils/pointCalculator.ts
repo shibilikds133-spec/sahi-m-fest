@@ -3,7 +3,7 @@ export const calculateGrade = (totalMark: number, maxMark: number): string | nul
   const pct = (totalMark / maxMark) * 100;
   
   if (pct >= 90) return 'A+';
-  if (pct >= 70) return 'A';
+  if (pct >= 75) return 'A';
   if (pct >= 60) return 'B';
   if (pct >= 50) return 'C';
   return null;

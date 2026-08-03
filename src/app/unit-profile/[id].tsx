@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   hero: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: 24,
     gap: 18,
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     minHeight: 110,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: 16,
   },
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   sectionCard: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
   },

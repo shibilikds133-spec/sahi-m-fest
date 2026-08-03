@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,7 +16,6 @@ import {
   Award,
   BookOpen,
   Building2,
-  Medal,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -153,6 +151,13 @@ export default function PublicCandidateProfileScreen() {
   }
 
   const { profile, participated_items, published_results } = candidate;
+  const avatarInitials = (profile.name || 'Candidate')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase();
 
   return (
     <View style={styles.screen}>
@@ -191,11 +196,9 @@ export default function PublicCandidateProfileScreen() {
             }
           ]}>
             <View style={[styles.avatar, isMobile && styles.avatarMobile]}>
-              {profile.photo_url ? (
-                <Image source={{ uri: profile.photo_url }} style={styles.avatarImage} resizeMode="cover" />
-              ) : (
-                <UserRound size={isMobile ? 42 : 58} color={palette.green} />
-              )}
+              <Text style={[styles.avatarInitials, isMobile && styles.avatarInitialsMobile]}>
+                {avatarInitials}
+              </Text>
             </View>
             <View style={styles.heroMain}>
               <View style={styles.publicPill}>
@@ -448,7 +451,7 @@ const styles = StyleSheet.create({
   hero: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: 24,
     gap: 18,
@@ -475,9 +478,14 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: 52,
   },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
+  avatarInitials: {
+    color: '#D1FAE5',
+    fontFamily: 'Poppins_900Black',
+    fontSize: 42,
+    letterSpacing: 1,
+  },
+  avatarInitialsMobile: {
+    fontSize: 34,
   },
   heroMain: {
     flex: 1,
@@ -584,7 +592,7 @@ const styles = StyleSheet.create({
     minHeight: 110,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: 16,
   },
@@ -620,7 +628,7 @@ const styles = StyleSheet.create({
   sectionCard: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
   },

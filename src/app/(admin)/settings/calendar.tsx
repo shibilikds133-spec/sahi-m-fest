@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Platform } from 'react-native';
 import { SsfInput } from '../../../components/ui/SsfInput';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfCard } from '../../../components/ui/SsfCard';
@@ -51,8 +51,18 @@ export default function FestivalCalendarSettings() {
       return;
     }
 
+    const festivalYear = Number(formData.start_date.slice(0, 4));
+    if (!Number.isInteger(festivalYear) || festivalYear < 1900 || festivalYear > 2200) {
+      setError('Start Date must contain a valid festival year.');
+      return;
+    }
+
     try {
-      await updateFestival.mutateAsync({ id: festival?.id, ...formData });
+      await updateFestival.mutateAsync({
+        id: festival?.id,
+        ...formData,
+        festival_year: festivalYear,
+      });
       setSaved(true);
       // Auto-hide success message after 3 seconds
       setTimeout(() => setSaved(false), 3000);
@@ -140,7 +150,7 @@ export default function FestivalCalendarSettings() {
           <SsfCard className="mb-6">
             <SsfInput
               label="Festival Name (Optional)"
-              placeholder="e.g., Sahithyolsav 2025"
+              placeholder={`e.g., Sahithyolsav ${formData.start_date.slice(0, 4) || new Date().getFullYear()}`}
               value={formData.custom_name}
               onChangeText={(text) => setFormData({ ...formData, custom_name: text })}
               className="mb-5"

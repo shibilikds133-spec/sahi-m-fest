@@ -39,8 +39,23 @@ export const judgeService = {
     if (error) throw new Error(error.message);
   },
 
+  async listJudgeActivityLogs<T>(tenantId: string) {
+    const { data, error } = await judgeRepository.listJudgeActivityLogs<T>(tenantId);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+
   async assignJudgesToSchedule(scheduleId: string, judgeIds: string[]) {
     const { error } = await judgeRepository.assignJudgesToSchedule(scheduleId, judgeIds);
+    if (error) throw new Error(error.message);
+  },
+
+  async removeJudgeFromSchedule(scheduleId: string, judgeId: string, force = false) {
+    const { error } = await judgeRepository.removeJudgeFromSchedule(
+      scheduleId,
+      judgeId,
+      force
+    );
     if (error) throw new Error(error.message);
   },
 
@@ -68,6 +83,9 @@ export const judgeService = {
     registration_id: string;
     criteria_scores: Record<string, number>;
     total_mark: number;
+    entry_mode_snapshot?: 'criteria' | 'total_only';
+    max_mark_snapshot?: number;
+    criteria_snapshot?: { key: string; label: string; max: number }[];
     tenant_id: string;
     is_draft?: boolean;
   }) {

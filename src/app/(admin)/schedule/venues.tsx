@@ -87,7 +87,7 @@ export default function VenuesManagement() {
   if (isLoadingVenues) return <ActivityIndicator color="#1B6B3A" style={{ marginTop: 40 }} />;
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
+    <ScrollView className="flex-1 bg-ssf-bg py-3 px-3">
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">

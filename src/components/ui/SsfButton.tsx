@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, TouchableOpacityProps, View } from 'react-native';
+import { ui } from '@/constants/designSystem';
 
 interface SsfButtonProps extends TouchableOpacityProps {
  label: string;
@@ -17,26 +18,29 @@ export const SsfButton: React.FC<SsfButtonProps> = ({
  icon,
  className = '',
  disabled,
+ accessibilityLabel,
+ accessibilityRole,
+ accessibilityState,
  ...props
 }) => {
- const baseClasses = 'items-center justify-center rounded-full flex-row shadow-sm active:opacity-80';
+ const baseClasses = 'items-center justify-center rounded-xl flex-row active:opacity-80';
  
  const variantClasses = {
- primary: 'bg-ssf-primary',
- outline: 'border border-ssf-primary bg-transparent',
- ghost: 'bg-transparent shadow-none',
+ primary: 'bg-ui-primary',
+ outline: 'border border-ui-border bg-white',
+ ghost: 'bg-transparent',
  };
 
  const sizeClasses = {
- sm: 'py-2 px-5',
- md: 'py-3 px-8',
- lg: 'py-4 px-10',
+ sm: 'h-9 px-4',
+ md: 'h-11 px-5',
+ lg: 'h-13 px-7',
  };
 
  const textVariantClasses = {
  primary: 'text-white',
- outline: 'text-ssf-primary',
- ghost: 'text-ssf-primary',
+ outline: 'text-ui-text',
+ ghost: 'text-ui-primary',
  };
 
  const textSizeClasses = {
@@ -51,14 +55,21 @@ export const SsfButton: React.FC<SsfButtonProps> = ({
  <TouchableOpacity
  className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${isDisabled ? 'opacity-50' : ''} ${className}`}
  disabled={isDisabled}
+ accessibilityRole={accessibilityRole ?? 'button'}
+ accessibilityLabel={accessibilityLabel ?? label}
+ accessibilityState={{
+  ...accessibilityState,
+  disabled: isDisabled,
+  busy: isLoading,
+ }}
  {...props}
  >
  {isLoading ? (
- <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#065F46'} className="mr-2" />
+ <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : ui.colors.primary} className="mr-2" />
  ) : icon ? (
  <View className="mr-2">{icon}</View>
  ) : null}
- <Text className={`font-poppins-bold uppercase tracking-wider ${textVariantClasses[variant]} ${textSizeClasses[size]}`}>
+ <Text className={`font-poppins-bold ${textVariantClasses[variant]} ${textSizeClasses[size]}`}>
  {label}
  </Text>
  </TouchableOpacity>

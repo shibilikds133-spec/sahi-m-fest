@@ -39,7 +39,7 @@ export function StatsSection() {
           <Animated.View
             key={stat.label}
             entering={FadeInUp.duration(760).delay(120 + index * 80).springify()}
-            className="overflow-hidden rounded-3xl border bg-white/10 p-5"
+            className="overflow-hidden rounded-xl border bg-white/10 p-5"
             style={[
               {
                 width: isDesktop ? undefined : isTablet ? '48%' : '100%',

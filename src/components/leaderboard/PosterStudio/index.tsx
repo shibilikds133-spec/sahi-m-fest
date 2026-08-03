@@ -906,7 +906,7 @@ const styles: Record<string, React.CSSProperties> = {
   canvasArea: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', zIndex: 10, backgroundColor: '#0f0f0f', backgroundImage: 'radial-gradient(#2a2a2a 1px, transparent 1px)', backgroundSize: '24px 24px' },
   canvasWrapper: { flex: 1, position: 'relative', overflow: 'hidden' },
   emptyStateCenter: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyStateCard: { textAlign: 'center', maxWidth: 440, padding: 40, backgroundColor: '#171717', borderRadius: 16, border: '1px solid #2a2a2a', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' },
+  emptyStateCard: { textAlign: 'center', maxWidth: 440, padding: 40, backgroundColor: '#171717', borderRadius: 10, border: '1px solid #2a2a2a', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' },
   emptyStateTitle: { fontSize: 22, fontWeight: 800, color: '#E2E8F0', marginBottom: 12, marginTop: 0 },
   emptyStateMsg: { fontSize: 14, color: '#94A3B8', lineHeight: '1.6', marginBottom: 24 },
   emptyStateCta: { padding: '12px 28px', borderRadius: 10, border: 'none', backgroundColor: '#0F766E', color: '#FFFFFF', fontSize: 14, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em' },

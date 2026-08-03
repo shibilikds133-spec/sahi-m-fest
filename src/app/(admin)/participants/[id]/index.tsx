@@ -1,18 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform, Image, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Switch, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useGoBack } from '../../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useParticipants } from '../../../../core/hooks/useParticipants';
-import { ArrowLeft, Lock, Unlock, Edit3, Trash2, User, AlertTriangle, Plus, Eye, EyeOff, ExternalLink } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Lock,
+  Unlock,
+  Edit3,
+  Trash2,
+  AlertTriangle,
+  Plus,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  CheckCircle2,
+  CircleUserRound,
+  ChevronDown,
+  ChevronRight,
+  Globe2,
+  ShieldCheck,
+  Trophy,
+} from 'lucide-react-native';
 import { useFestival } from '../../../../core/hooks/useFestival';
-import { useAuthStore } from '../../../../core/store/authStore';
 import { CATEGORIES } from '../../../../constants/categories';
+import { SsfSelectMenu } from '../../../../components/ui/SsfSelectMenu';
+import { SsfSheet } from '../../../../components/ui/SsfSheet';
+import { SsfProfileSkeleton } from '../../../../components/ui/SsfSkeleton';
+
+function InfoTile({
+  label,
+  value,
+  tone = 'default',
+  style,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: 'default' | 'success' | 'warning';
+  style?: any;
+}) {
+  const valueColor =
+    tone === 'success' ? 'text-emerald-700' : tone === 'warning' ? 'text-amber-700' : 'text-ssf-text';
+
+  return (
+    <View
+      className="min-h-[48px] justify-center border-b border-slate-200 py-1.5 pr-3"
+      style={style}
+    >
+      <Text className="font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">{label}</Text>
+      <Text selectable className={`mt-0.5 font-poppins-bold text-[13px] leading-5 ${valueColor}`}>
+        {value || '–'}
+      </Text>
+    </View>
+  );
+}
+
+function DetailAccordion({
+  title,
+  subtitle,
+  expanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <View className="border-b border-slate-200">
+      <TouchableOpacity
+        onPress={onToggle}
+        activeOpacity={0.82}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        className="min-h-[50px] flex-row items-center py-2"
+      >
+        <View className="h-8 w-8 items-center justify-center">
+          {expanded
+            ? <ChevronDown size={16} color="#047857" />
+            : <ChevronRight size={16} color="#64748B" />}
+        </View>
+        <View className="ml-2.5 flex-1">
+          <Text className={`font-poppins-bold text-[12px] ${expanded ? 'text-emerald-800' : 'text-ssf-text'}`}>{title}</Text>
+          <Text className="font-poppins text-[9px] text-ssf-text-muted">{subtitle}</Text>
+        </View>
+        <Text className={`font-poppins-bold text-[9px] uppercase ${expanded ? 'text-emerald-700' : 'text-slate-400'}`}>
+          {expanded ? 'Hide' : 'View'}
+        </Text>
+      </TouchableOpacity>
+      {expanded && (
+        <View className="pb-3 pl-10">
+          {children}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ParticipantDetails() {
   const { id } = useLocalSearchParams();
   const participantId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktopProfile = width >= 1000;
   const goBack = useGoBack('/(admin)/participants');
   
   const {
@@ -21,12 +116,8 @@ export default function ParticipantDetails() {
     registrations: events,
     updateStatus,
     updateParticipant,
-    uploadProfilePhoto,
-    removeProfilePhoto,
     deleteParticipant,
     isUpdatingParticipant,
-    isUploadingProfilePhoto,
-    isRemovingProfilePhoto,
     registerParticipant,
     isRegistering
   } = useParticipants(participantId);
@@ -34,7 +125,6 @@ export default function ParticipantDetails() {
   const { useActiveFestival, useItems } = useFestival();
   const { data: festival } = useActiveFestival();
   const { data: allItems } = useItems(festival?.id);
-  const { tenant_id } = useAuthStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
@@ -52,14 +142,18 @@ export default function ParticipantDetails() {
   const [dob, setDob] = useState('');
   const [categoryCode, setCategoryCode] = useState('');
   const [gender, setGender] = useState('');
+  const [classStd, setClassStd] = useState('');
+  const [educationType, setEducationType] = useState('');
+  const [membershipNo, setMembershipNo] = useState('');
   const [profileBio, setProfileBio] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
   const [profileSlug, setProfileSlug] = useState('');
   const [publicProfileEnabled, setPublicProfileEnabled] = useState(true);
   const [showOrganisationPublic, setShowOrganisationPublic] = useState(true);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
+  const [expandedProfileSection, setExpandedProfileSection] = useState<'competition' | 'contact' | 'verification' | null>(
+    isDesktopProfile ? 'competition' : null,
+  );
+  const [publicSectionExpanded, setPublicSectionExpanded] = useState(false);
+  const [eventsSectionExpanded, setEventsSectionExpanded] = useState(isDesktopProfile);
 
   // Update local state when participant data loads
   useEffect(() => {
@@ -70,8 +164,10 @@ export default function ParticipantDetails() {
       setDob(participant.dob || '');
       setCategoryCode(participant.category_code || '');
       setGender(participant.gender || '');
+      setClassStd(participant.class_std || '');
+      setEducationType(participant.education_type || '');
+      setMembershipNo(participant.membership_no || '');
       setProfileBio(participant.profile_bio || '');
-      setPhotoUrl(participant.photo_url || '');
       setProfileSlug(participant.profile_slug || '');
       setPublicProfileEnabled(participant.public_profile_enabled !== false);
       setShowOrganisationPublic(participant.show_organisation_public !== false);
@@ -102,7 +198,9 @@ export default function ParticipantDetails() {
           dob: dob || null,
           category_code: categoryCode || null,
           gender: gender || null,
-          photo_url: photoUrl || null,
+          class_std: classStd || null,
+          education_type: educationType || null,
+          membership_no: membershipNo || null,
           profile_bio: profileBio || null,
           profile_slug: profileSlug || null,
           public_profile_enabled: publicProfileEnabled,
@@ -140,50 +238,6 @@ export default function ParticipantDetails() {
             }
         }}
       ]);
-    }
-  };
-
-  const handlePhotoUpload = () => {
-    if (Platform.OS !== 'web') {
-      Alert.alert('Upload unavailable', 'Photo upload is available from the web admin panel. You can still paste a public image URL.');
-      return;
-    }
-    if (!festival?.id || !tenant_id) {
-      Alert.alert('Error', 'Festival and tenant context are required before uploading.');
-      return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/png,image/jpeg,image/webp';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      setIsUploadingPhoto(true);
-      try {
-        const updated = await uploadProfilePhoto({
-          id: participantId!,
-          file,
-          tenantId: tenant_id,
-          festivalId: festival.id,
-        });
-        setPhotoUrl(updated.photo_url || '');
-      } catch (error: any) {
-        Alert.alert('Upload failed', error.message);
-      } finally {
-        setIsUploadingPhoto(false);
-      }
-    };
-    input.click();
-  };
-
-  const handlePhotoRemove = async () => {
-    if (!participantId) return;
-    try {
-      const updated = await removeProfilePhoto(participantId);
-      setPhotoUrl(updated.photo_url || '');
-    } catch (error: any) {
-      Alert.alert('Remove failed', error.message);
     }
   };
 
@@ -289,7 +343,7 @@ export default function ParticipantDetails() {
     }
   };
 
-  if (isLoadingDetail) return <ActivityIndicator color="#1B6B3A" className="mt-10" />;
+  if (isLoadingDetail) return <SsfProfileSkeleton />;
 
   if (!participant) {
     return (
@@ -311,26 +365,40 @@ export default function ParticipantDetails() {
     }
   };
   const statColor = getStatusColor(participant.status);
+  const avatarInitials = (participant.name || 'Participant')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part: string) => part.charAt(0))
+    .join('')
+    .toUpperCase();
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
-      <View className="flex-row items-center justify-between mb-6">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
-            <ArrowLeft size={24} color="#333" />
+    <ScrollView
+      className="flex-1 bg-ssf-bg"
+      contentContainerStyle={{
+        width: '100%',
+        maxWidth: 1360,
+        alignSelf: 'center',
+        paddingHorizontal: isDesktopProfile ? 8 : 10,
+        paddingTop: isDesktopProfile ? 8 : 12,
+        paddingBottom: isDesktopProfile ? 18 : 28,
+      }}
+    >
+      {!isDesktopProfile && (
+        <View className="mb-3 flex-row items-center">
+          <TouchableOpacity
+            onPress={goBack}
+            className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white"
+          >
+            <ArrowLeft size={19} color="#0F172A" />
           </TouchableOpacity>
-          <Text className="text-2xl font-poppins-black text-ssf-text">Profile</Text>
+          <View className="flex-1">
+            <Text className="text-lg font-poppins-black text-ssf-text">Participant profile</Text>
+            <Text className="text-[10px] font-poppins text-ssf-text-muted">Identity, eligibility and registrations</Text>
+          </View>
         </View>
-        <TouchableOpacity 
-          onPress={toggleLock}
-          className={`flex-row items-center gap-x-2 px-3 py-2 rounded-xl border ${locked ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}
-        >
-          {locked ? <Lock size={16} color="#DC2626" /> : <Unlock size={16} color="#1B6B3A" />}
-          <Text className={`font-poppins-bold ${locked ? 'text-red-600' : 'text-green-700'}`}>
-            {locked ? 'Locked' : 'Unlocked'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {isBanned && (
         <View className="bg-red-100 border border-red-300 rounded-xl p-4 mb-4 flex-row items-center gap-x-3">
@@ -345,43 +413,120 @@ export default function ParticipantDetails() {
         </View>
       )}
 
-      <SsfCard className="mb-6">
-        <View className="flex-row justify-between items-start mb-6">
-          <View className="flex-row items-center gap-x-4">
-            <View className="w-16 h-16 rounded-full bg-gray-100 border border-gray-200 items-center justify-center overflow-hidden">
-              {participant.photo_url ? (
-                <Image source={{ uri: participant.photo_url }} className="w-full h-full" resizeMode="cover" />
-              ) : (
-                <User size={32} color="#9CA3AF" />
-              )}
-            </View>
-            <View>
-              <Text className="text-sm font-poppins text-ssf-text-muted">Chest No.</Text>
-              <Text className="text-2xl font-poppins-black">{participant.chest_number || 'N/A'}</Text>
-              {participant.organisations && (
-                <View className="mt-1 flex-row items-center gap-x-1 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full self-start">
-                  <Text className="font-poppins-bold text-[10px] text-blue-700 uppercase">
-                    {participant.organisations.name} · {participant.organisations.org_type}
+      <View className={isDesktopProfile ? 'gap-y-2' : 'gap-y-3'}>
+        <View>
+      <SsfCard
+        className="mb-0 w-full overflow-hidden"
+        style={{ padding: 0, borderRadius: 10 }}
+      >
+        <LinearGradient
+          colors={['#D8F1EB', '#E2F4F0', '#DDF2ED']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ height: isDesktopProfile ? 70 : 88 }}
+        />
+        <View className={isDesktopProfile ? 'px-4 pb-4' : 'px-3 pb-3'}>
+          <View
+            className={`rounded-[10px] border border-emerald-100 bg-white shadow-sm ${isDesktopProfile ? 'p-3' : 'p-4'}`}
+            style={{ marginTop: isDesktopProfile ? -24 : -38 }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 flex-row items-center">
+                <View className={`${isDesktopProfile ? 'h-14 w-14 rounded-2xl' : 'h-16 w-16 rounded-[18px]'} items-center justify-center border border-emerald-100 bg-emerald-50`}>
+                  <Text className={`${isDesktopProfile ? 'text-lg' : 'text-xl'} font-poppins-black text-emerald-800`}>
+                    {avatarInitials}
                   </Text>
                 </View>
+                <View className="ml-3 flex-1">
+                  <Text numberOfLines={2} className={`${isDesktopProfile ? 'text-[16px] leading-5' : 'text-[17px] leading-6'} font-poppins-black text-ssf-text`}>
+                    {participant.name}
+                  </Text>
+                  <Text numberOfLines={1} className="mt-0.5 font-poppins text-[10px] text-ssf-text-muted">
+                    {participant.email || participant.unique_code || 'Participant profile'}
+                  </Text>
+                  <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
+                    {participant.category_code && (
+                      <View className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1">
+                        <Text className="font-poppins-bold text-[9px] uppercase text-slate-600">
+                          {participant.category_code}
+                        </Text>
+                      </View>
+                    )}
+                    <View className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1">
+                      <Text className="font-poppins-bold text-[9px] text-emerald-700">
+                        Chest {participant.chest_number || 'N/A'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      disabled={locked}
+                      onPress={promptStatusChange}
+                      className={`rounded-lg border px-2 py-1 ${statColor.bg} ${statColor.border}`}
+                    >
+                      <Text className={`font-poppins-bold text-[9px] uppercase ${statColor.text}`}>
+                        {participant.status || 'Pending'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+              {isDesktopProfile && (
+                <View className="ml-3 flex-row items-center gap-x-2">
+                  <TouchableOpacity
+                    onPress={toggleLock}
+                    className={`h-9 w-9 items-center justify-center rounded-lg border ${locked ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-white'}`}
+                  >
+                    {locked ? <Lock size={15} color="#DC2626" /> : <Unlock size={15} color="#047857" />}
+                  </TouchableOpacity>
+                  {!locked && !isEditing && (
+                  <TouchableOpacity
+                    className="flex-row items-center rounded-lg bg-ssf-primary px-4 py-2.5"
+                    onPress={() => setIsEditing(true)}
+                  >
+                    <Edit3 size={15} color="#FFFFFF" />
+                    <Text className="ml-1.5 font-poppins-bold text-[11px] text-white">Edit</Text>
+                  </TouchableOpacity>
+                  )}
+                </View>
               )}
-              <TouchableOpacity 
-                disabled={locked}
-                onPress={promptStatusChange} 
-                className={`mt-2 px-3 py-1 rounded-full border self-start ${statColor.bg} ${statColor.border}`}
-              >
-                <Text className={`font-poppins-bold text-[10px] uppercase ${statColor.text}`}>
-                  {participant.status || 'Pending'}
-               </Text>
-              </TouchableOpacity>
             </View>
+
+            {participant.organisations && (
+              <View className="mt-3 flex-row items-center border-t border-slate-100 pt-2.5">
+                <ShieldCheck size={14} color="#047857" />
+                <Text numberOfLines={1} className="ml-2 flex-1 font-poppins-bold text-[10px] uppercase text-ssf-text">
+                  {participant.organisations.name}
+                </Text>
+                <Text className="font-poppins text-[9px] uppercase text-ssf-text-muted">
+                  {participant.organisations.org_type}
+                </Text>
+              </View>
+            )}
+
+            {!isDesktopProfile && (
+              <View className="mt-3 flex-row gap-x-2 border-t border-slate-100 pt-3">
+                <TouchableOpacity
+                  onPress={toggleLock}
+                  className={`h-11 flex-1 flex-row items-center justify-center rounded-xl border ${
+                    locked ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'
+                  }`}
+                >
+                  {locked ? <Lock size={16} color="#DC2626" /> : <Unlock size={16} color="#047857" />}
+                  <Text className={`ml-2 font-poppins-bold text-[11px] ${locked ? 'text-red-600' : 'text-emerald-700'}`}>
+                    {locked ? 'Unlock profile' : 'Lock profile'}
+                  </Text>
+                </TouchableOpacity>
+                {!locked && !isEditing && (
+                  <TouchableOpacity
+                    className="h-11 flex-1 flex-row items-center justify-center rounded-xl bg-ssf-primary"
+                    onPress={() => setIsEditing(true)}
+                  >
+                    <Edit3 size={16} color="#FFFFFF" />
+                    <Text className="ml-2 font-poppins-bold text-[11px] text-white">Edit details</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
-          {!locked && !isEditing && (
-             <TouchableOpacity className="p-2 bg-gray-50 rounded-full" onPress={() => setIsEditing(true)}>
-               <Edit3 size={20} color="#666" />
-             </TouchableOpacity>
-          )}
-        </View>
 
         {participant.status === 'rejected' && participant.rejection_reason && (
           <View className="bg-red-50 p-3 rounded-lg mb-4 border border-red-100">
@@ -391,7 +536,40 @@ export default function ParticipantDetails() {
         )}
 
         {isEditing ? (
-          <View className="gap-y-4 border-t border-gray-100 pt-4">
+          <SsfSheet
+            visible={isEditing}
+            onClose={() => setIsEditing(false)}
+            title="Edit profile"
+            description="Update participant details and public profile settings. Save when you’re done."
+            footer={
+              <>
+                <SsfButton
+                  label={isUpdatingParticipant ? 'Saving...' : 'Save changes'}
+                  onPress={handleSave}
+                  disabled={isUpdatingParticipant}
+                />
+                <SsfButton
+                  label="Close"
+                  variant="outline"
+                  onPress={() => setIsEditing(false)}
+                  disabled={isUpdatingParticipant}
+                />
+              </>
+            }
+          >
+          <View className="gap-y-4">
+            <View className="items-center rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+              <Text className="mb-3 font-poppins-bold text-[10px] uppercase tracking-widest text-emerald-700">Live preview</Text>
+              <View className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-emerald-200 shadow-sm">
+                <Text className="font-poppins-black text-2xl text-emerald-900">
+                  {(name || 'Participant').trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase()}
+                </Text>
+              </View>
+              <Text className="mt-3 font-poppins-black text-xl text-ssf-text">{name || 'Participant name'}</Text>
+              <Text className="font-poppins text-xs text-ssf-text-muted">
+                {[categoryCode, participant.chest_number].filter(Boolean).join(' · ') || 'Candidate profile'}
+              </Text>
+            </View>
             <View>
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Name</Text>
               <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={name} onChangeText={setName} />
@@ -399,108 +577,55 @@ export default function ParticipantDetails() {
             <View className="flex-row gap-x-3" style={{ zIndex: 50 }}>
               <View className="flex-1" style={{ zIndex: 50 }}>
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Category Code</Text>
-                {Platform.OS === 'web' ? (
-                  <View className="border border-ssf-border rounded-xl bg-white overflow-hidden">
-                    <select 
-                      style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: 'transparent', outline: 'none', fontFamily: 'inherit', color: '#333' }}
-                      value={categoryCode}
-                      onChange={(e) => setCategoryCode(e.target.value)}
-                    >
-                      <option value="">-- Select Category --</option>
-                      {CATEGORIES.map(cat => (
-                        <option key={cat.code} value={cat.code}>
-                          {cat.code} - {cat.name_en}
-                        </option>
-                      ))}
-                      {!CATEGORIES.find(c => c.code === categoryCode) && categoryCode && (
-                         <option value={categoryCode}>{categoryCode}</option>
-                      )}
-                    </select>
-                  </View>
-                ) : (
-                  <View>
-                    <TouchableOpacity 
-                      className="border border-ssf-border rounded-xl p-3 bg-white flex-row justify-between items-center"
-                      onPress={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                    >
-                      <Text className={`font-poppins ${categoryCode ? 'text-ssf-text' : 'text-gray-400'}`}>
-                        {categoryCode 
-                          ? CATEGORIES.find(c => c.code === categoryCode)?.code + ' - ' + (CATEGORIES.find(c => c.code === categoryCode)?.name_en || '') 
-                          : '-- Select Category --'}
-                      </Text>
-                    </TouchableOpacity>
-                    
-                    {isCategoryDropdownOpen && (
-                      <View className="mt-1 border border-ssf-border rounded-xl bg-white overflow-hidden absolute top-full left-0 right-0 z-50 shadow-sm" style={{ maxHeight: 200 }}>
-                        <ScrollView nestedScrollEnabled>
-                          {CATEGORIES.map(cat => (
-                            <TouchableOpacity 
-                              key={cat.code}
-                              className="p-3 border-b border-gray-100"
-                              onPress={() => {
-                                setCategoryCode(cat.code);
-                                setIsCategoryDropdownOpen(false);
-                              }}
-                            >
-                              <Text className="font-poppins text-ssf-text">
-                                {cat.code} - {cat.name_en}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-                  </View>
-                )}
+                <SsfSelectMenu
+                  value={categoryCode}
+                  onValueChange={setCategoryCode}
+                  placeholder="-- Select Category --"
+                  accessibilityLabel="Select category"
+                  options={[
+                    { label: '-- Select Category --', value: '' },
+                    ...CATEGORIES.map((cat) => ({
+                      label: `${cat.code} - ${cat.name_en}`,
+                      value: cat.code,
+                    })),
+                    ...(!CATEGORIES.find((category) => category.code === categoryCode) && categoryCode
+                      ? [{ label: categoryCode, value: categoryCode }]
+                      : []),
+                  ]}
+                />
               </View>
               <View className="flex-1" style={{ zIndex: 40 }}>
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Gender (boys/girls)</Text>
-                {Platform.OS === 'web' ? (
-                  <View className="border border-ssf-border rounded-xl bg-white overflow-hidden">
-                    <select 
-                      style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: 'transparent', outline: 'none', fontFamily: 'inherit', color: '#333' }}
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                    >
-                      <option value="">-- Select --</option>
-                      <option value="boys">Boys</option>
-                      <option value="girls">Girls</option>
-                    </select>
-                  </View>
-                ) : (
-                  <View>
-                    <TouchableOpacity 
-                      className="border border-ssf-border rounded-xl p-3 bg-white flex-row justify-between items-center"
-                      onPress={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
-                    >
-                      <Text className={`font-poppins capitalize ${gender ? 'text-ssf-text' : 'text-gray-400'}`}>
-                        {gender || '-- Select --'}
-                      </Text>
-                    </TouchableOpacity>
-                    
-                    {isGenderDropdownOpen && (
-                      <View className="mt-1 border border-ssf-border rounded-xl bg-white overflow-hidden absolute top-full left-0 right-0 z-50 shadow-sm">
-                        <TouchableOpacity 
-                          className="p-3 border-b border-gray-100"
-                          onPress={() => { setGender('boys'); setIsGenderDropdownOpen(false); }}
-                        >
-                          <Text className="font-poppins text-ssf-text">Boys</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          className="p-3"
-                          onPress={() => { setGender('girls'); setIsGenderDropdownOpen(false); }}
-                        >
-                          <Text className="font-poppins text-ssf-text">Girls</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                )}
+                <SsfSelectMenu
+                  value={gender}
+                  onValueChange={setGender}
+                  placeholder="-- Select --"
+                  accessibilityLabel="Select gender"
+                  options={[
+                    { label: '-- Select --', value: '' },
+                    { label: 'Boys', value: 'boys' },
+                    { label: 'Girls', value: 'girls' },
+                  ]}
+                />
               </View>
             </View>
             <View>
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Date of Birth (YYYY-MM-DD)</Text>
               <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={dob} onChangeText={setDob} />
+            </View>
+            <View className="flex-row gap-x-3">
+              <View className="flex-1">
+                <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Class / Standard</Text>
+                <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={classStd} onChangeText={setClassStd} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Education Type</Text>
+                <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={educationType} onChangeText={setEducationType} />
+              </View>
+            </View>
+            <View>
+              <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Membership Number</Text>
+              <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={membershipNo} onChangeText={setMembershipNo} />
             </View>
             <View>
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Email</Text>
@@ -514,36 +639,6 @@ export default function ParticipantDetails() {
               <View className="flex-row items-center gap-x-2">
                 <Eye size={18} color="#0B6BDB" />
                 <Text className="font-poppins-bold text-base text-ssf-text">Public Candidate Profile</Text>
-              </View>
-              <View>
-                <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Profile Photo URL</Text>
-                <TextInput
-                  className="border border-ssf-border rounded-xl p-3 font-poppins"
-                  value={photoUrl}
-                  onChangeText={setPhotoUrl}
-                  placeholder="https://..."
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={handlePhotoUpload}
-                  disabled={isUploadingPhoto || isUploadingProfilePhoto}
-                  className="mt-2 self-start px-3 py-2 rounded-xl border border-blue-100 bg-blue-50"
-                >
-                  <Text className="font-poppins-bold text-xs text-blue-700">
-                    {isUploadingPhoto ? 'Uploading...' : 'Upload Photo'}
-                  </Text>
-                </TouchableOpacity>
-                {photoUrl ? (
-                  <TouchableOpacity
-                    onPress={handlePhotoRemove}
-                    disabled={isRemovingProfilePhoto}
-                    className="mt-2 self-start px-3 py-2 rounded-xl border border-red-100 bg-red-50"
-                  >
-                    <Text className="font-poppins-bold text-xs text-red-700">
-                      {isRemovingProfilePhoto ? 'Removing...' : 'Remove Photo'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
               </View>
               <View>
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Public Slug</Text>
@@ -591,139 +686,244 @@ export default function ParticipantDetails() {
                 />
               </View>
             </View>
-            <View className="flex-row gap-x-3 mt-2">
-              <SsfButton label="Cancel" variant="outline" className="flex-1" onPress={() => setIsEditing(false)} />
-              <SsfButton label={isUpdatingParticipant ? "Saving..." : "Save"} className="flex-1" onPress={handleSave} disabled={isUpdatingParticipant} />
-            </View>
           </View>
+          </SsfSheet>
         ) : (
-          <View className="gap-y-3 border-t border-gray-100 pt-4">
-             <Text className="font-poppins-bold text-lg">{participant.name}</Text>
-             <View className="flex-row flex-wrap gap-y-2">
-               <View className="w-1/2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">Category</Text>
-                 <Text className="font-poppins-bold text-sm">{participant.category_code || '-'}</Text>
-               </View>
-               <View className="w-1/2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">Gender</Text>
-                 <Text className="font-poppins-bold text-sm capitalize">{participant.gender || '-'}</Text>
-               </View>
-               <View className="w-1/2 mt-2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">Age</Text>
-                 <Text className="font-poppins-bold text-sm">{participant.age || '-'}</Text>
-               </View>
-               <View className="w-1/2 mt-2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">DOB</Text>
-                 <Text className="font-poppins-bold text-sm">{participant.dob || '-'}</Text>
-               </View>
-               <View className="w-1/2 mt-2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">Class/Edu</Text>
-                 <Text className="font-poppins-bold text-sm">{participant.class_std || participant.education_type || '-'}</Text>
-               </View>
-               <View className="w-1/2 mt-2">
-                 <Text className="font-poppins text-xs text-ssf-text-muted">Phone</Text>
-                 <Text className="font-poppins-bold text-sm">{participant.phone || '-'}</Text>
-               </View>
-             </View>
-             {!isBanned && (
-               <TouchableOpacity onPress={handleBan} className="mt-2 self-start">
-                 <Text className="font-poppins text-xs text-red-600 underline">Add Plagiarism Ban</Text>
-               </TouchableOpacity>
-             )}
+          <View className={`${isDesktopProfile ? 'gap-y-2 border-t border-gray-100 pt-3' : 'gap-y-2 pt-3'}`}>
+            <DetailAccordion
+              title="Competition details"
+              subtitle="Category, age and eligibility"
+              expanded={expandedProfileSection === 'competition'}
+              onToggle={() => setExpandedProfileSection((current) => current === 'competition' ? null : 'competition')}
+            >
+              <View className="flex-row flex-wrap gap-x-2 gap-y-1">
+                <InfoTile label="Category" value={participant.category_code || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Gender" value={participant.gender || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Age" value={participant.age || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Date of birth" value={participant.dob || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Class / Standard" value={participant.class_std || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Education type" value={participant.education_type || '–'} style={{ width: '48.5%' }} />
+                {participant.is_campus_parallel && (
+                  <InfoTile label="Campus / Parallel" value="Yes" style={{ width: '48.5%' }} />
+                )}
+              </View>
+            </DetailAccordion>
+
+            <DetailAccordion
+              title="Contact & institution"
+              subtitle="Contact and membership information"
+              expanded={expandedProfileSection === 'contact'}
+              onToggle={() => setExpandedProfileSection((current) => current === 'contact' ? null : 'contact')}
+            >
+              <View className="flex-row flex-wrap gap-x-2 gap-y-1">
+                <InfoTile label="Phone" value={participant.phone || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Email" value={participant.email || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Institution" value={participant.institution_name || '–'} style={{ width: '48.5%' }} />
+                <InfoTile label="Membership no." value={participant.membership_no || '–'} style={{ width: '48.5%' }} />
+              </View>
+            </DetailAccordion>
+
+            <DetailAccordion
+              title="Verification"
+              subtitle="Festival verification and identity"
+              expanded={expandedProfileSection === 'verification'}
+              onToggle={() => setExpandedProfileSection((current) => current === 'verification' ? null : 'verification')}
+            >
+              <View className="flex-row flex-wrap gap-x-2 gap-y-1">
+                <InfoTile label="Unique code" value={participant.unique_code || '–'} style={{ width: '48.5%' }} />
+                <InfoTile
+                  label="Verification"
+                  value={participant.is_verified ? 'Verified' : 'Not verified'}
+                  tone={participant.is_verified ? 'success' : 'warning'}
+                  style={{ width: '48.5%' }}
+                />
+                <InfoTile label="ID card" value={participant.id_card_uploaded ? 'Uploaded' : 'Not uploaded'} style={{ width: '48.5%' }} />
+                {participant.residence_changed && (
+                  <InfoTile label="Residence changed" value="Yes" style={{ width: '48.5%' }} />
+                )}
+              </View>
+            </DetailAccordion>
+
+            {!isBanned && (
+              <TouchableOpacity onPress={handleBan} className="mt-1 self-start rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                <Text className="font-poppins-bold text-[10px] text-red-600">Add plagiarism ban</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
+        </View>
       </SsfCard>
+        </View>
 
-      <SsfCard className="mb-6">
-        <View className="flex-row justify-between items-start mb-4">
-          <View className="flex-row items-center gap-x-3 flex-1">
-            <View className={`w-10 h-10 rounded-full items-center justify-center ${participant.public_profile_enabled === false ? 'bg-gray-100' : 'bg-green-50'}`}>
+        <View
+          className={isDesktopProfile ? 'flex-row items-start gap-2' : 'gap-y-3'}
+        >
+          <View style={isDesktopProfile ? { flex: 1 } : undefined}>
+      <SsfCard
+        className="mb-0 w-full p-3"
+        style={{ borderRadius: 10 }}
+      >
+        <View className={`flex-row justify-between items-start ${publicSectionExpanded ? 'mb-3' : ''}`}>
+          <TouchableOpacity
+            onPress={() => setPublicSectionExpanded((current) => !current)}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: publicSectionExpanded }}
+            className={`${isDesktopProfile ? 'gap-x-3' : 'gap-x-2.5'} flex-1 flex-row items-center`}
+          >
+            <View className={`h-10 w-10 items-center justify-center rounded-lg border ${participant.public_profile_enabled === false ? 'border-slate-200 bg-slate-100' : 'border-emerald-100 bg-emerald-50'}`}>
               {participant.public_profile_enabled === false ? (
                 <EyeOff size={20} color="#64748B" />
               ) : (
-                <Eye size={20} color="#078B5A" />
+                <Globe2 size={20} color="#078B5A" />
               )}
             </View>
             <View className="flex-1">
-              <Text className="font-poppins-bold text-lg text-ssf-text">Public Candidate Profile</Text>
-              <Text className="font-poppins text-xs text-ssf-text-muted">
-                Public-safe projection for leaderboard, profiles, and future certificates.
+              <Text numberOfLines={isDesktopProfile ? 2 : 1} className="font-poppins-bold text-base text-ssf-text">
+                {isDesktopProfile ? 'Public Candidate Profile' : 'Public Profile'}
+              </Text>
+              <Text numberOfLines={1} className={`${isDesktopProfile ? 'text-xs' : 'text-[10px]'} font-poppins text-ssf-text-muted`}>
+                {isDesktopProfile ? 'Public-safe identity and leaderboard profile.' : 'Public identity & leaderboard'}
               </Text>
             </View>
-          </View>
+            {publicSectionExpanded
+              ? <ChevronDown size={17} color="#047857" />
+              : <ChevronRight size={17} color="#64748B" />}
+          </TouchableOpacity>
           {participant.profile_slug && participant.public_profile_enabled !== false && (
             <TouchableOpacity
               onPress={() => router.push(`/candidate/${participant.profile_slug}` as any)}
-              className="ml-3 px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 flex-row items-center gap-x-2"
+              accessibilityRole="button"
+              accessibilityLabel="Open public profile"
+              className={`${isDesktopProfile ? 'ml-3 px-3' : 'ml-2 w-9'} h-9 rounded-xl border border-blue-100 bg-blue-50 flex-row items-center justify-center gap-x-1.5`}
             >
               <ExternalLink size={15} color="#0B6BDB" />
-              <Text className="font-poppins-bold text-xs text-blue-700">Open</Text>
+              {isDesktopProfile && <Text className="font-poppins-bold text-[11px] text-blue-700">Open</Text>}
             </TouchableOpacity>
           )}
         </View>
-        <View className="gap-y-3">
-          <View className="flex-row flex-wrap gap-y-3">
-            <View className="w-1/2 pr-3">
-              <Text className="font-poppins text-xs text-ssf-text-muted">Visibility</Text>
-              <Text className={`font-poppins-bold text-sm ${participant.public_profile_enabled === false ? 'text-gray-500' : 'text-green-700'}`}>
-                {participant.public_profile_enabled === false ? 'Disabled' : 'Enabled'}
+        {publicSectionExpanded && <View className="border-t border-slate-100">
+          <View className="flex-row">
+            <View className="flex-1 py-3 pr-3">
+              <View className="flex-row items-center">
+                {participant.public_profile_enabled === false
+                  ? <EyeOff size={14} color="#64748B" />
+                  : <CheckCircle2 size={14} color="#047857" />}
+                <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Visibility</Text>
+              </View>
+              <Text className={`mt-1 font-poppins-bold text-[13px] ${participant.public_profile_enabled === false ? 'text-gray-500' : 'text-emerald-700'}`}>
+                {participant.public_profile_enabled === false ? 'Disabled' : 'Public'}
               </Text>
             </View>
-            <View className="w-1/2 pr-3">
-              <Text className="font-poppins text-xs text-ssf-text-muted">Organisation</Text>
-              <Text className={`font-poppins-bold text-sm ${participant.show_organisation_public === false ? 'text-gray-500' : 'text-green-700'}`}>
+            <View className="flex-1 border-l border-slate-100 py-3 pl-3">
+              <View className="flex-row items-center">
+                <ShieldCheck size={14} color={participant.show_organisation_public === false ? '#64748B' : '#2563EB'} />
+                <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Organisation</Text>
+              </View>
+              <Text className={`mt-1 font-poppins-bold text-[13px] ${participant.show_organisation_public === false ? 'text-gray-500' : 'text-blue-700'}`}>
                 {participant.show_organisation_public === false ? 'Hidden publicly' : 'Shown publicly'}
               </Text>
             </View>
-            <View className="w-full pr-3">
-              <Text className="font-poppins text-xs text-ssf-text-muted">Slug</Text>
-              <Text className="font-poppins-bold text-sm text-ssf-text">{participant.profile_slug || 'Will be generated on save'}</Text>
-            </View>
           </View>
-          <View className="bg-ssf-surface border border-ssf-border rounded-xl p-3">
-            <Text className="font-poppins text-xs text-ssf-text-muted mb-1">Public Bio</Text>
-            <Text className="font-poppins text-sm text-ssf-text leading-5">
+          <View className="border-t border-slate-100 py-3">
+            <View className="mb-1 flex-row items-center">
+              <CircleUserRound size={14} color="#64748B" />
+              <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Profile slug</Text>
+            </View>
+            <Text selectable className="font-poppins-bold text-xs leading-5 text-ssf-text">
+              {participant.profile_slug || 'Will be generated on save'}
+            </Text>
+          </View>
+          <View className="border-t border-slate-100 pt-3">
+            <Text className="mb-1 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Public bio</Text>
+            <Text className="font-poppins text-[13px] leading-5 text-ssf-text">
               {participant.profile_bio || 'No public bio added yet.'}
             </Text>
           </View>
-        </View>
+        </View>}
       </SsfCard>
+          </View>
 
-      <SsfCard className="mb-6">
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="font-poppins-bold text-lg">Registered Events</Text>
+          <View style={isDesktopProfile ? { flex: 1 } : undefined}>
+      <SsfCard
+        className="mb-0 w-full p-3"
+        style={{ borderRadius: 10 }}
+      >
+        <View className={`flex-row justify-between items-center ${eventsSectionExpanded ? 'mb-3' : ''}`}>
+          <TouchableOpacity
+            onPress={() => setEventsSectionExpanded((current) => !current)}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: eventsSectionExpanded }}
+            className="flex-row items-center flex-1"
+          >
+            <View className="h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+              <Trophy size={17} color="#D97706" />
+            </View>
+            <View className="ml-2.5">
+              <Text className="font-poppins-bold text-base">Registered Events</Text>
+              <Text className="font-poppins text-[10px] text-ssf-text-muted">
+                {events.length} {events.length === 1 ? 'event' : 'events'} assigned
+              </Text>
+            </View>
+            <View className="ml-auto mr-3">
+              {eventsSectionExpanded
+                ? <ChevronDown size={17} color="#047857" />
+                : <ChevronRight size={17} color="#64748B" />}
+            </View>
+          </TouchableOpacity>
           {!locked && !isBanned && (
             <TouchableOpacity 
               onPress={() => setIsAddingEvent(true)}
-              className="bg-ssf-primary px-3 py-1.5 rounded-full flex-row items-center gap-x-1"
+              className="bg-ssf-primary px-3 py-2 rounded-xl flex-row items-center gap-x-1"
             >
               <Plus size={14} color="#FFF" />
               <Text className="font-poppins-bold text-xs text-white">Add</Text>
             </TouchableOpacity>
           )}
         </View>
-        {events.length === 0 ? (
-           <Text className="font-poppins text-ssf-text-muted">No events assigned yet.</Text>
+        {eventsSectionExpanded && (events.length === 0 ? (
+           <View className="items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8">
+             <Trophy size={26} color="#CBD5E1" />
+             <Text className="mt-2 font-poppins-bold text-xs text-ssf-text-muted">No events assigned yet</Text>
+           </View>
         ) : (
-           events.map((ev: any) => (
-             <View key={ev.id} className="p-3 border-b border-ssf-border last:border-0 flex-row justify-between items-center">
-                <View>
-                  <Text className="font-poppins-bold">{ev.items?.item_name_en || 'Unknown Event'}</Text>
-                  <Text className="font-poppins text-xs text-ssf-text-muted">{ev.level} Level</Text>
+           <View className="gap-y-2">
+             {events.map((ev: any, index: number) => (
+               <View key={ev.id} className="flex-row items-center border-b border-slate-100 py-3 last:border-b-0">
+                  <View className="h-8 w-8 items-center justify-center rounded-lg bg-white">
+                    <Text className="font-poppins-bold text-[11px] text-emerald-700">{index + 1}</Text>
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text className="font-poppins-bold text-[13px]">{ev.items?.item_name_en || 'Unknown Event'}</Text>
+                    <Text className="font-poppins text-[10px] uppercase text-ssf-text-muted">{ev.level || 'Festival'} level</Text>
+                  </View>
+                  {ev.items?.item_code && (
+                    <View className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1">
+                      <Text className="font-poppins-bold text-[9px] text-blue-700">{ev.items.item_code}</Text>
+                    </View>
+                  )}
                 </View>
-             </View>
-           ))
-        )}
+             ))}
+           </View>
+        ))}
       </SsfCard>
+          </View>
+        </View>
 
       {!locked && (
-        <SsfButton 
-          label="Delete Participant" 
-          variant="outline" 
-          icon={<Trash2 size={16} color="#DC2626" />} 
-          onPress={handleDelete}
-        />
+        <View className="items-end">
+          <SsfButton
+            label="Delete Participant"
+            variant="outline"
+            size={isDesktopProfile ? 'md' : 'sm'}
+            className={isDesktopProfile ? '' : 'w-full border-red-100 bg-red-50'}
+            icon={<Trash2 size={16} color="#DC2626" />}
+            onPress={handleDelete}
+          />
+        </View>
       )}
+      </View>
 
       {/* Add Event Modal */}
       {isAddingEvent && (

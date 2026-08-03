@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { useParticipants } from '../../../core/hooks/useParticipants';
-import { UserPlus, ChevronRight, Upload, CheckSquare, Square, X, Search, FileDown, CheckCircle, Trash2, GitCompare } from 'lucide-react-native';
+import { UserPlus, ChevronRight, Upload, CheckSquare, Square, X, Search, FileDown, CheckCircle, Trash2, GitCompare, RotateCcw } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as XLSX from 'xlsx';
+import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
+import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 
 export default function ParticipantsList() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktopTable = width >= 980;
   
   const {
     participants,
@@ -135,7 +139,8 @@ export default function ParticipantsList() {
   const toggleSelect = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -174,23 +179,40 @@ export default function ParticipantsList() {
     }
   };
 
-  const FilterList = ({ items, selectedValue, onSelect }: { items: string[], selectedValue: string, onSelect: (v: string) => void }) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-2">
-      {items.map(item => (
-        <TouchableOpacity
-          key={item}
-          onPress={() => onSelect(item)}
-          className={`px-4 py-1.5 rounded-full mr-2 border ${selectedValue === item
-              ? 'bg-ssf-primary border-ssf-primary'
-              : 'bg-white border-ssf-border'
-            }`}
-        >
-          <Text className={`font-poppins-bold text-xs ${selectedValue === item ? 'text-white' : 'text-ssf-text-muted'}`}>
-            {item}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+  const hasActiveFilters =
+    selectedCategory !== 'All' || selectedStatus !== 'All' || selectedGender !== 'All';
+
+  const clearFilters = () => {
+    setSelectedCategory('All');
+    setSelectedStatus('All');
+    setSelectedGender('All');
+  };
+
+  const CompactFilter = ({
+    label,
+    items,
+    selectedValue,
+    onSelect,
+    width: filterWidth,
+  }: {
+    label: string;
+    items: string[];
+    selectedValue: string;
+    onSelect: (value: string) => void;
+    width: number;
+  }) => (
+    <SsfSelectMenu
+      value={selectedValue}
+      onValueChange={onSelect}
+      accessibilityLabel={`Filter by ${label}`}
+      width={filterWidth}
+      compact
+      active={selectedValue !== 'All'}
+      options={items.map((item) => ({
+        label: item === 'All' ? `${label}: All` : `${label}: ${item}`,
+        value: item,
+      }))}
+    />
   );
 
   return (
@@ -201,7 +223,12 @@ export default function ParticipantsList() {
           <Text className="text-3xl font-poppins-black text-ssf-text">Participants</Text>
           <Text className="text-sm font-poppins text-ssf-text-muted mt-1">{filteredParticipants.length} showing</Text>
         </View>
-        <View className="flex-row gap-x-2">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexShrink: 1, marginLeft: 12 }}
+          contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingRight: 2 }}
+        >
           <TouchableOpacity onPress={() => router.push('/(admin)/participants/chest-numbers')} className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-1">
             <Text className="font-poppins-bold text-ssf-primary text-xs hidden sm:flex">Numbers</Text>
           </TouchableOpacity>
@@ -224,37 +251,17 @@ export default function ParticipantsList() {
           <TouchableOpacity onPress={() => router.push('/(admin)/participants/import')} className="p-2 bg-white border border-ssf-border rounded-lg">
             <Upload size={20} color="#1B6B3A" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-json' as any)} className="p-2 bg-orange-50 border border-orange-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-orange-700 text-xs">JR Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-up' as any)} className="p-2 bg-blue-50 border border-blue-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-blue-700 text-xs">UP Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-senior' as any)} className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-emerald-700 text-xs">SR Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-lp' as any)} className="p-2 bg-indigo-50 border border-indigo-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-indigo-700 text-xs">LP Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-hs' as any)} className="p-2 bg-purple-50 border border-purple-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-purple-700 text-xs">HS Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-hss' as any)} className="p-2 bg-pink-50 border border-pink-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-pink-700 text-xs">HSS Import</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(admin)/participants/import-general' as any)} className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex-row items-center gap-x-1">
-            <Text className="font-poppins-bold text-yellow-700 text-xs">GEN Import</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/(admin)/participants/add')} className="p-2 bg-ssf-primary border border-ssf-primary rounded-lg flex-row items-center gap-x-2">
             <UserPlus size={20} color="white" />
             <Text className="font-poppins-bold text-white text-xs hidden sm:flex">Add New</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
 
       {/* Sticky Filters & Search */}
-      <View className="bg-ssf-bg pb-4 z-10">
-        <View className="flex-row items-center bg-white border border-ssf-border rounded-xl px-4 py-2 mb-3">
+      <View className="bg-ui-bg pb-4 z-10">
+        <View className="bg-white border border-ui-border rounded-xl p-3">
+        <View className="flex-row items-center bg-white border border-ui-border rounded-xl px-4 h-11">
           <Search size={18} color="#9CA3AF" />
           <TextInput
             className="flex-1 ml-2 font-poppins text-ssf-text outline-none"
@@ -268,10 +275,48 @@ export default function ParticipantsList() {
             </TouchableOpacity>
           )}
         </View>
-
-        <FilterList items={categories} selectedValue={selectedCategory} onSelect={setSelectedCategory} />
-        <FilterList items={statuses} selectedValue={selectedStatus} onSelect={setSelectedStatus} />
-        <FilterList items={genders} selectedValue={selectedGender} onSelect={setSelectedGender} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10 }}
+        >
+          <CompactFilter
+            label="Category"
+            items={categories}
+            selectedValue={selectedCategory}
+            onSelect={setSelectedCategory}
+            width={148}
+          />
+          <CompactFilter
+            label="Status"
+            items={statuses}
+            selectedValue={selectedStatus}
+            onSelect={setSelectedStatus}
+            width={142}
+          />
+          <CompactFilter
+            label="Gender"
+            items={genders}
+            selectedValue={selectedGender}
+            onSelect={setSelectedGender}
+            width={132}
+          />
+          {hasActiveFilters && (
+            <TouchableOpacity
+              onPress={clearFilters}
+              className="h-9 px-3 rounded-lg border border-ui-border bg-white flex-row items-center justify-center"
+            >
+              <RotateCcw size={13} color="#64748B" />
+              <Text className="ml-1.5 font-poppins-bold text-[10px] text-ui-text-muted">Reset</Text>
+            </TouchableOpacity>
+          )}
+          <View className="h-9 px-3 rounded-lg bg-ui-muted items-center justify-center">
+            <Text className="font-poppins-bold text-[10px] text-ui-text-muted">
+              {filteredParticipants.length} results
+            </Text>
+          </View>
+        </ScrollView>
+        </View>
       </View>
 
       {/* Bulk action bar */}
@@ -306,15 +351,124 @@ export default function ParticipantsList() {
       </View>
 
       {/* List */}
-      <SsfCard className="mb-20">
+      <SsfCard className="mb-20 p-0 overflow-hidden">
         {isLoadingList ? (
-          <ActivityIndicator color="#1B6B3A" className="my-10" />
+          <View className="p-4">
+            <SsfTableSkeleton rows={7} columns={6} compact={!isDesktopTable} />
+          </View>
         ) : filteredParticipants.length === 0 ? (
           <View className="items-center justify-center py-10">
             <Text className="text-ssf-text-muted font-poppins mb-4">No participants found.</Text>
           </View>
+        ) : isDesktopTable ? (
+          <View>
+            <View className="min-h-11 px-4 flex-row items-center bg-ui-muted border-b border-ui-border">
+              {selectMode && <View style={{ width: 42 }} />}
+              <Text style={{ flex: 2.4 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Participant
+              </Text>
+              <Text style={{ flex: 0.9 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Chest No.
+              </Text>
+              <Text style={{ flex: 0.75 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Category
+              </Text>
+              <Text style={{ flex: 0.75 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Gender
+              </Text>
+              <Text style={{ flex: 1.5 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Organisation
+              </Text>
+              <Text style={{ width: 112 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">
+                Status
+              </Text>
+              <Text style={{ width: 130 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted text-right">
+                Actions
+              </Text>
+            </View>
+            {filteredParticipants.map((p: any) => {
+              const isSelected = selected.has(p.id);
+              const statColor = getStatusColor(p.status);
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  activeOpacity={0.72}
+                  className={`min-h-16 px-4 flex-row items-center border-b border-ui-border ${
+                    isSelected ? 'bg-teal-50' : 'bg-white'
+                  }`}
+                  onPress={() => selectMode ? toggleSelect(p.id) : router.push(`/(admin)/participants/${p.id}`)}
+                  onLongPress={() => {
+                    if (!selectMode) setSelectMode(true);
+                    toggleSelect(p.id);
+                  }}
+                >
+                  {selectMode && (
+                    <View style={{ width: 42 }}>
+                      {isSelected
+                        ? <CheckSquare size={18} color="#0F766E" />
+                        : <Square size={18} color="#94A3B8" />}
+                    </View>
+                  )}
+                  <View style={{ flex: 2.4, paddingRight: 12 }}>
+                    <Text numberOfLines={1} className="font-poppins-bold text-sm text-ui-text">
+                      {p.name}
+                    </Text>
+                    <Text numberOfLines={1} className="font-poppins text-[10px] text-ui-text-muted mt-0.5">
+                      Registered {p.created_at ? new Date(p.created_at).toLocaleDateString() : '—'}
+                    </Text>
+                  </View>
+                  <Text style={{ flex: 0.9 }} numberOfLines={1} className="font-poppins text-xs text-ui-text">
+                    {p.chest_number || '—'}
+                  </Text>
+                  <Text style={{ flex: 0.75 }} numberOfLines={1} className="font-poppins-bold text-xs text-ui-text">
+                    {p.category_code || '—'}
+                  </Text>
+                  <Text style={{ flex: 0.75 }} numberOfLines={1} className="font-poppins text-xs text-ui-text-muted capitalize">
+                    {p.gender || '—'}
+                  </Text>
+                  <View style={{ flex: 1.5, paddingRight: 12 }}>
+                    <Text numberOfLines={1} className="font-poppins text-xs text-ui-text">
+                      {p.organisations?.name || '—'}
+                    </Text>
+                    {p.organisations?.org_type && (
+                      <Text numberOfLines={1} className="font-poppins text-[9px] text-ui-text-muted capitalize">
+                        {p.organisations.org_type}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ width: 112, alignItems: 'flex-start' }}>
+                    <TouchableOpacity
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        promptStatusChange(p);
+                      }}
+                      className={`px-2.5 py-1 rounded-full border ${statColor.bg} ${statColor.border}`}
+                    >
+                      <Text className={`font-poppins-bold text-[9px] uppercase ${statColor.text}`}>
+                        {p.status || 'Pending'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ width: 130, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+                    {p.profile_slug && !selectMode && (
+                      <TouchableOpacity
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          router.push(`/candidate/${p.profile_slug}` as any);
+                        }}
+                        className="h-8 px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 items-center justify-center"
+                      >
+                        <Text className="font-poppins-bold text-[9px] text-emerald-700">Public Profile</Text>
+                      </TouchableOpacity>
+                    )}
+                    {!selectMode && <ChevronRight size={17} color="#94A3B8" />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         ) : (
-          <View className="gap-y-3">
+          <View>
             {filteredParticipants.map((p: any, index: number) => {
               const isSelected = selected.has(p.id);
               const statColor = getStatusColor(p.status);
@@ -322,7 +476,7 @@ export default function ParticipantsList() {
               return (
                 <Animated.View key={p.id} entering={FadeInUp.delay((index % 10) * 50)}>
                   <TouchableOpacity
-                    className={`flex-row items-center justify-between p-3 border rounded-xl ${isSelected ? 'bg-green-50 border-green-300' : 'bg-ssf-surface border-ssf-border'
+                    className={`min-h-[72px] flex-row items-center justify-between border-b border-ssf-border px-3 py-2 ${isSelected ? 'bg-green-50' : 'bg-ssf-surface'
                       }`}
                     onPress={() => selectMode ? toggleSelect(p.id) : router.push(`/(admin)/participants/${p.id}`)}
                     onLongPress={() => {
@@ -336,39 +490,39 @@ export default function ParticipantsList() {
                       </View>
                     )}
 
-                    <View className="flex-1">
+                    <View className="min-w-0 flex-1">
                       <View className="flex-row items-center gap-x-2">
-                        <Text className="font-poppins-bold text-ssf-text text-base">{p.name}</Text>
+                        <Text numberOfLines={1} className="min-w-0 flex-1 font-poppins-bold text-[13px] text-ssf-text">{p.name}</Text>
                         <TouchableOpacity onPress={() => promptStatusChange(p)} className={`px-2 py-0.5 rounded-full border ${statColor.bg} ${statColor.border}`}>
                           <Text className={`font-poppins-bold text-[9px] uppercase ${statColor.text}`}>
                             {p.status || 'Pending'}
                           </Text>
                         </TouchableOpacity>
                       </View>
-                      <Text className="font-poppins text-xs text-ssf-text-muted mt-1">
+                      <Text numberOfLines={1} className="mt-0.5 font-poppins text-[10px] text-ssf-text-muted">
                         {p.chest_number ? `No: ${p.chest_number}` : 'No Chest No.'} • Cat: {p.category_code} {p.gender ? `• ${p.gender === 'boys' ? 'B' : 'G'}` : ''}
                       </Text>
                       {p.organisations && (
-                        <Text className="font-poppins text-[10px] text-blue-600 mt-0.5">
+                        <Text numberOfLines={1} className="mt-0.5 font-poppins text-[9px] text-blue-600">
                           🏠 {p.organisations.name} ({p.organisations.org_type})
                         </Text>
                       )}
                     </View>
 
                     {!selectMode && (
-                      <View className="ml-2 flex-row items-center gap-x-3">
+                      <View className="ml-2 flex-row items-center gap-x-1.5">
                         {p.profile_slug && (
                           <TouchableOpacity 
                             onPress={(e) => {
                               e.stopPropagation();
                               router.push(`/candidate/${p.profile_slug}` as any);
                             }}
-                            className="bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200"
+                            className="rounded-md bg-emerald-50 px-2 py-1"
                           >
-                            <Text className="text-[10px] font-poppins-bold text-emerald-700">Public Profile</Text>
+                            <Text className="font-poppins-bold text-[8px] text-emerald-700">Public</Text>
                           </TouchableOpacity>
                         )}
-                        <ChevronRight size={20} color="#9CA3AF" />
+                        <ChevronRight size={16} color="#9CA3AF" />
                       </View>
                     )}
                   </TouchableOpacity>

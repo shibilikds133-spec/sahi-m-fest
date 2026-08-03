@@ -78,6 +78,43 @@ export default function JudgePortalLanding() {
     };
   }, [waitingForApproval, currentTokenId, code, tokenDataObj]);
 
+  // Secure fallback when Realtime is unavailable or the anon role cannot read
+  // table changes directly. The RPC returns only the status for this code.
+  useEffect(() => {
+    if (!waitingForApproval || !code || !tokenDataObj) return;
+
+    let cancelled = false;
+    const checkStatus = async () => {
+      try {
+        const status = await judgeTokenService.getLoginStatus(code);
+        if (cancelled) return;
+
+        if (status === 'approved') {
+          await AsyncStorage.setItem('judge_session_token', code);
+          await AsyncStorage.setItem('judge_session_data', JSON.stringify(tokenDataObj));
+          router.replace('/judge/marks' as any);
+        } else if (status === 'rejected' || status === 'expired' || status === 'used' || status === 'invalid') {
+          setWaitingForApproval(false);
+          setCurrentTokenId(null);
+          setError(
+            status === 'rejected'
+              ? 'Your login request was rejected by the administrator.'
+              : 'This access code is no longer valid.'
+          );
+        }
+      } catch (statusError) {
+        console.warn('Unable to refresh approval status:', statusError);
+      }
+    };
+
+    checkStatus();
+    const intervalId = setInterval(checkStatus, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [waitingForApproval, code, tokenDataObj, router]);
+
   const handleBoxChange = (text: string, index: number) => {
     setError('');
     
@@ -142,9 +179,15 @@ export default function JudgePortalLanding() {
     try {
       const tokenData = await judgeTokenService.validateToken(finalCode);
       // Instead of replacing router, we request login and wait for approval
-      await judgeTokenService.requestLogin(tokenData.id);
+      const request = await judgeTokenService.requestLogin(finalCode);
+      if (request?.status === 'approved') {
+        await AsyncStorage.setItem('judge_session_token', finalCode);
+        await AsyncStorage.setItem('judge_session_data', JSON.stringify(tokenData));
+        router.replace('/judge/marks' as any);
+        return;
+      }
       setTokenDataObj(tokenData);
-      setCurrentTokenId(tokenData.id);
+      setCurrentTokenId(request?.id ?? tokenData.id);
       setWaitingForApproval(true);
     } catch (e: any) {
       setError(e.message ?? 'Invalid code. Please try again.');
@@ -164,7 +207,7 @@ export default function JudgePortalLanding() {
         const url = new URL(data);
         extractedCode = url.searchParams.get('code') || data;
       }
-    } catch (e) {
+    } catch {
       // Not a URL, use raw data
     }
     const cleanCode = extractedCode.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 6);
@@ -178,14 +221,47 @@ export default function JudgePortalLanding() {
   };
 
   const startScanning = async () => {
+    setError('');
+
+    if (Platform.OS === 'web') {
+      if (!window.isSecureContext) {
+        setError('Camera requires HTTPS or localhost. Open the Judge Portal using localhost or a secure HTTPS link.');
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('Camera access is not supported by this browser. Enter the 6-character code manually.');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        });
+        stream.getTracks().forEach((track) => track.stop());
+        setIsScanning(true);
+      } catch (cameraError: any) {
+        const blocked = cameraError?.name === 'NotAllowedError' || cameraError?.name === 'PermissionDeniedError';
+        setError(
+          blocked
+            ? 'Camera is blocked. Click the camera/lock icon in the address bar, set Camera to Allow, then press Scan QR Code again.'
+            : 'Unable to open the camera. Check whether another app is using it, or enter the code manually.'
+        );
+      }
+      return;
+    }
+
     if (!permission?.granted) {
-      const { status } = await requestPermission();
-      if (status !== 'granted') {
-        setError('Camera permission is required to scan QR code.');
+      const result = await requestPermission();
+      if (result.status !== 'granted') {
+        setError(
+          result.canAskAgain
+            ? 'Camera permission is required. Tap Scan QR Code and choose Allow.'
+            : 'Camera is blocked in device settings. Enable camera access for this app, then try again.'
+        );
         return;
       }
     }
-    setError('');
     setIsScanning(true);
   };
 
@@ -404,7 +480,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 24,
+    borderRadius: 10,
     backgroundColor: 'rgba(3, 15, 38, 0.45)',
     padding: 40,
     shadowColor: '#000000',

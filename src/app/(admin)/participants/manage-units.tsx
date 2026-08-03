@@ -399,7 +399,7 @@ export default function ManageUnits() {
       {activeTab === 'reassign' ? (
         <View className="flex-1 flex-row flex-wrap gap-4">
           {/* Main Controls Panel */}
-          <View className="w-full lg:w-1/4 bg-white p-4 rounded-3xl shadow-sm border border-slate-100 mb-4 h-fit">
+          <View className="w-full lg:w-1/4 bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-4 h-fit">
             <Text className="text-lg font-poppins-bold text-ssf-text mb-4">1. Filter Records</Text>
 
             {/* Text Search */}
@@ -487,7 +487,7 @@ export default function ManageUnits() {
             {/* Target Unit Panel */}
             <Text className="text-lg font-poppins-bold text-ssf-text mb-2">2. Destination Unit</Text>
             <Text className="font-poppins text-xs text-ssf-text-muted mb-2">Select the organisation to reassign selected participants into:</Text>
-            <View className="bg-ssf-bg border border-ssf-border rounded-2xl p-2 max-h-48 overflow-y-auto mb-4">
+            <View className="bg-ssf-bg border border-ssf-border rounded-xl p-2 max-h-48 overflow-y-auto mb-4">
               {organisations.map((org) => (
                 <TouchableOpacity
                   key={org.id}
@@ -538,7 +538,7 @@ export default function ManageUnits() {
               {isLoadingList ? (
                 <ActivityIndicator color="#1B6B3A" className="my-10" />
               ) : filteredParticipants.length === 0 ? (
-                <View className="items-center justify-center py-20 border border-dashed border-ssf-border rounded-3xl bg-slate-50">
+                <View className="items-center justify-center py-20 border border-dashed border-ssf-border rounded-xl bg-slate-50">
                   <Text className="text-ssf-text-muted font-poppins text-sm mb-2">No records match your filters.</Text>
                   <Text className="text-ssf-text-muted font-poppins text-xs">Try adjusting the filters in the left sidebar.</Text>
                 </View>
@@ -609,7 +609,7 @@ export default function ManageUnits() {
         </View>
       ) : (
         /* History & Audit logs Tab */
-        <ScrollView className="flex-1 bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+        <ScrollView className="flex-1 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-xl font-poppins-bold">Audit History Batches</Text>
             <TouchableOpacity onPress={() => queryClient.invalidateQueries({ queryKey: ['participant-unit-batches'] })} className="p-2 border border-ssf-border rounded-lg bg-slate-50 flex-row items-center gap-x-1">
@@ -637,7 +637,7 @@ export default function ManageUnits() {
                 const isProcessingState = batch.status === 'processing';
 
                 return (
-                  <View key={batch.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                  <View key={batch.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50">
                     <View className="flex-row justify-between items-start flex-wrap gap-2 mb-2 border-b border-slate-100 pb-2">
                       <View>
                         <Text className="font-poppins-bold text-xs text-slate-500">BATCH ID: {batch.id}</Text>
@@ -802,7 +802,7 @@ export default function ManageUnits() {
 
             {/* Hard Confirmation Gate */}
             {previewReport.validIds.length > 300 && (
-              <View className="mb-6 bg-red-50 border border-red-200 p-4 rounded-2xl">
+              <View className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl">
                 <Text className="font-poppins-bold text-xs text-red-800 uppercase mb-1">🔥 Large Operation Alert</Text>
                 <Text className="font-poppins text-xs text-red-700 mb-3">
                   This reassignment modifies more than 300 participants. This action will update leaderboards and certificates.

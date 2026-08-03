@@ -1303,7 +1303,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 24,
+    borderRadius: 10,
     backgroundColor: 'rgba(3, 15, 38, 0.45)',
     padding: 32,
     shadowColor: '#000000',
@@ -1319,7 +1319,7 @@ const styles = StyleSheet.create({
   },
   landingCardMobile: {
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 10,
   },
   heroTitle: {
     fontFamily: Platform.OS === 'web' ? 'Georgia, serif' : 'serif',
@@ -1959,7 +1959,7 @@ const styles = StyleSheet.create({
   listCard: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
     ...Platform.select({
@@ -2047,7 +2047,7 @@ const styles = StyleSheet.create({
   itemSectionCard: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
     ...Platform.select({
@@ -2180,7 +2180,7 @@ const styles = StyleSheet.create({
     minHeight: 168,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2205,7 +2205,7 @@ const styles = StyleSheet.create({
   errorCard: {
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.25)',
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: 'rgba(239, 68, 68, 0.04)',
     padding: 20,
     marginBottom: 16,
@@ -2372,7 +2372,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 0,
     marginBottom: 20,
-    borderRadius: 16,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(251, 191, 36, 0.2)',
     overflow: 'hidden',

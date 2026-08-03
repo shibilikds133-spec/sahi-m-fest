@@ -159,23 +159,23 @@ export default function MarkEntryPage() {
   return (
     <View className="flex-1 bg-ssf-bg">
       {/* Header */}
-      <View className="bg-ssf-primary pt-14 pb-6 px-5 rounded-b-[28px]">
+      <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-2">
-          <TouchableOpacity onPress={goBack} className="mr-3 p-1.5 bg-white/10 rounded-full">
-            <ArrowLeft size={20} color="#FFF" />
+          <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+            <ArrowLeft size={18} color="#0F172A" />
           </TouchableOpacity>
-          <Text className="text-xl font-poppins-black text-white flex-1" numberOfLines={1}>
+          <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
             Mark Entry
           </Text>
         </View>
-        <Text className="text-white/70 font-poppins text-sm">
+        <Text className="ml-12 text-[11px] font-poppins text-ssf-text-muted">
           {schedule?.items?.item_name_ml ?? 'Event'}
         </Text>
 
         {/* Judge Status Panel */}
         {judgeSummary && (judgeSummary as any[]).length > 0 && (
-          <View className="mt-3 bg-white/10 rounded-2xl p-3 gap-y-1.5">
-            <Text className="font-poppins-bold text-white/80 text-xs mb-1">Judge Status</Text>
+          <View className="mt-3 rounded-lg border border-ui-border bg-ui-muted p-3 gap-y-1.5">
+            <Text className="font-poppins-bold text-ssf-text text-xs mb-1">Judge Status</Text>
             {(judgeSummary as any[]).map((j: any, idx: number) => {
               const total = Number(j.total_assigned) || 0;
               const submitted = Number(j.submitted_count) || 0;
@@ -183,14 +183,14 @@ export default function MarkEntryPage() {
               const partial = submitted > 0 && !allDone;
               return (
                 <View key={j.judge_id} className="flex-row items-center justify-between">
-                  <Text className="font-poppins text-white text-xs flex-1" numberOfLines={1}>
+                  <Text className="font-poppins text-ssf-text text-xs flex-1" numberOfLines={1}>
                     {idx + 1}. {j.judge_name}
                   </Text>
                   <View className={`px-2 py-0.5 rounded-full ${
-                    allDone ? 'bg-green-400/30' : partial ? 'bg-yellow-400/30' : 'bg-white/10'
+                    allDone ? 'bg-green-100' : partial ? 'bg-yellow-100' : 'bg-slate-100'
                   }`}>
                     <Text className={`font-poppins-bold text-xs ${
-                      allDone ? 'text-green-200' : partial ? 'text-yellow-200' : 'text-white/50'
+                      allDone ? 'text-green-700' : partial ? 'text-yellow-700' : 'text-slate-500'
                     }`}>
                       {allDone ? `✅ Submitted (${submitted}/${total})` :
                        partial ? `⏳ Partial (${submitted}/${total})` :
@@ -211,12 +211,12 @@ export default function MarkEntryPage() {
               onPress={() => setSelectedJudge(j.id)}
               className={`mx-1 px-3 py-1.5 rounded-full border ${
                 selectedJudge === j.id
-                  ? 'bg-white border-white'
-                  : 'border-white/40 bg-white/10'
+                  ? 'bg-ssf-primary border-ssf-primary'
+                  : 'border-ui-border bg-white'
               }`}
             >
               <Text className={`font-poppins-bold text-xs ${
-                selectedJudge === j.id ? 'text-ssf-primary' : 'text-white'
+                selectedJudge === j.id ? 'text-white' : 'text-ssf-text'
               }`}>
                 {j.name}
               </Text>

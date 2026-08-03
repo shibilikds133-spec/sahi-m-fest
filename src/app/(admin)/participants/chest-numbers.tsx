@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { useParticipants } from '../../../core/hooks/useParticipants';
 import { ArrowLeft, KeyRound, AlertTriangle, CheckCircle } from 'lucide-react-native';
+import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 
 const CATEGORIES = ['LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS'];
 
@@ -106,13 +107,13 @@ export default function ChestNumberGeneration() {
         <View className="flex-1">
           <Text className="font-poppins-bold text-blue-800">Auto-Generation Rules</Text>
           <Text className="font-poppins text-xs text-blue-700 mt-1">
-            Chest numbers (e.g. LP-001) can only be generated for participants whose status is "Approved". Pending or Rejected participants will be skipped.
+            Chest numbers (e.g. LP-001) can only be generated for participants whose status is &quot;Approved&quot;. Pending or Rejected participants will be skipped.
           </Text>
         </View>
       </View>
 
       {isLoadingList ? (
-        <ActivityIndicator color="#1B6B3A" size="large" className="my-10" />
+        <SsfTableSkeleton rows={7} columns={3} compact />
       ) : (
         CATEGORIES.map(cat => {
           const data = stats[cat];

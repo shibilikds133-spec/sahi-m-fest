@@ -472,7 +472,7 @@ export default function ItemResultsPage() {
 const styles = StyleSheet.create({
   tableCard: {
     backgroundColor: colors.card,
-    borderRadius: 22,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     overflow: 'hidden',

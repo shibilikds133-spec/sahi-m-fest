@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../../core/hooks/useGoBack';
-import { ArrowLeft, Plus, Settings2, Edit, UploadCloud, X } from 'lucide-react-native';
+import { ArrowLeft, Plus, Edit, UploadCloud, X } from 'lucide-react-native';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useAuthStore } from '../../../../core/store/authStore';
 import { scoringRuleRepository } from '../../../../lib/repositories/scoringRuleRepository';
+import { getCriterionKey } from '../../../../core/utils/scoringRules';
 
 export default function ScoringRulesList() {
   const router = useRouter();
@@ -52,6 +53,32 @@ export default function ScoringRulesList() {
       
       // We will loop over parsed and upsert based on event_name
       for (const rule of parsed) {
+        if (!rule?.event_name || typeof rule.event_name !== 'string') {
+          throw new Error('Every rule must have an event_name.');
+        }
+        const entryMode = rule.entry_mode === 'total_only' ? 'total_only' : 'criteria';
+        const importedCriteria = Array.isArray(rule.criteria) ? rule.criteria : [];
+        const totalMarks = entryMode === 'total_only' ? 100 : (parseInt(rule.total_marks) || 100);
+
+        if (entryMode === 'criteria') {
+          const criteriaTotal = importedCriteria.reduce(
+            (sum: number, criterion: any) => sum + (parseInt(criterion.marks) || 0),
+            0,
+          );
+          const criterionKeys = importedCriteria.map((criterion: any) =>
+            getCriterionKey(criterion.name || '')
+          );
+          if (
+            importedCriteria.length === 0
+            || importedCriteria.some((criterion: any) => !criterion.name?.trim() || (parseInt(criterion.marks) || 0) <= 0)
+            || criterionKeys.some((key: string) => !key)
+            || new Set(criterionKeys).size !== criterionKeys.length
+            || criteriaTotal !== totalMarks
+          ) {
+            throw new Error(`Invalid criteria for ${rule.event_name}. Criteria must be complete and total ${totalMarks}.`);
+          }
+        }
+
         // Find if this rule already exists
         const existing = rules.find(r => 
           r.event_name.toLowerCase() === rule.event_name.toLowerCase() && 
@@ -63,9 +90,10 @@ export default function ScoringRulesList() {
         const payload = {
           event_name: rule.event_name,
           event_name_ml: rule.event_name_ml || null,
-          total_marks: rule.total_marks || 100,
+          total_marks: totalMarks,
           time_limit: rule.time_limit || null,
           guidelines: rule.guidelines || null,
+          entry_mode: entryMode,
           tenant_id: tenantId, // Custom for this tenant
           is_default: false
         };
@@ -73,28 +101,38 @@ export default function ScoringRulesList() {
         if (existing) {
           await scoringRuleRepository.updateRule(existing.id, payload);
           savedRuleId = existing.id;
-          
-          // delete old criteria
-          const oldCriteriaIds = (existing.scoring_criteria || []).map((c: any) => c.id);
-          for (const cid of oldCriteriaIds) {
-            await scoringRuleRepository.deleteCriterion(cid);
-          }
         } else {
           const { data, error } = await scoringRuleRepository.createRule(payload);
           if (error) throw error;
           savedRuleId = data.id;
         }
 
-        // Add criteria
-        if (Array.isArray(rule.criteria)) {
-          for (let i = 0; i < rule.criteria.length; i++) {
-            const c = rule.criteria[i];
-            await scoringRuleRepository.createCriterion({
-              rule_id: savedRuleId,
-              name: c.name,
-              marks: parseInt(c.marks) || 0,
-              sort_order: c.sort_order ?? i,
-            });
+        // Paper Total keeps saved criteria dormant. Criteria imports update rows
+        // before removing extras so a failed write cannot erase the old setup.
+        if (entryMode === 'criteria') {
+          const oldCriteria = existing
+            ? [...(existing.scoring_criteria || [])].sort((a: any, b: any) => a.sort_order - b.sort_order)
+            : [];
+
+          for (let i = 0; i < importedCriteria.length; i++) {
+            const criterion = importedCriteria[i];
+            const criterionPayload = {
+              name: criterion.name.trim(),
+              marks: parseInt(criterion.marks),
+              sort_order: criterion.sort_order ?? i,
+            };
+            const result = oldCriteria[i]
+              ? await scoringRuleRepository.updateCriterion(oldCriteria[i].id, criterionPayload)
+              : await scoringRuleRepository.createCriterion({
+                  rule_id: savedRuleId,
+                  ...criterionPayload,
+                });
+            if (result.error) throw result.error;
+          }
+
+          for (const removedCriterion of oldCriteria.slice(importedCriteria.length)) {
+            const { error } = await scoringRuleRepository.deleteCriterion(removedCriterion.id);
+            if (error) throw error;
           }
         }
       }
@@ -191,8 +229,18 @@ export default function ScoringRulesList() {
                     <Text className="font-poppins-bold text-orange-600 text-xs">Custom</Text>
                   </View>
                 )}
+                <View className={`flex-row items-center px-2 py-1 rounded-md ${
+                  rule.entry_mode === 'total_only' ? 'bg-blue-50' : 'bg-green-50'
+                }`}>
+                  <Text className={`font-poppins-bold text-xs ${
+                    rule.entry_mode === 'total_only' ? 'text-blue-700' : 'text-green-700'
+                  }`}>
+                    {rule.entry_mode === 'total_only' ? 'Paper Total' : 'Paperless'}
+                  </Text>
+                </View>
               </View>
               
+              {rule.entry_mode !== 'total_only' && (
               <View className="mt-3 bg-gray-50 p-2 rounded-lg">
                 <Text className="font-poppins-bold text-xs text-gray-500 mb-1">
                   Criteria ({rule.scoring_criteria?.length || 0})
@@ -205,6 +253,7 @@ export default function ScoringRulesList() {
                   ))}
                 </View>
               </View>
+              )}
             </SsfCard>
           ))}
           <View className="h-20" />
@@ -222,7 +271,7 @@ export default function ScoringRulesList() {
               </TouchableOpacity>
             </View>
             <Text className="font-poppins text-xs text-gray-500 mb-3">
-              Paste the generated JSON array containing event_name, total_marks, time_limit, guidelines, and criteria.
+              Paste a JSON array containing event_name, entry_mode, total_marks, time_limit, guidelines, and criteria.
             </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-xl p-4 font-poppins text-xs h-64 text-ssf-text"
