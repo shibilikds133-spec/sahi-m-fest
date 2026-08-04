@@ -32,8 +32,14 @@ export const useOrganisations = () => {
 
   const archiveOrganisationMutation = useMutation({
     mutationFn: (orgId: string) => organisationService.archiveChildOrganisation(orgId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['childOrganisations', parentId] });
+    onSuccess: (_result, orgId) => {
+      // Remove the archived row immediately. The repository query also
+      // excludes archived_at rows, but updating the cache prevents the old
+      // row from remaining visible until the refetch completes.
+      queryClient.setQueryData<any[]>(['childOrganisations', parentId], (current = []) =>
+        current.filter((organisation) => organisation.id !== orgId)
+      );
+      queryClient.invalidateQueries({ queryKey: ['childOrganisations', parentId], refetchType: 'active' });
     },
   });
 
