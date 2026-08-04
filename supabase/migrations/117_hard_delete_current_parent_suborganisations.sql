@@ -1,6 +1,6 @@
 -- One-time cleanup requested for the current parent organisation.
--- The parent remains intact. Only its five already-archived child rows are
--- removed; historical participant/registration links are detached first.
+-- The parent remains intact. Only its archived child rows are removed;
+-- historical participant/registration links are detached first.
 
 BEGIN;
 
