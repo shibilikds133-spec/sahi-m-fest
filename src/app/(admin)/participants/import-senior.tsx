@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
+import { CollegeFestImportBlock } from '../../../components/ui/CollegeFestImportBlock';
 import { ArrowLeft, CheckCircle, AlertCircle, Play, Database, FileText, Upload } from 'lucide-react-native';
 import { useAuthStore } from '../../../core/store/authStore';
 import { databaseProvider as db } from '../../../providers/database';
@@ -21,6 +22,7 @@ export default function ImportSeniorDataset() {
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
   const festivalId = activeFestival?.id;
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
 
   const [rawText, setRawText] = useState<string>('');
   const [dataset, setDataset] = useState<JuniorParticipant[]>([]);
@@ -258,6 +260,7 @@ export default function ImportSeniorDataset() {
   }));
   const mismatchCount = conflictsList.filter(c => c.isMismatch).length;
 
+  if (isCollegeFest) return <CollegeFestImportBlock />;
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
@@ -270,10 +273,10 @@ export default function ImportSeniorDataset() {
       <SsfCard className="mb-6 bg-emerald-50 border border-emerald-200">
         <Text className="font-poppins-bold text-emerald-800 mb-2">Senior Import Rules</Text>
         <Text className="font-poppins text-xs text-emerald-700 leading-5">
-          • Normalizes all names to FULL CAPITALS.{'\n'}
-          • Prevents chest number duplication. Mismatch conflicts are flagged in RED.{'\n'}
-          • Partial-Safe Mode: imports participant and valid items, skips only invalid item codes.{'\n'}
-          • Deduplicates registrations automatically. Zero-corruption policy.
+          â€¢ Normalizes all names to FULL CAPITALS.{'\n'}
+          â€¢ Prevents chest number duplication. Mismatch conflicts are flagged in RED.{'\n'}
+          â€¢ Partial-Safe Mode: imports participant and valid items, skips only invalid item codes.{'\n'}
+          â€¢ Deduplicates registrations automatically. Zero-corruption policy.
         </Text>
       </SsfCard>
 
@@ -342,12 +345,12 @@ export default function ImportSeniorDataset() {
                 </View>
                 {internalValidation?.duplicateChests.length ? (
                   <Text className="font-poppins text-xs text-red-700 mb-1">
-                    • Duplicate Chest Numbers inside JSON: {internalValidation.duplicateChests.join(', ')}
+                    â€¢ Duplicate Chest Numbers inside JSON: {internalValidation.duplicateChests.join(', ')}
                   </Text>
                 ) : null}
                 {mismatchCount > 0 ? (
                   <Text className="font-poppins text-xs text-red-700">
-                    • Database Conflicts: {mismatchCount} chest numbers mismatch existing participants.
+                    â€¢ Database Conflicts: {mismatchCount} chest numbers mismatch existing participants.
                   </Text>
                 ) : null}
               </View>
@@ -414,7 +417,7 @@ export default function ImportSeniorDataset() {
                 <Text className="font-poppins-bold text-orange-800 text-xs mb-1">Skipped Invalid Items:</Text>
                 {importReport.invalid_items.map((it: any, index: number) => (
                   <Text key={index} className="font-poppins text-xs text-orange-700">
-                    • Chest {it.chest_number}: Item {it.item_code} ({it.error})
+                    â€¢ Chest {it.chest_number}: Item {it.item_code} ({it.error})
                   </Text>
                 ))}
               </View>
@@ -425,7 +428,7 @@ export default function ImportSeniorDataset() {
                 <Text className="font-poppins-bold text-red-800 text-xs mb-1">Errors Blocked:</Text>
                 {importReport.errors.map((err: any, index: number) => (
                   <Text key={index} className="font-poppins text-xs text-red-700">
-                    • {typeof err === 'object' ? `Chest ${err.chest_number}: ${err.error} (DB: ${err.existing_name} vs JSON: ${err.import_name})` : err}
+                    â€¢ {typeof err === 'object' ? `Chest ${err.chest_number}: ${err.error} (DB: ${err.existing_name} vs JSON: ${err.import_name})` : err}
                   </Text>
                 ))}
               </View>

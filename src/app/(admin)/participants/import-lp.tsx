@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
+import { CollegeFestImportBlock } from '../../../components/ui/CollegeFestImportBlock';
 import { ArrowLeft, CheckCircle, AlertCircle, Database, FileText, Upload } from 'lucide-react-native';
 import { useAuthStore } from '../../../core/store/authStore';
 import { databaseProvider as db } from '../../../providers/database';
@@ -48,6 +49,7 @@ export default function ImportUpperPrimaryDataset() {
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
   const festivalId = activeFestival?.id;
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
 
   const [rawText, setRawText] = useState<string>('');
   const [dataset, setDataset] = useState<UpParticipant[]>([]);
@@ -317,6 +319,7 @@ export default function ImportUpperPrimaryDataset() {
   }));
   const mismatchCount = conflictsList.filter(c => c.isMismatch).length;
 
+  if (isCollegeFest) return <CollegeFestImportBlock />;
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
@@ -329,10 +332,10 @@ export default function ImportUpperPrimaryDataset() {
       <SsfCard className="mb-6 bg-blue-50 border border-blue-200">
         <Text className="font-poppins-bold text-blue-800 mb-2">Lower Primary Rules</Text>
         <Text className="font-poppins text-xs text-blue-700 leading-5">
-          • Auto-uppercase names. Prevents chest number duplication.{'\n'}
-          • Auto-detects Girls from girls-only events without overwriting existing data.{'\n'}
-          • Event Mapping: Converts event_name to UP-0XX item codes automatically.{'\n'}
-          • Header validation strictly flags mismatch between header and actual count.
+          â€¢ Auto-uppercase names. Prevents chest number duplication.{'\n'}
+          â€¢ Auto-detects Girls from girls-only events without overwriting existing data.{'\n'}
+          â€¢ Event Mapping: Converts event_name to UP-0XX item codes automatically.{'\n'}
+          â€¢ Header validation strictly flags mismatch between header and actual count.
         </Text>
       </SsfCard>
 
@@ -402,7 +405,7 @@ export default function ImportUpperPrimaryDataset() {
                    <Text className="font-poppins-bold text-orange-800">Unmapped Events (Skipped)</Text>
                  </View>
                  {Array.from(unmappedEvents).map(ev => (
-                   <Text key={ev} className="font-poppins text-xs text-orange-700">• {ev}</Text>
+                   <Text key={ev} className="font-poppins text-xs text-orange-700">â€¢ {ev}</Text>
                  ))}
                </View>
             )}
@@ -423,12 +426,12 @@ export default function ImportUpperPrimaryDataset() {
                 </View>
                 {internalValidation?.duplicateChests.length ? (
                   <Text className="font-poppins text-xs text-red-700 mb-1">
-                    • Duplicate Chest Numbers inside JSON: {internalValidation.duplicateChests.join(', ')}
+                    â€¢ Duplicate Chest Numbers inside JSON: {internalValidation.duplicateChests.join(', ')}
                   </Text>
                 ) : null}
                 {mismatchCount > 0 ? (
                   <Text className="font-poppins text-xs text-red-700">
-                    • Database Conflicts: {mismatchCount} chest numbers mismatch existing participants.
+                    â€¢ Database Conflicts: {mismatchCount} chest numbers mismatch existing participants.
                   </Text>
                 ) : null}
               </View>
@@ -503,7 +506,7 @@ export default function ImportUpperPrimaryDataset() {
                 <Text className="font-poppins-bold text-orange-800 text-xs mb-1">Missing Item Mappings:</Text>
                 {importReport.invalid_items.map((it: any, index: number) => (
                   <Text key={index} className="font-poppins text-xs text-orange-700">
-                    • Chest {it.chest_number}: Item {it.item_code}
+                    â€¢ Chest {it.chest_number}: Item {it.item_code}
                   </Text>
                 ))}
               </View>
@@ -514,7 +517,7 @@ export default function ImportUpperPrimaryDataset() {
                 <Text className="font-poppins-bold text-red-800 text-xs mb-1">Errors Blocked:</Text>
                 {importReport.errors.map((err: any, index: number) => (
                   <Text key={index} className="font-poppins text-xs text-red-700">
-                    • {typeof err === 'object' ? `Chest ${err.chest_number}: ${err.error} (DB: ${err.existing_name} vs JSON: ${err.import_name})` : err}
+                    â€¢ {typeof err === 'object' ? `Chest ${err.chest_number}: ${err.error} (DB: ${err.existing_name} vs JSON: ${err.import_name})` : err}
                   </Text>
                 ))}
               </View>

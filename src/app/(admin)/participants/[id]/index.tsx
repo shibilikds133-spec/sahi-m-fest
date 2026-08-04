@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import { CATEGORIES } from '../../../../constants/categories';
+import { COLLEGE_FEST_CATEGORY_CODES, getCollegeFestCategoryLabel } from '../../../../core/festival/templatePolicy';
 import { SsfSelectMenu } from '../../../../components/ui/SsfSelectMenu';
 import { SsfSheet } from '../../../../components/ui/SsfSheet';
 import { SsfProfileSkeleton } from '../../../../components/ui/SsfSkeleton';
@@ -356,6 +357,29 @@ export default function ParticipantDetails() {
 
   const locked = participant.is_locked;
   const isBanned = participant.plagiarism_ban_until && new Date(participant.plagiarism_ban_until) > new Date();
+  const isCollegeFest = festival?.festival_template === 'college_fest';
+
+  const categoryOptions = isCollegeFest
+    ? [
+        { label: '-- Select Category --', value: '' },
+        ...COLLEGE_FEST_CATEGORY_CODES.map((code) => ({
+          label: `${code} - ${getCollegeFestCategoryLabel(code)}`,
+          value: code,
+        })),
+        ...(!COLLEGE_FEST_CATEGORY_CODES.includes(categoryCode as any) && categoryCode
+          ? [{ label: categoryCode, value: categoryCode }]
+          : []),
+      ]
+    : [
+        { label: '-- Select Category --', value: '' },
+        ...CATEGORIES.map((cat) => ({
+          label: `${cat.code} - ${cat.name_en}`,
+          value: cat.code,
+        })),
+        ...(!CATEGORIES.find((category) => category.code === categoryCode) && categoryCode
+          ? [{ label: categoryCode, value: categoryCode }]
+          : []),
+      ];
 
   const getStatusColor = (status: string) => {
     switch((status || 'pending').toLowerCase()) {
@@ -582,16 +606,7 @@ export default function ParticipantDetails() {
                   onValueChange={setCategoryCode}
                   placeholder="-- Select Category --"
                   accessibilityLabel="Select category"
-                  options={[
-                    { label: '-- Select Category --', value: '' },
-                    ...CATEGORIES.map((cat) => ({
-                      label: `${cat.code} - ${cat.name_en}`,
-                      value: cat.code,
-                    })),
-                    ...(!CATEGORIES.find((category) => category.code === categoryCode) && categoryCode
-                      ? [{ label: categoryCode, value: categoryCode }]
-                      : []),
-                  ]}
+                  options={categoryOptions}
                 />
               </View>
               <View className="flex-1" style={{ zIndex: 40 }}>

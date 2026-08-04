@@ -8,6 +8,8 @@ import { useBulkImport, ImportRow, ValidatedRow } from '../../../core/hooks/useB
 import { UploadCloud, FileSpreadsheet, ArrowLeft, Download, CheckCircle, AlertCircle, Edit2 } from 'lucide-react-native';
 import { useAuthStore } from '../../../core/store/authStore';
 import { participantService } from '../../../services/participantService';
+import { useFestival } from '../../../core/hooks/useFestival';
+import { CollegeFestImportBlock } from '../../../components/ui/CollegeFestImportBlock';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as XLSX from 'xlsx';
@@ -18,6 +20,10 @@ export default function ImportParticipants() {
   const { tenant_id: authTenantId } = useAuthStore();
   const tenantId = authTenantId || '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
   const festivalId = '550e8400-e29b-41d4-a716-446655440000'; 
+
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
 
   const {
     loading,
@@ -155,6 +161,8 @@ export default function ImportParticipants() {
       Alert.alert('Import Failed', err.message);
     }
   };
+
+  if (isCollegeFest) return <CollegeFestImportBlock />;
 
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">

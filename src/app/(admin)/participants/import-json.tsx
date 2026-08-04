@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
+import { CollegeFestImportBlock } from '../../../components/ui/CollegeFestImportBlock';
 import { ArrowLeft, CheckCircle, AlertCircle, Play, Database, FileText } from 'lucide-react-native';
 import { useAuthStore } from '../../../core/store/authStore';
 import { databaseProvider as db } from '../../../providers/database';
@@ -24,6 +25,7 @@ export default function ImportJuniorDataset() {
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
   const festivalId = activeFestival?.id;
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
 
   const [dataset, setDataset] = useState<JuniorParticipant[]>([]);
   const [internalValidation, setInternalValidation] = useState<ImportValidationResult | null>(null);
@@ -217,6 +219,7 @@ export default function ImportJuniorDataset() {
     }
   };
 
+  if (isCollegeFest) return <CollegeFestImportBlock />;
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
@@ -229,10 +232,10 @@ export default function ImportJuniorDataset() {
       <SsfCard className="mb-6 bg-yellow-50 border border-yellow-200">
         <Text className="font-poppins-bold text-yellow-800 mb-2">Production Safety Rules</Text>
         <Text className="font-poppins text-xs text-yellow-700 leading-5">
-          • All names are normalized to FULL CAPITALS.{'\n'}
-          • Chest number conflicts block import if names mismatch.{'\n'}
-          • Valid items are imported; invalid items are skipped without dropping the participant.{'\n'}
-          • A storage snapshot backup is created before execution.
+          â€¢ All names are normalized to FULL CAPITALS.{'\n'}
+          â€¢ Chest number conflicts block import if names mismatch.{'\n'}
+          â€¢ Valid items are imported; invalid items are skipped without dropping the participant.{'\n'}
+          â€¢ A storage snapshot backup is created before execution.
         </Text>
       </SsfCard>
 
@@ -259,7 +262,7 @@ export default function ImportJuniorDataset() {
             <Text className="font-poppins-bold text-red-700">Internal JSON Duplication Detected</Text>
           </View>
           {internalValidation.errors.map((e, i) => (
-            <Text key={i} className="font-poppins text-xs text-red-600 mb-1">• {e}</Text>
+            <Text key={i} className="font-poppins text-xs text-red-600 mb-1">â€¢ {e}</Text>
           ))}
         </SsfCard>
       )}
@@ -318,15 +321,15 @@ export default function ImportJuniorDataset() {
         ) : (
           <View className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
             <Text className="font-poppins-bold text-lg mb-2">Import Report</Text>
-            <Text className="font-poppins text-sm mb-1 text-green-700">✅ Imported Participants: {importReport.imported_participants}</Text>
-            <Text className="font-poppins text-sm mb-1 text-green-700">✅ Imported Registrations: {importReport.imported_registrations}</Text>
-            <Text className="font-poppins text-sm mb-1 text-gray-500">⏭️ Skipped Participants: {importReport.skipped_participants}</Text>
-            <Text className="font-poppins text-sm mb-1 text-gray-500">⏭️ Skipped Registrations: {importReport.skipped_registrations}</Text>
+            <Text className="font-poppins text-sm mb-1 text-green-700">âœ… Imported Participants: {importReport.imported_participants}</Text>
+            <Text className="font-poppins text-sm mb-1 text-green-700">âœ… Imported Registrations: {importReport.imported_registrations}</Text>
+            <Text className="font-poppins text-sm mb-1 text-gray-500">â­ï¸ Skipped Participants: {importReport.skipped_participants}</Text>
+            <Text className="font-poppins text-sm mb-1 text-gray-500">â­ï¸ Skipped Registrations: {importReport.skipped_registrations}</Text>
             {importReport.invalid_items?.length > 0 && (
-              <Text className="font-poppins text-sm mb-1 text-orange-600">⚠️ Invalid Items Skipped: {importReport.invalid_items.length}</Text>
+              <Text className="font-poppins text-sm mb-1 text-orange-600">âš ï¸ Invalid Items Skipped: {importReport.invalid_items.length}</Text>
             )}
             {importReport.errors?.length > 0 && (
-              <Text className="font-poppins text-sm mb-3 text-red-600">❌ Errors: {importReport.errors.length}</Text>
+              <Text className="font-poppins text-sm mb-3 text-red-600">âŒ Errors: {importReport.errors.length}</Text>
             )}
             <SsfButton 
               label="Download JSON Report" 
