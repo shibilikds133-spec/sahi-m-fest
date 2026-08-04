@@ -1,3 +1,9 @@
+import {
+  getCollegeFestCategoryLabel,
+  normalizeCollegeFestCategoryInput,
+  type FestivalTemplate,
+} from '../core/festival/templatePolicy';
+
 export const CATEGORIES = [
   {
     code: 'LP',
@@ -77,3 +83,21 @@ export const CATEGORIES = [
     gender: 'girls'
   }
 ];
+
+const SAHITHYOLSAV_CATEGORY_ALIASES: Record<string, string> = {
+  JUNIOR: 'JR',
+  SENIOR: 'SR',
+  CAMPUS: 'CA',
+  GENERAL: 'GN',
+};
+
+export function getCategoryLabel(code: string, template?: FestivalTemplate): string {
+  if (template === 'college_fest') {
+    const normalizedCode = normalizeCollegeFestCategoryInput(code);
+    return normalizedCode ? getCollegeFestCategoryLabel(normalizedCode) : code;
+  }
+
+  const normalizedCode = code.trim().toUpperCase();
+  const lookupCode = SAHITHYOLSAV_CATEGORY_ALIASES[normalizedCode] ?? normalizedCode;
+  return CATEGORIES.find((category) => category.code === lookupCode)?.name_en ?? code;
+}

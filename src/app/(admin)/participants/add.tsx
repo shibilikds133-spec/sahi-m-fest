@@ -6,8 +6,14 @@ import { SsfButton } from '../../../components/ui/SsfButton';
 import { participantService } from '../../../services/participantService';
 import { useAuthStore } from '../../../core/store/authStore';
 import { getCategory, validateParticipant, calculateAge, getCutoffDate, DEFAULT_FESTIVAL_YEAR, checkClassAgeConsistency, getCategoryDOBRange, type CategoryCode } from '../../../core/utils/participantValidation';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye } from 'lucide-react-native';
 import { useFestival } from '../../../core/hooks/useFestival';
+import {
+  COLLEGE_FEST_CATEGORY_CODES,
+  CollegeFestCategoryCode,
+  getCollegeFestCategoryLabel,
+  isCollegeFestCategory,
+} from '../../../core/festival/templatePolicy';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -36,6 +42,11 @@ const CATEGORY_LABELS: Record<CategoryCode, string> = {
   GENERAL: 'GENERAL – Open Category',
 };
 
+function getCategoryLabel(code: CategoryCode | CollegeFestCategoryCode): string {
+  if (isCollegeFestCategory(code)) return getCollegeFestCategoryLabel(code);
+  return CATEGORY_LABELS[code] || code;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -62,6 +73,8 @@ export default function AddParticipant() {
     : tenant_id;
   const festivalId = activeFestival?.id;
   const festivalYear = activeFestival?.festival_year ?? DEFAULT_FESTIVAL_YEAR;
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
+
 
   // Form state
   const [name, setName] = useState('');
@@ -69,6 +82,7 @@ export default function AddParticipant() {
   const [classStd, setClassStd] = useState(''); // '1'–'12'
   const [educationType, setEducationType] = useState(''); // campus type
   const [manualCategory, setManualCategory] = useState<'JUNIOR' | 'SENIOR' | ''>(''); // explicit J/S pick
+  const [collegeCategory, setCollegeCategory] = useState<CollegeFestCategoryCode | ''>('');
   const [phone, setPhone] = useState('');
   const [manualChestNumber, setManualChestNumber] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
@@ -85,7 +99,7 @@ export default function AddParticipant() {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
   // Derived / display state
-  const [resolvedCategory, setResolvedCategory] = useState<CategoryCode | null>(null);
+  const [resolvedCategory, setResolvedCategory] = useState<CategoryCode | CollegeFestCategoryCode | null>(null);
   const [categoryError, setCategoryError] = useState('');
   const [ageClassWarning, setAgeClassWarning] = useState('');
   const dobInputRef = useRef<any>(null);
@@ -135,6 +149,11 @@ export default function AddParticipant() {
     setCategoryError('');
     setResolvedCategory(null);
     setAgeClassWarning('');
+
+    if (isCollegeFest) {
+      setResolvedCategory(collegeCategory ? collegeCategory : null);
+      return;
+    }
 
     // If user manually picked JUNIOR/SENIOR, use that directly
     if (manualCategory && !classStd && !educationType) {
@@ -188,7 +207,7 @@ export default function AddParticipant() {
     } catch {
       // Not enough info yet — that's fine
     }
-  }, [dob, classStd, educationType, manualCategory, festivalYear]);
+  }, [dob, classStd, educationType, manualCategory, festivalYear, isCollegeFest, collegeCategory]);
 
   // ─── Save Handler ───────────────────────────────────────────────────────────
 
@@ -217,9 +236,16 @@ export default function AddParticipant() {
     }
 
     // Validate and get category
-    let category: CategoryCode;
+    let category: CategoryCode | CollegeFestCategoryCode;
     try {
-      if (manualCategory && !classStd && !educationType) {
+      if (isCollegeFest) {
+        const selected = collegeCategory;
+        if (!selected || !isCollegeFestCategory(selected)) {
+          Alert.alert('Validation Error', 'Please select Sub Junior, Junior, or Senior.');
+          return;
+        }
+        category = selected;
+      } else if (manualCategory && !classStd && !educationType) {
         // Manual JUNIOR/SENIOR selection — DOB is required for chest number logic
         if (!dob) {
           Alert.alert('Validation Error', `Date of Birth is required for ${manualCategory} category.`);
@@ -300,7 +326,7 @@ export default function AddParticipant() {
       if (Platform.OS === 'web') window.alert('Error: ' + msg);
       else Alert.alert('Error', msg);
     } else {
-      const successMsg = `${name} saved under ${CATEGORY_LABELS[category] || category}.\nChest No: ${chest_number}`;
+      const successMsg = `${name} saved under ${getCategoryLabel(category)}.\nChest No: ${chest_number}`;
       const photoMsg = photoUploadError
         ? `\n\nPhoto upload failed, but the participant record was saved.\n${photoUploadError.message || 'Please retry from the participant profile.'}`
         : '';
@@ -440,7 +466,27 @@ export default function AddParticipant() {
           </View>
         </View>
 
+        {isCollegeFest && (
+          <View>
+            <Text className="font-poppins text-ssf-text-muted mb-2">Category *</Text>
+            <View className="flex-row gap-2">
+              {COLLEGE_FEST_CATEGORY_CODES.map(category => (
+                <TouchableOpacity
+                  key={category}
+                  className={`flex-1 px-2 py-3 rounded-xl border items-center ${collegeCategory === category ? 'bg-ssf-primary border-ssf-primary' : 'bg-ssf-surface border-ssf-border'}`}
+                  onPress={() => setCollegeCategory(category)}
+                >
+                  <Text className={`font-poppins-bold text-xs ${collegeCategory === category ? 'text-white' : 'text-ssf-text'}`}>
+                    {getCollegeFestCategoryLabel(category)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Class (for school students) */}
+        {!isCollegeFest && (
         <View>
           <Text className="font-poppins text-ssf-text-muted mb-2">Class (School Students)</Text>
           <View className="flex-row flex-wrap gap-2">
@@ -457,9 +503,10 @@ export default function AddParticipant() {
             ))}
           </View>
         </View>
+        )}
 
         {/* Education Type (College/Campus) */}
-        <View>
+        {!isCollegeFest && <View>
           <Text className="font-poppins text-ssf-text-muted mb-2">Education Type (Campus Students)</Text>
           <View className="flex-row flex-wrap gap-2">
             {CAMPUS_TYPES.map(type => (
@@ -474,10 +521,10 @@ export default function AddParticipant() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </View>}
 
         {/* Junior / Senior (Youth / General) */}
-        <View>
+        {!isCollegeFest && <View>
           <Text className="font-poppins text-ssf-text-muted mb-1">Junior / Senior (Youth Category)</Text>
           <Text className="font-poppins text-xs text-ssf-text-muted mb-2 italic">
             Select if participant is NOT a school student and NOT a college student.
@@ -522,7 +569,7 @@ export default function AddParticipant() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </View>}
 
         {/* Auto-resolved Category */}
         <View className={`rounded-xl p-4 border ${
@@ -530,21 +577,23 @@ export default function AddParticipant() {
             ? 'bg-red-50 border-red-400'
             : resolvedCategory ? 'bg-green-50 border-green-400' : 'bg-ssf-surface border-ssf-border'
         }`}>
-          <Text className="font-poppins text-ssf-text-muted mb-1">Auto-Assigned Category</Text>
+          <Text className="font-poppins text-ssf-text-muted mb-1">{isCollegeFest ? 'Selected Category' : 'Auto-Assigned Category'}</Text>
           {resolvedCategory && !ageClassWarning ? (
             <Text className="font-poppins-bold text-green-700 text-base">
-              ✅ {CATEGORY_LABELS[resolvedCategory] || resolvedCategory}
+              ✅ {getCategoryLabel(resolvedCategory)}
             </Text>
           ) : ageClassWarning ? (
             <>
               <Text className="font-poppins-bold text-red-600 text-base">
-                ❌ {CATEGORY_LABELS[resolvedCategory!] || resolvedCategory}
+                ❌ {getCategoryLabel(resolvedCategory!)}
               </Text>
               <Text className="font-poppins text-xs text-red-600 mt-2">{ageClassWarning}</Text>
             </>
           ) : (
             <Text className="font-poppins text-xs text-ssf-text-muted italic">
-              Enter DOB + Class or Education Type to auto-assign category
+              {isCollegeFest
+                ? 'Select Sub Junior, Junior, or Senior'
+                : 'Enter DOB + Class or Education Type to auto-assign category'}
             </Text>
           )}
           {categoryError ? (

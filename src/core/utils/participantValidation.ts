@@ -1,10 +1,30 @@
 import { supabase } from '../config/supabase';
+import type {
+  CollegeFestCategoryCode,
+  FestivalTemplate,
+} from '../festival/templatePolicy';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type CategoryCode = 'LP' | 'UP' | 'HS' | 'HSS' | 'JUNIOR' | 'SENIOR' | 'CAMPUS' | 'GENERAL';
+export type SahithyolsavCategoryCode =
+  | 'LP'
+  | 'UP'
+  | 'HS'
+  | 'HSS'
+  | 'JUNIOR'
+  | 'SENIOR'
+  | 'CAMPUS'
+  | 'GENERAL';
+
+export type CategoryCode<
+  TTemplate extends FestivalTemplate = 'sahithyolsav',
+> = TTemplate extends 'college_fest'
+  ? CollegeFestCategoryCode
+  : SahithyolsavCategoryCode;
+
+export type FestivalCategoryCode = CategoryCode<FestivalTemplate>;
 
 export type EducationType =
   | 'degree'
@@ -145,7 +165,7 @@ export function calculateAge(
 export function getCategory(
   data: ParticipantData,
   festivalYear: number = DEFAULT_FESTIVAL_YEAR
-): CategoryCode {
+): SahithyolsavCategoryCode {
   const { class_std, dob, education_type } = data;
 
   // ── 1. CAMPUS override ────────────────────────────────────────────────────
@@ -242,7 +262,7 @@ export function checkClassAgeConsistency(
 export function validateParticipant(
   data: ParticipantData,
   festivalYear: number = DEFAULT_FESTIVAL_YEAR
-): CategoryCode {
+): SahithyolsavCategoryCode {
 
   // ── Step 1: Determine category first ──────────────────────────────────────
   // For CAMPUS and class-based, DOB is NOT required.

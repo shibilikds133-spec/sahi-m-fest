@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { festivalSettingsService } from '../../services/festivalSettingsService';
 import { useAuthStore } from '../store/authStore';
+import type { FestivalTemplate } from '../festival/templatePolicy';
 
 type FestivalCalendarRecord = {
   id: string;
@@ -13,6 +14,7 @@ type FestivalCalendarRecord = {
   registration_open?: string | null;
   registration_close?: string | null;
   is_active: boolean;
+  festival_template: FestivalTemplate;
 };
 
 type PointsConfigRecord = {
