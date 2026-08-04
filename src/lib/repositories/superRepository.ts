@@ -25,7 +25,11 @@ export const superRepository = {
     return databaseProvider.revokeTenantAccess(orgId);
   },
 
-  setupTenantRecords(payload: Record<string, unknown>) {
-    return databaseProvider.setupTenantRecords(payload);
-  }
+  disableTenantAccess(orgId: string, reason?: string) {
+    return databaseProvider.disableTenantAccess(orgId, reason);
+  },
+
+  enableTenantAccess(orgId: string, reason?: string) {
+    return databaseProvider.enableTenantAccess(orgId, reason);
+  },
 };

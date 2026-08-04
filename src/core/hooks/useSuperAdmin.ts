@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { superService } from '../../services/superService';
+import { tenantProvisioningService, ProvisionRootTenantInput } from '../../services/tenantProvisioningService';
 
 export function useSuperAdmin() {
   const queryClient = useQueryClient();
@@ -42,11 +43,32 @@ export function useSuperAdmin() {
     },
   });
 
-  const useSetupTenantRecords = () => useMutation({
-    mutationFn: (payload: Record<string, unknown>) => superService.setupTenantRecords(payload),
+  const useDisableTenantAccess = () => useMutation({
+    mutationFn: (payload: { orgId: string; reason?: string }) => superService.disableTenantAccess(payload.orgId, payload.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superadmin', 'tenants'] });
     },
+  });
+
+  const useEnableTenantAccess = () => useMutation({
+    mutationFn: (payload: { orgId: string; reason?: string }) => superService.enableTenantAccess(payload.orgId, payload.reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'tenants'] });
+    },
+  });
+
+  const useProvisionRootTenant = () => useMutation({
+    mutationFn: (input: ProvisionRootTenantInput) => tenantProvisioningService.provisionRootTenant(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'tenants'] });
+    },
+  });
+
+  const useResetRootTenantCredential = () => useMutation({
+    mutationFn: (organisationId: string) => tenantProvisioningService.resetCredential({
+      targetType: 'root_admin',
+      organisationId,
+    }),
   });
 
   return {
@@ -56,6 +78,9 @@ export function useSuperAdmin() {
     useDeleteGlobalOrganisation,
     useTenantAccounts,
     useRevokeTenantAccess,
-    useSetupTenantRecords,
+    useDisableTenantAccess,
+    useEnableTenantAccess,
+    useProvisionRootTenant,
+    useResetRootTenantCredential,
   };
 }

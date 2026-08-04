@@ -133,7 +133,8 @@ export interface DatabaseProvider {
   deleteGlobalOrganisation(id: string): Promise<QueryResult<void>>;
   listTenantAccounts<T>(): Promise<ListResult<T>>;
   revokeTenantAccess(orgId: string): Promise<QueryResult<void>>;
-  setupTenantRecords(payload: Record<string, unknown>): Promise<QueryResult<void>>;
+  disableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>>;
+  enableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>>;
 
   // Bulk Unit Reassignment Methods
   previewBulkUnitAssignment(participantIds: string[], targetUnitId: string, tenantId: string): Promise<ListResult<any>>;

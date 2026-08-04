@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-import { getSupabaseCredentials } from '../core/config/supabase';
 import { superRepository } from '../lib/repositories/superRepository';
 
 const throwIfError = (error: { message: string } | null) => {
@@ -43,32 +41,13 @@ export const superService = {
     throwIfError(error);
   },
 
-  async setupTenantRecords(payload: Record<string, unknown>) {
-    // 1. Create isolated auth account so we don't log out the active superadmin session
-    const { supabaseUrl, supabaseKey } = getSupabaseCredentials();
-    const dummyClient = createClient(
-      supabaseUrl,
-      supabaseKey,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
-    
-    const { data: signUpData, error: signUpError } = await dummyClient.auth.signUp({
-      email: payload.p_admin_email as string,
-      password: payload.p_admin_pass as string,
-      options: { data: { full_name: `${payload.p_org_name} Admin` } },
-    });
-
-    if (signUpError || !signUpData?.user) {
-      throw new Error(`Auth Error: ${signUpError?.message || 'Unknown sign up error'}`);
-    }
-
-    // 2. Link the records via RPC
-    const finalPayload = {
-      ...payload,
-      p_user_id: signUpData.user.id
-    };
-
-    const { error } = await superRepository.setupTenantRecords(finalPayload);
+  async disableTenantAccess(orgId: string, reason?: string) {
+    const { error } = await superRepository.disableTenantAccess(orgId, reason);
     throwIfError(error);
-  }
+  },
+
+  async enableTenantAccess(orgId: string, reason?: string) {
+    const { error } = await superRepository.enableTenantAccess(orgId, reason);
+    throwIfError(error);
+  },
 };

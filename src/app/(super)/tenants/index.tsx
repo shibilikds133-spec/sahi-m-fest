@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSuperAdmin } from '../../../core/hooks/useSuperAdmin';
+import type { FestivalTemplate } from '../../../lib/repositories/provisioningRepository';
+import { FEATURE_FLAGS } from '../../../core/config/features';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import {
   ArrowLeft, Users, ShieldCheck, ShieldAlert, X, RefreshCw,
-  Building2, Map, GitBranch, Landmark, Flag, Eye, EyeOff,
-  Mail, KeyRound, Info, ChevronRight, Copy, ExternalLink, Trash2,
+  Building2, Map, GitBranch, Landmark, Flag,
+  Mail, KeyRound, Info, ChevronRight, Copy, ExternalLink,
 } from 'lucide-react-native';
 
 const C = {
@@ -37,7 +39,7 @@ interface Org {
   org_type: OrgType;
   tenant_id: string | null;
   admin_email?: string | null;
-  admin_password_temp?: string | null;
+  access_disabled?: boolean;
 }
 
 const ORG_TYPE_CONFIG: Record<OrgType, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
@@ -55,18 +57,20 @@ function DetailModal({ visible, onClose, onComplete, org }: {
   onComplete: () => void; 
   org: Org | null 
 }) {
-  const [showPass, setShowPass]       = useState(false);
   const [copied, setCopied]           = useState(false);
   const [copiedTenantId, setCopiedTenantId] = useState(false);
-  const [revoking, setRevoking]       = useState(false);
-  const { useRevokeTenantAccess } = useSuperAdmin();
-  const revokeMutation = useRevokeTenantAccess();
+  const [busy, setBusy]               = useState(false);
+  const { useDisableTenantAccess, useEnableTenantAccess, useResetRootTenantCredential } = useSuperAdmin();
+  const disableMutation = useDisableTenantAccess();
+  const enableMutation = useEnableTenantAccess();
+  const resetMutation = useResetRootTenantCredential();
 
   if (!org) return null;
   const cfg = ORG_TYPE_CONFIG[org.org_type];
+  const isDisabled = org.access_disabled === true;
 
   const handleCopy = () => {
-    const text = `Email: ${org.admin_email ?? '—'}\nPassword: ${org.admin_password_temp ?? '—'}\nTenant ID: ${org.tenant_id ?? '—'}`;
+    const text = `Email: ${org.admin_email ?? '—'}\nTenant ID: ${org.tenant_id ?? '—'}`;
     if (Platform.OS === 'web') {
       navigator.clipboard?.writeText(text).then(() => {
         setCopied(true);
@@ -100,32 +104,110 @@ function DetailModal({ visible, onClose, onComplete, org }: {
     }
   };
 
-  const handleRevoke = async () => {
-    const performRevoke = async () => {
+  const performDisable = async () => {
+    try {
+      setBusy(true);
+      await disableMutation.mutateAsync({ orgId: org.id });
+      if (Platform.OS === 'web') window.alert('Tenant access disabled. Festival data and history are preserved.');
+      else Alert.alert('Success', 'Tenant access disabled. Festival data and history are preserved.');
+      onComplete();
+      onClose();
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(`Error: ${error.message}`);
+      else Alert.alert('Error', error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDisable = async () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Disable access for ${org.name}? This disables tenant access. Festival data and history will be preserved. This action can be reversed.`)) {
+        await performDisable();
+      }
+    } else {
+      Alert.alert(
+        'Disable Access',
+        `Disable access for ${org.name}? This disables tenant access. Festival data and history will be preserved. This action can be reversed.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Disable Access', style: 'destructive', onPress: performDisable },
+        ]
+      );
+    }
+  };
+
+  const performEnable = async () => {
+    try {
+      setBusy(true);
+      await enableMutation.mutateAsync({ orgId: org.id });
+      if (Platform.OS === 'web') window.alert('Tenant access re-enabled.');
+      else Alert.alert('Success', 'Tenant access re-enabled.');
+      onComplete();
+      onClose();
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(`Error: ${error.message}`);
+      else Alert.alert('Error', error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleEnable = async () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Re-enable access for ${org.name}? Festival data and history will be preserved.`)) {
+        await performEnable();
+      }
+    } else {
+      Alert.alert(
+        'Re-enable Access',
+        `Re-enable access for ${org.name}? Festival data and history will be preserved.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Re-enable Access', style: 'destructive', onPress: performEnable },
+        ]
+      );
+    }
+  };
+
+  const handleResetPassword = async () => {
+    const runReset = async () => {
       try {
-        setRevoking(true);
-        await revokeMutation.mutateAsync(org.id);
-        Platform.OS === 'web' ? window.alert('Access revoked successfully.') : Alert.alert('Success', 'Access revoked successfully.');
-        onComplete();
-        onClose();
+        setBusy(true);
+        const res = await resetMutation.mutateAsync(org.id);
+        const loginId = res?.login_identifier || org.admin_email || '—';
+        const auditNote = res?.audit_recorded === false ? '\n\nWARNING: the password was reset but the audit record could not be written.' : '';
+        const displayMsg = `Password reset successful!\n\nLogin Identifier: ${loginId}\nTemporary password: ${res?.temporary_password}${auditNote}\n\nThis password is shown once and is not stored. Deliver it securely to the admin and ask them to change it.`;
+        if (Platform.OS === 'web') {
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(`Login Identifier: ${loginId}\nTemporary password: ${res?.temporary_password}`);
+          }
+          window.alert(displayMsg);
+        } else {
+          Alert.alert('Credential reset complete', displayMsg, [
+            { text: 'Copy credentials', onPress: () => Clipboard.setString(`Login Identifier: ${loginId}\nTemporary password: ${res?.temporary_password}`) },
+            { text: 'Done' },
+          ]);
+        }
       } catch (error: any) {
-        Platform.OS === 'web' ? window.alert(`Error: ${error.message}`) : Alert.alert('Error', error.message);
+        if (Platform.OS === 'web') window.alert(`Error: ${error.message}`);
+        else Alert.alert('Error', error.message);
       } finally {
-        setRevoking(false);
+        setBusy(false);
       }
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm(`Are you sure you want to REVOKE access for ${org.name}? This will delete their login account and all associated tenant data permanently.`)) {
-        await performRevoke();
+      if (window.confirm(`Reset password for ${org.name}? A new temporary password will be shown once.`)) {
+        await runReset();
       }
     } else {
       Alert.alert(
-        'Confirm Revocation',
-        `Are you sure you want to REVOKE access for ${org.name}? This will delete their login account permanently.`,
+        'Reset Password',
+        `Reset password for ${org.name}? A new temporary password will be shown once.`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Revoke Access', style: 'destructive', onPress: performRevoke },
+          { text: 'Reset', style: 'destructive', onPress: runReset },
         ]
       );
     }
@@ -147,8 +229,17 @@ function DetailModal({ visible, onClose, onComplete, org }: {
               <View>
                 <Text style={{ color: C.text, fontFamily: 'Poppins_900Black', fontSize: 18 }}>{org.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <ShieldCheck size={12} color={C.green} />
-                  <Text style={{ color: C.green, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>Active Tenant</Text>
+                  {isDisabled ? (
+                    <>
+                      <ShieldAlert size={12} color={C.danger} />
+                      <Text style={{ color: C.danger, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>Disabled Tenant</Text>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={12} color={C.green} />
+                      <Text style={{ color: C.green, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>Active Tenant</Text>
+                    </>
+                  )}
                 </View>
               </View>
             </View>
@@ -186,23 +277,25 @@ function DetailModal({ visible, onClose, onComplete, org }: {
             </Text>
           </View>
 
-          {/* Password */}
-          <Text style={{ color: C.muted, fontFamily: 'Poppins_700Bold', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>
-            Admin Password <Text style={{ color: C.danger, fontSize: 9 }}>(TEST ONLY)</Text>
-          </Text>
-          <View style={{ backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <KeyRound size={16} color={C.muted} />
-            <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 15, flex: 1 }}>
-              {org.admin_password_temp
-                ? (showPass ? org.admin_password_temp : '••••••••')
-                : '—'}
+          {/* Reset Password */}
+            <Text style={{ color: C.muted, fontFamily: 'Poppins_700Bold', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>
+              Admin Password
             </Text>
-            {org.admin_password_temp && (
-              <TouchableOpacity onPress={() => setShowPass(v => !v)}>
-                {showPass ? <EyeOff size={18} color={C.muted} /> : <Eye size={18} color={C.muted} />}
-              </TouchableOpacity>
-            )}
-          </View>
+            <View style={{ backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <KeyRound size={16} color={C.muted} />
+              <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 15, flex: 1 }}>
+                ••••••••
+              </Text>
+              {FEATURE_FLAGS.ENABLE_ONBOARDING ? (
+                <TouchableOpacity onPress={handleResetPassword} disabled={busy}>
+                  <RefreshCw size={18} color={C.muted} />
+                </TouchableOpacity>
+              ) : (
+                <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', fontSize: 11 }}>
+                  Unavailable
+                </Text>
+              )}
+            </View>
 
           {/* Action Buttons */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
@@ -229,29 +322,31 @@ function DetailModal({ visible, onClose, onComplete, org }: {
             )}
           </View>
 
-          {/* Revoke Access Button */}
+          {/* Disable / Re-enable Access Button */}
           <TouchableOpacity
-            onPress={handleRevoke}
-            disabled={revoking}
+            onPress={isDisabled ? handleEnable : handleDisable}
+            disabled={busy}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              backgroundColor: C.dangerBg,
+              backgroundColor: isDisabled ? C.greenBg : C.dangerBg,
               padding: 13,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: C.danger + '50',
+              borderColor: (isDisabled ? C.green : C.danger) + '50',
               marginBottom: 20,
             }}
           >
-            {revoking ? (
-              <ActivityIndicator size="small" color={C.danger} />
+            {busy ? (
+              <ActivityIndicator size="small" color={isDisabled ? C.green : C.danger} />
             ) : (
               <>
-                <Trash2 size={16} color={C.danger} />
-                <Text style={{ color: C.danger, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Revoke Access & Delete Account</Text>
+                <ShieldAlert size={16} color={isDisabled ? C.green : C.danger} />
+                <Text style={{ color: isDisabled ? C.green : C.danger, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>
+                  {isDisabled ? 'Re-enable Access' : 'Disable Access'}
+                </Text>
               </>
             )}
           </TouchableOpacity>
@@ -260,7 +355,7 @@ function DetailModal({ visible, onClose, onComplete, org }: {
           <View style={{ backgroundColor: 'rgba(251,191,36,0.08)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.accent + '30', flexDirection: 'row', gap: 8 }}>
             <Info size={16} color={C.accent} style={{ marginTop: 1 }} />
             <Text style={{ color: C.accent, fontFamily: 'Poppins_400Regular', fontSize: 12, flex: 1 }}>
-              Use "Open Login" in a new tab to test without losing your superadmin session.
+              Use &quot;Open Login&quot; in a new tab to test without losing your superadmin session.
             </Text>
           </View>
         </Animated.View>
@@ -270,46 +365,116 @@ function DetailModal({ visible, onClose, onComplete, org }: {
 }
 
 // ─── Onboard Modal ────────────────────────────────────────────────────
-function OnboardModal({ visible, onClose, onComplete, org, setupMutation }: {
-  visible: boolean; onClose: () => void; onComplete: () => void; org: Org | null; setupMutation: any;
+function OnboardModal({ visible, onClose, onComplete, org, provisionMutation }: {
+  visible: boolean; onClose: () => void; onComplete: () => void; org: Org | null; provisionMutation: any;
 }) {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [saving, setSaving]     = useState(false);
+  const [email, setEmail]      = useState('');
+  const [phase, setPhase]      = useState<'idle' | 'provisioning' | 'success' | 'failed'>('idle');
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [loginIdentifier, setLoginIdentifier] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [festivalTemplate, setFestivalTemplate] = useState<FestivalTemplate>('sahithyolsav');
 
-  useEffect(() => { if (visible) { setEmail(''); setPassword(''); setShowPass(false); } }, [visible]);
+  useEffect(() => {
+    if (visible) {
+      setEmail(''); setPhase('idle'); setTempPassword(null); setLoginIdentifier(null); setErrorMsg('');
+      setFestivalTemplate('sahithyolsav');
+    }
+  }, [visible]);
 
   const handleSave = async () => {
     if (!org) return;
-    if (!email.trim() || !password.trim()) {
-      Platform.OS === 'web' ? window.alert('Please enter both email and password.') : Alert.alert('Validation', 'Please enter both email and password.');
+    if (!email.trim()) {
+      if (Platform.OS === 'web') {
+        window.alert('Please enter the admin email.');
+      } else {
+        Alert.alert('Validation', 'Please enter the admin email.');
+      }
       return;
     }
-    if (password.length < 6) {
-      Platform.OS === 'web' ? window.alert('Password must be at least 6 characters.') : Alert.alert('Validation', 'Password must be at least 6 characters.');
-      return;
-    }
+    setErrorMsg('');
     try {
-      await setupMutation.mutateAsync({
-        p_org_id:       org.id,
-        p_org_name:     org.name,
-        p_org_type:     org.org_type,
-        p_admin_email:  email.trim().toLowerCase(),
-        p_admin_pass:   password,
+      // Trusted endpoint flow: creates the Auth user server-side, generates a
+      // temporary password (returned once, never stored) and finalises the
+      // database link transactionally. Success is only claimed after linking.
+      setPhase('provisioning');
+      const result = await provisionMutation.mutateAsync({
+        orgId: org.id,
+        orgName: org.name,
+        orgType: org.org_type,
+        adminEmail: email.trim().toLowerCase(),
+        festivalTemplate,
       });
-
-      Platform.OS === 'web'
-        ? window.alert(`✅ Tenant account created!\nEmail: ${email}\nPassword: ${password}`)
-        : Alert.alert('Success', `Tenant created!\nEmail: ${email}\nPassword: ${password}`);
-      onComplete();
-      onClose();
+      setPhase('success');
+      setTempPassword(result?.temporary_password ?? null);
+      setLoginIdentifier(result?.login_identifier ?? email.trim().toLowerCase());
     } catch (error: any) {
-      Platform.OS === 'web' ? window.alert(`Error: ${error.message}`) : Alert.alert('Error', error.message);
+      setPhase('failed');
+      setErrorMsg(error.message);
     }
   };
 
   if (!org) return null;
+
+  const renderStatus = () => {
+    if (phase === 'provisioning') {
+      return (
+        <View style={{ alignItems: 'center', paddingVertical: 8, marginBottom: 16 }}>
+          <ActivityIndicator color={C.accent} />
+          <Text style={{ color: C.text, fontFamily: 'Poppins_600SemiBold', fontSize: 13, marginTop: 10 }}>
+            Creating account and linking organisation…
+          </Text>
+          <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 4 }}>
+            Account is only usable after linking completes.
+          </Text>
+        </View>
+      );
+    }
+    if (phase === 'success') {
+      return (
+        <View style={{ backgroundColor: C.greenBg, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: C.green + '40', marginBottom: 16 }}>
+          <Text style={{ color: C.green, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Completed — account linked</Text>
+          {tempPassword ? (
+            <View>
+              <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 8, lineHeight: 20 }}>
+                Login identifier: <Text style={{ fontFamily: 'Poppins_700Bold', color: C.accent }}>{loginIdentifier}</Text>{'\n'}
+                Temporary password (shown once): <Text style={{ fontFamily: 'Poppins_700Bold', color: C.accent }}>{tempPassword}</Text>{'\n'}
+                <Text style={{ color: C.muted, fontSize: 12 }}>Please deliver it securely. It is not stored anywhere.</Text>
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  const credentials = `Login Identifier: ${loginIdentifier}\nTemporary password: ${tempPassword}`;
+                  if (Platform.OS === 'web') navigator.clipboard?.writeText(credentials);
+                  else Clipboard.setString(credentials);
+                }}
+                style={{ marginTop: 10, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 9, backgroundColor: C.greenBg, borderWidth: 1, borderColor: C.green + '50' }}
+              >
+                <Text style={{ color: C.green, fontFamily: 'Poppins_700Bold', fontSize: 12 }}>Copy credentials</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 8 }}>
+              The account was created previously for this organisation and is already linked.
+            </Text>
+          )}
+        </View>
+      );
+    }
+    if (phase === 'failed') {
+      return (
+        <View style={{ backgroundColor: C.dangerBg, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: C.danger + '40', marginBottom: 16 }}>
+          <Text style={{ color: C.danger, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Failed safely</Text>
+          <Text style={{ color: C.text, fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 6, lineHeight: 19 }}>
+            {errorMsg || 'The provisioning operation failed. No account was left behind — retry below.'}
+          </Text>
+          <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 6 }}>
+            Retrying continues the same safe operation — it will not create a duplicate account.
+          </Text>
+        </View>
+      );
+    }
+    return null;
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -333,28 +498,58 @@ function OnboardModal({ visible, onClose, onComplete, org, setupMutation }: {
             value={email} onChangeText={setEmail}
             placeholder="e.g. admin@unit.com" placeholderTextColor={C.muted}
             autoCapitalize="none" keyboardType="email-address"
+            editable={phase !== 'provisioning'}
             style={{ backgroundColor: C.bg, color: C.text, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, fontFamily: 'Poppins_400Regular', fontSize: 15, marginBottom: 20 }}
           />
 
-          <Text style={{ color: C.muted, fontFamily: 'Poppins_700Bold', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>Initial Password</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.border, marginBottom: 30 }}>
-            <TextInput
-              value={password} onChangeText={setPassword}
-              placeholder="Min 6 characters" placeholderTextColor={C.muted}
-              secureTextEntry={!showPass}
-              style={{ flex: 1, color: C.text, padding: 14, fontFamily: 'Poppins_400Regular', fontSize: 15 }}
-            />
-            <TouchableOpacity onPress={() => setShowPass(v => !v)} style={{ paddingHorizontal: 14 }}>
-              {showPass ? <EyeOff size={20} color={C.muted} /> : <Eye size={20} color={C.muted} />}
-            </TouchableOpacity>
+          <Text style={{ color: C.muted, fontFamily: 'Poppins_700Bold', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>Festival Template</Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+            {([
+              { value: 'sahithyolsav', label: 'Sahithyolsav' },
+              { value: 'college_fest', label: 'College Fest' },
+            ] as { value: FestivalTemplate; label: string }[]).map(option => (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => setFestivalTemplate(option.value)}
+                disabled={phase === 'provisioning'}
+                style={{ flex: 1, padding: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: festivalTemplate === option.value ? C.green : C.border, backgroundColor: festivalTemplate === option.value ? C.greenBg : C.bg }}
+              >
+                <Text style={{ color: festivalTemplate === option.value ? C.green : C.text, fontFamily: 'Poppins_700Bold', fontSize: 12 }}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          <TouchableOpacity onPress={handleSave} disabled={setupMutation.isPending}
-            style={{ backgroundColor: setupMutation.isPending ? C.border : C.green, padding: 16, borderRadius: 14, alignItems: 'center' }}>
-            {setupMutation.isPending ? <ActivityIndicator color={C.text} /> : (
-              <Text style={{ color: '#000', fontFamily: 'Poppins_700Bold', fontSize: 15 }}>Create Tenant Account</Text>
+
+          <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', fontSize: 12, marginBottom: 20, lineHeight: 18 }}>
+            A temporary password is generated by the server and shown once after linking. It is never stored in the database.
+          </Text>
+
+          {renderStatus()}
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            {phase === 'failed' && (
+              <TouchableOpacity onPress={handleSave} disabled={provisionMutation.isPending}
+                style={{ flex: 1, backgroundColor: C.accentBg, padding: 16, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: C.accent + '50' }}>
+                <Text style={{ color: C.accent, fontFamily: 'Poppins_700Bold', fontSize: 15 }}>Retry</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+            {phase !== 'success' && (
+              <TouchableOpacity onPress={handleSave} disabled={provisionMutation.isPending || phase === 'provisioning'}
+                style={{ flex: 1, backgroundColor: provisionMutation.isPending ? C.border : C.green, padding: 16, borderRadius: 14, alignItems: 'center' }}>
+                {provisionMutation.isPending ? <ActivityIndicator color={C.text} /> : (
+                  <Text style={{ color: '#000', fontFamily: 'Poppins_700Bold', fontSize: 15 }}>
+                    {phase === 'failed' ? 'Retry Creation' : 'Create Tenant Account'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+            {phase === 'success' && (
+              <TouchableOpacity onPress={() => { onComplete(); onClose(); }}
+                style={{ flex: 1, backgroundColor: C.green, padding: 16, borderRadius: 14, alignItems: 'center' }}>
+                <Text style={{ color: '#000', fontFamily: 'Poppins_700Bold', fontSize: 15 }}>Done</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -365,9 +560,9 @@ function OnboardModal({ visible, onClose, onComplete, org, setupMutation }: {
 export default function TenantsManager() {
   const router = useRouter();
   
-  const { useTenantAccounts, useSetupTenantRecords } = useSuperAdmin();
+  const { useTenantAccounts, useProvisionRootTenant } = useSuperAdmin();
   const { data: orgsData, isLoading: loading, refetch } = useTenantAccounts<Org>();
-  const setupMutation = useSetupTenantRecords();
+  const provisionMutation = useProvisionRootTenant();
   const orgs = orgsData || [];
   
   const [activeFilter, setActiveFilter] = useState<'all' | OrgType>('all');
@@ -437,12 +632,17 @@ export default function TenantsManager() {
             ) : filteredOrgs.map((org, i) => {
               const cfg = ORG_TYPE_CONFIG[org.org_type];
               const hasAccess = !!org.tenant_id;
+              const isDisabled = org.access_disabled === true;
+              const onboardingAllowed = FEATURE_FLAGS.ENABLE_ONBOARDING;
+              const rowAction = hasAccess
+                ? () => setDetailOrg(org)
+                : (onboardingAllowed ? () => setOnboardOrg(org) : undefined);
               return (
                 <Animated.View key={org.id} entering={FadeInDown.delay(i * 50).duration(400)}>
                   <TouchableOpacity
-                    onPress={() => hasAccess ? setDetailOrg(org) : setOnboardOrg(org)}
-                    activeOpacity={0.8}
-                    style={{ backgroundColor: C.surface, borderRadius: 10, borderWidth: 1, borderColor: hasAccess ? '#34D39930' : C.border, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    onPress={rowAction}
+                    activeOpacity={rowAction ? 0.8 : 1}
+                    style={{ backgroundColor: C.surface, borderRadius: 10, borderWidth: 1, borderColor: hasAccess ? (isDisabled ? '#F8717130' : '#34D39930') : C.border, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                       <View style={{ backgroundColor: cfg.bg, padding: 10, borderRadius: 12 }}>{cfg.icon}</View>
@@ -456,16 +656,18 @@ export default function TenantsManager() {
 
                     {hasAccess ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.greenBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: '#34D39940' }}>
-                          <ShieldCheck size={12} color={C.green} />
-                          <Text style={{ color: C.green, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>Active</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDisabled ? C.dangerBg : C.greenBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: (isDisabled ? C.danger : '#34D399') + '40' }}>
+                          {isDisabled ? <ShieldAlert size={12} color={C.danger} /> : <ShieldCheck size={12} color={C.green} />}
+                          <Text style={{ color: isDisabled ? C.danger : C.green, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>{isDisabled ? 'Disabled' : 'Active'}</Text>
                         </View>
                         <ChevronRight size={16} color={C.muted} />
                       </View>
                     ) : (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 }}>
                         <ShieldAlert size={12} color={C.danger} />
-                        <Text style={{ color: C.text, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>Onboard</Text>
+                        <Text style={{ color: C.text, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>
+                          {onboardingAllowed ? 'Onboard' : 'Unavailable'}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -476,7 +678,7 @@ export default function TenantsManager() {
         </ScrollView>
       </Animated.View>
 
-      <OnboardModal visible={!!onboardOrg} org={onboardOrg} onClose={() => setOnboardOrg(null)} onComplete={fetchOrgs} setupMutation={setupMutation} />
+      <OnboardModal visible={!!onboardOrg} org={onboardOrg} onClose={() => setOnboardOrg(null)} onComplete={fetchOrgs} provisionMutation={provisionMutation} />
       <DetailModal visible={!!detailOrg} org={detailOrg} onClose={() => setDetailOrg(null)} onComplete={fetchOrgs} />
     </View>
   );

@@ -801,10 +801,18 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async listTenantAccounts<T>(): Promise<ListResult<T>> {
     const { data, error } = await supabase
       .from('organisations')
-      .select('id, name, org_type, tenant_id, admin_email, admin_password_temp')
+      .select('id, name, org_type, tenant_id, admin_email, tenants(access_disabled)')
       .order('created_at', { ascending: false });
-      
-    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+
+    const flattened = (data ?? []).map((o: any) => {
+      const embedded = o.tenants;
+      const access_disabled = Array.isArray(embedded)
+        ? embedded[0]?.access_disabled ?? false
+        : embedded?.access_disabled ?? false;
+      return { ...o, access_disabled, tenants: undefined };
+    });
+
+    return { data: (flattened as T[]) ?? [], error: normalizeError(error) };
   }
 
   async revokeTenantAccess(orgId: string): Promise<QueryResult<void>> {
@@ -815,10 +823,24 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: undefined, error: null };
   }
 
-  async setupTenantRecords(payload: Record<string, unknown>): Promise<QueryResult<void>> {
-    const { data, error } = await supabase.rpc('setup_tenant_records', payload);
+  async disableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>> {
+    const { data, error } = await supabase.rpc('disable_tenant_access', {
+      p_org_id: orgId,
+      p_reason: reason ?? null,
+    });
     if (error || (data && !data.success)) {
-      return { data: undefined, error: normalizeError(error || new Error(data?.error || 'Failed to setup tenant')) };
+      return { data: undefined, error: normalizeError(error || new Error(data?.error || 'Failed to disable tenant access')) };
+    }
+    return { data: undefined, error: null };
+  }
+
+  async enableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>> {
+    const { data, error } = await supabase.rpc('enable_tenant_access', {
+      p_org_id: orgId,
+      p_reason: reason ?? null,
+    });
+    if (error || (data && !data.success)) {
+      return { data: undefined, error: normalizeError(error || new Error(data?.error || 'Failed to enable tenant access')) };
     }
     return { data: undefined, error: null };
   }
