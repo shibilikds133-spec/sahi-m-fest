@@ -21,20 +21,24 @@ export const useOrganisations = () => {
   });
 
   const createOrganisationMutation = useMutation({
-    mutationFn: ({ orgName, orgType }: { orgName: string; orgType?: string }) => {
+    mutationFn: ({ orgName, orgType, username, idempotencyKey }: { orgName: string; orgType?: string; username: string; idempotencyKey?: string }) => {
       if (!parentId) throw new Error('Parent ID not found');
-      return organisationService.createSubOrganisation(parentId, orgName, orgType);
+      return organisationService.createSubOrganisation(parentId, orgName, orgType, username, idempotencyKey);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['childOrganisations', parentId] });
     },
   });
 
-  const deleteOrganisationMutation = useMutation({
-    mutationFn: (orgId: string) => organisationService.deleteChildOrganisation(orgId),
+  const archiveOrganisationMutation = useMutation({
+    mutationFn: (orgId: string) => organisationService.archiveChildOrganisation(orgId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['childOrganisations', parentId] });
     },
+  });
+
+  const resetCredentialMutation = useMutation({
+    mutationFn: (organisationId: string) => organisationService.resetOrganisationCredential(organisationId),
   });
 
   return {
@@ -44,8 +48,9 @@ export const useOrganisations = () => {
     isLoadingChildren: childOrganisationsQuery.isLoading || myOrganisationQuery.isLoading,
     createOrganisation: createOrganisationMutation.mutateAsync,
     isCreating: createOrganisationMutation.isPending,
-    deleteOrganisation: deleteOrganisationMutation.mutateAsync,
-    isDeleting: deleteOrganisationMutation.isPending,
-    generateCredentials: organisationService.generateCredentials,
+    archiveOrganisation: archiveOrganisationMutation.mutateAsync,
+    isArchiving: archiveOrganisationMutation.isPending,
+    resetCredential: resetCredentialMutation.mutateAsync,
+    isResettingCredential: resetCredentialMutation.isPending,
   };
 };

@@ -28,6 +28,21 @@ export const judgeRepository = {
   async getRegistrationsBySchedule<T>(scheduleId: string) {
     return databaseProvider.getRegistrationsBySchedule<T>(scheduleId);
   },
+  async getJudgeRegistrationsByToken<T>(token: string) {
+    return databaseProvider.getJudgeRegistrationsByToken<T>(token);
+  },
+  async submitJudgeMark<T>(payload: {
+    token: string;
+    registrationId: string;
+    criteriaScores: Record<string, number>;
+    totalMark: number;
+    status: 'draft' | 'final';
+    entryMode?: 'criteria' | 'total_only';
+    maxMark?: number;
+    criteriaSnapshot?: { key: string; label: string; max: number }[];
+  }) {
+    return databaseProvider.submitJudgeMark<T>(payload);
+  },
   async listMarkEntries<T>(scheduleId: string) {
     return databaseProvider.listMarkEntries<T>(scheduleId);
   },

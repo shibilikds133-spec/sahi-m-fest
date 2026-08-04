@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { supabase } from '../../../core/config/supabase';
-import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { Key, Plus, Pause, Play, Trash2 } from 'lucide-react-native';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/shadcn/card';
+import { Button } from '../../../components/ui/shadcn/button';
+import { Input } from '../../../components/ui/shadcn/input';
+import { Label } from '../../../components/ui/shadcn/label';
 
 type Provider = 'gemini' | 'llama' | 'openai' | 'anthropic';
 
@@ -17,8 +20,6 @@ interface ApiKey {
 export default function ApiKeysSettingsScreen() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // New Key Form State
   const [newKey, setNewKey] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<Provider>('gemini');
   const [isAdding, setIsAdding] = useState(false);
@@ -35,7 +36,6 @@ export default function ApiKeysSettingsScreen() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      // Ignore if table doesn't exist yet, we will prompt user to run SQL
       console.warn('Error fetching API keys:', error);
     } else {
       setApiKeys(data || []);
@@ -100,91 +100,102 @@ export default function ApiKeysSettingsScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 p-4">
-      <Stack.Screen options={{ title: 'AI API Keys' }} />
-      
-      <View className="bg-white p-6 rounded-xl shadow-sm mb-6">
-        <Text className="text-lg font-bold text-gray-800 mb-4">Add New API Key</Text>
-        
-        <Text className="text-gray-600 mb-2 font-medium">Select Provider</Text>
-        <View className="flex-row flex-wrap gap-2 mb-4">
-          {(['gemini', 'openai', 'anthropic'] as Provider[]).map(provider => (
-            <TouchableOpacity
-              key={provider}
-              onPress={() => setSelectedProvider(provider)}
-              className={`px-4 py-2 rounded-full border ${selectedProvider === provider ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-300'}`}
-            >
-              <Text className={`${selectedProvider === provider ? 'text-white' : 'text-gray-600'} capitalize font-medium`}>
-                {provider}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text className="text-gray-600 mb-2 font-medium">API Key</Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-gray-800"
-          placeholder={`Enter your ${selectedProvider.toUpperCase()} API Key`}
-          value={newKey}
-          onChangeText={setNewKey}
-          secureTextEntry
-        />
-
-        <TouchableOpacity 
-          className="bg-primary-600 p-4 rounded-xl items-center flex-row justify-center"
-          onPress={handleAddKey}
-          disabled={isAdding}
-        >
-          {isAdding ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <>
-              <Ionicons name="add-circle-outline" size={20} color="white" className="mr-2" />
-              <Text className="text-white font-bold ml-2">Save Key</Text>
-            </>
-          )}
-        </TouchableOpacity>
+    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
+      {/* Page Title */}
+      <View className="mb-6">
+        <Text className="text-3xl font-poppins-black text-ui-text">API Keys</Text>
+        <Text className="text-sm font-poppins text-ui-text-muted mt-1">Manage AI provider keys</Text>
       </View>
 
-      <Text className="text-lg font-bold text-gray-800 mb-4">Manage Active Keys</Text>
-      
+      {/* Add New Key */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <Text className="font-poppins-bold text-ui-text text-base mb-4">Add New API Key</Text>
+
+          <Label className="mb-2">Select Provider</Label>
+          <View className="flex-row gap-2 mb-4">
+            {(['gemini', 'openai', 'anthropic'] as Provider[]).map(provider => (
+              <Button
+                key={provider}
+                variant={selectedProvider === provider ? 'default' : 'outline'}
+                size="sm"
+                onPress={() => setSelectedProvider(provider)}
+              >
+                {provider}
+              </Button>
+            ))}
+          </View>
+
+          <View className="mb-4">
+            <Label>API Key</Label>
+            <Input
+              placeholder={`Enter your ${selectedProvider.toUpperCase()} API Key`}
+              value={newKey}
+              onChangeText={setNewKey}
+              secureTextEntry
+            />
+          </View>
+
+          <Button onPress={handleAddKey} disabled={isAdding}>
+            {isAdding ? 'Saving...' : 'Save Key'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Active Keys */}
+      <Text className="font-poppins-bold text-ui-text text-lg mb-3">Manage Active Keys</Text>
+
       {loading ? (
-        <ActivityIndicator size="large" color="#0ea5e9" className="mt-8" />
+        <ActivityIndicator color="#0F766E" style={{ marginTop: 40 }} />
       ) : apiKeys.length === 0 ? (
-        <View className="bg-white p-6 rounded-xl shadow-sm items-center">
-          <Ionicons name="key-outline" size={48} color="#cbd5e1" />
-          <Text className="text-gray-500 mt-4 text-center">No API Keys found in the database. The system is currently using fallback .env keys.</Text>
-        </View>
+        <Card>
+          <CardContent className="p-6 items-center">
+            <Key size={40} color="#CBD5E1" />
+            <Text className="font-poppins text-ui-text-muted mt-3 text-center">
+              No API Keys found. The system is using fallback .env keys.
+            </Text>
+          </CardContent>
+        </Card>
       ) : (
         apiKeys.map((key) => (
-          <View key={key.id} className="bg-white p-4 rounded-xl shadow-sm mb-3 flex-row items-center justify-between">
-            <View className="flex-1">
-              <View className="flex-row items-center mb-1">
-                <Text className="font-bold text-gray-800 capitalize text-lg">{key.provider === 'llama' ? 'Llama (Groq)' : key.provider}</Text>
-                <View className={`ml-3 px-2 py-1 rounded-full ${key.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                  <Text className={`text-xs font-bold ${key.is_active ? 'text-green-700' : 'text-gray-500'}`}>
-                    {key.is_active ? 'ACTIVE' : 'INACTIVE'}
+          <Card key={key.id} className="mb-3">
+            <CardContent className="p-4 flex-row items-center justify-between">
+              <View className="flex-1 pr-3">
+                <View className="flex-row items-center mb-1">
+                  <Text className="font-poppins-bold text-ui-text text-base capitalize">
+                    {key.provider === 'llama' ? 'Llama (Groq)' : key.provider}
                   </Text>
+                  <View className={`ml-2 px-2 py-0.5 rounded ${key.is_active ? 'bg-green-100' : 'bg-ui-muted'}`}>
+                    <Text className={`font-poppins-bold text-[10px] ${key.is_active ? 'text-green-700' : 'text-ui-text-muted'}`}>
+                      {key.is_active ? 'ACTIVE' : 'INACTIVE'}
+                    </Text>
+                  </View>
                 </View>
+                <Text className="font-poppins text-ui-text-muted text-xs" numberOfLines={1}>
+                  {key.key_value.substring(0, 8)}••••••••{key.key_value.substring(key.key_value.length - 4)}
+                </Text>
               </View>
-              <Text className="text-gray-500 font-mono text-sm" numberOfLines={1}>
-                {key.key_value.substring(0, 8)}••••••••••••{key.key_value.substring(key.key_value.length - 4)}
-              </Text>
-            </View>
-            
-            <View className="flex-row gap-3">
-              <TouchableOpacity onPress={() => toggleStatus(key.id, key.is_active)} className="p-2 bg-gray-50 rounded-full">
-                <Ionicons name={key.is_active ? "pause-outline" : "play-outline"} size={20} color={key.is_active ? "#f59e0b" : "#10b981"} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteKey(key.id)} className="p-2 bg-red-50 rounded-full">
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
-              </TouchableOpacity>
-            </View>
-          </View>
+
+              <View className="flex-row gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => toggleStatus(key.id, key.is_active)}
+                >
+                  {key.is_active ? 'Disable' : 'Enable'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => deleteKey(key.id)}
+                >
+                  Delete
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
         ))
       )}
-      
-      <View className="h-10" />
     </ScrollView>
   );
 }

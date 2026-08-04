@@ -97,7 +97,7 @@ export const participantService = {
   async generateCodeLetters(scheduleId: string, itemId: string, tenantId: string, overwrite = false): Promise<{ smartPriorityApplied: boolean } | void> {
     const allRegistrations = await this.getRegistrationsByItem<any>(itemId, tenantId);
     const registrations = (allRegistrations || []).filter(
-      (r: any) => r.status === 'approved' && r.is_verified === true
+      (r: any) => r.status !== 'rejected' && r.is_verified === true
     );
     if (!registrations || registrations.length === 0) {
       throw new Error('No verified and active participants registered for this event yet.');

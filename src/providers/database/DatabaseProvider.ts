@@ -94,6 +94,17 @@ export interface DatabaseProvider {
   upsertMarkEntry<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   finalizeMarkEntry(markEntryId: string): Promise<QueryResult<void>>;
   getRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>>;
+  getJudgeRegistrationsByToken<T>(token: string): Promise<ListResult<T>>;
+  submitJudgeMark<T>(payload: {
+    token: string;
+    registrationId: string;
+    criteriaScores: Record<string, number>;
+    totalMark: number;
+    status: 'draft' | 'final';
+    entryMode?: 'criteria' | 'total_only';
+    maxMark?: number;
+    criteriaSnapshot?: { key: string; label: string; max: number }[];
+  }): Promise<QueryResult<T>>;
   
   // Results Methods
   listResults<T>(scheduleId: string): Promise<ListResult<T>>;

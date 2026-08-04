@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Modal, Clipboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfInput } from '../../../components/ui/SsfInput';
 import { useOrganisations } from '../../../core/hooks/useOrganisations';
-import { ArrowLeft, Plus, Building2, KeyRound, User, Trash2, ExternalLink } from 'lucide-react-native';
+import { ArrowLeft, Plus, Building2, User, Archive, ExternalLink, RefreshCw } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
+import { FEATURE_FLAGS } from '../../../core/config/features';
 
 export default function SubOrganisationsManager() {
   const router = useRouter();
@@ -16,32 +17,99 @@ export default function SubOrganisationsManager() {
     isLoadingChildren: loading, 
     createOrganisation, 
     isCreating, 
-    deleteOrganisation,
-    generateCredentials 
+    archiveOrganisation,
+    isArchiving,
+    resetCredential,
+    isResettingCredential
   } = useOrganisations();
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [usernameEdited, setUsernameEdited] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [attemptKey, setAttemptKey] = useState('');
 
-  const handleDeleteOrg = (org: any) => {
-    const msg = `Delete "${org.name}"? This will permanently remove the account and all its data.`;
-    const doDelete = async () => {
+  // Auto-suggest logic
+  useEffect(() => {
+    if (!usernameEdited) {
+      const suggested = newOrgName
+        .trim()
+        .toLowerCase()
+        .replace(/[\s\-]+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '')
+        .slice(0, 40);
+      setNewUsername(suggested);
+    }
+  }, [newOrgName, usernameEdited]);
+
+  const openCreateModal = () => {
+    setNewOrgName('');
+    setNewUsername('');
+    setUsernameEdited(false);
+    setErrorMsg('');
+    setAttemptKey(`child-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    setModalVisible(true);
+  };
+
+  const handleArchiveOrg = (org: any) => {
+    const msg = `Archive "${org.name}"? This archives the organisation and preserves participant, registration, result and festival history.`;
+    const doArchive = async () => {
       try {
-        await deleteOrganisation(org.id);
+        await archiveOrganisation(org.id);
+        if (Platform.OS === 'web') window.alert('Organisation archived. History preserved.');
+        else Alert.alert('Success', 'Organisation archived. History preserved.');
       } catch (err: any) {
-        if (Platform.OS === 'web') window.alert('Delete failed: ' + err.message);
+        if (Platform.OS === 'web') window.alert('Archive failed: ' + err.message);
         else Alert.alert('Error', err.message);
       }
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm(msg)) doDelete();
+      if (window.confirm(msg)) doArchive();
     } else {
-      Alert.alert('Delete Sub-Org', msg, [
+      Alert.alert('Archive Sub-Org', msg, [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: doDelete },
+        { text: 'Archive', style: 'destructive', onPress: doArchive },
+      ]);
+    }
+  };
+
+  const handleResetPassword = (org: any) => {
+    const msg = `Reset password for "${org.name}"? A new temporary password will be shown once.`;
+    const doReset = async () => {
+      try {
+        const res = await resetCredential(org.id);
+        const tempPass = res?.temporary_password;
+        const loginId = res?.login_identifier || org.admin_email || '—';
+        const auditNote = res?.audit_recorded === false ? '\n\nWARNING: the password was reset but the audit record could not be written.' : '';
+        const displayMsg = `Password reset successful!\n\nLogin Identifier: ${loginId}\nTemporary password: ${tempPass}${auditNote}\n\nThis password is shown once and is not stored. Deliver it securely to the admin and ask them to change it.`;
+        if (Platform.OS === 'web') {
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(`Login Identifier: ${loginId}\nTemporary password: ${tempPass}`);
+          }
+          window.alert(displayMsg);
+        } else {
+          Alert.alert('Credential reset complete', displayMsg, [
+            { text: 'Copy credentials', onPress: () => Clipboard.setString(`Login Identifier: ${loginId}\nTemporary password: ${tempPass}`) },
+            { text: 'Done' },
+          ]);
+        }
+      } catch (err: any) {
+        if (Platform.OS === 'web') window.alert('Reset failed: ' + err.message);
+        else Alert.alert('Error', err.message);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(msg)) doReset();
+    } else {
+      Alert.alert('Reset Password', msg, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', style: 'destructive', onPress: doReset },
       ]);
     }
   };
@@ -52,20 +120,47 @@ export default function SubOrganisationsManager() {
       return;
     }
     
+    const normalizedUsername = newUsername.trim().toLowerCase();
+    
+    if (!normalizedUsername) {
+      setErrorMsg('Username must contain 3–40 lowercase letters, numbers or underscores.');
+      return;
+    }
+    if (!/^[a-z0-9_]{3,40}$/.test(normalizedUsername)) {
+      setErrorMsg('Username must contain 3–40 lowercase letters, numbers or underscores.');
+      return;
+    }
+    
     setErrorMsg('');
 
     try {
-      await createOrganisation({ orgName: newOrgName, orgType: 'unit' });
+      const result = await createOrganisation({
+        orgName: newOrgName,
+        orgType: 'unit',
+        username: normalizedUsername,
+        idempotencyKey: attemptKey
+      });
       setModalVisible(false);
       setNewOrgName('');
-      if (Platform.OS === 'web') window.alert('Unit created securely with auto-generated credentials!');
-      else Alert.alert('Success', 'Unit created securely with auto-generated credentials!');
+      setNewUsername('');
+      setUsernameEdited(false);
+
+      const tempPass = result?.temporary_password;
+      const loginId = result?.login_identifier || result?.admin_email;
+      const displayMsg = `Unit created and linked!\n\nLogin Identifier: ${loginId}\nUsername: ${result?.username || normalizedUsername}\nTemporary password: ${tempPass}`;
+
+      if (Platform.OS === 'web') {
+        window.alert(displayMsg);
+      } else {
+        Alert.alert('Unit created', `${displayMsg}\n\nThis password is shown once and is not stored.`, [
+          { text: 'Copy credentials', onPress: () => Clipboard.setString(`Login Identifier: ${loginId}\nTemporary password: ${tempPass}`) },
+          { text: 'Done' },
+        ]);
+      }
     } catch (err: any) {
       setErrorMsg(err.message);
     }
   };
-
-  const currentCreds = generateCredentials(newOrgName);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
@@ -83,12 +178,18 @@ export default function SubOrganisationsManager() {
                   <Text style={{ color: '#0F172A', fontFamily: 'Poppins_900Black', fontSize: 22, lineHeight: 26 }}>Sub-Organisations</Text>
                 </View>
               </View>
-              <SsfButton 
-                label="Add New" 
-                size="sm" 
-                icon={<Plus size={16} color="#fff" />} 
-                onPress={() => { setNewOrgName(''); setErrorMsg(''); setModalVisible(true); }} 
-              />
+              {FEATURE_FLAGS.ENABLE_ONBOARDING ? (
+                <SsfButton
+                  label="Add New"
+                  size="sm"
+                  icon={<Plus size={16} color="#fff" />}
+                  onPress={openCreateModal}
+                />
+              ) : (
+                <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A', backgroundColor: '#FFFBEB' }}>
+                  <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#92400E' }}>Onboarding temporarily unavailable</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -102,13 +203,12 @@ export default function SubOrganisationsManager() {
               </View>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ flexGrow: 1 }}>
-                <View style={{ minWidth: 920, flex: 1, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E0EA', borderRadius: 14, overflow: 'hidden' }}>
+                <View style={{ minWidth: 800, flex: 1, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E0EA', borderRadius: 14, overflow: 'hidden' }}>
                   <View style={{ height: 44, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#D8E0EA' }}>
                     <Text style={{ flex: 1.6, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Organisation</Text>
-                    <Text style={{ flex: 1.5, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>User ID</Text>
-                    <Text style={{ flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Access Key</Text>
+                    <Text style={{ flex: 1.5, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Login Username</Text>
                     <Text style={{ width: 100, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Type</Text>
-                    <Text style={{ width: 120, textAlign: 'right', fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Actions</Text>
+                    <Text style={{ width: 160, textAlign: 'right', fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Actions</Text>
                   </View>
 
                   {orgs.map((org: any) => (
@@ -123,16 +223,22 @@ export default function SubOrganisationsManager() {
                         <User size={13} color="#0F766E" />
                         <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#475569' }}>{org.admin_email || '—'}</Text>
                       </View>
-                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
-                        <KeyRound size={13} color="#B45309" />
-                        <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_700Bold', fontSize: 12, color: '#92400E' }}>{org.admin_password_temp || '—'}</Text>
-                      </View>
                       <View style={{ width: 100, alignItems: 'flex-start' }}>
                         <View style={{ backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 }}>
                           <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 9, color: '#0F766E', textTransform: 'uppercase' }}>{org.org_type || 'UNIT'}</Text>
                         </View>
                       </View>
-                      <View style={{ width: 120, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                      <View style={{ width: 160, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                        {FEATURE_FLAGS.ENABLE_ONBOARDING && (
+                          <TouchableOpacity
+                            onPress={() => handleResetPassword(org)}
+                            accessibilityLabel={`Reset Password for ${org.name}`}
+                            disabled={isResettingCredential}
+                            style={{ width: 34, height: 34, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#FECACA' }}
+                          >
+                            <RefreshCw size={15} color="#DC2626" />
+                          </TouchableOpacity>
+                        )}
                         <TouchableOpacity
                           onPress={() => router.push(`/unit-profile/${org.id}`)}
                           accessibilityLabel={`Open ${org.name}`}
@@ -141,11 +247,12 @@ export default function SubOrganisationsManager() {
                           <ExternalLink size={15} color="#2563EB" />
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleDeleteOrg(org)}
-                          accessibilityLabel={`Delete ${org.name}`}
-                          style={{ width: 34, height: 34, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#FECACA' }}
+                          onPress={() => handleArchiveOrg(org)}
+                          accessibilityLabel={`Archive ${org.name}`}
+                          disabled={isArchiving}
+                          style={{ width: 34, height: 34, backgroundColor: '#FFFBEB', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#FDE68A' }}
                         >
-                          <Trash2 size={15} color="#DC2626" />
+                          <Archive size={15} color="#B45309" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -162,32 +269,28 @@ export default function SubOrganisationsManager() {
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 }}>
             <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 20, color: '#0F172A', marginBottom: 20 }}>Create Sub-Organisation</Text>
             
-            <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 13, marginBottom: 8 }}>
-              Enter the name of the new organisation. The system will automatically generate a secure User ID and Password for them.
+            <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 13, marginBottom: 16 }}>
+              Enter the name of the new organisation and an admin username. A secure admin account and credentials are generated by the server and shown once after linking completes.
             </Text>
 
             <SsfInput 
               label="Organisation Name (e.g. Unit Makkaraparamba)" 
               value={newOrgName} 
               onChangeText={setNewOrgName} 
-              style={{ marginBottom: 20 }}
+              style={{ marginBottom: 16 }}
             />
 
-            {newOrgName.trim().length > 0 && (
-              <View style={{ backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold', color: '#0F172A', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Auto-Generated Credentials</Text>
-                
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                  <User size={14} color="#065F46" />
-                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#333' }}>ID: <Text style={{ fontFamily: 'Poppins_700Bold', color: '#065F46' }}>{currentCreds.id}</Text></Text>
-                </View>
-                
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                  <KeyRound size={14} color="#B45309" />
-                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#333' }}>Pass: <Text style={{ fontFamily: 'Poppins_700Bold', color: '#B45309' }}>{currentCreds.pass}</Text></Text>
-                </View>
-              </View>
-            )}
+            <SsfInput
+              label="Admin Username (e.g. makkaraparamba_admin)"
+              value={newUsername}
+              onChangeText={(text) => {
+                setNewUsername(text);
+                setUsernameEdited(true);
+              }}
+              autoCapitalize="none"
+              style={{ marginBottom: 4 }}
+            />
+            <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 11, marginBottom: 16 }}>Use 3–40 lowercase letters, numbers or underscores.</Text>
 
             {errorMsg ? (
               <Text style={{ color: '#DC2626', fontFamily: 'Poppins_400Regular', marginBottom: 16, fontSize: 13 }}>⚠️ {errorMsg}</Text>
@@ -198,15 +301,15 @@ export default function SubOrganisationsManager() {
                 label="Cancel" 
                 variant="outline" 
                 style={{ flex: 1 }} 
-                onPress={() => { setModalVisible(false); setErrorMsg(''); setNewOrgName(''); }} 
+                onPress={() => { setModalVisible(false); setErrorMsg(''); setNewOrgName(''); setNewUsername(''); setUsernameEdited(false); }}
                 disabled={isCreating}
               />
               <SsfButton 
-                label={isCreating ? "Creating..." : "Create Account"} 
+                label={isCreating ? "Creating account..." : "Create Account"}
                 variant="primary" 
                 style={{ flex: 1 }} 
                 onPress={handleCreate} 
-                disabled={isCreating || !newOrgName.trim()}
+                disabled={isCreating || !newOrgName.trim() || !newUsername.trim()}
               />
             </View>
           </View>

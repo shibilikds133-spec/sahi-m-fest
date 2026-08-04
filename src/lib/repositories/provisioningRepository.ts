@@ -46,7 +46,26 @@ export const provisioningRepository = {
     const { data, error } = await supabase.functions.invoke('provision-admin', {
       body: payload,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // FunctionsHttpError carries the parsed Edge Function response body in
+      // `error.context` ({ error, message }). Prefer that server-side message
+      // ("Invalid username format", PREFLIGHT_DENIED details, ...) over the
+      // generic SDK message so operators see the actionable reason.
+      const context = (error as any)?.context as
+        | { error?: string; message?: string }
+        | undefined;
+      const err = new Error(
+        typeof context?.message === 'string' && context.message
+          ? context.message
+          : error.message || 'Provisioning failed',
+      ) as Error & {
+        code?: string;
+        operationId?: string | null;
+      };
+      err.code = typeof context?.error === 'string' ? context.error : undefined;
+      err.operationId = null;
+      throw err;
+    }
     const result = (data ?? {}) as ProvisioningResponse;
     if (result.error) {
       const err = new Error(result.message || 'Provisioning failed. Please retry.') as Error & {

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Platform } from 'react-native';
-import { SsfInput } from '../../../components/ui/SsfInput';
-import { SsfButton } from '../../../components/ui/SsfButton';
-import { SsfCard } from '../../../components/ui/SsfCard';
-import { useFestival } from '../../../core/hooks/useFestival';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { CheckCircle2, Calendar } from 'lucide-react-native';
+import { CheckCircle2, Calendar as CalendarIcon } from 'lucide-react-native';
+import { useFestival } from '../../../core/hooks/useFestival';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/shadcn/card';
+import { Button } from '../../../components/ui/shadcn/button';
+import { Input } from '../../../components/ui/shadcn/input';
+import { Label } from '../../../components/ui/shadcn/label';
 
 export default function FestivalCalendarSettings() {
   const router = useRouter();
@@ -64,140 +63,172 @@ export default function FestivalCalendarSettings() {
         festival_year: festivalYear,
       });
       setSaved(true);
-      // Auto-hide success message after 3 seconds
       setTimeout(() => setSaved(false), 3000);
     } catch (e: any) {
       setError(e.message || 'Failed to update calendar');
     }
   };
 
-  // Date input component — uses native HTML date picker on web
-  const DateField = ({
-    label, value, onChange, hint
-  }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) => (
-    <View className="mb-5">
-      <View className="flex-row items-center gap-x-2 mb-1">
-        <Calendar size={14} color="#1B6B3A" />
-        <Text className="font-poppins-bold text-ssf-text text-sm">{label}</Text>
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-ssf-bg items-center justify-center">
+        <Text className="font-poppins text-ui-text-muted">Loading...</Text>
       </View>
-      {Platform.OS === 'web' ? (
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px 14px',
-            borderRadius: '12px',
-            border: '1.5px solid #D1D5DB',
-            fontFamily: 'inherit',
-            fontSize: '15px',
-            color: value ? '#111827' : '#9CA3AF',
-            outline: 'none',
-            backgroundColor: '#F9FAFB',
-            cursor: 'pointer',
-          }}
-        />
-      ) : (
-        <SsfInput
-          label=""
-          placeholder="YYYY-MM-DD"
-          value={value}
-          onChangeText={onChange}
-        />
-      )}
-      {hint && <Text className="font-poppins text-xs text-ssf-text-muted mt-1">{hint}</Text>}
-    </View>
-  );
-
-  if (isLoading) return (
-    <View className="flex-1 bg-ssf-bg items-center justify-center">
-      <Text className="font-poppins text-ssf-text">Loading...</Text>
-    </View>
-  );
+    );
+  }
 
   return (
-    <View className="flex-1 bg-ssf-bg">
-      <LinearGradient
-        colors={['#065F46', '#044230']}
-        className="pt-16 pb-12 px-6 rounded-b-[40px] shadow-sm mb-6"
-      >
-        <Text className="text-3xl font-poppins-black text-white">Festival Calendar</Text>
-        <Text className="text-ssf-surface opacity-80 font-poppins mt-1">Set the timeline for Sahithyolsav</Text>
-      </LinearGradient>
+    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
+      {/* Page Title — matches schedule page pattern */}
+      <View className="mb-6">
+        <Text className="text-3xl font-poppins-black text-ui-text">Festival Calendar</Text>
+        <Text className="text-sm font-poppins text-ui-text-muted mt-1">Set the festival timeline</Text>
+      </View>
 
-      <ScrollView className="px-5">
-        <Animated.View entering={FadeInUp.duration(800).springify()}>
+      {/* Success Banner */}
+      {saved && (
+        <View className="flex-row items-center gap-2 bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+          <CheckCircle2 size={18} color="#16A34A" />
+          <Text className="font-poppins-bold text-green-800 text-sm">Calendar Updated!</Text>
+        </View>
+      )}
 
-          {/* Success Banner */}
-          {saved && (
-            <View className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 flex-row items-center gap-x-3">
-              <CheckCircle2 size={20} color="#16A34A" />
-              <View>
-                <Text className="font-poppins-bold text-green-800">Calendar Updated!</Text>
-                <Text className="font-poppins text-green-700 text-xs">Festival dates saved successfully.</Text>
-              </View>
+      {/* Error Banner */}
+      {error !== '' && (
+        <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+          <Text className="font-poppins-bold text-red-700 text-sm">{error}</Text>
+        </View>
+      )}
+
+      {/* Festival Details Card */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Festival Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="space-y-4">
+            <View>
+              <Label>Festival Name (Optional)</Label>
+              <Input
+                placeholder={`e.g., Sahithyolsav ${formData.start_date.slice(0, 4) || new Date().getFullYear()}`}
+                value={formData.custom_name}
+                onChangeText={(text) => setFormData({ ...formData, custom_name: text })}
+              />
             </View>
-          )}
 
-          {/* Error Banner */}
-          {error !== '' && (
-            <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-              <Text className="font-poppins-bold text-red-700">⚠️ {error}</Text>
+            <View>
+              <Label>Festival Start Date *</Label>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                />
+              ) : (
+                <Input
+                  placeholder="YYYY-MM-DD"
+                  value={formData.start_date}
+                  onChangeText={(text) => setFormData({ ...formData, start_date: text })}
+                />
+              )}
             </View>
-          )}
 
-          <SsfCard className="mb-6">
-            <SsfInput
-              label="Festival Name (Optional)"
-              placeholder={`e.g., Sahithyolsav ${formData.start_date.slice(0, 4) || new Date().getFullYear()}`}
-              value={formData.custom_name}
-              onChangeText={(text) => setFormData({ ...formData, custom_name: text })}
-              className="mb-5"
-            />
+            <View>
+              <Label>Festival End Date *</Label>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                />
+              ) : (
+                <Input
+                  placeholder="YYYY-MM-DD"
+                  value={formData.end_date}
+                  onChangeText={(text) => setFormData({ ...formData, end_date: text })}
+                />
+              )}
+            </View>
+          </View>
+        </CardContent>
+      </Card>
 
-            <DateField
-              label="Festival Start Date *"
-              value={formData.start_date}
-              onChange={(v) => setFormData({ ...formData, start_date: v })}
-            />
+      {/* Registration Card */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Registration Window</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="space-y-4">
+            <View>
+              <Label>Registration Opens</Label>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={formData.registration_open}
+                  onChange={(e) => setFormData({ ...formData, registration_open: e.target.value })}
+                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                />
+              ) : (
+                <Input
+                  placeholder="YYYY-MM-DD"
+                  value={formData.registration_open}
+                  onChangeText={(text) => setFormData({ ...formData, registration_open: text })}
+                />
+              )}
+              <Text className="text-xs font-poppins text-ui-text-muted mt-1">Leave blank if registration is already open</Text>
+            </View>
 
-            <DateField
-              label="Festival End Date *"
-              value={formData.end_date}
-              onChange={(v) => setFormData({ ...formData, end_date: v })}
-            />
+            <View>
+              <Label>Registration Deadline</Label>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={formData.registration_close}
+                  onChange={(e) => setFormData({ ...formData, registration_close: e.target.value })}
+                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                />
+              ) : (
+                <Input
+                  placeholder="YYYY-MM-DD"
+                  value={formData.registration_close}
+                  onChangeText={(text) => setFormData({ ...formData, registration_close: text })}
+                />
+              )}
+              <Text className="text-xs font-poppins text-ui-text-muted mt-1">Last date to register participants</Text>
+            </View>
+          </View>
+        </CardContent>
+      </Card>
 
-            <DateField
-              label="Registration Opens"
-              value={formData.registration_open}
-              onChange={(v) => setFormData({ ...formData, registration_open: v })}
-              hint="Leave blank if registration is already open"
-            />
+      {/* Actions */}
+      <View className="gap-3 mb-8">
+        <Button
+          variant="default"
+          onPress={handleSave}
+          disabled={updateFestival.isPending}
+        >
+          {updateFestival.isPending ? 'Saving...' : 'Save Calendar'}
+        </Button>
 
-            <DateField
-              label="Registration Deadline"
-              value={formData.registration_close}
-              onChange={(v) => setFormData({ ...formData, registration_close: v })}
-              hint="Last date to register participants"
-            />
+        {festival?.festival_template === 'college_fest' && (
+          <Button
+            variant="outline"
+            onPress={() => router.push('/(admin)/settings/categories' as any)}
+          >
+            Manage College Fest Categories
+          </Button>
+        )}
 
-            <SsfButton
-              label={updateFestival.isPending ? 'Saving...' : 'Save Calendar'}
-              onPress={handleSave}
-              isLoading={updateFestival.isPending}
-              className="w-full shadow-lg mt-2"
-            />
-          </SsfCard>
-
-          <SsfButton
-            label="← Back"
-            variant="ghost"
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/(admin)/settings' as any)}
-            className="w-full mb-10"
-          />
-        </Animated.View>
-      </ScrollView>
-    </View>
+        <Button
+          variant="ghost"
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(admin)/settings' as any)}
+        >
+          ← Back
+        </Button>
+      </View>
+    </ScrollView>
   );
 }

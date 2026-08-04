@@ -1,29 +1,45 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, Alert, TextInput, TouchableOpacity, Modal } from 'react-native';
-import { SsfButton } from '../../../components/ui/SsfButton';
-import { SsfCard } from '../../../components/ui/SsfCard';
-import { SsfInput } from '../../../components/ui/SsfInput';
+import { View, Text, ScrollView, Alert, TextInput, TouchableOpacity, Modal, useWindowDimensions, Platform } from 'react-native';
 import { useFestival } from '../../../core/hooks/useFestival';
+import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories';
 import { HANDBOOK_ITEMS } from '../../../constants/items';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Search, CheckCircle, Circle, Plus } from 'lucide-react-native';
+import { Search, CheckCircle, Circle, Plus, Trash2 } from 'lucide-react-native';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/shadcn/card';
+import { Button } from '../../../components/ui/shadcn/button';
+import { Input } from '../../../components/ui/shadcn/input';
+import { Label } from '../../../components/ui/shadcn/label';
 
 export default function ItemActivationSettings() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const { useActiveFestival, useActiveItems, useUpdateActiveItems } = useFestival();
   const { data: festival } = useActiveFestival();
+  const isCollegeFest = festival?.festival_template === 'college_fest';
+  const { data: collegeCategories = [], isLoading: categoriesLoading } = useFestivalCategories(
+    isCollegeFest ? festival?.id : undefined,
+    true,
+  );
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
   const updateActiveItems = useUpdateActiveItems(festival?.id);
 
   const [search, setSearch] = useState('');
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
-  
-  // Custom Items state
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual' });
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isCollegeFest && collegeCategories.length > 0) {
+      setCustomForm(current => ({ ...current, cat: current.cat && collegeCategories.some(category => category.code === current.cat)
+        ? current.cat
+        : collegeCategories[0].code }));
+    } else if (!isCollegeFest) {
+      setCustomForm(current => ({ ...current, cat: 'GN' }));
+    }
+  }, [isCollegeFest, collegeCategories]);
 
   useEffect(() => {
     if (activeCodes) {
@@ -33,8 +49,8 @@ export default function ItemActivationSettings() {
 
   const groupedItems = useMemo(() => {
     const combined = [...HANDBOOK_ITEMS, ...customItems];
-    const list = combined.filter(item => 
-      item.item_name_ml.toLowerCase().includes(search.toLowerCase()) || 
+    const list = combined.filter(item =>
+      item.item_name_ml.toLowerCase().includes(search.toLowerCase()) ||
       item.item_code.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -47,8 +63,15 @@ export default function ItemActivationSettings() {
     return grouped;
   }, [search, customItems]);
 
+  const allItems = useMemo(() => {
+    return [...HANDBOOK_ITEMS, ...customItems].filter(item =>
+      item.item_name_ml.toLowerCase().includes(search.toLowerCase()) ||
+      item.item_code.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search, customItems]);
+
   const toggleItem = (code: string) => {
-    setSelectedCodes(prev => 
+    setSelectedCodes(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
     );
   };
@@ -58,153 +81,274 @@ export default function ItemActivationSettings() {
       Alert.alert('Error', 'Please fill in Name and Category');
       return;
     }
-    
-    // Auto Generate Code: Example: GN-C458
     const autoCode = `${customForm.cat.toUpperCase()}-C${Math.floor(100 + Math.random() * 900)}`;
-
     const newItem = {
       id: `custom-${Date.now()}`,
       item_code: autoCode,
       item_name_ml: customForm.name,
-      category_codes: [customForm.cat.toUpperCase()],
+      category_codes: [customForm.cat],
       participation_type: customForm.type,
       source: 'custom'
     };
     setCustomItems([...customItems, newItem]);
     setSelectedCodes([...selectedCodes, newItem.item_code]);
     setIsAddModalOpen(false);
-    setCustomForm({ code: '', name: '', cat: 'GN', type: 'individual' });
+    setCategoryMenuOpen(false);
+    setCustomForm({ code: '', name: '', cat: isCollegeFest ? (collegeCategories[0]?.code || '') : 'GN', type: 'individual' });
   };
 
   const handleSave = async () => {
     try {
-      // Find full records for all selected codes to ensure they exist in DB
-      const selectedRecords = [...HANDBOOK_ITEMS, ...customItems].filter(i => 
+      const selectedRecords = [...HANDBOOK_ITEMS, ...customItems].filter(i =>
         selectedCodes.includes(i.item_code)
       );
-
-      await updateActiveItems.mutateAsync({ 
-        selectedCodes, 
-        itemRecords: selectedRecords 
+      await updateActiveItems.mutateAsync({
+        selectedCodes,
+        itemRecords: selectedRecords
       });
-      
       Alert.alert('Success', `${selectedCodes.length} items activated!`);
-      // Use replace instead of back() to avoid GO_BACK error when no history exists
       router.replace('/(admin)/settings' as any);
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to sync items');
     }
   };
 
-  if (isLoading) return <View className="flex-1 bg-ssf-bg"><Text>Loading...</Text></View>;
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-ssf-bg items-center justify-center">
+        <Text className="font-poppins text-ui-text-muted">Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-ssf-bg">
-      <LinearGradient 
-        colors={['#065F46', '#044230']}
-        className="pt-16 pb-8 px-6 rounded-b-[40px] shadow-sm mb-4"
-      >
-        <Text className="text-3xl font-poppins-black text-white">Item Activation</Text>
-        <Text className="text-ssf-surface opacity-80 font-poppins mt-1">Enable items from the 170 Sahityotsav 2026 events</Text>
-      </LinearGradient>
-
-      <View className="px-5 mb-4 border-b border-slate-200 pb-2">
-        <View className="bg-white rounded-xl flex-row items-center px-4 py-3 shadow-sm border border-slate-100">
-          <Search size={20} color="#64748B" />
-          <TextInput 
-            className="flex-1 ml-3 font-poppins text-ssf-text"
-            placeholder="Search items or codes..."
-            value={search}
-            onChangeText={setSearch}
-          />
+      <ScrollView className="flex-1 py-6 px-4" contentContainerStyle={{ paddingBottom: 120 }}>
+        {/* Page Title — matches schedule page pattern */}
+        <View className="mb-6">
+          <Text className="text-3xl font-poppins-black text-ui-text">Item Activation</Text>
+          <Text className="text-sm font-poppins text-ui-text-muted mt-1">
+            Enable items from the {HANDBOOK_ITEMS.length} Sahityotsav 2026 events
+          </Text>
         </View>
-      </View>
 
-      <ScrollView className="px-5">
-        <Animated.View entering={FadeInUp.duration(600)}>
-          <View className="flex-row justify-between items-center mb-4 px-2">
-            <Text className="font-poppins-black text-ssf-text-muted">{selectedCodes.length} items selected</Text>
-            <View className="flex-row items-center">
-              <TouchableOpacity onPress={() => setIsAddModalOpen(true)} className="mr-4">
-                <Text className="text-ssf-gold font-poppins-bold">+ Custom</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSelectedCodes(HANDBOOK_ITEMS.map(i => i.item_code))}>
-                <Text className="text-ssf-primary font-poppins-bold">Select All</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Search + Actions Bar */}
+        <View className="flex-row items-center gap-3 mb-4">
+          <View className="flex-1 flex-row items-center bg-white border border-ui-border rounded-lg px-3 h-10">
+            <Search size={16} color="#94A3B8" />
+            <TextInput
+              className="flex-1 ml-2 font-poppins text-sm text-ui-text"
+              placeholder="Search items or codes..."
+              placeholderTextColor="#94A3B8"
+              value={search}
+              onChangeText={setSearch}
+            />
           </View>
+          <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || collegeCategories.length === 0)} onPress={() => setIsAddModalOpen(true)}>
+            + Custom
+          </Button>
+          <Button variant="ghost" size="sm" onPress={() => setSelectedCodes(HANDBOOK_ITEMS.map(i => i.item_code))}>
+            Select All
+          </Button>
+        </View>
 
-          {Object.entries(groupedItems).map(([category, items]) => (
-            <View key={category} className="mb-4">
-              <View className="bg-ssf-primary/10 py-1 px-3 rounded-md self-start mb-3 ml-1">
-                <Text className="font-poppins-bold text-ssf-primary text-sm">{category} Category</Text>
+        {/* Stats */}
+        <Text className="text-sm font-poppins-bold text-ui-text-muted mb-4 px-1">
+          {selectedCodes.length} items selected
+        </Text>
+
+        {/* Desktop: Table View */}
+        {isDesktop ? (
+          <Card className="mb-6">
+            <CardContent className="p-0">
+              {/* Table Header */}
+              <View className="flex-row bg-ui-muted px-4 py-3 border-b border-ui-border">
+                <View className="w-10" />
+                <View className="flex-1">
+                  <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Code</Text>
+                </View>
+                <View className="flex-[2]">
+                  <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Name</Text>
+                </View>
+                <View className="w-24">
+                  <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Category</Text>
+                </View>
+                <View className="w-24">
+                  <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Type</Text>
+                </View>
               </View>
-              
-              {items.map((item) => {
+
+              {/* Table Rows */}
+              {allItems.map((item, idx) => {
                 const isSelected = selectedCodes.includes(item.item_code);
                 return (
-                  <TouchableOpacity key={item.item_code} onPress={() => toggleItem(item.item_code)}>
-                    <SsfCard className="mb-3 p-4 flex-row items-center border border-transparent" style={isSelected ? { borderColor: '#065F4633', backgroundColor: '#F0FDF4' } : {}}>
-                      <View className="flex-1">
-                        <Text className="text-xs font-poppins-bold text-ssf-primary mb-1">{item.item_code}</Text>
-                        <Text className="text-base font-poppins-black text-ssf-text">{item.item_name_ml}</Text>
-                        <Text className="text-xs text-ssf-text-muted mt-1">{item.participation_type === 'individual' ? 'Individual' : 'Group'} Match</Text>
-                      </View>
+                  <TouchableOpacity
+                    key={item.item_code}
+                    onPress={() => toggleItem(item.item_code)}
+                    className={`flex-row items-center px-4 py-3 border-b border-ui-border ${
+                      isSelected ? 'bg-green-50' : idx % 2 === 0 ? 'bg-white' : 'bg-ui-muted/30'
+                    }`}
+                  >
+                    <View className="w-10">
                       {isSelected ? (
-                        <CheckCircle size={24} color="#065F46" />
+                        <CheckCircle size={18} color="#0F766E" />
                       ) : (
-                        <Circle size={24} color="#CBD5E1" />
+                        <Circle size={18} color="#CBD5E1" />
                       )}
-                    </SsfCard>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-poppins-bold text-xs text-ui-primary">{item.item_code}</Text>
+                    </View>
+                    <View className="flex-[2]">
+                      <Text className="font-poppins text-sm text-ui-text">{item.item_name_ml}</Text>
+                    </View>
+                    <View className="w-24">
+                      <View className="bg-ui-primary/10 px-2 py-0.5 rounded self-start">
+                        <Text className="font-poppins-bold text-[10px] text-ui-primary">
+                          {item.category_codes[0] || 'GN'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="w-24">
+                      <Text className="font-poppins text-xs text-ui-text-muted">
+                        {item.participation_type === 'individual' ? 'Individual' : 'Group'}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
-                )
+                );
               })}
-            </View>
-          ))}
-          <View className="h-28" />
-        </Animated.View>
+
+              {allItems.length === 0 && (
+                <View className="py-12 items-center">
+                  <Text className="font-poppins text-ui-text-muted">No items found</Text>
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          /* Mobile: Card View */
+          <View>
+            {Object.entries(groupedItems).map(([category, items]) => (
+              <View key={category} className="mb-4">
+                <View className="bg-ui-primary/10 py-1 px-3 rounded self-start mb-3">
+                  <Text className="font-poppins-bold text-ui-primary text-sm">{category} Category</Text>
+                </View>
+
+                {items.map((item) => {
+                  const isSelected = selectedCodes.includes(item.item_code);
+                  return (
+                    <TouchableOpacity key={item.item_code} onPress={() => toggleItem(item.item_code)}>
+                      <Card className={`mb-2 ${isSelected ? 'border-ui-primary/30 bg-green-50' : ''}`}>
+                        <CardContent className="p-4 flex-row items-center">
+                          <View className="flex-1">
+                            <Text className="text-xs font-poppins-bold text-ui-primary mb-1">{item.item_code}</Text>
+                            <Text className="text-base font-poppins-bold text-ui-text">{item.item_name_ml}</Text>
+                            <Text className="text-xs text-ui-text-muted mt-1">
+                              {item.participation_type === 'individual' ? 'Individual' : 'Group'} Match
+                            </Text>
+                          </View>
+                          {isSelected ? (
+                            <CheckCircle size={22} color="#0F766E" />
+                          ) : (
+                            <Circle size={22} color="#CBD5E1" />
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
-      <View className="absolute bottom-8 left-5 right-5 pb-6 bg-ssf-bg">
-        <SsfButton 
-          label={`Save Changes (${selectedCodes.length} Items)`}
-          onPress={handleSave}
-          isLoading={updateActiveItems.isPending}
-          className="shadow-2xl shadow-ssf-primary/40"
-        />
+      {/* Fixed Save Button */}
+      <View className="absolute bottom-0 left-0 right-0 bg-ssf-bg border-t border-ui-border px-4 py-4">
+        <Button onPress={handleSave} disabled={updateActiveItems.isPending}>
+          {updateActiveItems.isPending ? 'Saving...' : `Save Changes (${selectedCodes.length} Items)`}
+        </Button>
       </View>
 
       {/* Add Custom Item Modal */}
       <Modal visible={isAddModalOpen} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white p-6 rounded-t-3xl min-h-[50%]">
-            <Text className="text-xl font-poppins-black text-ssf-text mb-4">Add Custom Item</Text>
-            
-            <SsfInput 
-              label="Item Name (Malayalam/English)" 
-              value={customForm.name} 
-              onChangeText={t => setCustomForm({...customForm, name: t})} 
-              className="mb-4"
-            />
-            
-            <SsfInput 
-              className="mb-4"
-              label="Category (e.g. GN, LP, UP)" 
-              value={customForm.cat} 
-              onChangeText={t => setCustomForm({...customForm, cat: t})} 
-            />
+            <Text className="text-xl font-poppins-bold text-ui-text mb-4">Add Custom Item</Text>
 
-            <View className="flex-row mb-6 mt-2">
-              <TouchableOpacity onPress={() => setCustomForm({...customForm, type: 'individual'})} className={`flex-1 py-3 items-center rounded-l-lg border border-r-0 ${customForm.type === 'individual' ? 'bg-ssf-primary/10 border-ssf-primary' : 'border-slate-200 bg-slate-50'}`}>
-                <Text className={customForm.type === 'individual' ? 'text-ssf-primary font-poppins-bold' : 'text-slate-500 font-poppins'}>Individual</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setCustomForm({...customForm, type: 'group'})} className={`flex-1 py-3 items-center rounded-r-lg border ${customForm.type === 'group' ? 'bg-ssf-primary/10 border-ssf-primary' : 'border-slate-200 bg-slate-50'}`}>
-                <Text className={customForm.type === 'group' ? 'text-ssf-primary font-poppins-bold' : 'text-slate-500 font-poppins'}>Group</Text>
-              </TouchableOpacity>
+            <View className="mb-4">
+              <Label>Item Name (Malayalam/English)</Label>
+              <Input
+                value={customForm.name}
+                onChangeText={t => setCustomForm({...customForm, name: t})}
+                placeholder="Enter item name"
+              />
             </View>
 
-            <SsfButton label="Add to List" onPress={handleAddCustom} className="mb-3" />
-            <SsfButton label="Cancel" variant="outline" onPress={() => setIsAddModalOpen(false)} />
+            <View className="mb-4">
+              <Label>{isCollegeFest ? 'Category' : 'Category (e.g. GN, LP, UP)'}</Label>
+              {isCollegeFest ? (
+                <View>
+                  <TouchableOpacity
+                    className="h-10 justify-center rounded-md border border-ui-border bg-white px-3"
+                    onPress={() => setCategoryMenuOpen(current => !current)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Select item category"
+                  >
+                    <Text className="font-poppins text-sm text-ui-text">
+                      {collegeCategories.find(category => category.code === customForm.cat)?.name || 'Select a category'}
+                    </Text>
+                  </TouchableOpacity>
+                  {categoryMenuOpen && (
+                    <View className="mt-1 rounded-md border border-ui-border bg-white">
+                      {collegeCategories.map(category => (
+                        <TouchableOpacity
+                          key={category.id}
+                          className="border-b border-ui-border px-3 py-2.5 last:border-b-0"
+                          onPress={() => {
+                            setCustomForm(current => ({ ...current, cat: category.code }));
+                            setCategoryMenuOpen(false);
+                          }}
+                        >
+                          <Text className="font-poppins text-sm text-ui-text">{category.name} ({category.code})</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <Input
+                  value={customForm.cat}
+                  onChangeText={t => setCustomForm({...customForm, cat: t})}
+                  placeholder="GN"
+                />
+              )}
+            </View>
+
+            <View className="mb-6">
+              <Label>Participation Type</Label>
+              <View className="flex-row gap-2 mt-2">
+                <Button
+                  variant={customForm.type === 'individual' ? 'default' : 'outline'}
+                  size="sm"
+                  onPress={() => setCustomForm({...customForm, type: 'individual'})}
+                >
+                  Individual
+                </Button>
+                <Button
+                  variant={customForm.type === 'group' ? 'default' : 'outline'}
+                  size="sm"
+                  onPress={() => setCustomForm({...customForm, type: 'group'})}
+                >
+                  Group
+                </Button>
+              </View>
+            </View>
+
+            <View className="gap-3">
+              <Button onPress={handleAddCustom}>Add to List</Button>
+              <Button variant="outline" onPress={() => setIsAddModalOpen(false)}>Cancel</Button>
+            </View>
           </View>
         </View>
       </Modal>

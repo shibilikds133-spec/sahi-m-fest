@@ -50,3 +50,6 @@ app-example
 
 # Supabase CLI local project metadata
 supabase/.temp/
+
+.vercel
+.env*

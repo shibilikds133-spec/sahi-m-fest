@@ -801,8 +801,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async listTenantAccounts<T>(): Promise<ListResult<T>> {
     const { data, error } = await supabase
       .from('organisations')
-      .select('id, name, org_type, tenant_id, admin_email, tenants(access_disabled)')
+      .select('id, name, org_type, tenant_id, admin_email, tenants!organisations_tenant_id_fkey(access_disabled)')
       .order('created_at', { ascending: false });
+
+    // Ensure query errors are not suppressed and returned as empty arrays.
+    if (error) {
+      console.error("listTenantAccounts query failed:", error);
+      return { data: [], error: normalizeError(error) };
+    }
 
     const flattened = (data ?? []).map((o: any) => {
       const embedded = o.tenants;
@@ -812,7 +818,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       return { ...o, access_disabled, tenants: undefined };
     });
 
-    return { data: (flattened as T[]) ?? [], error: normalizeError(error) };
+    return { data: (flattened as T[]) ?? [], error: null };
   }
 
   async revokeTenantAccess(orgId: string): Promise<QueryResult<void>> {
@@ -1049,6 +1055,61 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .update({ is_draft: false, is_final: true, submitted_at: new Date().toISOString() })
       .eq('id', markEntryId);
     return { data: undefined, error: normalizeError(error) };
+  }
+
+  async getJudgeRegistrationsByToken<T>(token: string): Promise<ListResult<T>> {
+    // Token-bound RPC. The judge, schedule, tenant and festival are derived
+    // server-side from the approved token; the caller cannot choose a schedule.
+    const { data, error } = await supabase.rpc('get_judge_registrations', {
+      p_token: token.toUpperCase().trim(),
+    });
+
+    if (error) {
+      console.error('[getJudgeRegistrationsByToken] RPC error:', error);
+      return { data: [], error: normalizeError(error) };
+    }
+
+    const mapped = ((data as any[]) ?? []).map((row) => ({
+      id: row.id,
+      item_id: row.item_id,
+      tenant_id: row.tenant_id,
+      code_letter: row.code_letter,
+      existing_mark: row.existing_mark ?? null,
+      participants: {
+        name: row.participant_name,
+        chest_number: row.chest_number,
+        photo_url: row.photo_url,
+        category_code: row.category_code,
+      },
+    }));
+
+    return { data: mapped as unknown as T[], error: null };
+  }
+
+  async submitJudgeMark<T>(payload: {
+    token: string;
+    registrationId: string;
+    criteriaScores: Record<string, number>;
+    totalMark: number;
+    status: 'draft' | 'final';
+    entryMode?: 'criteria' | 'total_only';
+    maxMark?: number;
+    criteriaSnapshot?: { key: string; label: string; max: number }[];
+  }): Promise<QueryResult<T>> {
+    // Secure token-bound RPC for draft and final mark writes. The judge,
+    // schedule and tenant are derived from the approved token server-side.
+    const { data, error } = await supabase.rpc('upsert_judge_mark', {
+      p_token: payload.token.toUpperCase().trim(),
+      p_registration_id: payload.registrationId,
+      p_criteria_scores: payload.criteriaScores ?? {},
+      p_total_mark: payload.totalMark,
+      p_status: payload.status,
+      p_entry_mode: payload.entryMode ?? 'criteria',
+      p_max_mark: payload.maxMark ?? 100,
+      p_criteria_snapshot: payload.criteriaSnapshot ?? [],
+    });
+
+    return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
   // ─── Results Methods ───────────────────────────────────────────────────────────

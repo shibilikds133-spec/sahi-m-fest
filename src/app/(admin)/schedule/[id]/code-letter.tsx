@@ -22,7 +22,7 @@ export default function CodeLetterGeneration() {
 
   const activeRegistrations = React.useMemo(() => {
     return (registrations || [])
-      .filter((r: any) => r.status === 'approved' && r.is_verified === true)
+      .filter((r: any) => r.status !== 'rejected' && r.is_verified === true)
       .sort((a: any, b: any) => {
         if (a.code_letter && b.code_letter) return a.code_letter.localeCompare(b.code_letter);
         if (a.code_letter) return -1;

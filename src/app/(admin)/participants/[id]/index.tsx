@@ -27,7 +27,7 @@ import {
 } from 'lucide-react-native';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import { CATEGORIES } from '../../../../constants/categories';
-import { COLLEGE_FEST_CATEGORY_CODES, getCollegeFestCategoryLabel } from '../../../../core/festival/templatePolicy';
+import { useFestivalCategories } from '../../../../core/hooks/useFestivalCategories';
 import { SsfSelectMenu } from '../../../../components/ui/SsfSelectMenu';
 import { SsfSheet } from '../../../../components/ui/SsfSheet';
 import { SsfProfileSkeleton } from '../../../../components/ui/SsfSkeleton';
@@ -126,6 +126,9 @@ export default function ParticipantDetails() {
   const { useActiveFestival, useItems } = useFestival();
   const { data: festival } = useActiveFestival();
   const { data: allItems } = useItems(festival?.id);
+  const isCollegeFest = festival?.festival_template === 'college_fest';
+  const { data: collegeCategories = [], isLoading: categoriesLoading } =
+    useFestivalCategories(isCollegeFest ? festival?.id : undefined, false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
@@ -188,6 +191,13 @@ export default function ParticipantDetails() {
   const handleSave = async () => {
     if (!name) return Alert.alert('Error', 'Name is required');
     if (!participantId) return;
+    if (isCollegeFest) {
+      const selected = collegeCategories.find(category => category.code === categoryCode);
+      const unchangedArchived = selected && !selected.is_active && categoryCode === participant.category_code;
+      if (!selected || (!selected.is_active && !unchangedArchived)) {
+        return Alert.alert('Error', 'Select an active College Fest category.');
+      }
+    }
 
     try {
       await updateParticipant({ 
@@ -199,8 +209,8 @@ export default function ParticipantDetails() {
           dob: dob || null,
           category_code: categoryCode || null,
           gender: gender || null,
-          class_std: classStd || null,
-          education_type: educationType || null,
+          class_std: isCollegeFest ? null : classStd || null,
+          education_type: isCollegeFest ? null : educationType || null,
           membership_no: membershipNo || null,
           profile_bio: profileBio || null,
           profile_slug: profileSlug || null,
@@ -357,17 +367,15 @@ export default function ParticipantDetails() {
 
   const locked = participant.is_locked;
   const isBanned = participant.plagiarism_ban_until && new Date(participant.plagiarism_ban_until) > new Date();
-  const isCollegeFest = festival?.festival_template === 'college_fest';
-
   const categoryOptions = isCollegeFest
     ? [
         { label: '-- Select Category --', value: '' },
-        ...COLLEGE_FEST_CATEGORY_CODES.map((code) => ({
-          label: `${code} - ${getCollegeFestCategoryLabel(code)}`,
-          value: code,
+        ...collegeCategories.filter(category => category.is_active || category.code === participant.category_code).map((category) => ({
+          label: `${category.name}${category.is_active ? '' : ' (Archived)'}`,
+          value: category.code,
         })),
-        ...(!COLLEGE_FEST_CATEGORY_CODES.includes(categoryCode as any) && categoryCode
-          ? [{ label: categoryCode, value: categoryCode }]
+        ...(!collegeCategories.some(category => category.code === categoryCode) && categoryCode
+          ? [{ label: `${categoryCode} (Historical)`, value: categoryCode }]
           : []),
       ]
     : [
@@ -570,7 +578,7 @@ export default function ParticipantDetails() {
                 <SsfButton
                   label={isUpdatingParticipant ? 'Saving...' : 'Save changes'}
                   onPress={handleSave}
-                  disabled={isUpdatingParticipant}
+                  disabled={isUpdatingParticipant || (isCollegeFest && categoriesLoading)}
                 />
                 <SsfButton
                   label="Close"
@@ -628,7 +636,7 @@ export default function ParticipantDetails() {
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Date of Birth (YYYY-MM-DD)</Text>
               <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={dob} onChangeText={setDob} />
             </View>
-            <View className="flex-row gap-x-3">
+            {!isCollegeFest && <View className="flex-row gap-x-3">
               <View className="flex-1">
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Class / Standard</Text>
                 <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={classStd} onChangeText={setClassStd} />
@@ -637,7 +645,7 @@ export default function ParticipantDetails() {
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Education Type</Text>
                 <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={educationType} onChangeText={setEducationType} />
               </View>
-            </View>
+            </View>}
             <View>
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Membership Number</Text>
               <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={membershipNo} onChangeText={setMembershipNo} />

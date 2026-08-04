@@ -10,7 +10,10 @@ export type AuthProfile = {
 };
 
 export interface AuthProvider {
-  lookupEmailByUsername(username: string): Promise<AuthResult<string>>;
+  resolveUsernameLogin(username: string, password: string): Promise<AuthResult<{
+    user: { id: string };
+    session: { access_token: string; refresh_token: string };
+  }>>;
   signInWithPassword(email: string, password: string): Promise<AuthResult<{ user: any }>>;
   signOut(): Promise<AuthResult<void>>;
   getSession(): Promise<AuthResult<{ user: any } | null>>;

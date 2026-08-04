@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Pencil, Plus, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react-native';
 import { SsfButton } from '../../../components/ui/SsfButton';
@@ -240,25 +239,20 @@ export default function PointsSettings() {
 
   return (
     <View className="flex-1 bg-ssf-bg">
-      <LinearGradient
-        colors={['#065F46', '#044230']}
-        className="pt-16 pb-10 px-6 rounded-b-[36px] mb-5"
-      >
-        <View className="flex-row items-center justify-between">
+      <ScrollView className="flex-1 py-6 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Page Title — matches schedule page pattern */}
+        <View className="flex-row items-center justify-between mb-6">
           <View className="flex-1 pr-3">
-            <Text className="text-3xl font-poppins-black text-white">Points System</Text>
-            <Text className="text-white/75 font-poppins mt-1">
+            <Text className="text-3xl font-poppins-black text-ui-text">Points System</Text>
+            <Text className="text-sm font-poppins text-ui-text-muted mt-1">
               One flexible rule set for results and leaderboards
             </Text>
           </View>
-          <View className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 items-center">
-            <Text className="text-white/70 font-poppins text-[9px] uppercase">Version</Text>
-            <Text className="text-white font-poppins-black text-lg">{form.version}</Text>
+          <View className="bg-ui-muted border border-ui-border rounded-xl px-3 py-2 items-center">
+            <Text className="font-poppins text-[9px] uppercase text-ui-text-muted">Version</Text>
+            <Text className="font-poppins-black text-lg text-ui-text">{form.version}</Text>
           </View>
         </View>
-      </LinearGradient>
-
-      <ScrollView className="px-5" contentContainerStyle={{ paddingBottom: 40 }}>
         <SsfCard className="mb-5">
           <Text className="font-poppins-black text-lg text-ssf-text">Configuration Mode</Text>
           <Text className="font-poppins text-xs text-gray-500 mt-1 mb-4">

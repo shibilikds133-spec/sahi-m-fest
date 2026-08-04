@@ -84,18 +84,15 @@ export default function JudgeMarksPage() {
 
       try {
         if (!session) return;
-        const res = await databaseProvider.upsertMarkEntry({
-          schedule_id: session.schedule_id,
-          judge_id: session.judge_id,
-          registration_id: regId,
-          criteria_scores: entryMode === 'total_only' ? {} : scores,
-          total_mark: total,
-          entry_mode_snapshot: entryMode,
-          max_mark_snapshot: eventTotalMarks,
-          criteria_snapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
-          tenant_id: session.tenant_id,
-          is_draft: true,
-          is_final: false,
+        const res = await databaseProvider.submitJudgeMark({
+          token: session.token,
+          registrationId: regId,
+          criteriaScores: entryMode === 'total_only' ? {} : scores,
+          totalMark: total,
+          status: 'draft',
+          entryMode,
+          maxMark: eventTotalMarks,
+          criteriaSnapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
         });
 
         if (res.error) throw new Error(res.error.message);
@@ -145,9 +142,9 @@ export default function JudgeMarksPage() {
       const sessionData = JSON.parse(sessionStr);
       setSession({ ...sessionData, token });
 
-      // Load registrations for this schedule
+      // Load registrations for this token-bound schedule
       const { data, error: registrationsError } =
-        await databaseProvider.getRegistrationsBySchedule<any>(sessionData.schedule_id);
+        await databaseProvider.getJudgeRegistrationsByToken<any>(token);
       if (registrationsError) {
         throw new Error(
           registrationsError.message || 'Could not load participants for this event.'
@@ -182,19 +179,17 @@ export default function JudgeMarksPage() {
         } catch {}
       }
 
-      // 2. Fetch marks from database to merge/overwrite
+      // 2. Merge server-side existing marks (returned by the token-bound RPC).
+      //    These are authoritative for the judge's own entries.
       try {
-        const { data: dbMarkEntries } = await databaseProvider.listMarkEntries<any>(sessionData.schedule_id);
-        if (dbMarkEntries) {
-          dbMarkEntries.forEach((entry: any) => {
-            if (entry.judge_id === sessionData.judge_id) {
-              loadedMarks[entry.registration_id] =
-                entry.entry_mode_snapshot === 'total_only'
-                  ? { total: Number(entry.total_mark ?? 0) }
-                  : entry.criteria_scores || {};
-            }
-          });
-        }
+        regs.forEach((reg: any) => {
+          const existingMark = reg?.existing_mark;
+          if (!existingMark) return;
+          loadedMarks[reg.id] =
+            existingMark.entry_mode_snapshot === 'total_only'
+              ? { total: Number(existingMark.total_mark ?? 0) }
+              : (existingMark.criteria_scores || {});
+        });
       } catch (dbErr) {
         console.warn('Could not load marks from DB, using local only:', dbErr);
       }
@@ -278,19 +273,15 @@ export default function JudgeMarksPage() {
           label: c.label,
           max: c.max,
         }));
-        const res = await databaseProvider.upsertMarkEntry({
-          schedule_id: session.schedule_id,
-          judge_id: session.judge_id,
-          registration_id: reg.id,
-          criteria_scores: entryMode === 'total_only' ? {} : scores,
-          total_mark: total,
-          entry_mode_snapshot: entryMode,
-          max_mark_snapshot: eventTotalMarks,
-          criteria_snapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
-          tenant_id: session.tenant_id,
-          is_draft: false,
-          is_final: true,
-          submitted_at: new Date().toISOString(),
+        const res = await databaseProvider.submitJudgeMark({
+          token: session.token,
+          registrationId: reg.id,
+          criteriaScores: entryMode === 'total_only' ? {} : scores,
+          totalMark: total,
+          status: 'final',
+          entryMode,
+          maxMark: eventTotalMarks,
+          criteriaSnapshot: entryMode === 'criteria' ? criteriaSnapshot : [],
         });
         if (res.error) {
           throw new Error(`Failed to save mark entry: ${res.error.message}`);

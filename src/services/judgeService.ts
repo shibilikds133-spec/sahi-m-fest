@@ -71,6 +71,27 @@ export const judgeService = {
     return data ?? [];
   },
 
+  async getJudgeRegistrationsByToken<T>(token: string) {
+    const { data, error } = await judgeRepository.getJudgeRegistrationsByToken<T>(token);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+
+  async submitJudgeMark<T>(payload: {
+    token: string;
+    registrationId: string;
+    criteriaScores: Record<string, number>;
+    totalMark: number;
+    status: 'draft' | 'final';
+    entryMode?: 'criteria' | 'total_only';
+    maxMark?: number;
+    criteriaSnapshot?: { key: string; label: string; max: number }[];
+  }) {
+    const { data, error } = await judgeRepository.submitJudgeMark<T>(payload);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   async listMarkEntries<T>(scheduleId: string) {
     const { data, error } = await judgeRepository.listMarkEntries<T>(scheduleId);
     if (error) throw new Error(error.message);
