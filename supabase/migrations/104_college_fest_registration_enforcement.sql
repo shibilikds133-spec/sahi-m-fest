@@ -93,7 +93,7 @@ BEGIN
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
       AND proname = 'resolve_festival_template'
-      AND pg_get_function_identity_arguments(oid) = 'uuid'
+      AND oidvectortypes(proargtypes) = 'uuid'
       AND proretset = false
       AND prosecdef = true
   ) THEN

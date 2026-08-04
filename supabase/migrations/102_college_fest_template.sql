@@ -162,7 +162,7 @@ BEGIN
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
       AND proname = 'finalise_tenant_provisioning'
-      AND pg_get_function_identity_arguments(oid) = 'uuid, uuid, text, text, text'
+      AND oidvectortypes(proargtypes) = 'uuid, uuid, text, text, text'
   ) THEN
     RAISE EXCEPTION 'Dependency missing: five-argument finalise_tenant_provisioning not found (is migration 100 applied?)';
   END IF;
@@ -171,7 +171,7 @@ BEGIN
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
       AND proname = 'finalise_child_organisation_provisioning'
-      AND pg_get_function_identity_arguments(oid) = 'uuid, uuid, text, text, text, text'
+      AND oidvectortypes(proargtypes) = 'uuid, uuid, text, text, text, text'
   ) THEN
     RAISE EXCEPTION 'Dependency missing: finalise_child_organisation_provisioning not found (is migration 100 applied?)';
   END IF;
@@ -190,7 +190,7 @@ BEGIN
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
       AND proname = 'finalise_tenant_provisioning'
-      AND pg_get_function_identity_arguments(oid) = 'uuid, uuid, text, text, text, text'
+      AND oidvectortypes(proargtypes) = 'uuid, uuid, text, text, text, text'
   ) THEN
     RAISE EXCEPTION 'Unexpected pre-existing six-argument finalise_tenant_provisioning overload';
   END IF;
