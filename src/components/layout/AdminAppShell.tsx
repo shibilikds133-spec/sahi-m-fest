@@ -36,6 +36,7 @@ import {
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/core/store/authStore';
+import { useFestival } from '@/core/hooks/useFestival';
 import { ui } from '@/constants/designSystem';
 
 type IconType = React.ComponentType<{
@@ -203,10 +204,12 @@ function DesktopSidebar({
   pathname,
   collapsed,
   onToggle,
+  festivalName,
 }: {
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
+  festivalName: string;
 }) {
   const router = useRouter();
   const { user, role, logout } = useAuthStore();
@@ -221,7 +224,7 @@ function DesktopSidebar({
           </View>
           {!collapsed && (
             <View style={{ flex: 1 }}>
-              <Text style={styles.brandName}>Sahithyolsav</Text>
+              <Text style={styles.brandName} numberOfLines={1}>{festivalName}</Text>
               <Text style={styles.brandCaption}>Festival workspace</Text>
             </View>
           )}
@@ -483,6 +486,9 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
   const isDesktop = width >= 900;
   const hasIntegratedSectionHeader = pathname.includes('/settings/leaderboard');
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname]);
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
+  const festivalName = activeFestival?.custom_name?.trim() || 'Sahithyolsav';
 
   return (
     <View style={styles.shell}>
@@ -491,13 +497,14 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
           pathname={pathname}
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed((current) => !current)}
+          festivalName={festivalName}
         />
       )}
       <View style={styles.shellMain}>
         {isDesktop && !hasIntegratedSectionHeader && (
           <View style={styles.topbar}>
             <View>
-              <Text style={styles.topbarEyebrow}>Sahithyolsav 2026</Text>
+              <Text style={styles.topbarEyebrow}>{festivalName}</Text>
               <Text style={styles.topbarTitle}>{pageTitle}</Text>
             </View>
             <View style={styles.topbarActions}>
