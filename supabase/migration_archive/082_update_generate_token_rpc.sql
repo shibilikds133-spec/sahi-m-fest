@@ -1,3 +1,11 @@
+-- ARCHIVED DUPLICATE MIGRATION
+--
+-- This file originally existed as supabase/migrations/082_update_generate_token_rpc.sql
+-- and collided with 082_judge_token_regeneration.sql. It is retained byte-for-byte
+-- below as an audit artifact, but is not executable migration history. Migration
+-- 083 is the canonical live implementation and migration 094 records the forward
+-- reconciliation.
+
 -- Update generate_judge_token to accept p_force_refresh parameter
 
 DROP FUNCTION IF EXISTS public.generate_judge_token(UUID, UUID, UUID, UUID);
