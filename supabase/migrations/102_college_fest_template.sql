@@ -49,6 +49,7 @@ DO $$
 DECLARE
   v_col_ok boolean;
   v_constraint_def text;
+  v_has_non_default_rows boolean;
 BEGIN
   -- 1a. tenants.festival_template must not already exist with an
   --     incompatible definition (type/default/nullability).
@@ -112,11 +113,47 @@ BEGIN
   -- 1d. Data-state guard: no festival template other than the default may
   --     already exist (this migration was never applied; `college_fest`
   --     before this point would indicate a foreign/partial implementation).
-  IF EXISTS (SELECT 1 FROM public.tenants WHERE festival_template IS DISTINCT FROM 'sahithyolsav') THEN
-    RAISE EXCEPTION 'Migration 102 was never applied, but tenants.festival_template is already set to a non-default value';
+  --     The columns are created later in this migration, so the existence of
+  --     each column is checked first and the actual data probe runs only via
+  --     constant dynamic SQL (EXECUTE ... USING) inside the exists-branch;
+  --     column resolution is deferred and the parser never sees a static
+  --     reference to a column that may not exist yet.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'tenants'
+      AND column_name = 'festival_template'
+  ) THEN
+    EXECUTE
+      'SELECT EXISTS (
+         SELECT 1
+         FROM public.tenants
+         WHERE festival_template IS DISTINCT FROM $1
+       )'
+      INTO v_has_non_default_rows
+      USING 'sahithyolsav';
+
+    IF v_has_non_default_rows THEN
+      RAISE EXCEPTION 'Migration 102 was never applied, but tenants.festival_template is already set to a non-default value';
+    END IF;
   END IF;
-  IF EXISTS (SELECT 1 FROM public.festival_calendar WHERE festival_template IS DISTINCT FROM 'sahithyolsav') THEN
-    RAISE EXCEPTION 'Migration 102 was never applied, but festival_calendar.festival_template is already set to a non-default value';
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'festival_calendar'
+      AND column_name = 'festival_template'
+  ) THEN
+    EXECUTE
+      'SELECT EXISTS (
+         SELECT 1
+         FROM public.festival_calendar
+         WHERE festival_template IS DISTINCT FROM $1
+       )'
+      INTO v_has_non_default_rows
+      USING 'sahithyolsav';
+
+    IF v_has_non_default_rows THEN
+      RAISE EXCEPTION 'Migration 102 was never applied, but festival_calendar.festival_template is already set to a non-default value';
+    END IF;
   END IF;
 
   -- 1e. Dependencies on the reconciled history (001-101) must exist, so a
