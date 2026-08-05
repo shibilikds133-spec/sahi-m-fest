@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, ScrollView, Alert, TextInput, TouchableOpacity, Modal, useWindowDimensions, Platform } from 'react-native';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories';
+import { useAuthStore } from '../../../core/store/authStore';
 import { HANDBOOK_ITEMS } from '../../../constants/items';
 import { useRouter } from 'expo-router';
 import { Search, CheckCircle, Circle, Plus, Trash2 } from 'lucide-react-native';
@@ -14,7 +16,8 @@ export default function ItemActivationSettings() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const { useActiveFestival, useActiveItems, useUpdateActiveItems } = useFestival();
+  const { useActiveFestival, useActiveItems, useItems, useUpdateActiveItems } = useFestival();
+  const { tenant_id: currentTenantId } = useAuthStore();
   const { data: festival } = useActiveFestival();
   const isCollegeFest = festival?.festival_template === 'college_fest';
   const { data: collegeCategories = [], isLoading: categoriesLoading } = useFestivalCategories(
@@ -22,6 +25,7 @@ export default function ItemActivationSettings() {
     true,
   );
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
+  const { data: persistedItems = [], isLoading: persistedItemsLoading } = useItems(festival?.id);
   const updateActiveItems = useUpdateActiveItems(festival?.id);
 
   const [search, setSearch] = useState('');
@@ -30,6 +34,39 @@ export default function ItemActivationSettings() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
+  const [showTenantItemsOnly, setShowTenantItemsOnly] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.localStorage.getItem(`items-show-tenant-only:${currentTenantId || 'unknown'}`) === 'true';
+    }
+    return false;
+  });
+  const [tenantFilterLoaded, setTenantFilterLoaded] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      setShowTenantItemsOnly(typeof window !== 'undefined' && window.localStorage.getItem(tenantFilterStorageKey) === 'true');
+      setTenantFilterLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    setTenantFilterLoaded(false);
+    AsyncStorage.getItem(tenantFilterStorageKey).then(value => {
+      if (!cancelled) {
+        setShowTenantItemsOnly(value === 'true');
+        setTenantFilterLoaded(true);
+      }
+    }).catch(() => {
+      if (!cancelled) setTenantFilterLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [tenantFilterStorageKey]);
+
+  useEffect(() => {
+    if (tenantFilterLoaded) {
+      AsyncStorage.setItem(tenantFilterStorageKey, String(showTenantItemsOnly)).catch(() => undefined);
+    }
+  }, [showTenantItemsOnly, tenantFilterLoaded, tenantFilterStorageKey]);
 
   useEffect(() => {
     if (isCollegeFest && collegeCategories.length > 0) {
@@ -47,11 +84,28 @@ export default function ItemActivationSettings() {
     }
   }, [activeCodes]);
 
+  const availableItems = useMemo(() => {
+    const combined = [
+      ...HANDBOOK_ITEMS,
+      ...(Array.isArray(persistedItems) ? persistedItems : []),
+      ...customItems,
+    ];
+    const unique = new Map<string, any>();
+    combined.forEach(item => {
+      const existing = unique.get(item.item_code);
+      const isCurrentTenantItem = item.tenant_id === currentTenantId || item.source === 'custom';
+      if (!existing || isCurrentTenantItem) unique.set(item.item_code, item);
+    });
+    return Array.from(unique.values()).filter(item =>
+      !showTenantItemsOnly || item.tenant_id === currentTenantId || item.source === 'custom'
+    );
+  }, [currentTenantId, customItems, persistedItems, showTenantItemsOnly]);
+
   const groupedItems = useMemo(() => {
-    const combined = [...HANDBOOK_ITEMS, ...customItems];
+    const combined = availableItems;
     const list = combined.filter(item =>
-      item.item_name_ml.toLowerCase().includes(search.toLowerCase()) ||
-      item.item_code.toLowerCase().includes(search.toLowerCase())
+      String(item.item_name_ml ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(item.item_code ?? '').toLowerCase().includes(search.toLowerCase())
     );
 
     const grouped: Record<string, typeof list> = {};
@@ -61,14 +115,14 @@ export default function ItemActivationSettings() {
       grouped[cat].push(item);
     });
     return grouped;
-  }, [search, customItems]);
+  }, [availableItems, search]);
 
   const allItems = useMemo(() => {
-    return [...HANDBOOK_ITEMS, ...customItems].filter(item =>
-      item.item_name_ml.toLowerCase().includes(search.toLowerCase()) ||
-      item.item_code.toLowerCase().includes(search.toLowerCase())
+    return availableItems.filter(item =>
+      String(item.item_name_ml ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(item.item_code ?? '').toLowerCase().includes(search.toLowerCase())
     );
-  }, [search, customItems]);
+  }, [availableItems, search]);
 
   const toggleItem = (code: string) => {
     setSelectedCodes(prev =>
@@ -113,7 +167,7 @@ export default function ItemActivationSettings() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || persistedItemsLoading) {
     return (
       <View className="flex-1 bg-ssf-bg items-center justify-center">
         <Text className="font-poppins text-ui-text-muted">Loading...</Text>
@@ -147,10 +201,22 @@ export default function ItemActivationSettings() {
           <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || collegeCategories.length === 0)} onPress={() => setIsAddModalOpen(true)}>
             + Custom
           </Button>
-          <Button variant="ghost" size="sm" onPress={() => setSelectedCodes(HANDBOOK_ITEMS.map(i => i.item_code))}>
+          <Button variant="ghost" size="sm" onPress={() => setSelectedCodes(availableItems.map(i => i.item_code))}>
             Select All
           </Button>
         </View>
+
+        <TouchableOpacity
+          className="mb-4 flex-row items-center gap-2 self-start rounded-lg border border-ui-border bg-white px-3 py-2"
+          onPress={() => setShowTenantItemsOnly(current => !current)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: showTenantItemsOnly }}
+        >
+          {showTenantItemsOnly ? <CheckCircle size={17} color="#0F766E" /> : <Circle size={17} color="#94A3B8" />}
+          <Text className="font-poppins text-xs text-ui-text">
+            Show this tenant&apos;s competitions only
+          </Text>
+        </TouchableOpacity>
 
         {/* Stats */}
         <Text className="text-sm font-poppins-bold text-ui-text-muted mb-4 px-1">

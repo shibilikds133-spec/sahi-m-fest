@@ -120,12 +120,12 @@ export const useFestival = () => {
   // 6. Fetch Items from DB
   const useItems = (festivalId: string | undefined) => {
     return useQuery({
-      queryKey: ['items', festivalId],
+      queryKey: ['items', festivalId, tenant_id],
       queryFn: async () => {
         if (!festivalId) return [];
         return festivalSettingsService.getItems<any>(festivalId);
       },
-      enabled: !!festivalId,
+      enabled: !!festivalId && !!tenant_id,
     });
   };
 

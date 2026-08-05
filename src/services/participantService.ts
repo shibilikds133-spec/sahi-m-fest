@@ -384,6 +384,8 @@ export const participantService = {
   async listOrganisations(tenantId: string): Promise<OrganisationOption[]> {
     const { data, error } = await participantRepository.listOrganisations<OrganisationOption>(tenantId);
     throwIfError(error);
-    return data;
+    // Archived sub-organisations remain in the database for history, but they
+    // must not be selectable for new participants.
+    return (data || []).filter((organisation: any) => !organisation.archived_at);
   },
 };
