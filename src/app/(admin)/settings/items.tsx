@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, ScrollView, Alert, TextInput, TouchableOpacity, Modal, useWindowDimensions, Platform } from 'react-native';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories';
@@ -34,6 +35,29 @@ export default function ItemActivationSettings() {
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [showTenantItemsOnly, setShowTenantItemsOnly] = useState(false);
+  const [tenantFilterLoaded, setTenantFilterLoaded] = useState(false);
+
+  const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setTenantFilterLoaded(false);
+    AsyncStorage.getItem(tenantFilterStorageKey).then(value => {
+      if (!cancelled) {
+        setShowTenantItemsOnly(value === 'true');
+        setTenantFilterLoaded(true);
+      }
+    }).catch(() => {
+      if (!cancelled) setTenantFilterLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [tenantFilterStorageKey]);
+
+  useEffect(() => {
+    if (tenantFilterLoaded) {
+      AsyncStorage.setItem(tenantFilterStorageKey, String(showTenantItemsOnly)).catch(() => undefined);
+    }
+  }, [showTenantItemsOnly, tenantFilterLoaded, tenantFilterStorageKey]);
 
   useEffect(() => {
     if (isCollegeFest && collegeCategories.length > 0) {
