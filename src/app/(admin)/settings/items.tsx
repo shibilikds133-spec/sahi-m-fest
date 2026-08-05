@@ -34,12 +34,21 @@ export default function ItemActivationSettings() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
-  const [showTenantItemsOnly, setShowTenantItemsOnly] = useState(false);
+  const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
+  const [showTenantItemsOnly, setShowTenantItemsOnly] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.localStorage.getItem(`items-show-tenant-only:${currentTenantId || 'unknown'}`) === 'true';
+    }
+    return false;
+  });
   const [tenantFilterLoaded, setTenantFilterLoaded] = useState(false);
 
-  const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
-
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      setShowTenantItemsOnly(typeof window !== 'undefined' && window.localStorage.getItem(tenantFilterStorageKey) === 'true');
+      setTenantFilterLoaded(true);
+      return;
+    }
     let cancelled = false;
     setTenantFilterLoaded(false);
     AsyncStorage.getItem(tenantFilterStorageKey).then(value => {
