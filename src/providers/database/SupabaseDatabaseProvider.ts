@@ -248,11 +248,13 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: undefined, error: normalizeError(error) };
   }
 
-  async countParticipantsByCategory(categoryCode: string): Promise<QueryResult<number>> {
-    const { count, error } = await supabase
+  async countParticipantsByCategory(categoryCode: string, festivalId?: string): Promise<QueryResult<number>> {
+    let query = supabase
       .from('participants')
       .select('*', { count: 'exact', head: true })
       .eq('category_code', categoryCode);
+    if (festivalId) query = query.eq('festival_id', festivalId);
+    const { count, error } = await query;
 
     return { data: count ?? 0, error: normalizeError(error) };
   }

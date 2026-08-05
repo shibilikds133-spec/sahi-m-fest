@@ -53,8 +53,12 @@ export const participantRepository = {
     return databaseProvider.updateParticipants(participantIds, updates);
   },
 
-  countParticipantsByCategory(categoryCode: string) {
-    return databaseProvider.countParticipantsByCategory(categoryCode);
+  countParticipantsByCategory(categoryCode: string, festivalId?: string) {
+    return databaseProvider.countParticipantsByCategory(categoryCode, festivalId);
+  },
+
+  validateChestNumbers(festivalId: string, chestNumbers: string[]) {
+    return databaseProvider.validateChestNumbers(festivalId, chestNumbers);
   },
 
   createParticipant<T>(payload: Record<string, unknown>) {
@@ -113,4 +117,3 @@ export const participantRepository = {
     return databaseProvider.createSystemEvent<T>(payload);
   },
 };
-

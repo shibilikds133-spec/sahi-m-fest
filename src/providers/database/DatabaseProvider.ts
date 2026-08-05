@@ -38,7 +38,7 @@ export interface DatabaseProvider {
   deleteParticipant(participantId: string): Promise<QueryResult<void>>;
   deleteParticipants(participantIds: string[]): Promise<QueryResult<void>>;
   updateParticipants(participantIds: string[], updates: Record<string, unknown>): Promise<QueryResult<void>>;
-  countParticipantsByCategory(categoryCode: string): Promise<QueryResult<number>>;
+  countParticipantsByCategory(categoryCode: string, festivalId?: string): Promise<QueryResult<number>>;
   createParticipant<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   createParticipants<T>(payloads: Record<string, unknown>[]): Promise<ListResult<T>>;
   createRegistration<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;

@@ -303,10 +303,21 @@ export const participantService = {
     throwIfError(error);
   },
 
-  async generateChestNumber(categoryCode: string): Promise<string> {
-    const { data, error } = await participantRepository.countParticipantsByCategory(categoryCode);
+  async generateChestNumber(categoryCode: string, festivalId?: string): Promise<string> {
+    const { data, error } = await participantRepository.countParticipantsByCategory(categoryCode, festivalId);
     throwIfError(error);
-    return `${categoryCode}-${((data ?? 0) + 1).toString().padStart(3, '0')}`;
+    let next = (data ?? 0) + 1;
+    // Counts can have gaps after deletes/imports, so verify the candidate
+    // against this festival before returning it.
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const candidate = `${categoryCode}-${next.toString().padStart(3, '0')}`;
+      if (!festivalId) return candidate;
+      const { data: conflicts, error: conflictError } = await participantRepository.validateChestNumbers(festivalId, [candidate]);
+      throwIfError(conflictError);
+      if (!conflicts?.length) return candidate;
+      next += 1;
+    }
+    throw new Error('Unable to generate a unique chest number. Please try again.');
   },
 
   async createParticipant<T>(payload: Record<string, unknown>): Promise<T> {

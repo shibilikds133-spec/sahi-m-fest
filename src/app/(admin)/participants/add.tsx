@@ -277,7 +277,7 @@ export default function AddParticipant() {
     // Generate or use manual chest number
     let chest_number = manualChestNumber.trim();
     if (!chest_number) {
-      chest_number = await participantService.generateChestNumber(category);
+      chest_number = await participantService.generateChestNumber(category, festivalId);
     }
 
     // Calculate age for storage
