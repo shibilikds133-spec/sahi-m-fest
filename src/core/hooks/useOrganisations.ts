@@ -51,6 +51,8 @@ export const useOrganisations = () => {
     myOrganisation: myOrganisationQuery.data,
     isLoadingMyOrg: myOrganisationQuery.isLoading,
     childOrganisations: childOrganisationsQuery.data || [],
+    childOrganisationsError: childOrganisationsQuery.error,
+    refetchChildOrganisations: childOrganisationsQuery.refetch,
     isLoadingChildren: childOrganisationsQuery.isLoading || myOrganisationQuery.isLoading,
     createOrganisation: createOrganisationMutation.mutateAsync,
     isCreating: createOrganisationMutation.isPending,

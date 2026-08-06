@@ -14,6 +14,8 @@ export default function SubOrganisationsManager() {
   
   const { 
     childOrganisations: orgs, 
+    childOrganisationsError,
+    refetchChildOrganisations,
     isLoadingChildren: loading, 
     createOrganisation, 
     isCreating, 
@@ -196,6 +198,19 @@ export default function SubOrganisationsManager() {
           <View style={{ paddingHorizontal: 20 }}>
             {loading ? (
               <SsfTableSkeleton rows={6} columns={3} compact />
+            ) : childOrganisationsError ? (
+              <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.8 }}>
+                <Building2 size={48} color="#DC2626" />
+                <Text style={{ fontFamily: 'Poppins_400Regular', color: '#B91C1C', marginTop: 16, textAlign: 'center' }}>
+                  Unable to load sub-organisations. Check your connection and try again.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => refetchChildOrganisations()}
+                  style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: '#0F766E' }}
+                >
+                  <Text style={{ fontFamily: 'Poppins_700Bold', color: '#FFFFFF' }}>Retry</Text>
+                </TouchableOpacity>
+              </View>
             ) : orgs.length === 0 ? (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.5 }}>
                 <Building2 size={48} color="#64748B" />
