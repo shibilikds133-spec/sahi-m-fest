@@ -289,23 +289,43 @@ export default function AddParticipant() {
     let saveError: Error | null = null;
     let photoUploadError: Error | null = null;
     try {
-      const newParticipant = await participantService.createParticipant<any>({
-        tenant_id: targetTenantId,
-        festival_id: festivalId,
-        organisation_id: selectedOrgId,
-        name: name.trim(),
-        category_code: category,
-        phone: phone || null,
-        chest_number,
-        status: 'approved',
-        age: ageNum,
-        class_std: isCollegeFest ? null : classStd || null,
-        dob: dob || null,
-        gender,
-        profile_bio: profileBio || null,
-        public_profile_enabled: publicProfileEnabled,
-        show_organisation_public: showOrganisationPublic,
-      });
+      // The unique index is the final authority. Two admins can generate the
+      // same number concurrently, so retry an automatically generated number
+      // when the insert loses that race.
+      let newParticipant: any;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          newParticipant = await participantService.createParticipant<any>({
+            tenant_id: targetTenantId,
+            festival_id: festivalId,
+            organisation_id: selectedOrgId,
+            name: name.trim(),
+            category_code: category,
+            phone: phone || null,
+            chest_number,
+            status: 'approved',
+            age: ageNum,
+            class_std: isCollegeFest ? null : classStd || null,
+            dob: dob || null,
+            gender,
+            profile_bio: profileBio || null,
+            public_profile_enabled: publicProfileEnabled,
+            show_organisation_public: showOrganisationPublic,
+          });
+          break;
+        } catch (error: any) {
+          const isDuplicateChest = error?.code === '23505'
+            && String(error?.message || '').includes('unique_active_chest_number');
+          if (!isDuplicateChest || manualChestNumber.trim() || attempt === 2) throw error;
+          // Do not call the generator again here: if RLS hides the existing
+          // row, it can return the same candidate repeatedly. Advance the
+          // candidate that the database just rejected instead.
+          const match = chest_number.match(/^(.*-)(\d+)$/);
+          chest_number = match
+            ? `${match[1]}${(Number(match[2]) + 1).toString().padStart(match[2].length, '0')}`
+            : await participantService.generateChestNumber(category, festivalId);
+        }
+      }
 
       if (photoFile && newParticipant?.id) {
         try {

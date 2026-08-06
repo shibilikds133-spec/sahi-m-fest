@@ -1,6 +1,7 @@
 import { participantRepository } from '../lib/repositories/participantRepository';
 import { ruleEngine } from '../core/rules/ruleEngine';
 import { uploadService } from './storage/uploadService';
+import { getCollegeFestChestPrefix, isCollegeFestCategory } from '../core/festival/templatePolicy';
 
 export type ParticipantStatus = 'pending' | 'approved' | 'rejected';
 
@@ -42,8 +43,18 @@ export type PublicCandidateProfile = {
   }[];
 };
 
-const throwIfError = (error: { message: string } | null) => {
-  if (error) throw new Error(error.message);
+const throwIfError = (error: { message: string; code?: string; details?: string | null; hint?: string | null } | null) => {
+  if (error) {
+    const databaseError = new Error(error.message) as Error & {
+      code?: string;
+      details?: string | null;
+      hint?: string | null;
+    };
+    databaseError.code = error.code;
+    databaseError.details = error.details;
+    databaseError.hint = error.hint;
+    throw databaseError;
+  }
 };
 
 const resolveExistingPhotoKey = (participant: any): string | null => {
@@ -307,10 +318,13 @@ export const participantService = {
     const { data, error } = await participantRepository.countParticipantsByCategory(categoryCode, festivalId);
     throwIfError(error);
     let next = (data ?? 0) + 1;
+    const chestPrefix = isCollegeFestCategory(categoryCode)
+      ? getCollegeFestChestPrefix(categoryCode)
+      : categoryCode;
     // Counts can have gaps after deletes/imports, so verify the candidate
     // against this festival before returning it.
     for (let attempt = 0; attempt < 100; attempt += 1) {
-      const candidate = `${categoryCode}-${next.toString().padStart(3, '0')}`;
+      const candidate = `${chestPrefix}-${next.toString().padStart(3, '0')}`;
       if (!festivalId) return candidate;
       const { data: conflicts, error: conflictError } = await participantRepository.validateChestNumbers(festivalId, [candidate]);
       throwIfError(conflictError);
