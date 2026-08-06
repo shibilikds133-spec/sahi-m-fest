@@ -22,7 +22,8 @@ export const unstable_settings = {
 const queryClient = new QueryClient();
 
 function LayoutContent() {
- useProtectedRoute();
+ const blockProtectedCoreRoute = useProtectedRoute();
+ if (blockProtectedCoreRoute) return null;
  return <Slot />;
 }
 

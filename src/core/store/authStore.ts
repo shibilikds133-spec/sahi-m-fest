@@ -5,7 +5,7 @@ import { authService } from '../../services/authService';
 interface AuthState {
   user: any | null;
   tenant_id: string | null;
-  role: 'admin' | 'judge' | 'volunteer' | 'participant' | null;
+  role: 'admin' | 'judge' | 'volunteer' | 'participant' | 'team_leader' | null;
   is_superadmin: boolean;
   initialized: boolean;
   setUser: (user: any, tenant_id: string | null, role: any, is_superadmin?: boolean) => void;

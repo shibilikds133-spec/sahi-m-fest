@@ -88,7 +88,12 @@ const ORG_TYPE_CONFIG: Record<OrgType, { label: string; icon: React.ReactNode; c
     color: '#A855F7',
     bg: 'rgba(168,85,247,0.10)',
   },
-};
+} as const;
+
+const DEFAULT_ORG_CONFIG = { label: 'Other', icon: <Layers size={16} color="#94A3B8" />, color: '#94A3B8', bg: 'rgba(148,163,184,0.10)' };
+
+const getOrgConfig = (type: string) =>
+  ORG_TYPE_CONFIG[type as OrgType] ?? DEFAULT_ORG_CONFIG;
 
 // ─── Add Modal ───────────────────────────────────────────────────────
 function AddOrgModal({
@@ -211,19 +216,19 @@ function AddOrgModal({
           </Text>
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
             {(['unit', 'sector', 'division', 'district', 'state'] as OrgType[]).map((t) => {
-              const cfg = ORG_TYPE_CONFIG[t];
-              const active = orgType === t;
-              return (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => { setOrgType(t); setParentId(null); }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: active ? cfg.color : C.border,
-                    backgroundColor: active ? cfg.bg : C.bg,
+              const cfg = getOrgConfig(t);
+               const active = orgType === t;
+               return (
+                 <TouchableOpacity
+                   key={t}
+                   onPress={() => { setOrgType(t); setParentId(null); }}
+                   style={{
+                     flex: 1,
+                     paddingVertical: 10,
+                     borderRadius: 12,
+                     borderWidth: 1,
+                     borderColor: active ? cfg.color : C.border,
+                     backgroundColor: active ? cfg.bg : C.bg,
                     alignItems: 'center',
                   }}
                 >
@@ -251,7 +256,7 @@ function AddOrgModal({
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {eligibleParents.map((p) => {
                       const active = parentId === p.id;
-                      const cfg = ORG_TYPE_CONFIG[p.org_type];
+                      const cfg = getOrgConfig(p.org_type);
                       return (
                         <TouchableOpacity
                           key={p.id}
@@ -311,7 +316,7 @@ export default function OrganisationsManager() {
   const { data: orgsData, isLoading: loading, refetch } = useGlobalOrganisations<Org>();
   const deleteMutation = useDeleteGlobalOrganisation();
   
-  const orgs = orgsData || [];
+  const orgs = (orgsData || []).map((o) => ({ ...o, org_type: (String(o.org_type ?? '').trim().toLowerCase() || 'unit') as OrgType }));
 
   const [showModal, setShowModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<OrgType | 'all'>('all');
@@ -349,13 +354,8 @@ export default function OrganisationsManager() {
   // Build parent name map for display
   const parentMap = Object.fromEntries(orgs.map((o) => [o.id, o.name]));
 
-  const counts = {
-    unit: orgs.filter((o) => o.org_type === 'unit').length,
-    sector: orgs.filter((o) => o.org_type === 'sector').length,
-    division: orgs.filter((o) => o.org_type === 'division').length,
-    district: orgs.filter((o) => o.org_type === 'district').length,
-    state: orgs.filter((o) => o.org_type === 'state').length,
-  };
+  const counts: Record<OrgType, number> = { unit: 0, sector: 0, division: 0, district: 0, state: 0 };
+  orgs.forEach((o) => { if (o.org_type in counts) counts[o.org_type]++; });
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -429,7 +429,7 @@ export default function OrganisationsManager() {
         {/* ── Count pills ── */}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
           {(['unit', 'sector', 'division', 'district', 'state'] as OrgType[]).map((t) => {
-            const cfg = ORG_TYPE_CONFIG[t];
+            const cfg = getOrgConfig(t);
             return (
               <View
                 key={t}
@@ -468,7 +468,7 @@ export default function OrganisationsManager() {
       >
         {(['all', 'unit', 'sector', 'division', 'district', 'state'] as const).map((f) => {
           const active = activeFilter === f;
-          const cfg = f !== 'all' ? ORG_TYPE_CONFIG[f] : null;
+          const cfg = f !== 'all' ? getOrgConfig(f) : null;
           return (
             <TouchableOpacity
               key={f}
@@ -528,7 +528,7 @@ export default function OrganisationsManager() {
           </Animated.View>
         ) : (
           filtered.map((org, i) => {
-            const cfg = ORG_TYPE_CONFIG[org.org_type];
+            const cfg = getOrgConfig(org.org_type);
             const isDeleting = deleting === org.id;
             return (
               <Animated.View
