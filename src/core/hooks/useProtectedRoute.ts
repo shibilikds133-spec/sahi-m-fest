@@ -6,6 +6,9 @@ export function useProtectedRoute() {
   const router = useRouter();
   const segments = useSegments();
   const { user, role, is_superadmin, initialized } = useAuthStore();
+  const inTeamGroup = segments[0] === 'team';
+  const isTeamLeader = role === 'team_leader';
+  const mustBlockCoreRoute = Boolean(initialized && user && isTeamLeader && !inTeamGroup);
 
   useEffect(() => {
     if (!initialized) return;
@@ -15,6 +18,14 @@ export function useProtectedRoute() {
     const inJudgeGroup = segments[0] === 'judge';
     const inSuperGroup = segments[0] === '(super)';
     const inPublicGroup = segments[0] === '(public)';
+
+    // Team Leaders have a dedicated namespace. Keep this check separate from
+    // navigation visibility so a manually entered core URL is denied before
+    // the protected screen can issue its own queries.
+    if (user && isTeamLeader && !inTeamGroup) {
+      router.replace('/team/dashboard');
+      return;
+    }
 
     // --- Unauthenticated ---
     if (!user) {
@@ -41,6 +52,8 @@ export function useProtectedRoute() {
         router.replace('/(admin)');
       } else if (role === 'judge') {
         router.replace('/judge');
+      } else if (role === 'team_leader') {
+        router.replace('/team/dashboard');
       } else {
         router.replace('/(public)');
       }
@@ -70,5 +83,7 @@ export function useProtectedRoute() {
       router.replace('/(public)');
       return;
     }
-  }, [user, role, is_superadmin, initialized, segments]);
+  }, [user, role, is_superadmin, initialized, segments, inTeamGroup, isTeamLeader, router]);
+
+  return mustBlockCoreRoute;
 }

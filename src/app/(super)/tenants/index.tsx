@@ -18,7 +18,7 @@ import { FEATURE_FLAGS } from '../../../core/config/features';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import {
   ArrowLeft, Users, ShieldCheck, ShieldAlert, X, RefreshCw,
-  Building2, Map, GitBranch, Landmark, Flag,
+  Building2, Map, GitBranch, Landmark, Flag, Layers,
   Mail, KeyRound, Info, ChevronRight, Copy, ExternalLink,
 } from 'lucide-react-native';
 
@@ -48,7 +48,12 @@ const ORG_TYPE_CONFIG: Record<OrgType, { label: string; icon: React.ReactNode; c
   division: { label: 'Division', icon: <GitBranch size={16} color="#818CF8" />, color: '#818CF8', bg: 'rgba(129,140,248,0.10)' },
   district: { label: 'District', icon: <Landmark  size={16} color="#EC4899" />, color: '#EC4899', bg: 'rgba(236,72,153,0.10)' },
   state:    { label: 'State',    icon: <Flag      size={16} color="#A855F7" />, color: '#A855F7', bg: 'rgba(168,85,247,0.10)' },
-};
+} as const;
+
+const DEFAULT_ORG_CONFIG = { label: 'Other', icon: <Layers size={16} color="#94A3B8" />, color: '#94A3B8', bg: 'rgba(148,163,184,0.10)' };
+
+const getOrgConfig = (type: string) =>
+  ORG_TYPE_CONFIG[type as OrgType] ?? DEFAULT_ORG_CONFIG;
 
 // ─── Detail Modal (for active tenants) ───────────────────────────────
 function DetailModal({ visible, onClose, onComplete, org }: { 
@@ -66,7 +71,7 @@ function DetailModal({ visible, onClose, onComplete, org }: {
   const resetMutation = useResetRootTenantCredential();
 
   if (!org) return null;
-  const cfg = ORG_TYPE_CONFIG[org.org_type];
+  const cfg = getOrgConfig(org.org_type);
   const isDisabled = org.access_disabled === true;
 
   const handleCopy = () => {
@@ -487,7 +492,7 @@ function OnboardModal({ visible, onClose, onComplete, org, provisionMutation }: 
             <View>
               <Text style={{ color: C.text, fontFamily: 'Poppins_900Black', fontSize: 20 }}>Onboard Tenant</Text>
               <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', fontSize: 13 }}>
-                {org.name} ({ORG_TYPE_CONFIG[org.org_type].label})
+                {org.name} ({getOrgConfig(org.org_type).label})
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={{ padding: 6 }}><X size={22} color={C.muted} /></TouchableOpacity>
@@ -563,7 +568,7 @@ export default function TenantsManager() {
   const { useTenantAccounts, useProvisionRootTenant } = useSuperAdmin();
   const { data: orgsData, isLoading: loading, refetch } = useTenantAccounts<Org>();
   const provisionMutation = useProvisionRootTenant();
-  const orgs = orgsData || [];
+  const orgs = (orgsData || []).map((o) => ({ ...o, org_type: (String(o.org_type ?? '').trim().toLowerCase() || 'unit') as OrgType }));
   
   const [activeFilter, setActiveFilter] = useState<'all' | OrgType>('all');
   const [onboardOrg, setOnboardOrg]   = useState<Org | null>(null);
@@ -606,7 +611,7 @@ export default function TenantsManager() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {(['all', 'state', 'district', 'division', 'sector', 'unit'] as const).map(f => {
                 const active = activeFilter === f;
-                const cfg = f !== 'all' ? ORG_TYPE_CONFIG[f] : null;
+                const cfg = f !== 'all' ? getOrgConfig(f) : null;
                 return (
                   <TouchableOpacity key={f} onPress={() => setActiveFilter(f)} style={{
                     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1,
@@ -630,7 +635,7 @@ export default function TenantsManager() {
                 <Text style={{ color: C.muted, fontFamily: 'Poppins_400Regular', marginTop: 16 }}>No organisations found.</Text>
               </View>
             ) : filteredOrgs.map((org, i) => {
-              const cfg = ORG_TYPE_CONFIG[org.org_type];
+              const cfg = getOrgConfig(org.org_type);
               const hasAccess = !!org.tenant_id;
               const isDisabled = org.access_disabled === true;
               const onboardingAllowed = FEATURE_FLAGS.ENABLE_ONBOARDING;

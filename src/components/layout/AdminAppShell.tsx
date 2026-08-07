@@ -179,6 +179,11 @@ const navItems: NavItem[] = [
         path: '/(admin)/settings/api-keys',
         match: (path) => path.includes('/settings/api-keys'),
       },
+      {
+        label: 'Team Leader Portal',
+        path: '/(admin)/settings/team-leader-portal',
+        match: (path) => path.includes('/settings/team-leader-portal'),
+      },
     ],
   },
 ];

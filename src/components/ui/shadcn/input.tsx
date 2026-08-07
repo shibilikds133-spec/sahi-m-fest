@@ -8,7 +8,7 @@ const Input = React.forwardRef<TextInput, TextInputProps>(
       <TextInput
         ref={ref}
         className={cn(
-          "flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text placeholder:text-ui-text-muted",
+          "flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-poppins text-foreground placeholder:text-muted-foreground",
           className
         )}
         placeholderTextColor="#94A3B8"

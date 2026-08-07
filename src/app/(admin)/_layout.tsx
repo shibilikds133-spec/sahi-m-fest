@@ -29,6 +29,7 @@ export default function AdminLayout() {
         <Stack.Screen name="settings/leaderboard" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/categories" />
+        <Stack.Screen name="settings/team-leader-portal" />
       </Stack>
       <BackgroundExportEngine />
     </AdminAppShell>

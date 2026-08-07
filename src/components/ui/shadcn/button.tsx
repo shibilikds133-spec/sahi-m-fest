@@ -1,35 +1,12 @@
 import * as React from "react";
-import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
+import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { cn } from "../../../lib/utils";
 
-const buttonVariants = {
-  variants: {
-    variant: {
-      default: "bg-ui-primary",
-      destructive: "bg-red-500",
-      outline: "border border-ui-border bg-white",
-      secondary: "bg-ui-muted",
-      ghost: "bg-transparent",
-      link: "bg-transparent",
-    },
-    size: {
-      default: "h-10 px-4 py-2",
-      sm: "h-8 px-3",
-      lg: "h-12 px-8",
-      icon: "h-10 w-10",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-    size: "default",
-  },
-};
-
 const variantStyles = {
-  default: "bg-ui-primary",
-  destructive: "bg-red-500",
-  outline: "border border-ui-border bg-white",
-  secondary: "bg-ui-muted",
+  default: "bg-primary",
+  destructive: "bg-destructive",
+  outline: "border border-border bg-background",
+  secondary: "bg-secondary",
   ghost: "bg-transparent",
   link: "bg-transparent",
 };
@@ -42,12 +19,12 @@ const sizeStyles = {
 };
 
 const textVariantStyles = {
-  default: "text-white",
-  destructive: "text-white",
-  outline: "text-ui-text",
-  secondary: "text-ui-text",
-  ghost: "text-ui-text",
-  link: "text-ui-primary",
+  default: "text-primary-foreground",
+  destructive: "text-destructive-foreground",
+  outline: "text-foreground",
+  secondary: "text-secondary-foreground",
+  ghost: "text-foreground",
+  link: "text-primary",
 };
 
 export interface ButtonProps {
