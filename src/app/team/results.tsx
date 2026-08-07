@@ -43,8 +43,8 @@ export default function ResultsScreen() {
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
         <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>Results</Text>
-          <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Results</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
             Published results for your team
           </Text>
         </View>
@@ -59,7 +59,7 @@ export default function ResultsScreen() {
             {filtered.length === 0 ? (
               <Card>
                 <CardContent style={{ padding: 24, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: '#64748B' }}>No results to display</Text>
+                  <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>No results to display</Text>
                 </CardContent>
               </Card>
             ) : (
@@ -69,10 +69,10 @@ export default function ResultsScreen() {
                     <CardContent style={{ padding: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                             {result.item_name || result.item_code || 'Item'}
                           </Text>
-                          <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                          <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                             {result.participant_name || 'Participant'}
                           </Text>
                           <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>

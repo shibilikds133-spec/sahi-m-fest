@@ -4,7 +4,6 @@ import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderStanding } from '@/services/teamLeaderPortalService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
-import { Badge } from '@/components/ui/shadcn/badge';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 
 export default function MyTeamScreen() {
@@ -40,8 +39,8 @@ export default function MyTeamScreen() {
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
         <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>My Team</Text>
-          <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>My Team</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
             Team standings and leaderboard
           </Text>
         </View>
@@ -52,27 +51,27 @@ export default function MyTeamScreen() {
             <CardContent style={{ padding: 16 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View>
-                  <Text style={{ fontSize: 12, color: '#64748B' }}>Your Team</Text>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginTop: 2 }}>
+                  <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Your Team</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 2 }}>
                     {ownTeam.team_name}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 12, color: '#64748B' }}>Rank</Text>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: '#0F766E' }}>
+                  <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Rank</Text>
+                  <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--primary))' }}>
                     #{ownRank}
                   </Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
                 <View>
-                  <Text style={{ fontSize: 12, color: '#64748B' }}>Total Points</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>{totalPoints}</Text>
+                  <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Total Points</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: 'hsl(var(--foreground))' }}>{totalPoints}</Text>
                 </View>
                 {ownRank > 1 && (
                   <View>
-                    <Text style={{ fontSize: 12, color: '#64748B' }}>Behind Rank 1</Text>
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#DC2626' }}>-{pointsBehind}</Text>
+                    <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Behind Rank 1</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: 'hsl(var(--destructive))' }}>-{pointsBehind}</Text>
                   </View>
                 )}
               </View>
@@ -87,7 +86,7 @@ export default function MyTeamScreen() {
           </CardHeader>
           <CardContent>
             {standings.length === 0 ? (
-              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: 16 }}>
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: 16 }}>
                 No standings available
               </Text>
             ) : (
@@ -101,24 +100,25 @@ export default function MyTeamScreen() {
                       padding: 12,
                       borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: team.is_own_team ? '#0F766E' : '#E2E8F0',
-                      backgroundColor: team.is_own_team ? '#F0FDFA' : '#FFFFFF',
+                      borderColor: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                      backgroundColor: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--card))',
+                      opacity: team.is_own_team ? 0.1 : 1,
                     }}
                   >
                     <View style={{ width: 32, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: team.is_own_team ? '#0F766E' : '#111827' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--foreground))' }}>
                         #{team.rank}
                       </Text>
                     </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={{ fontSize: 14, fontWeight: team.is_own_team ? '700' : '500', color: '#111827' }}>
+                      <Text style={{ fontSize: 14, fontWeight: team.is_own_team ? '700' : '500', color: 'hsl(var(--foreground))' }}>
                         {team.team_name}
                         {team.is_own_team && (
-                          <Text style={{ fontSize: 11, color: '#0F766E', marginLeft: 6 }}>Your Team</Text>
+                          <Text style={{ fontSize: 11, color: 'hsl(var(--primary))', marginLeft: 6 }}>Your Team</Text>
                         )}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                       {team.total_points}
                     </Text>
                   </View>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -11,9 +10,7 @@ import {
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import {
-  BarChart3,
   CalendarDays,
-  ChevronRight,
   Home,
   LogOut,
   Menu,
@@ -28,7 +25,6 @@ import {
 } from 'lucide-react-native';
 import { useAuthStore } from '@/core/store/authStore';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
-import { cn } from '@/lib/utils';
 
 type IconType = React.ComponentType<{ color?: string; size?: number; strokeWidth?: number }>;
 
@@ -115,7 +111,7 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
         <View
           style={{
             width: sidebarOpen ? 220 : 56,
-            backgroundColor: '#102A2E',
+            backgroundColor: 'hsl(187, 77%, 11%)',
             paddingTop: 16,
             paddingBottom: 16,
           }}
@@ -124,16 +120,16 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
           <View style={{ paddingHorizontal: 12, marginBottom: 16 }}>
             {sidebarOpen ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#94A3B8', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ color: 'hsl(215, 20.2%, 65.1%)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Team Portal
                 </Text>
                 <TouchableOpacity onPress={() => setSidebarOpen(false)} hitSlop={8}>
-                  <PanelLeftClose size={16} color="#94A3B8" />
+                  <PanelLeftClose size={16} color="hsl(215, 20.2%, 65.1%)" />
                 </TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity onPress={() => setSidebarOpen(true)} hitSlop={8} style={{ alignItems: 'center' }}>
-                <PanelLeftOpen size={18} color="#94A3B8" />
+                <PanelLeftOpen size={18} color="hsl(215, 20.2%, 65.1%)" />
               </TouchableOpacity>
             )}
           </View>
@@ -153,18 +149,18 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
                     paddingVertical: 10,
                     paddingHorizontal: sidebarOpen ? 12 : 0,
                     justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                    backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    backgroundColor: active ? 'hsl(187, 60%, 15%)' : 'transparent',
                     marginHorizontal: sidebarOpen ? 8 : 4,
                     borderRadius: 8,
                     marginBottom: 2,
                   }}
                 >
-                  <Icon size={18} color={active ? '#5EEAD4' : '#94A3B8'} />
+                  <Icon size={18} color={active ? 'hsl(167, 76%, 70%)' : 'hsl(215, 20.2%, 65.1%)'} />
                   {sidebarOpen && (
                     <Text
                       style={{
                         marginLeft: 10,
-                        color: active ? '#FFFFFF' : '#CBD5E1',
+                        color: active ? 'hsl(210, 40%, 98%)' : 'hsl(213, 27%, 84%)',
                         fontSize: 13,
                         fontWeight: active ? '600' : '400',
                       }}
@@ -191,33 +187,33 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
               marginTop: 8,
             }}
           >
-            <LogOut size={18} color="#94A3B8" />
+            <LogOut size={18} color="hsl(215, 20.2%, 65.1%)" />
             {sidebarOpen && (
-              <Text style={{ marginLeft: 10, color: '#CBD5E1', fontSize: 13 }}>Logout</Text>
+              <Text style={{ marginLeft: 10, color: 'hsl(213, 27%, 84%)', fontSize: 13 }}>Logout</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Main content */}
-        <View style={{ flex: 1, backgroundColor: '#F6F7F9' }}>
+        <View style={{ flex: 1, backgroundColor: 'hsl(var(--background))' }}>
           {/* Top bar */}
           <View
             style={{
               height: 48,
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'hsl(var(--card))',
               borderBottomWidth: 1,
-              borderBottomColor: '#E2E8F0',
+              borderBottomColor: 'hsl(var(--border))',
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
               paddingHorizontal: 16,
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
               {context?.festival_id ? 'Festival Portal' : 'Team Portal'}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 12, color: '#64748B' }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>
                 {context?.organisation_id ? 'Team' : ''}
               </Text>
             </View>
@@ -233,14 +229,14 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
 
   // Mobile layout
   return (
-    <View style={{ flex: 1, backgroundColor: '#F6F7F9' }}>
+    <View style={{ flex: 1, backgroundColor: 'hsl(var(--background))' }}>
       {/* Mobile top bar */}
       <View
         style={{
           height: 48,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'hsl(var(--card))',
           borderBottomWidth: 1,
-          borderBottomColor: '#E2E8F0',
+          borderBottomColor: 'hsl(var(--border))',
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -248,9 +244,9 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
         }}
       >
         <TouchableOpacity onPress={() => setMobileMenuOpen(true)} hitSlop={8}>
-          <Menu size={20} color="#111827" />
+          <Menu size={20} color="hsl(var(--foreground))" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
           Team Portal
         </Text>
         <View style={{ width: 20 }} />
@@ -263,11 +259,11 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
             onPress={() => setMobileMenuOpen(false)}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }}
           />
-          <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 260, backgroundColor: '#102A2E', paddingTop: 16 }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 260, backgroundColor: 'hsl(187, 77%, 11%)', paddingTop: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 }}>
-              <Text style={{ color: '#94A3B8', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Team Portal</Text>
+              <Text style={{ color: 'hsl(215, 20.2%, 65.1%)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Team Portal</Text>
               <TouchableOpacity onPress={() => setMobileMenuOpen(false)}>
-                <X size={18} color="#94A3B8" />
+                <X size={18} color="hsl(215, 20.2%, 65.1%)" />
               </TouchableOpacity>
             </View>
             {navItems.map((item) => {
@@ -282,11 +278,11 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
                     alignItems: 'center',
                     paddingVertical: 12,
                     paddingHorizontal: 16,
-                    backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    backgroundColor: active ? 'hsl(187, 60%, 15%)' : 'transparent',
                   }}
                 >
-                  <Icon size={18} color={active ? '#5EEAD4' : '#94A3B8'} />
-                  <Text style={{ marginLeft: 12, color: active ? '#FFFFFF' : '#CBD5E1', fontSize: 14, fontWeight: active ? '600' : '400' }}>
+                  <Icon size={18} color={active ? 'hsl(167, 76%, 70%)' : 'hsl(215, 20.2%, 65.1%)'} />
+                  <Text style={{ marginLeft: 12, color: active ? 'hsl(210, 40%, 98%)' : 'hsl(213, 27%, 84%)', fontSize: 14, fontWeight: active ? '600' : '400' }}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -294,8 +290,8 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
             })}
             <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', marginTop: 8, paddingTop: 8 }}>
               <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 }}>
-                <LogOut size={18} color="#94A3B8" />
-                <Text style={{ marginLeft: 12, color: '#CBD5E1', fontSize: 14 }}>Logout</Text>
+                <LogOut size={18} color="hsl(215, 20.2%, 65.1%)" />
+                <Text style={{ marginLeft: 12, color: 'hsl(213, 27%, 84%)', fontSize: 14 }}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -311,9 +307,9 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
       <View
         style={{
           flexDirection: 'row',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'hsl(var(--card))',
           borderTopWidth: 1,
-          borderTopColor: '#E2E8F0',
+          borderTopColor: 'hsl(var(--border))',
           paddingBottom: Platform.OS === 'ios' ? 20 : 8,
           paddingTop: 8,
         }}
@@ -327,8 +323,8 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
               onPress={() => navigate(item.path)}
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Icon size={20} color={active ? '#0F766E' : '#94A3B8'} />
-              <Text style={{ fontSize: 10, color: active ? '#0F766E' : '#94A3B8', marginTop: 2, fontWeight: active ? '600' : '400' }}>
+              <Icon size={20} color={active ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'} />
+              <Text style={{ fontSize: 10, color: active ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))', marginTop: 2, fontWeight: active ? '600' : '400' }}>
                 {item.shortLabel || item.label}
               </Text>
             </TouchableOpacity>

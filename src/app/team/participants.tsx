@@ -45,8 +45,8 @@ export default function ParticipantsScreen() {
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
         <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>Participants</Text>
-          <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Participants</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
             View registered participants for your team
           </Text>
         </View>
@@ -62,7 +62,7 @@ export default function ParticipantsScreen() {
             {filtered.length === 0 ? (
               <Card>
                 <CardContent style={{ padding: 24, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: '#64748B' }}>No participants found</Text>
+                  <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>No participants found</Text>
                 </CardContent>
               </Card>
             ) : (
@@ -72,7 +72,7 @@ export default function ParticipantsScreen() {
                     <CardContent style={{ padding: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                             {p.name || 'Participant'}
                           </Text>
                           <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>

@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
-  Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,16 +12,17 @@ import { AdminAppShell } from '@/components/layout/AdminAppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
 import { Label } from '@/components/ui/shadcn/label';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { supabase } from '@/core/config/supabase';
-import { CheckCircle, ChevronLeft, Loader2, Plus, Search, Trash2, UserPlus, Users, XCircle } from 'lucide-react-native';
+import { ChevronLeft, Search, Trash2, Users } from 'lucide-react-native';
 
 interface Assignment {
   id: string;
-  leader_user_id: string;
-  organisation_id: string;
+  user_id: string;
+  festival_team_id: string;
+  status: string;
+  assigned_at: string;
   team_name: string;
   leader_email: string;
   leader_name: string;
@@ -52,40 +49,68 @@ export default function TeamLeaderPortalAdmin() {
     try {
       setLoading(true);
 
-      // Load assignments with team info
+      // Load assignments with team info via festival_teams → organisations
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('team_leader_assignments')
         .select(`
           id,
-          leader_user_id,
-          organisation_id,
+          user_id,
+          festival_team_id,
+          status,
+          assigned_at,
           created_at,
-          organisations(name),
-          profiles!team_leader_assignments_leader_user_id_fkey(display_name, email)
-        `);
+          festival_teams!inner(
+            organisation_id,
+            organisations(name)
+          )
+        `)
+        .eq('status', 'active');
 
       if (assignmentsError) throw assignmentsError;
 
-      const formatted = (assignmentsData || []).map((a: any) => ({
-        id: a.id,
-        leader_user_id: a.leader_user_id,
-        organisation_id: a.organisation_id,
-        team_name: a.organisations?.name || 'Unknown Team',
-        leader_email: a.profiles?.email || 'N/A',
-        leader_name: a.profiles?.display_name || a.profiles?.email || 'Unknown',
-        created_at: a.created_at,
-      }));
+      // Resolve leader profiles separately (PostgREST FK name varies)
+      const userIds = (assignmentsData || []).map((a: any) => a.user_id).filter(Boolean);
+      const { data: profilesData } = userIds.length > 0
+        ? await supabase.from('profiles').select('id, display_name, email').in('id', userIds)
+        : { data: [] };
+
+      const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+
+      const formatted = (assignmentsData || []).map((a: any) => {
+        const profile = profileMap.get(a.user_id);
+        return {
+          id: a.id,
+          user_id: a.user_id,
+          festival_team_id: a.festival_team_id,
+          status: a.status,
+          assigned_at: a.assigned_at,
+          team_name: (a.festival_teams as any)?.organisations?.name || 'Unknown Team',
+          leader_email: profile?.email || 'N/A',
+          leader_name: profile?.display_name || profile?.email || 'Unknown',
+          created_at: a.created_at,
+        };
+      });
 
       setAssignments(formatted);
 
-      // Load dropdown data
-      const [usersResult, orgsResult] = await Promise.all([
-        supabase.from('profiles').select('id, display_name, email').eq('role', 'participant'),
-        supabase.from('organisations').select('id, name'),
+      // Load dropdown data: users with team_leader role, and active festival teams
+      const [usersResult, teamsResult] = await Promise.all([
+        supabase.from('profiles').select('id, display_name, email').eq('role', 'team_leader'),
+        supabase
+          .from('festival_teams')
+          .select('id, organisation_id, organisations(name), festival_id, is_active')
+          .eq('is_active', true),
       ]);
 
       setUsers(usersResult.data || []);
-      setOrganisations(orgsResult.data || []);
+      setOrganisations(
+        (teamsResult.data || []).map((t: any) => ({
+          id: t.id,
+          name: `${t.organisations?.name || 'Unknown'} (Team)`,
+          organisation_id: t.organisation_id,
+          festival_id: t.festival_id,
+        }))
+      );
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Error', 'Failed to load team leader data.');
@@ -104,19 +129,20 @@ export default function TeamLeaderPortalAdmin() {
     try {
       setAssigning(true);
 
-      // Check for existing assignment
+      // Check for existing active assignment for this user in any festival team
       const existing = assignments.find(
-        (a) => a.leader_user_id === selectedUserId || a.organisation_id === selectedOrgId
+        (a) => a.user_id === selectedUserId
       );
 
       if (existing) {
-        Alert.alert('Conflict', 'This user or team already has a leader assignment.');
+        Alert.alert('Conflict', 'This user already has a team leader assignment.');
         return;
       }
 
       const { error } = await supabase.from('team_leader_assignments').insert({
-        leader_user_id: selectedUserId,
-        organisation_id: selectedOrgId,
+        user_id: selectedUserId,
+        festival_team_id: selectedOrgId,
+        status: 'active',
       });
 
       if (error) throw error;
@@ -162,24 +188,27 @@ export default function TeamLeaderPortalAdmin() {
   const filteredAssignments = assignments.filter((a) =>
     a.team_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.leader_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.leader_email.toLowerCase().includes(searchQuery.toLowerCase())
+    a.leader_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <AdminAppShell>
-      <ScrollView style={styles.container}>
+      <ScrollView style={{ flex: 1, padding: 16 }}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={20} color="#374151" />
-            <Text style={styles.backText}>Back to Settings</Text>
+        <View style={{ marginBottom: 16 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <ChevronLeft size={20} color="hsl(var(--foreground))" />
+            <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginLeft: 4 }}>Back to Settings</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Team Leader Portal</Text>
-          <Text style={styles.subtitle}>Assign and manage team leaders</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Team Leader Portal</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
+            Assign and manage team leaders
+          </Text>
         </View>
 
         {/* Assign Form */}
-        <Card style={styles.card}>
+        <Card style={{ marginBottom: 16 }}>
           <CardHeader>
             <CardTitle>Assign Team Leader</CardTitle>
           </CardHeader>
@@ -187,30 +216,32 @@ export default function TeamLeaderPortalAdmin() {
             {loadingDropdowns ? (
               <Skeleton style={{ height: 100, borderRadius: 8 }} />
             ) : (
-              <View style={styles.form}>
-                <View style={styles.field}>
+              <View style={{ gap: 16 }}>
+                <View style={{ gap: 6 }}>
                   <Label>User</Label>
-                  <View style={styles.selectWrapper}>
+                  <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8 }}>
                     <TextInput
-                      style={styles.select}
+                      style={{ height: 40, paddingHorizontal: 12, fontSize: 14, color: 'hsl(var(--foreground))' }}
                       placeholder="Select a user"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="hsl(var(--muted-foreground))"
                       value={selectedUserId}
                       onChangeText={setSelectedUserId}
                     />
                   </View>
                   {users.length > 0 && (
-                    <View style={styles.dropdownList}>
+                    <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8, maxHeight: 150, overflow: 'hidden' }}>
                       {users.slice(0, 10).map((u) => (
                         <TouchableOpacity
                           key={u.id}
-                          style={[
-                            styles.dropdownItem,
-                            selectedUserId === u.id && styles.dropdownItemSelected,
-                          ]}
+                          style={{
+                            padding: 10,
+                            borderBottomWidth: 1,
+                            borderBottomColor: 'hsl(var(--border))',
+                            backgroundColor: selectedUserId === u.id ? 'hsl(var(--accent))' : 'transparent',
+                          }}
                           onPress={() => setSelectedUserId(u.id)}
                         >
-                          <Text style={styles.dropdownText}>
+                          <Text style={{ fontSize: 13, color: 'hsl(var(--foreground))' }}>
                             {u.display_name || u.email}
                           </Text>
                         </TouchableOpacity>
@@ -219,29 +250,31 @@ export default function TeamLeaderPortalAdmin() {
                   )}
                 </View>
 
-                <View style={styles.field}>
+                <View style={{ gap: 6 }}>
                   <Label>Team (Organisation)</Label>
-                  <View style={styles.selectWrapper}>
+                  <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8 }}>
                     <TextInput
-                      style={styles.select}
+                      style={{ height: 40, paddingHorizontal: 12, fontSize: 14, color: 'hsl(var(--foreground))' }}
                       placeholder="Select a team"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="hsl(var(--muted-foreground))"
                       value={selectedOrgId}
                       onChangeText={setSelectedOrgId}
                     />
                   </View>
                   {organisations.length > 0 && (
-                    <View style={styles.dropdownList}>
+                    <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8, maxHeight: 150, overflow: 'hidden' }}>
                       {organisations.slice(0, 10).map((o) => (
                         <TouchableOpacity
                           key={o.id}
-                          style={[
-                            styles.dropdownItem,
-                            selectedOrgId === o.id && styles.dropdownItemSelected,
-                          ]}
+                          style={{
+                            padding: 10,
+                            borderBottomWidth: 1,
+                            borderBottomColor: 'hsl(var(--border))',
+                            backgroundColor: selectedOrgId === o.id ? 'hsl(var(--accent))' : 'transparent',
+                          }}
                           onPress={() => setSelectedOrgId(o.id)}
                         >
-                          <Text style={styles.dropdownText}>{o.name}</Text>
+                          <Text style={{ fontSize: 13, color: 'hsl(var(--foreground))' }}>{o.name}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -251,13 +284,9 @@ export default function TeamLeaderPortalAdmin() {
                 <Button
                   onPress={handleAssign}
                   disabled={assigning || !selectedUserId || !selectedOrgId}
-                  className="flex-row items-center justify-center"
+                  loading={assigning}
                 >
-                  {assigning ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text className="text-white font-semibold text-sm">Assign</Text>
-                  )}
+                  Assign
                 </Button>
               </View>
             )}
@@ -265,21 +294,30 @@ export default function TeamLeaderPortalAdmin() {
         </Card>
 
         {/* Assignments List */}
-        <Card style={styles.card}>
+        <Card>
           <CardHeader>
-            <View style={styles.listHeader}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <CardTitle>Current Assignments</CardTitle>
               <Badge variant="secondary">{assignments.length}</Badge>
             </View>
           </CardHeader>
           <CardContent>
             {/* Search */}
-            <View style={styles.searchWrapper}>
-              <Search size={16} color="#94A3B8" />
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: 'hsl(var(--input))',
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              marginBottom: 12,
+              height: 40,
+            }}>
+              <Search size={16} color="hsl(var(--muted-foreground))" />
               <TextInput
-                style={styles.searchInput}
+                style={{ flex: 1, marginLeft: 8, fontSize: 14, color: 'hsl(var(--foreground))' }}
                 placeholder="Search teams or leaders..."
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="hsl(var(--muted-foreground))"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -292,27 +330,40 @@ export default function TeamLeaderPortalAdmin() {
                 ))}
               </View>
             ) : filteredAssignments.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Users size={32} color="#94A3B8" />
-                <Text style={styles.emptyText}>
+              <View style={{ alignItems: 'center', padding: 24 }}>
+                <Users size={32} color="hsl(var(--muted-foreground))" />
+                <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 8 }}>
                   {searchQuery ? 'No matching assignments found' : 'No team leaders assigned yet'}
                 </Text>
               </View>
             ) : (
               <View style={{ gap: 8 }}>
                 {filteredAssignments.map((assignment) => (
-                  <View key={assignment.id} style={styles.assignmentRow}>
-                    <View style={styles.assignmentInfo}>
-                      <Text style={styles.assignmentTeam}>{assignment.team_name}</Text>
-                      <Text style={styles.assignmentLeader}>
+                  <View
+                    key={assignment.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: 8,
+                      backgroundColor: 'hsl(var(--muted))',
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
+                        {assignment.team_name}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                         {assignment.leader_name} · {assignment.leader_email}
                       </Text>
                     </View>
                     <TouchableOpacity
                       onPress={() => handleRemove(assignment)}
-                      style={styles.removeButton}
+                      style={{ padding: 8 }}
                     >
-                      <Trash2 size={16} color="#DC2626" />
+                      <Trash2 size={16} color="hsl(var(--destructive))" />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -324,138 +375,3 @@ export default function TeamLeaderPortalAdmin() {
     </AdminAppShell>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
-    marginBottom: 16,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 13,
-    color: '#64748B',
-    marginLeft: 4,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  card: {
-    marginBottom: 16,
-  },
-  form: {
-    gap: 16,
-  },
-  field: {
-    gap: 6,
-  },
-  selectWrapper: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-  },
-  select: {
-    height: 40,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: '#111827',
-  },
-  dropdownList: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    maxHeight: 150,
-    overflow: 'hidden',
-  },
-  dropdownItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#F0FDFA',
-  },
-  dropdownText: {
-    fontSize: 13,
-    color: '#374151',
-  },
-  assignButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    height: 40,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#111827',
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 8,
-  },
-  assignmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    backgroundColor: '#FAFBFC',
-  },
-  assignmentInfo: {
-    flex: 1,
-  },
-  assignmentTeam: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  assignmentLeader: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  removeButton: {
-    padding: 8,
-  },
-});

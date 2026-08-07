@@ -3,23 +3,23 @@ import { Text, View } from "react-native";
 import { cn } from "../../../lib/utils";
 
 const badgeVariants = {
-  default: "bg-ui-primary",
-  secondary: "bg-ui-muted",
-  destructive: "bg-red-500",
-  outline: "border border-ui-border bg-transparent",
-  success: "bg-emerald-100",
-  warning: "bg-amber-100",
-  info: "bg-blue-100",
+  default: "bg-primary",
+  secondary: "bg-secondary",
+  destructive: "bg-destructive",
+  outline: "border border-border bg-transparent",
+  success: "bg-emerald-100 dark:bg-emerald-900/30",
+  warning: "bg-amber-100 dark:bg-amber-900/30",
+  info: "bg-blue-100 dark:bg-blue-900/30",
 };
 
 const textVariants = {
-  default: "text-white",
-  secondary: "text-ui-text",
-  destructive: "text-white",
-  outline: "text-ui-text",
-  success: "text-emerald-800",
-  warning: "text-amber-800",
-  info: "text-blue-800",
+  default: "text-primary-foreground",
+  secondary: "text-secondary-foreground",
+  destructive: "text-destructive",
+  outline: "text-foreground",
+  success: "text-emerald-700 dark:text-emerald-300",
+  warning: "text-amber-700 dark:text-amber-300",
+  info: "text-blue-700 dark:text-blue-300",
 };
 
 export interface BadgeProps {

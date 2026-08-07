@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/core/store/authStore';
+import { Text, View } from 'react-native';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderScheduleRow, TeamLeaderPublishedResult, TeamLeaderAnnouncement } from '@/services/teamLeaderPortalService';
@@ -14,8 +12,6 @@ export default function TeamLeaderDashboard() {
   const [schedule, setSchedule] = useState<TeamLeaderScheduleRow[]>([]);
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [announcements, setAnnouncements] = useState<TeamLeaderAnnouncement[]>([]);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!context) return;
     const load = async () => {
@@ -30,8 +26,6 @@ export default function TeamLeaderDashboard() {
         setAnnouncements(a);
       } catch (err) {
         console.error('Dashboard load error:', err);
-      } finally {
-        setLoading(false);
       }
     };
     load();
@@ -54,7 +48,7 @@ export default function TeamLeaderDashboard() {
       <TeamLeaderAppShell>
         <Card>
           <CardContent style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center' }}>
+            <Text style={{ fontSize: 14, color: 'hsl(var(--muted-foreground))', textAlign: 'center' }}>
               {contextError || 'Unable to load portal context. Please try again.'}
             </Text>
           </CardContent>
@@ -72,10 +66,10 @@ export default function TeamLeaderDashboard() {
       <View style={{ gap: 16 }}>
         {/* Header */}
         <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>
             Dashboard
           </Text>
-          <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
             Team overview and updates
           </Text>
         </View>
@@ -84,16 +78,16 @@ export default function TeamLeaderDashboard() {
         <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
           <Card style={{ flex: 1, minWidth: 150 }}>
             <CardContent style={{ padding: 16 }}>
-              <Text style={{ fontSize: 12, color: '#64748B' }}>Upcoming Events</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Upcoming Events</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
                 {upcomingEvents.length}
               </Text>
             </CardContent>
           </Card>
           <Card style={{ flex: 1, minWidth: 150 }}>
             <CardContent style={{ padding: 16 }}>
-              <Text style={{ fontSize: 12, color: '#64748B' }}>Published Results</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Published Results</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
                 {latestResults.length}
               </Text>
             </CardContent>
@@ -107,7 +101,7 @@ export default function TeamLeaderDashboard() {
           </CardHeader>
           <CardContent>
             {upcomingEvents.length === 0 ? (
-              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: 16 }}>
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: 16 }}>
                 No upcoming events
               </Text>
             ) : (
@@ -119,23 +113,23 @@ export default function TeamLeaderDashboard() {
                       padding: 12,
                       borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: '#E2E8F0',
-                      backgroundColor: '#FAFBFC',
+                      borderColor: 'hsl(var(--border))',
+                      backgroundColor: 'hsl(var(--muted))',
                     }}
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                         {event.item_name || event.item_code || 'Event'}
                       </Text>
                       <Badge variant={event.event_status === 'completed' ? 'secondary' : 'info'}>
                         {event.event_status || 'scheduled'}
                       </Badge>
                     </View>
-                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+                    <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 4 }}>
                       {event.start_time ? new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       {event.venue_name ? ` · ${event.venue_name}` : ''}
                     </Text>
-                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                    <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                       {event.participant_count} participant{event.participant_count !== 1 ? 's' : ''} · {event.checked_in_count} checked in
                     </Text>
                   </View>
@@ -152,7 +146,7 @@ export default function TeamLeaderDashboard() {
           </CardHeader>
           <CardContent>
             {latestResults.length === 0 ? (
-              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: 16 }}>
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: 16 }}>
                 No published results yet
               </Text>
             ) : (
@@ -164,12 +158,12 @@ export default function TeamLeaderDashboard() {
                       padding: 12,
                       borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: '#E2E8F0',
-                      backgroundColor: '#FAFBFC',
+                      borderColor: 'hsl(var(--border))',
+                      backgroundColor: 'hsl(var(--muted))',
                     }}
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                         {result.item_name || result.item_code || 'Item'}
                       </Text>
                       {result.rank != null && (
@@ -178,7 +172,7 @@ export default function TeamLeaderDashboard() {
                         </Badge>
                       )}
                     </View>
-                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+                    <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 4 }}>
                       {result.participant_name || 'Participant'}
                     </Text>
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
@@ -203,7 +197,7 @@ export default function TeamLeaderDashboard() {
           </CardHeader>
           <CardContent>
             {recentAnnouncements.length === 0 ? (
-              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: 16 }}>
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: 16 }}>
                 No announcements
               </Text>
             ) : (
@@ -215,14 +209,14 @@ export default function TeamLeaderDashboard() {
                       padding: 12,
                       borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: '#E2E8F0',
-                      backgroundColor: '#FAFBFC',
+                      borderColor: 'hsl(var(--border))',
+                      backgroundColor: 'hsl(var(--muted))',
                     }}
                   >
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                       {ann.title || 'Notice'}
                     </Text>
-                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }} numberOfLines={2}>
+                    <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 4 }} numberOfLines={2}>
                       {ann.message || ''}
                     </Text>
                   </View>

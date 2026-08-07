@@ -36,7 +36,7 @@ function TabsList({ className, children }: { className?: string; children: React
       horizontal
       showsHorizontalScrollIndicator={false}
       className={cn(
-        "flex flex-row items-center rounded-lg bg-ui-muted p-1",
+        "flex flex-row items-center rounded-lg bg-muted p-1",
         className
       )}
     >
@@ -62,14 +62,14 @@ function TabsTrigger({
       onPress={() => ctx.onValueChange(value)}
       className={cn(
         "flex-none items-center justify-center rounded-md px-3 py-1.5",
-        isActive ? "bg-white shadow-sm" : "bg-transparent",
+        isActive ? "bg-background shadow-sm" : "bg-transparent",
         className
       )}
     >
       <Text
         className={cn(
           "text-sm font-medium",
-          isActive ? "text-ui-text" : "text-ui-text-muted"
+          isActive ? "text-foreground" : "text-muted-foreground"
         )}
       >
         {children}

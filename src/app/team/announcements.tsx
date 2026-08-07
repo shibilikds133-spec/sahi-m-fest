@@ -36,8 +36,8 @@ export default function AnnouncementsScreen() {
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
         <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>Announcements</Text>
-          <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Announcements</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
             Latest updates and notices
           </Text>
         </View>
@@ -45,7 +45,7 @@ export default function AnnouncementsScreen() {
         {announcements.length === 0 ? (
           <Card>
             <CardContent style={{ padding: 24, alignItems: 'center' }}>
-              <Text style={{ fontSize: 13, color: '#64748B' }}>No announcements at this time</Text>
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>No announcements at this time</Text>
             </CardContent>
           </Card>
         ) : (
@@ -54,7 +54,7 @@ export default function AnnouncementsScreen() {
               <Card key={ann.id}>
                 <CardContent style={{ padding: 16 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827', flex: 1 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: 'hsl(var(--foreground))', flex: 1 }}>
                       {ann.title || 'Notice'}
                     </Text>
                     {ann.type && ann.type !== 'general' && (
@@ -63,11 +63,11 @@ export default function AnnouncementsScreen() {
                       </Badge>
                     )}
                   </View>
-                  <Text style={{ fontSize: 13, color: '#374151', marginTop: 8, lineHeight: 20 }}>
+                  <Text style={{ fontSize: 13, color: 'hsl(var(--foreground))', marginTop: 8, lineHeight: 20, opacity: 0.8 }}>
                     {ann.message || ''}
                   </Text>
                   {ann.created_at && (
-                    <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
+                    <Text style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginTop: 8 }}>
                       {new Date(ann.created_at).toLocaleString()}
                     </Text>
                   )}

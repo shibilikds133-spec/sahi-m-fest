@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,6 +11,9 @@ import { useRouter } from 'expo-router';
 import { Eye, EyeOff, LockKeyhole, UserRound } from 'lucide-react-native';
 import { useAuthStore } from '@/core/store/authStore';
 import { authService } from '@/services/authService';
+import { Button } from '@/components/ui/shadcn/button';
+import { Label } from '@/components/ui/shadcn/label';
+import { Card } from '@/components/ui/shadcn/card';
 
 export default function TeamLeaderLogin() {
   const [username, setUsername] = useState('');
@@ -49,31 +49,63 @@ export default function TeamLeaderLogin() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={{ flex: 1, backgroundColor: 'hsl(var(--background))' }}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 16,
+        }}
       >
-        <View style={[styles.card, isDesktop && styles.cardDesktop]}>
+        <Card style={{ width: '100%', maxWidth: 400, padding: isDesktop ? 32 : 24 }}>
           {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.iconCircle}>
-              <UserRound size={28} color="#0F766E" />
+          <View style={{ alignItems: 'center', marginBottom: 24 }}>
+            <View style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: 'hsl(var(--primary))',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+              opacity: 0.1,
+            }}>
+              <UserRound size={28} color="hsl(var(--primary))" style={{ opacity: 1 }} />
             </View>
-            <Text style={styles.title}>Team Leader Portal</Text>
-            <Text style={styles.subtitle}>Sign in to access your team dashboard</Text>
+            <Text style={{
+              fontSize: 20,
+              fontWeight: '700',
+              color: 'hsl(var(--foreground))',
+              fontFamily: 'Poppins_700Bold',
+            }}>
+              Team Leader Portal
+            </Text>
+            <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 4 }}>
+              Sign in to access your team dashboard
+            </Text>
           </View>
 
           {/* Form */}
-          <View style={styles.form}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Username</Text>
-              <View style={styles.inputWrapper}>
-                <UserRound size={16} color="#94A3B8" style={styles.inputIcon} />
+          <View style={{ gap: 16 }}>
+            <View style={{ gap: 6 }}>
+              <Label>Username</Label>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'hsl(var(--input))',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                height: 44,
+                backgroundColor: 'hsl(var(--background))',
+              }}>
+                <UserRound size={16} color="hsl(var(--muted-foreground))" style={{ marginRight: 8 }} />
                 <TextInput
-                  style={styles.input}
+                  style={{ flex: 1, fontSize: 14, color: 'hsl(var(--foreground))', padding: 0 }}
                   placeholder="Enter your username"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="hsl(var(--muted-foreground))"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
@@ -83,14 +115,23 @@ export default function TeamLeaderLogin() {
               </View>
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <LockKeyhole size={16} color="#94A3B8" style={styles.inputIcon} />
+            <View style={{ gap: 6 }}>
+              <Label>Password</Label>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'hsl(var(--input))',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                height: 44,
+                backgroundColor: 'hsl(var(--background))',
+              }}>
+                <LockKeyhole size={16} color="hsl(var(--muted-foreground))" style={{ marginRight: 8 }} />
                 <TextInput
-                  style={styles.input}
+                  style={{ flex: 1, fontSize: 14, color: 'hsl(var(--foreground))', padding: 0 }}
                   placeholder="Enter your password"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="hsl(var(--muted-foreground))"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -98,161 +139,47 @@ export default function TeamLeaderLogin() {
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
                   {showPassword ? (
-                    <EyeOff size={16} color="#94A3B8" />
+                    <EyeOff size={16} color="hsl(var(--muted-foreground))" />
                   ) : (
-                    <Eye size={16} color="#94A3B8" />
+                    <Eye size={16} color="hsl(var(--muted-foreground))" />
                   )}
                 </TouchableOpacity>
               </View>
             </View>
 
             {errorMsg ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{errorMsg}</Text>
+              <View style={{
+                backgroundColor: 'hsl(var(--destructive))',
+                borderWidth: 1,
+                borderColor: 'hsl(var(--destructive))',
+                borderRadius: 8,
+                padding: 10,
+                opacity: 0.1,
+              }}>
+                <Text style={{ color: 'hsl(var(--destructive))', fontSize: 13 }}>
+                  {errorMsg}
+                </Text>
               </View>
             ) : null}
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+            <Button
               onPress={handleLogin}
               disabled={loading}
-              activeOpacity={0.8}
+              loading={loading}
+              className="mt-1"
             >
-              {loading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
+              Sign In
+            </Button>
           </View>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
+          <View style={{ marginTop: 20, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>
               Contact your Festival Administrator if you need access.
             </Text>
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#F6F7F9',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardDesktop: {
-    padding: 32,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#E7F6F3',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    fontFamily: 'Poppins_700Bold',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 4,
-  },
-  form: {
-    gap: 16,
-  },
-  field: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
-    backgroundColor: '#FFFFFF',
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: '#111827',
-    padding: 0,
-  },
-  errorBox: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 8,
-    padding: 10,
-  },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 13,
-  },
-  button: {
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#0F766E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  footer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-});

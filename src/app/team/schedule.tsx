@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderScheduleRow } from '@/services/teamLeaderPortalService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Button } from '@/components/ui/shadcn/button';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
@@ -44,9 +44,9 @@ export default function ScheduleScreen() {
       <View style={{ gap: 16 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>Schedule</Text>
-            <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
-              Your team's event schedule
+            <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Schedule</Text>
+            <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
+              Your team&apos;s event schedule
             </Text>
           </View>
           <Button variant="outline" size="sm" onPress={() => router.push('/team/schedule/full')}>
@@ -66,7 +66,7 @@ export default function ScheduleScreen() {
             {filtered.length === 0 ? (
               <Card>
                 <CardContent style={{ padding: 24, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: '#64748B' }}>No events found</Text>
+                  <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>No events found</Text>
                 </CardContent>
               </Card>
             ) : (
@@ -76,19 +76,19 @@ export default function ScheduleScreen() {
                     <CardContent style={{ padding: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                             {event.item_name || event.item_code || 'Event'}
                           </Text>
-                          <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                          <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                             {event.start_time ? new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                             {event.end_time ? ` - ${new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
                           </Text>
                           {event.venue_name && (
-                            <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                            <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                               Venue: {event.venue_name}
                             </Text>
                           )}
-                          <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                          <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
                             {event.participant_count} participant{event.participant_count !== 1 ? 's' : ''} · {event.checked_in_count} checked in
                           </Text>
                         </View>
