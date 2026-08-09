@@ -36,7 +36,8 @@ export function TeamLeaderProvider({ children }: { children: React.ReactNode }) 
       setError(null);
       const data = await teamLeaderPortalService.getContext();
       if (data) {
-        setContext(data);
+        const branding = await teamLeaderPortalService.getBranding(data.festival_team_id);
+        setContext({ ...data, ...branding });
         setPortalEnabled(true);
       } else {
         setContext(null);

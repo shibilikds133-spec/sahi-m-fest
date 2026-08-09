@@ -8,6 +8,8 @@ export interface TeamLeaderContext {
   organisation_id: string;
   team_name?: string;
   festival_name?: string;
+  portal_primary_color?: string | null;
+  portal_accent_color?: string | null;
 }
 
 export interface TeamLeaderParticipant {
@@ -81,6 +83,15 @@ async function readRpcSingle<T>(name: string): Promise<T | null> {
  */
 export const teamLeaderPortalService = {
   getContext: () => readRpcSingle<TeamLeaderContext>('get_team_leader_context_details'),
+  getBranding: async (festivalTeamId: string) => {
+    const { data, error } = await supabase
+      .from('festival_teams')
+      .select('portal_primary_color, portal_accent_color')
+      .eq('id', festivalTeamId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
   getParticipants: () => readRpc<TeamLeaderParticipant>('get_team_leader_participants'),
   getSchedule: () => readRpc<TeamLeaderScheduleRow>('get_team_leader_schedule'),
   getPublishedResults: () => readRpc<TeamLeaderPublishedResult>('get_team_leader_published_results'),

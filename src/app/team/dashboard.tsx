@@ -67,58 +67,66 @@ export default function TeamLeaderDashboard() {
     (total, event) => total + Math.max(0, event.participant_count - event.checked_in_count),
     0,
   );
+  const teamPrimary = context.portal_primary_color || '#0F766E';
+  const teamAccent = context.portal_accent_color || '#14B8A6';
 
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
-        {/* Header */}
-        <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>
-            Dashboard
+        {/* Branded hero */}
+        <View style={{ padding: 20, borderRadius: 18, backgroundColor: teamPrimary, overflow: 'hidden' }}>
+          <Text style={{ color: teamAccent, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+            Team Leader Portal
           </Text>
-          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-            {context.team_name || 'Team'} overview and updates
+          <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '800', marginTop: 6 }}>
+            {context.team_name || 'Your Team'}
           </Text>
+          <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, marginTop: 4 }}>
+            {context.festival_name || 'Festival'} · Your team overview and updates
+          </Text>
+          <View style={{ alignSelf: 'flex-start', marginTop: 16, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: `${teamAccent}33`, borderWidth: 1, borderColor: `${teamAccent}88` }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>LIVE TEAM SPACE</Text>
+          </View>
         </View>
 
         {/* Summary Cards */}
         <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-          <Card style={{ flex: 1, minWidth: 150 }}>
+          <Card style={{ flex: 1, minWidth: 150, borderLeftWidth: 4, borderLeftColor: teamPrimary }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Participants</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary, marginTop: 4 }}>
                 {participantCount}
               </Text>
             </CardContent>
           </Card>
-          <Card style={{ flex: 1, minWidth: 150 }}>
+          <Card style={{ flex: 1, minWidth: 150, borderLeftWidth: 4, borderLeftColor: teamAccent }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Upcoming Events</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary, marginTop: 4 }}>
                 {upcomingEvents.length}
               </Text>
             </CardContent>
           </Card>
-          <Card style={{ flex: 1, minWidth: 150 }}>
+          <Card style={{ flex: 1, minWidth: 150, borderLeftWidth: 4, borderLeftColor: teamPrimary }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Published Results</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary, marginTop: 4 }}>
                 {latestResults.length}
               </Text>
             </CardContent>
           </Card>
-          <Card style={{ flex: 1, minWidth: 150 }}>
+          <Card style={{ flex: 1, minWidth: 150, borderLeftWidth: 4, borderLeftColor: teamAccent }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Pending Check-ins</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary, marginTop: 4 }}>
                 {pendingCheckIns}
               </Text>
             </CardContent>
           </Card>
-          <Card style={{ flex: 1, minWidth: 150 }}>
+          <Card style={{ flex: 1, minWidth: 150, borderLeftWidth: 4, borderLeftColor: teamPrimary }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Announcements</Text>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary, marginTop: 4 }}>
                 {announcements.length}
               </Text>
             </CardContent>
