@@ -27,9 +27,13 @@ const friendlyError = (msg: string): string => {
 };
 
 const getRequiredProfile = async (userId: string) => {
-  const { data, error } = await authProvider.getProfile(userId);
-  if (error || !data) throw new Error('Profile not found. Please contact an administrator.');
-  return data;
+  const directProfile = await authProvider.getProfile(userId);
+  if (!directProfile.error && directProfile.data) return directProfile.data;
+
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('get_my_login_profile');
+  const rpcProfile = rpcRows?.[0];
+  if (rpcError || !rpcProfile) throw new Error('Profile not found. Please contact an administrator.');
+  return rpcProfile;
 };
 
 const resolveUserLogin = async (identifier: string, password: string) => {

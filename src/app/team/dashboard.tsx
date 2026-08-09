@@ -12,18 +12,21 @@ export default function TeamLeaderDashboard() {
   const [schedule, setSchedule] = useState<TeamLeaderScheduleRow[]>([]);
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [announcements, setAnnouncements] = useState<TeamLeaderAnnouncement[]>([]);
+  const [participantCount, setParticipantCount] = useState(0);
   useEffect(() => {
     if (!context) return;
     const load = async () => {
       try {
-        const [s, r, a] = await Promise.all([
+        const [s, r, a, p] = await Promise.all([
           teamLeaderPortalService.getSchedule(),
           teamLeaderPortalService.getPublishedResults(),
           teamLeaderPortalService.getAnnouncements(),
+          teamLeaderPortalService.getParticipants(),
         ]);
         setSchedule(s);
         setResults(r);
         setAnnouncements(a);
+        setParticipantCount(p.length);
       } catch (err) {
         console.error('Dashboard load error:', err);
       }
@@ -60,6 +63,10 @@ export default function TeamLeaderDashboard() {
   const upcomingEvents = schedule.slice(0, 5);
   const latestResults = results.slice(0, 5);
   const recentAnnouncements = announcements.slice(0, 3);
+  const pendingCheckIns = schedule.reduce(
+    (total, event) => total + Math.max(0, event.participant_count - event.checked_in_count),
+    0,
+  );
 
   return (
     <TeamLeaderAppShell>
@@ -70,12 +77,20 @@ export default function TeamLeaderDashboard() {
             Dashboard
           </Text>
           <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-            Team overview and updates
+            {context.team_name || 'Team'} overview and updates
           </Text>
         </View>
 
         {/* Summary Cards */}
         <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+          <Card style={{ flex: 1, minWidth: 150 }}>
+            <CardContent style={{ padding: 16 }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Participants</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+                {participantCount}
+              </Text>
+            </CardContent>
+          </Card>
           <Card style={{ flex: 1, minWidth: 150 }}>
             <CardContent style={{ padding: 16 }}>
               <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Upcoming Events</Text>
@@ -92,17 +107,33 @@ export default function TeamLeaderDashboard() {
               </Text>
             </CardContent>
           </Card>
+          <Card style={{ flex: 1, minWidth: 150 }}>
+            <CardContent style={{ padding: 16 }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Pending Check-ins</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+                {pendingCheckIns}
+              </Text>
+            </CardContent>
+          </Card>
+          <Card style={{ flex: 1, minWidth: 150 }}>
+            <CardContent style={{ padding: 16 }}>
+              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Announcements</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--foreground))', marginTop: 4 }}>
+                {announcements.length}
+              </Text>
+            </CardContent>
+          </Card>
         </View>
 
         {/* Upcoming Events */}
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
+            <CardTitle>Upcoming Competitions</CardTitle>
           </CardHeader>
           <CardContent>
             {upcomingEvents.length === 0 ? (
               <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: 16 }}>
-                No upcoming events
+                No upcoming competitions
               </Text>
             ) : (
               <View style={{ gap: 8 }}>
@@ -119,14 +150,15 @@ export default function TeamLeaderDashboard() {
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
-                        {event.item_name || event.item_code || 'Event'}
+                        {event.item_name || event.item_code || 'Competition'}
                       </Text>
                       <Badge variant={event.event_status === 'completed' ? 'secondary' : 'info'}>
                         {event.event_status || 'scheduled'}
                       </Badge>
                     </View>
                     <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 4 }}>
-                      {event.start_time ? new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      {event.start_time ? new Date(event.start_time).toLocaleDateString() : ''}
+                      {event.start_time ? ` · ${new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
                       {event.venue_name ? ` · ${event.venue_name}` : ''}
                     </Text>
                     <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>

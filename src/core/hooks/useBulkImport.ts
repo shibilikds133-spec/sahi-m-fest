@@ -156,11 +156,6 @@ export const useBulkImport = () => {
           errors.push(e.message);
         }
 
-        const eventCount = [row.event1, row.event2, row.event3, row.event4].filter(e => !!e).length;
-        if (eventCount > 4) {
-          errors.push(`Selected ${eventCount} events (max 4 allowed)`);
-        }
-
         if (row.phone) {
           const phoneStr = String(row.phone).replace(/\D/g, '');
           if (phoneStr.length > 0 && phoneStr.length < 10) errors.push('Phone must be at least 10 digits');

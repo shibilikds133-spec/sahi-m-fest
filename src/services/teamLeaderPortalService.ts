@@ -80,7 +80,7 @@ async function readRpcSingle<T>(name: string): Promise<T | null> {
  * tenant, festival, team, or organisation id from the caller.
  */
 export const teamLeaderPortalService = {
-  getContext: () => readRpcSingle<TeamLeaderContext>('get_team_leader_context'),
+  getContext: () => readRpcSingle<TeamLeaderContext>('get_team_leader_context_details'),
   getParticipants: () => readRpc<TeamLeaderParticipant>('get_team_leader_participants'),
   getSchedule: () => readRpc<TeamLeaderScheduleRow>('get_team_leader_schedule'),
   getPublishedResults: () => readRpc<TeamLeaderPublishedResult>('get_team_leader_published_results'),

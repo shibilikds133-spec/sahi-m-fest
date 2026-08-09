@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   Alert,
   ScrollView,
@@ -6,111 +6,188 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AdminAppShell } from '@/components/layout/AdminAppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Button } from '@/components/ui/shadcn/button';
 import { Label } from '@/components/ui/shadcn/label';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { supabase } from '@/core/config/supabase';
-import { ChevronLeft, Search, Trash2, Users } from 'lucide-react-native';
+import { useFestival } from '@/core/hooks/useFestival';
+import { useAuthStore } from '@/core/store/authStore';
+import { ChevronLeft, Search, Trash2, Users, X, ChevronDown, Check, AlertCircle } from 'lucide-react-native';
+
+interface Participant {
+  id: string;
+  name: string;
+  chest_number: string | null;
+  category_code: string | null;
+  user_id: string | null;
+  organisation_id: string | null;
+  organisation_name?: string;
+}
+
+interface FestivalTeam {
+  id: string;
+  organisation_id: string;
+  organisation_name: string;
+  festival_id: string;
+}
 
 interface Assignment {
   id: string;
   user_id: string;
   festival_team_id: string;
+  organisation_id?: string;
   status: string;
   assigned_at: string;
   team_name: string;
   leader_email: string;
+  leader_code: string | null;
   leader_name: string;
   created_at: string;
 }
 
+interface Profile {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  role: string | null;
+}
+
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox';
+
 export default function TeamLeaderPortalAdmin() {
   const router = useRouter();
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
+  const tenantId = useAuthStore((state) => state.tenant_id);
+
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [assigning, setAssigning] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedOrgId, setSelectedOrgId] = useState('');
-  const [users, setUsers] = useState<any[]>([]);
-  const [organisations, setOrganisations] = useState<any[]>([]);
+
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [teams, setTeams] = useState<FestivalTeam[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
 
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<FestivalTeam | null>(null);
+
+  const [participantProfile, setParticipantProfile] = useState<Profile | null>(null);
+  const [checkingProfile, setCheckingProfile] = useState(false);
+  const [existingAssignment, setExistingAssignment] = useState<Assignment | null>(null);
+
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [tempCredentials, setTempCredentials] = useState<{ username: string | null, email: string, password: string } | null>(null);
+
+  const [openDropdown, setOpenDropdown] = useState<'participant' | 'team' | null>(null);
+
   useEffect(() => {
-    loadData();
-  }, []);
+    if (activeFestival?.id && tenantId) {
+      loadData();
+    }
+  }, [activeFestival?.id, tenantId]);
 
   const loadData = async () => {
+    if (!activeFestival?.id || !tenantId) return;
+
     try {
       setLoading(true);
+      setLoadingDropdowns(true);
 
-      // Load assignments with team info via festival_teams → organisations
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('team_leader_assignments')
-        .select(`
-          id,
-          user_id,
-          festival_team_id,
-          status,
-          assigned_at,
-          created_at,
-          festival_teams!inner(
+      const { data: visibleOrganisations, error: visibilityError } = await supabase.rpc('get_visible_organisations', {
+        p_tenant_id: tenantId,
+      });
+      if (visibilityError) throw visibilityError;
+      const visibleOrganisationIds = (visibleOrganisations || [])
+        .map((organisation: any) => organisation.id)
+        .filter(Boolean);
+      if (visibleOrganisationIds.length === 0) {
+        setParticipants([]);
+        setTeams([]);
+        setAssignments([]);
+        return [];
+      }
+
+      const [participantsResult, teamsResult] = await Promise.all([
+        supabase
+          .from('participants')
+          .select('id, name, chest_number, category_code, organisation_id, user_id')
+          .eq('festival_id', activeFestival.id)
+          .in('organisation_id', visibleOrganisationIds)
+          .order('name'),
+        supabase
+          .from('festival_teams')
+          .select(`
+            id,
+            festival_id,
             organisation_id,
-            organisations(name)
-          )
-        `)
-        .eq('status', 'active');
+            organisations!inner(name, org_type)
+          `)
+          .eq('festival_id', activeFestival.id)
+          .in('organisation_id', visibleOrganisationIds)
+          .eq('is_active', true)
+          .order('organisation_id'),
+      ]);
 
-      if (assignmentsError) throw assignmentsError;
+      const assignmentsResult = await supabase.rpc('get_team_leader_assignments_for_admin', {
+        p_festival_id: activeFestival.id,
+      });
 
-      // Resolve leader profiles separately (PostgREST FK name varies)
-      const userIds = (assignmentsData || []).map((a: any) => a.user_id).filter(Boolean);
-      const { data: profilesData } = userIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name, email').in('id', userIds)
-        : { data: [] };
+      if (participantsResult.error) throw participantsResult.error;
+      if (teamsResult.error) throw teamsResult.error;
+      if (assignmentsResult.error) throw assignmentsResult.error;
 
-      const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+      const participantList: Participant[] = (participantsResult.data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        chest_number: p.chest_number,
+        category_code: p.category_code,
+        organisation_id: p.organisation_id,
+        user_id: p.user_id || null,
+      }));
+      setParticipants(participantList);
 
-      const formatted = (assignmentsData || []).map((a: any) => {
-        const profile = profileMap.get(a.user_id);
+      const existingTeamsByOrganisation = new Map(
+        (teamsResult.data || []).map((team: any) => [team.organisation_id, team]),
+      );
+      const teamList: FestivalTeam[] = (visibleOrganisations || [])
+        .filter((organisation: any) => String(organisation.org_type || '').toLowerCase() === 'unit')
+        .map((organisation: any) => {
+          const existingTeam = existingTeamsByOrganisation.get(organisation.id);
+          return {
+            id: existingTeam?.id || `organisation:${organisation.id}`,
+            organisation_id: organisation.id,
+            organisation_name: organisation.name || 'Unknown Team',
+            festival_id: existingTeam?.festival_id || activeFestival.id,
+          };
+        });
+      setTeams(teamList);
+
+      const formatted = (assignmentsResult.data || []).map((a: any) => {
         return {
           id: a.id,
           user_id: a.user_id,
           festival_team_id: a.festival_team_id,
           status: a.status,
           assigned_at: a.assigned_at,
-          team_name: (a.festival_teams as any)?.organisations?.name || 'Unknown Team',
-          leader_email: profile?.email || 'N/A',
-          leader_name: profile?.display_name || profile?.email || 'Unknown',
+          team_name: a.team_name || 'Unknown Team',
+          organisation_id: a.organisation_id,
+          leader_email: a.leader_email || 'N/A',
+          leader_code: a.leader_code || null,
+          leader_name: a.leader_name || 'Unknown',
           created_at: a.created_at,
         };
       });
 
       setAssignments(formatted);
-
-      // Load dropdown data: users with team_leader role, and active festival teams
-      const [usersResult, teamsResult] = await Promise.all([
-        supabase.from('profiles').select('id, display_name, email').eq('role', 'team_leader'),
-        supabase
-          .from('festival_teams')
-          .select('id, organisation_id, organisations(name), festival_id, is_active')
-          .eq('is_active', true),
-      ]);
-
-      setUsers(usersResult.data || []);
-      setOrganisations(
-        (teamsResult.data || []).map((t: any) => ({
-          id: t.id,
-          name: `${t.organisations?.name || 'Unknown'} (Team)`,
-          organisation_id: t.organisation_id,
-          festival_id: t.festival_id,
-        }))
-      );
+      return participantList;
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Error', 'Failed to load team leader data.');
@@ -120,40 +197,197 @@ export default function TeamLeaderPortalAdmin() {
     }
   };
 
+  const checkParticipantProfile = async (participant: Participant) => {
+    setCheckingProfile(true);
+    setParticipantProfile(null);
+    setExistingAssignment(null);
+    setShowCreateAccount(false);
+    setTempCredentials(null);
+
+    try {
+      const { data: accountRows, error: accountError } = await supabase.rpc('get_team_leader_participant_account', {
+        p_participant_id: participant.id,
+      });
+      if (accountError) throw accountError;
+
+      const profile = accountRows?.[0];
+      if (profile) {
+        setParticipantProfile({
+          id: profile.user_id,
+          display_name: profile.full_name,
+          email: profile.team_leader_email,
+          role: profile.role,
+        });
+
+        const assigned = assignments.find(a => a.user_id === profile.user_id);
+        if (assigned) setExistingAssignment(assigned);
+      }
+    } catch (error) {
+      console.error('Error checking profile:', error);
+    } finally {
+      setCheckingProfile(false);
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    if (!selectedParticipant) {
+      Alert.alert('Validation Error', 'Select a participant first.');
+      return;
+    }
+
+    try {
+      setCreatingAccount(true);
+      const { data, error } = await supabase.functions.invoke('provision-team-leader', {
+        body: {
+          participant_id: selectedParticipant.id,
+        },
+      });
+
+      if (error) {
+        const errorMsg = (error as any)?.context?.message || error.message;
+        throw new Error(errorMsg || 'Failed to create Team Leader account.');
+      }
+
+      setTempCredentials({
+        username: data?.username ?? null,
+        email: data?.email,
+        password: data?.password,
+      });
+      setShowCreateAccount(false);
+
+      // Update local participant state to reflect link
+      const updatedParticipant = { ...selectedParticipant, user_id: data.user_id };
+      setSelectedParticipant(updatedParticipant);
+
+      // Refresh assignments / participants from server
+      await loadData();
+
+      // Re-run the profile check immediately so UI shows "Account Linked"
+      await checkParticipantProfile(updatedParticipant);
+
+      Alert.alert('Success', 'Team Leader account created successfully.');
+
+    } catch (err: any) {
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('PARTICIPANT_ALREADY_LINKED') || errorMessage.includes('already has a linked account')) {
+        const participantId = selectedParticipant.id;
+        const refreshedParticipants = (await loadData()) || [];
+        const refreshedParticipant = refreshedParticipants.find((participant) => participant.id === participantId);
+        if (refreshedParticipant) {
+          setSelectedParticipant(refreshedParticipant);
+          await checkParticipantProfile(refreshedParticipant);
+        }
+        Alert.alert('Account Already Linked', 'This participant already has an account. The participant status has been refreshed; use the linked Team Leader account instead of creating another one.');
+      } else {
+        Alert.alert('Account Creation Failed', err.message);
+      }
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
+  const handleParticipantSelect = useCallback((participant: Participant) => {
+    setSelectedParticipant(participant);
+    setSelectedTeam(null);
+    checkParticipantProfile(participant);
+
+    if (participant.organisation_id) {
+      const matchedTeam = teams.find((t) => t.organisation_id === participant.organisation_id);
+      if (matchedTeam) {
+        setSelectedTeam(matchedTeam);
+      }
+    }
+  }, [teams]);
+
+  const handleTeamSelect = useCallback((team: any) => {
+    setSelectedTeam(team as FestivalTeam);
+  }, []);
+
   const handleAssign = async () => {
-    if (!selectedUserId || !selectedOrgId) {
-      Alert.alert('Validation', 'Please select both a user and a team.');
+    if (!activeFestival?.id) {
+      Alert.alert('Validation', 'No active festival is selected.');
+      return;
+    }
+    if (!selectedParticipant || !selectedTeam) {
+      Alert.alert('Validation', 'Please select both a participant and a team.');
+      return;
+    }
+
+    if (existingAssignment) {
+      Alert.alert(
+        'Already Assigned',
+        `${selectedParticipant.name} is already assigned as Team Leader to ${existingAssignment.team_name}.`
+      );
+      return;
+    }
+
+    if (!participantProfile) {
+      Alert.alert(
+        'Account Required',
+        `${selectedParticipant.name} does not have a Team Leader account. Please create an account first before assigning.`
+      );
+      return;
+    }
+
+    if (participantProfile.role !== 'team_leader') {
+      Alert.alert(
+        'Role Conflict',
+        `${selectedParticipant.name} is linked to an existing ${participantProfile.role || 'non-Team Leader'} account. The existing role will not be overwritten.`,
+      );
+      return;
+    }
+
+    const teamHasLeader = assignments.some(
+      (a) => a.organisation_id === selectedTeam.organisation_id && a.status === 'active' && a.user_id !== participantProfile.id
+    );
+
+    if (teamHasLeader) {
+      Alert.alert(
+        'Team Has Leader',
+        `${selectedTeam.organisation_name} already has an active Team Leader.`
+      );
       return;
     }
 
     try {
       setAssigning(true);
 
-      // Check for existing active assignment for this user in any festival team
-      const existing = assignments.find(
-        (a) => a.user_id === selectedUserId
-      );
+      // 1. Ensure festival_team exists for this organisation
+      const { data: teamData, error: teamError } = await supabase
+        .from('festival_teams')
+        .upsert(
+          {
+            festival_id: activeFestival.id,
+            organisation_id: selectedTeam.organisation_id,
+            parent_tenant_id: activeFestival.tenant_id,
+            is_active: true,
+          },
+          { onConflict: 'festival_id,organisation_id' }
+        )
+        .select('id')
+        .single();
 
-      if (existing) {
-        Alert.alert('Conflict', 'This user already has a team leader assignment.');
-        return;
-      }
+      if (teamError) throw teamError;
 
+      // 2. Assign to the festival_team
       const { error } = await supabase.from('team_leader_assignments').insert({
-        user_id: selectedUserId,
-        festival_team_id: selectedOrgId,
+        user_id: participantProfile.id,
+        festival_team_id: teamData.id,
         status: 'active',
+        assigned_by: (await supabase.auth.getUser()).data.user?.id,
       });
 
       if (error) throw error;
 
-      Alert.alert('Success', 'Team leader assigned successfully.');
-      setSelectedUserId('');
-      setSelectedOrgId('');
+      Alert.alert('Success', `${selectedParticipant.name} assigned as Team Leader to ${selectedTeam.organisation_name}.`);
+      setSelectedParticipant(null);
+      setSelectedTeam(null);
+      setParticipantProfile(null);
+      setExistingAssignment(null);
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error assigning:', error);
-      Alert.alert('Error', 'Failed to assign team leader.');
+      Alert.alert('Error', error.message || 'Failed to assign team leader.');
     } finally {
       setAssigning(false);
     }
@@ -172,8 +406,9 @@ export default function TeamLeaderPortalAdmin() {
             try {
               const { error } = await supabase
                 .from('team_leader_assignments')
-                .delete()
-                .eq('id', assignment.id);
+                .update({ status: 'revoked', revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+                .eq('id', assignment.id)
+                .eq('status', 'active');
               if (error) throw error;
               loadData();
             } catch (error) {
@@ -185,193 +420,226 @@ export default function TeamLeaderPortalAdmin() {
     );
   };
 
-  const filteredAssignments = assignments.filter((a) =>
-    a.team_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.leader_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.leader_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.status.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredAssignments = assignments.filter(
+    (a) =>
+      a.team_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.leader_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.leader_email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <AdminAppShell>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
-        {/* Header */}
-        <View style={{ marginBottom: 16 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <ChevronLeft size={20} color="hsl(var(--foreground))" />
-            <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginLeft: 4 }}>Back to Settings</Text>
-          </TouchableOpacity>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Team Leader Portal</Text>
-          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-            Assign and manage team leaders
-          </Text>
-        </View>
+    <ScrollView className="flex-1 p-4" horizontal={false} showsHorizontalScrollIndicator={false}>
+      <View className="mb-4">
+        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center mb-2">
+          <ChevronLeft size={20} className="text-foreground" />
+          <Text className="text-sm text-muted-foreground ml-1">Back to Settings</Text>
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-foreground">Team Leader Portal</Text>
+        <Text className="text-sm text-muted-foreground mt-0.5">
+          Assign and manage team leaders
+        </Text>
+      </View>
 
-        {/* Assign Form */}
-        <Card style={{ marginBottom: 16 }}>
-          <CardHeader>
-            <CardTitle>Assign Team Leader</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingDropdowns ? (
-              <Skeleton style={{ height: 100, borderRadius: 8 }} />
-            ) : (
-              <View style={{ gap: 16 }}>
-                <View style={{ gap: 6 }}>
-                  <Label>User</Label>
-                  <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8 }}>
-                    <TextInput
-                      style={{ height: 40, paddingHorizontal: 12, fontSize: 14, color: 'hsl(var(--foreground))' }}
-                      placeholder="Select a user"
-                      placeholderTextColor="hsl(var(--muted-foreground))"
-                      value={selectedUserId}
-                      onChangeText={setSelectedUserId}
-                    />
-                  </View>
-                  {users.length > 0 && (
-                    <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8, maxHeight: 150, overflow: 'hidden' }}>
-                      {users.slice(0, 10).map((u) => (
-                        <TouchableOpacity
-                          key={u.id}
-                          style={{
-                            padding: 10,
-                            borderBottomWidth: 1,
-                            borderBottomColor: 'hsl(var(--border))',
-                            backgroundColor: selectedUserId === u.id ? 'hsl(var(--accent))' : 'transparent',
-                          }}
-                          onPress={() => setSelectedUserId(u.id)}
-                        >
-                          <Text style={{ fontSize: 13, color: 'hsl(var(--foreground))' }}>
-                            {u.display_name || u.email}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-
-                <View style={{ gap: 6 }}>
-                  <Label>Team (Organisation)</Label>
-                  <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8 }}>
-                    <TextInput
-                      style={{ height: 40, paddingHorizontal: 12, fontSize: 14, color: 'hsl(var(--foreground))' }}
-                      placeholder="Select a team"
-                      placeholderTextColor="hsl(var(--muted-foreground))"
-                      value={selectedOrgId}
-                      onChangeText={setSelectedOrgId}
-                    />
-                  </View>
-                  {organisations.length > 0 && (
-                    <View style={{ borderWidth: 1, borderColor: 'hsl(var(--input))', borderRadius: 8, maxHeight: 150, overflow: 'hidden' }}>
-                      {organisations.slice(0, 10).map((o) => (
-                        <TouchableOpacity
-                          key={o.id}
-                          style={{
-                            padding: 10,
-                            borderBottomWidth: 1,
-                            borderBottomColor: 'hsl(var(--border))',
-                            backgroundColor: selectedOrgId === o.id ? 'hsl(var(--accent))' : 'transparent',
-                          }}
-                          onPress={() => setSelectedOrgId(o.id)}
-                        >
-                          <Text style={{ fontSize: 13, color: 'hsl(var(--foreground))' }}>{o.name}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-
-                <Button
-                  onPress={handleAssign}
-                  disabled={assigning || !selectedUserId || !selectedOrgId}
-                  loading={assigning}
-                >
-                  Assign
-                </Button>
-              </View>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Assignments List */}
-        <Card>
-          <CardHeader>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <CardTitle>Current Assignments</CardTitle>
-              <Badge variant="secondary">{assignments.length}</Badge>
-            </View>
-          </CardHeader>
-          <CardContent>
-            {/* Search */}
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: 'hsl(var(--input))',
-              borderRadius: 8,
-              paddingHorizontal: 12,
-              marginBottom: 12,
-              height: 40,
-            }}>
-              <Search size={16} color="hsl(var(--muted-foreground))" />
-              <TextInput
-                style={{ flex: 1, marginLeft: 8, fontSize: 14, color: 'hsl(var(--foreground))' }}
-                placeholder="Search teams or leaders..."
-                placeholderTextColor="hsl(var(--muted-foreground))"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
+      <Card
+        style={{
+          marginBottom: openDropdown ? 276 : 16,
+          zIndex: openDropdown ? 20 : 1,
+        }}
+      >
+        <CardHeader>
+          <CardTitle>Assign Team Leader</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingDropdowns ? (
+            <Skeleton style={{ height: 200, borderRadius: 8 }} />
+          ) : (
+            <View style={{ gap: 16 }}>
+              <SearchableCombobox
+                label="Team Leader"
+                placeholder="Search participant..."
+                items={participants}
+                selectedItem={selectedParticipant}
+                onSelect={handleParticipantSelect as any}
+                loading={loadingDropdowns}
+                emptyText="No participants found"
+                isOpen={openDropdown === 'participant'}
+                onOpenChange={(open) => setOpenDropdown(open ? 'participant' : null)}
+                formatSubtitle={(item) => {
+                  const parts: string[] = [];
+                  if (item.chest_number) parts.push(`Chest ${item.chest_number}`);
+                  if (item.category_code) parts.push(item.category_code);
+                  return parts.length > 0 ? parts.join(' · ') : null;
+                }}
               />
-            </View>
 
-            {loading ? (
-              <View style={{ gap: 8 }}>
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} style={{ height: 60, borderRadius: 8 }} />
-                ))}
-              </View>
-            ) : filteredAssignments.length === 0 ? (
-              <View style={{ alignItems: 'center', padding: 24 }}>
-                <Users size={32} color="hsl(var(--muted-foreground))" />
-                <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 8 }}>
-                  {searchQuery ? 'No matching assignments found' : 'No team leaders assigned yet'}
-                </Text>
-              </View>
-            ) : (
-              <View style={{ gap: 8 }}>
-                {filteredAssignments.map((assignment) => (
-                  <View
-                    key={assignment.id}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 12,
-                      borderWidth: 1,
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: 8,
-                      backgroundColor: 'hsl(var(--muted))',
-                    }}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
-                        {assignment.team_name}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-                        {assignment.leader_name} · {assignment.leader_email}
-                      </Text>
+
+              <SearchableCombobox
+                label="Team (Organisation)"
+                placeholder="Search team..."
+                items={teams.map((t) => ({ ...t, name: t.organisation_name }))}
+                selectedItem={selectedTeam ? { ...selectedTeam, name: selectedTeam.organisation_name } : null}
+                onSelect={handleTeamSelect}
+                loading={loadingDropdowns}
+                emptyText="No teams available"
+                isOpen={openDropdown === 'team'}
+                onOpenChange={(open) => setOpenDropdown(open ? 'team' : null)}
+              />
+
+              {selectedParticipant && (
+                <View className="p-4 bg-muted/50 rounded-lg border border-border">
+                  <Text className="font-semibold text-foreground mb-2">Account Status</Text>
+                  {checkingProfile ? (
+                    <Text className="text-muted-foreground text-sm">Checking...</Text>
+                  ) : participantProfile ? (
+                    <View className="flex-row items-center">
+                      {participantProfile.role === 'team_leader' ? (
+                        <>
+                          <Check size={16} className="text-green-600 mr-2" />
+                          <Text className="text-sm text-foreground">✓ Team Leader account linked</Text>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={16} className="text-amber-600 mr-2" />
+                          <Text className="text-sm text-amber-700 dark:text-amber-400">
+                            Linked to existing {participantProfile.role} account.
+                          </Text>
+                        </>
+                      )}
                     </View>
+                  ) : (
+                    <View>
+                      <Text className="text-sm text-muted-foreground mb-3">No Team Leader account linked.</Text>
+                      {!showCreateAccount && (
+                        <TouchableOpacity
+                          onPress={() => setShowCreateAccount(true)}
+                          className="bg-primary px-4 py-2 rounded-md self-start"
+                        >
+                          <Text className="text-primary-foreground font-medium text-sm">Create Team Leader Account</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                  {tempCredentials && (
+                    <View className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                      <Text className="font-medium text-green-800 dark:text-green-300 mb-1">Account Created Successfully</Text>
+                      {tempCredentials.username && (
+                        <Text className="text-sm text-green-700 dark:text-green-400">Team Leader Code: {tempCredentials.username}</Text>
+                      )}
+                      <Text className="text-sm text-green-700 dark:text-green-400">Email: {tempCredentials.email}</Text>
+                      <Text className="text-sm text-green-700 dark:text-green-400">Temporary Password: {tempCredentials.password}</Text>
+                      <Text className="text-xs text-muted-foreground mt-2 italic">The code and email are saved for later reference. Copy the temporary password now.</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {showCreateAccount && (
+                <View className="p-4 bg-card rounded-lg border border-border mt-2">
+                  <Text className="font-semibold mb-3 text-foreground">Create Team Leader Account</Text>
+                  <Text className="text-sm text-muted-foreground mb-4">
+                    Participant: {selectedParticipant?.name}
+                  </Text>
+                  <Text className="text-sm text-muted-foreground mb-4">
+                    A unique Team Leader code, login email, and temporary password will be generated automatically.
+                  </Text>
+                  <View className="flex-row justify-end space-x-2">
                     <TouchableOpacity
-                      onPress={() => handleRemove(assignment)}
-                      style={{ padding: 8 }}
+                      onPress={() => setShowCreateAccount(false)}
+                      className="px-4 py-2 border border-border rounded-md mr-2"
+                      disabled={creatingAccount}
                     >
-                      <Trash2 size={16} color="hsl(var(--destructive))" />
+                      <Text className="text-foreground">Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleCreateAccount}
+                      className={`px-4 py-2 bg-primary rounded-md ${creatingAccount ? 'opacity-50' : ''}`}
+                      disabled={creatingAccount}
+                    >
+                      <Text className="text-primary-foreground font-medium">
+                        {creatingAccount ? 'Creating...' : 'Create Account'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                ))}
-              </View>
-            )}
-          </CardContent>
-        </Card>
-      </ScrollView>
-    </AdminAppShell>
+                </View>
+              )}
+
+              <Button
+                onPress={handleAssign}
+                disabled={assigning || !selectedParticipant || !selectedTeam || !participantProfile || !!existingAssignment}
+                loading={assigning}
+              >
+                Assign
+              </Button>
+            </View>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <CardTitle>Current Assignments</CardTitle>
+            <Badge variant="secondary">{assignments.length}</Badge>
+          </View>
+        </CardHeader>
+        <CardContent>
+          <View className="flex-row items-center border border-input rounded-lg px-3 mb-3 h-10">
+            <Search size={16} className="text-muted-foreground" />
+            <TextInput
+              className="flex-1 ml-2 text-sm text-foreground"
+              style={Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : undefined}
+              placeholder="Search teams or leaders..."
+              placeholderTextColor="#888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          {loading ? (
+            <View style={{ gap: 8 }}>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} style={{ height: 60, borderRadius: 8 }} />
+              ))}
+            </View>
+          ) : filteredAssignments.length === 0 ? (
+            <View style={{ alignItems: 'center', padding: 24 }}>
+              <Users size={32} color="hsl(var(--muted-foreground))" />
+              <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 8 }}>
+                {searchQuery ? 'No matching assignments found' : 'No team leaders assigned yet'}
+              </Text>
+            </View>
+          ) : (
+            <View className="gap-2">
+              {filteredAssignments.map((assignment) => (
+                <View
+                  key={assignment.id}
+                  className="flex-row items-center p-3 border border-border rounded-lg bg-muted"
+                >
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-foreground">
+                      {assignment.team_name}
+                    </Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">
+                      {assignment.leader_name}
+                    </Text>
+                    {assignment.leader_code && (
+                      <Text className="text-xs text-muted-foreground mt-0.5">
+                        Code: {assignment.leader_code} · {assignment.leader_email}
+                      </Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleRemove(assignment)}
+                    className="p-2"
+                  >
+                    <Trash2 size={16} className="text-destructive" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </CardContent>
+      </Card>
+    </ScrollView>
   );
 }

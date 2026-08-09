@@ -1,32 +1,13 @@
 import { RegistrationRule, RuleContext, RuleResult } from './types';
 
-// REG-01: Max item count (Configurable, default max 4 non-General items)
+// REG-01: Participant item-count limits are intentionally removed.
+// Eligibility and duplicate-item rules remain active below.
 export const ItemLimitRule: RegistrationRule = {
   id: 'REG-01',
-  description: 'Participant cannot exceed configured maximum items (default 4 non-General items)',
-  evaluate(context: RuleContext): RuleResult | null {
-    const { item, existingRegistrations, festivalConfig } = context;
-    
-    // GN category bypasses limits by default
-    if (item.category_codes?.includes('GN')) return null;
-
-    const maxLimit = festivalConfig?.max_items_per_participant ?? 4;
-    
-    const nonGeneralCount = existingRegistrations.filter(
-      (r: any) => !r.item?.category_codes?.includes('GN')
-    ).length;
-
-    if (nonGeneralCount >= maxLimit) {
-      return {
-        ruleId: this.id,
-        severity: 'error',
-        message: `Maximum allowed items is ${maxLimit} (excluding General category).`,
-        metadata: { currentCount: nonGeneralCount, maxLimit }
-      };
-    }
-
+  description: 'Participant may register for any number of different eligible items',
+  evaluate(_context: RuleContext): RuleResult | null {
     return null;
-  }
+  },
 };
 
 // REG-02: Category match

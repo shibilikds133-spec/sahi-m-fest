@@ -37,6 +37,8 @@ export interface Participant {
   id: string;
   name: string;
   category_code: string;
+  user_id?: string | null;
+  organisation_id?: string | null;
   is_post_hs_religious?: boolean;
   is_recognized_board_student?: boolean;
   photo_url?: string;

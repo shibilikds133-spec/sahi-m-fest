@@ -25,6 +25,7 @@ export default function AdminLayout() {
         <Stack.Screen name="judges/index" />
         <Stack.Screen name="judges/approvals" />
         <Stack.Screen name="judges/audit" />
+        <Stack.Screen name="team-leaders" />
         <Stack.Screen name="organisations/index" />
         <Stack.Screen name="settings/leaderboard" />
         <Stack.Screen name="settings/index" />

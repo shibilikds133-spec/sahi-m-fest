@@ -111,6 +111,12 @@ const navItems: NavItem[] = [
     match: () => false,
   },
   {
+    label: 'Team Leader Management',
+    path: '/(admin)/team-leaders',
+    icon: Users,
+    match: (path) => path.includes('/team-leaders'),
+  },
+  {
     label: 'Leaderboard Management',
     path: '/(admin)/settings/leaderboard',
     icon: Trophy,
@@ -178,11 +184,6 @@ const navItems: NavItem[] = [
         label: 'AI Settings & API Keys',
         path: '/(admin)/settings/api-keys',
         match: (path) => path.includes('/settings/api-keys'),
-      },
-      {
-        label: 'Team Leader Portal',
-        path: '/(admin)/settings/team-leader-portal',
-        match: (path) => path.includes('/settings/team-leader-portal'),
       },
     ],
   },

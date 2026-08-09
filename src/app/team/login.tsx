@@ -36,6 +36,7 @@ export default function TeamLeaderLogin() {
     try {
       const result = await authService.login(username, password);
       if (result.role !== 'team_leader') {
+        await authService.logout().catch(() => undefined);
         setErrorMsg('This account does not have Team Leader access.');
         return;
       }

@@ -7,6 +7,7 @@ export function useProtectedRoute() {
   const segments = useSegments();
   const { user, role, is_superadmin, initialized } = useAuthStore();
   const inTeamGroup = segments[0] === 'team';
+  const inTeamLogin = inTeamGroup && segments[1] === 'login';
   const isTeamLeader = role === 'team_leader';
   const mustBlockCoreRoute = Boolean(initialized && user && isTeamLeader && !inTeamGroup);
 
@@ -18,6 +19,14 @@ export function useProtectedRoute() {
     const inJudgeGroup = segments[0] === 'judge';
     const inSuperGroup = segments[0] === '(super)';
     const inPublicGroup = segments[0] === '(public)';
+
+    // The Team Leader login is a public entry point. Once authenticated, only
+    // a team_leader role may remain inside the /team namespace.
+    if (!user && inTeamLogin) return;
+    if (user && inTeamGroup && !isTeamLeader) {
+      router.replace('/(public)');
+      return;
+    }
 
     // Team Leaders have a dedicated namespace. Keep this check separate from
     // navigation visibility so a manually entered core URL is denied before
@@ -32,6 +41,7 @@ export function useProtectedRoute() {
       if (
         !inPublicGroup && 
         !inAuthGroup && 
+        !inTeamLogin &&
         segments[0] !== 'stage-management' && 
         segments[0] !== 'candidate' && 
         segments[0] !== 'unit-profile' && 
@@ -83,7 +93,7 @@ export function useProtectedRoute() {
       router.replace('/(public)');
       return;
     }
-  }, [user, role, is_superadmin, initialized, segments, inTeamGroup, isTeamLeader, router]);
+  }, [user, role, is_superadmin, initialized, segments, inTeamGroup, inTeamLogin, isTeamLeader, router]);
 
   return mustBlockCoreRoute;
 }

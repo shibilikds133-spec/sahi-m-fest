@@ -9,6 +9,7 @@ import { ArrowLeft, UserCheck, Save, CheckCircle2, AlertCircle } from 'lucide-re
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useJudges } from '../../../../core/hooks/useJudges';
+import { useParticipants } from '../../../../core/hooks/useParticipants';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { calculateGrade } from '../../../../services/judgeService';
 import { useAuthStore } from '../../../../core/store/authStore';
@@ -27,14 +28,24 @@ export default function MarkEntryPage() {
 
   const {
     judges,
-    useScheduleRegistrations,
     useMarkEntries,
     saveMarkEntry,
     finalizeMarkEntry,
     useJudgeSubmissionSummary,
   } = useJudges();
 
-  const { data: registrations, isLoading: loadingRegs } = useScheduleRegistrations(scheduleId);
+  // Keep mark entry aligned with the Code Letter page. Both pages must read
+  // the same item registrations; the old schedule RPC applied a stricter
+  // organisation-tree filter and could hide participants that already had
+  // code letters assigned.
+  const { useItemRegistrations } = useParticipants();
+  const { data: itemRegistrations, isLoading: loadingRegs } = useItemRegistrations(schedule?.item_id);
+  const registrations = React.useMemo(
+    () => (itemRegistrations || []).filter((registration: any) =>
+      registration.status !== 'rejected' && registration.is_verified === true && !!registration.code_letter
+    ),
+    [itemRegistrations],
+  );
   const { data: markEntries, refetch: refetchMarks } = useMarkEntries(scheduleId);
   const { data: judgeSummary } = useJudgeSubmissionSummary(scheduleId);
 
@@ -118,7 +129,12 @@ export default function MarkEntryPage() {
 
     setIsSavingAll(true);
     try {
-      for (const reg of registrations as any[]) {
+      const editableRegistrations = (registrations as any[]).filter(
+        reg => !getEntry(reg.id, selectedJudge)?.is_final,
+      );
+      if (editableRegistrations.length === 0) return;
+
+      for (const reg of editableRegistrations) {
         const scores = marks[reg.id]?.[selectedJudge] ?? {};
         const total = Object.values(scores).reduce((a, b) => a + b, 0);
 
@@ -247,6 +263,7 @@ export default function MarkEntryPage() {
               const total = getTotal(reg.id, selectedJudge);
               const grade = calculateGrade(total, 100);
               const isSaving = saving === reg.id;
+              const isFinalized = entry?.is_final === true;
 
               return (
                 <SsfCard key={reg.id} className="mb-4">
@@ -297,11 +314,14 @@ export default function MarkEntryPage() {
                         {Array.from({ length: c.max / 5 + 1 }, (_, i) => i * 5).map(val => (
                           <TouchableOpacity
                             key={val}
-                            onPress={() => updateScore(reg.id, selectedJudge, c.key, val)}
+                            onPress={() => {
+                              if (!isFinalized) updateScore(reg.id, selectedJudge, c.key, val);
+                            }}
+                            disabled={isFinalized}
                             className={`px-2.5 py-1 rounded-lg mb-1 border ${
                               (marks[reg.id]?.[selectedJudge]?.[c.key] ?? -1) === val
                                 ? 'bg-ssf-primary border-ssf-primary'
-                                : 'bg-gray-50 border-gray-200'
+                                : isFinalized ? 'bg-gray-100 border-gray-200 opacity-60' : 'bg-gray-50 border-gray-200'
                             }`}
                           >
                             <Text className={`font-poppins-bold text-xs ${
@@ -337,7 +357,9 @@ export default function MarkEntryPage() {
             })
           )}
           
-          {registrations && (registrations as any[]).length > 0 && (
+          {registrations && (registrations as any[]).some(
+            reg => !getEntry(reg.id, selectedJudge)?.is_final
+          ) && (
             <View className="mt-2 mb-8 px-1">
               <SsfButton
                 label={isSavingAll ? 'Submitting...' : 'Submit All Marks for Judge'}

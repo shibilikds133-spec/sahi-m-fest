@@ -3,10 +3,10 @@ import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { cn } from "../../../lib/utils";
 
 const variantStyles = {
-  default: "bg-primary",
+  default: "bg-[#0F766E]",
   destructive: "bg-destructive",
-  outline: "border border-border bg-background",
-  secondary: "bg-secondary",
+  outline: "border border-[#B7D9D3] bg-[#E7F6F3]",
+  secondary: "bg-[#E7F6F3]",
   ghost: "bg-transparent",
   link: "bg-transparent",
 };
@@ -19,10 +19,10 @@ const sizeStyles = {
 };
 
 const textVariantStyles = {
-  default: "text-primary-foreground",
+  default: "text-white",
   destructive: "text-destructive-foreground",
-  outline: "text-foreground",
-  secondary: "text-secondary-foreground",
+  outline: "text-[#0F172A]",
+  secondary: "text-[#0F766E]",
   ghost: "text-foreground",
   link: "text-primary",
 };

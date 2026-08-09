@@ -11,6 +11,7 @@ import {
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useJudges } from '../../../../core/hooks/useJudges';
+import { useParticipants } from '../../../../core/hooks/useParticipants';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import {
@@ -47,7 +48,6 @@ export default function ResultsPage() {
   const resolvedFestivalId: string | null = schedule?.festival_id ?? activeFestival?.id ?? null;
 
   const {
-    useScheduleRegistrations,
     useMarkEntries,
     useResults,
     publishResults: publishResultsMutation,
@@ -56,7 +56,14 @@ export default function ResultsPage() {
 
   const { updateSchedule } = useSchedule();
 
-  const { data: registrations, isLoading } = useScheduleRegistrations(scheduleId);
+  const { useItemRegistrations } = useParticipants();
+  const { data: itemRegistrations, isLoading } = useItemRegistrations(schedule?.item_id);
+  const registrations = React.useMemo(
+    () => (itemRegistrations || []).filter((registration: any) =>
+      registration.status !== 'rejected' && registration.is_verified === true && !!registration.code_letter
+    ),
+    [itemRegistrations],
+  );
   const { data: markEntries } = useMarkEntries(scheduleId);
   const { data: existingResults } = useResults(scheduleId);
   const { data: pointsConfig } = usePointsConfig(resolvedFestivalId ?? undefined);

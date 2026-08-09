@@ -27,7 +27,7 @@ export const SsfButton: React.FC<SsfButtonProps> = ({
  
  const variantClasses = {
  primary: 'bg-ui-primary',
- outline: 'border border-ui-border bg-white',
+ outline: 'border border-ui-border bg-ui-primary-soft',
  ghost: 'bg-transparent',
  };
 
