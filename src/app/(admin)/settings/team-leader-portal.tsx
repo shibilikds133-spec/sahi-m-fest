@@ -8,6 +8,7 @@ import {
   View,
   Platform,
   LayoutChangeEvent,
+  Clipboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
@@ -18,7 +19,7 @@ import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { supabase } from '@/core/config/supabase';
 import { useFestival } from '@/core/hooks/useFestival';
 import { useAuthStore } from '@/core/store/authStore';
-import { ChevronLeft, Search, Trash2, Users, X, ChevronDown, Check, AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, Search, Trash2, Users, X, ChevronDown, Check, AlertCircle, Copy } from 'lucide-react-native';
 
 interface Participant {
   id: string;
@@ -87,6 +88,21 @@ export default function TeamLeaderPortalAdmin() {
   const [tempCredentials, setTempCredentials] = useState<{ username: string | null, email: string, password: string } | null>(null);
 
   const [openDropdown, setOpenDropdown] = useState<'participant' | 'team' | null>(null);
+
+  const copyCredential = async (value: string | null | undefined, label: string) => {
+    if (!value) return;
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        Clipboard.setString(value);
+      }
+      Alert.alert('Copied', `${label} copied to clipboard.`);
+    } catch (error) {
+      console.error(`Failed to copy ${label}:`, error);
+      Alert.alert('Copy failed', 'Clipboard is unavailable on this device.');
+    }
+  };
 
   useEffect(() => {
     if (activeFestival?.id && tenantId) {
@@ -523,11 +539,26 @@ export default function TeamLeaderPortalAdmin() {
                     <View className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
                       <Text className="font-medium text-green-800 dark:text-green-300 mb-1">Account Created Successfully</Text>
                       {tempCredentials.username && (
-                        <Text className="text-sm text-green-700 dark:text-green-400">Team Leader Code: {tempCredentials.username}</Text>
+                        <View className="flex-row items-center justify-between py-1">
+                          <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Username: {tempCredentials.username}</Text>
+                          <TouchableOpacity onPress={() => copyCredential(tempCredentials.username, 'Username')} className="p-1">
+                            <Copy size={16} color="#15803d" />
+                          </TouchableOpacity>
+                        </View>
                       )}
-                      <Text className="text-sm text-green-700 dark:text-green-400">Email: {tempCredentials.email}</Text>
-                      <Text className="text-sm text-green-700 dark:text-green-400">Temporary Password: {tempCredentials.password}</Text>
-                      <Text className="text-xs text-muted-foreground mt-2 italic">The code and email are saved for later reference. Copy the temporary password now.</Text>
+                      <View className="flex-row items-center justify-between py-1">
+                        <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Email: {tempCredentials.email}</Text>
+                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.email, 'Email')} className="p-1">
+                          <Copy size={16} color="#15803d" />
+                        </TouchableOpacity>
+                      </View>
+                      <View className="flex-row items-center justify-between py-1">
+                        <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Password: {tempCredentials.password}</Text>
+                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.password, 'Password')} className="p-1">
+                          <Copy size={16} color="#15803d" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text className="text-xs text-muted-foreground mt-2 italic">Save or copy these credentials now. The password is not stored for later retrieval.</Text>
                     </View>
                   )}
                 </View>
@@ -623,9 +654,25 @@ export default function TeamLeaderPortalAdmin() {
                       {assignment.leader_name}
                     </Text>
                     {assignment.leader_code && (
-                      <Text className="text-xs text-muted-foreground mt-0.5">
-                        Code: {assignment.leader_code} · {assignment.leader_email}
-                      </Text>
+                      <View className="flex-row items-center mt-0.5">
+                        <Text className="text-xs text-muted-foreground flex-1">
+                          Code: {assignment.leader_code} · {assignment.leader_email}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => copyCredential(assignment.leader_code, 'Username')}
+                          className="p-1"
+                          accessibilityLabel={`Copy username for ${assignment.leader_name}`}
+                        >
+                          <Copy size={15} color="#64748b" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => copyCredential(assignment.leader_email, 'Email')}
+                          className="p-1 ml-1"
+                          accessibilityLabel={`Copy email for ${assignment.leader_name}`}
+                        >
+                          <Copy size={15} color="#64748b" />
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </View>
                   <TouchableOpacity
