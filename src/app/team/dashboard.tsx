@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { ArrowRight, CalendarDays, Trophy, Users } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderScheduleRow, TeamLeaderPublishedResult, TeamLeaderAnnouncement } from '@/services/teamLeaderPortalService';
@@ -9,6 +11,7 @@ import { Skeleton } from '@/components/ui/shadcn/skeleton';
 
 export default function TeamLeaderDashboard() {
   const { context, loading: contextLoading, error: contextError } = useTeamLeaderContext();
+  const router = useRouter();
   const [schedule, setSchedule] = useState<TeamLeaderScheduleRow[]>([]);
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [announcements, setAnnouncements] = useState<TeamLeaderAnnouncement[]>([]);
@@ -69,6 +72,7 @@ export default function TeamLeaderDashboard() {
   );
   const teamPrimary = context.portal_primary_color || '#0F766E';
   const teamAccent = context.portal_accent_color || '#14B8A6';
+  const goTo = (path: string) => router.push(path as any);
 
   return (
     <TeamLeaderAppShell>
@@ -131,6 +135,25 @@ export default function TeamLeaderDashboard() {
               </Text>
             </CardContent>
           </Card>
+        </View>
+
+        <View style={{ gap: 10 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: 'hsl(var(--foreground))' }}>Quick access</Text>
+          <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+            {[
+              { label: 'My team', path: '/team/my-team', icon: Users },
+              { label: 'Full schedule', path: '/team/schedule', icon: CalendarDays },
+              { label: 'View results', path: '/team/results', icon: Trophy },
+            ].map(({ label, path, icon: Icon }) => (
+              <Pressable key={path} onPress={() => goTo(path)} style={{ flex: 1, minWidth: 145, padding: 13, borderRadius: 13, borderWidth: 1, borderColor: `${teamAccent}55`, backgroundColor: `${teamAccent}0D`, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Icon size={16} color={teamPrimary} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: teamPrimary }}>{label}</Text>
+                </View>
+                <ArrowRight size={15} color={teamPrimary} />
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* Upcoming Events */}

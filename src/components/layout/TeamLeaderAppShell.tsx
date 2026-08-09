@@ -92,6 +92,7 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
   const { context } = useTeamLeaderContext();
   const teamPrimary = context?.portal_primary_color || '#0F766E';
   const teamAccent = context?.portal_accent_color || '#14B8A6';
+  const teamInitial = (context?.team_name || 'T').trim().charAt(0).toUpperCase();
 
   const isDesktop = width >= 768;
 
@@ -119,19 +120,34 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
           }}
         >
           {/* Header */}
-          <View style={{ paddingHorizontal: 12, marginBottom: 16 }}>
+          <View style={{ paddingHorizontal: 12, marginBottom: 18 }}>
             {sidebarOpen ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: 'hsl(215, 20.2%, 65.1%)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Team Portal
-                </Text>
-                <TouchableOpacity onPress={() => setSidebarOpen(false)} hitSlop={8}>
-                  <PanelLeftClose size={16} color="hsl(215, 20.2%, 65.1%)" />
-                </TouchableOpacity>
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                    <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: teamAccent, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: teamPrimary, fontSize: 15, fontWeight: '800' }}>{teamInitial}</Text>
+                    </View>
+                    <View>
+                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }} numberOfLines={1}>
+                        {context?.team_name || 'Team Portal'}
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.62)', fontSize: 10, marginTop: 1 }}>
+                        Team workspace
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={() => setSidebarOpen(false)} hitSlop={8}>
+                    <PanelLeftClose size={16} color="rgba(255,255,255,0.65)" />
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : (
               <TouchableOpacity onPress={() => setSidebarOpen(true)} hitSlop={8} style={{ alignItems: 'center' }}>
-                <PanelLeftOpen size={18} color="hsl(215, 20.2%, 65.1%)" />
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: teamAccent, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: teamPrimary, fontSize: 15, fontWeight: '800' }}>{teamInitial}</Text>
+                </View>
+                <PanelLeftOpen size={15} color="rgba(255,255,255,0.65)" style={{ marginTop: 8 }} />
               </TouchableOpacity>
             )}
           </View>
@@ -154,7 +170,9 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
                     backgroundColor: active ? `${teamAccent}33` : 'transparent',
                     marginHorizontal: sidebarOpen ? 8 : 4,
                     borderRadius: 8,
-                    marginBottom: 2,
+                    marginBottom: 4,
+                    borderWidth: active ? 1 : 0,
+                    borderColor: active ? `${teamAccent}66` : 'transparent',
                   }}
                 >
                   <Icon size={18} color={active ? teamAccent : 'hsl(215, 20.2%, 65.1%)'} />
@@ -208,16 +226,19 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: 16,
+              paddingHorizontal: 20,
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
-              {context?.team_name || (context?.festival_id ? 'Festival Portal' : 'Team Portal')}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>
-                {context?.organisation_id ? 'Team' : ''}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 7, height: 7, borderRadius: 99, backgroundColor: teamAccent }} />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: 'hsl(var(--foreground))' }}>
+                {context?.team_name || (context?.festival_id ? 'Festival Portal' : 'Team Portal')}
               </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: `${teamAccent}18` }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: teamPrimary }}>LIVE</Text>
+              </View>
             </View>
           </View>
 
@@ -248,8 +269,8 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
         <TouchableOpacity onPress={() => setMobileMenuOpen(true)} hitSlop={8}>
           <Menu size={20} color="hsl(var(--foreground))" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
-          Team Portal
+        <Text style={{ fontSize: 14, fontWeight: '700', color: 'hsl(var(--foreground))' }}>
+          {context?.team_name || 'Team Portal'}
         </Text>
         <View style={{ width: 20 }} />
       </View>

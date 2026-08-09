@@ -38,15 +38,18 @@ export default function ScheduleScreen() {
   }
 
   const filtered = filter === 'all' ? schedule : schedule.filter((s) => s.event_status === filter);
+  const teamPrimary = context?.portal_primary_color || '#0F766E';
+  const teamAccent = context?.portal_accent_color || '#14B8A6';
 
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ padding: 18, borderRadius: 16, backgroundColor: `${teamAccent}12`, borderWidth: 1, borderColor: `${teamAccent}45`, borderLeftWidth: 4, borderLeftColor: teamPrimary, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Schedule</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.1, textTransform: 'uppercase', color: teamPrimary }}>Planning</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: 'hsl(var(--foreground))', marginTop: 4 }}>Schedule</Text>
             <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-              Your team&apos;s event schedule
+              {schedule.length} event{schedule.length === 1 ? '' : 's'} for your team
             </Text>
           </View>
           <Button variant="outline" size="sm" onPress={() => router.push('/team/schedule/full')}>

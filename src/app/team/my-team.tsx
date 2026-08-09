@@ -34,21 +34,24 @@ export default function MyTeamScreen() {
   const ownRank = ownTeam?.rank ?? 0;
   const totalPoints = ownTeam?.total_points ?? 0;
   const pointsBehind = standings.length > 0 ? standings[0].total_points - totalPoints : 0;
+  const teamPrimary = context?.portal_primary_color || '#0F766E';
+  const teamAccent = context?.portal_accent_color || '#14B8A6';
 
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
-        <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>My Team</Text>
-          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-            Team standings and leaderboard
+        <View style={{ padding: 18, borderRadius: 16, backgroundColor: `${teamAccent}12`, borderWidth: 1, borderColor: `${teamAccent}45`, borderLeftWidth: 4, borderLeftColor: teamPrimary }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.1, textTransform: 'uppercase', color: teamPrimary }}>Leaderboard</Text>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: 'hsl(var(--foreground))', marginTop: 4 }}>My Team</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 3 }}>
+            Track your team&apos;s position and points
           </Text>
         </View>
 
         {/* Team Summary */}
         {ownTeam && (
-          <Card>
-            <CardContent style={{ padding: 16 }}>
+          <Card style={{ borderTopWidth: 4, borderTopColor: teamPrimary }}>
+            <CardContent style={{ padding: 18 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View>
                   <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Your Team</Text>
@@ -58,7 +61,7 @@ export default function MyTeamScreen() {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>Rank</Text>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: 'hsl(var(--primary))' }}>
+                  <Text style={{ fontSize: 24, fontWeight: '700', color: teamPrimary }}>
                     #{ownRank}
                   </Text>
                 </View>
@@ -100,13 +103,12 @@ export default function MyTeamScreen() {
                       padding: 12,
                       borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                      backgroundColor: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--card))',
-                      opacity: team.is_own_team ? 0.1 : 1,
+                      borderColor: team.is_own_team ? teamPrimary : 'hsl(var(--border))',
+                      backgroundColor: team.is_own_team ? `${teamAccent}16` : 'hsl(var(--card))',
                     }}
                   >
                     <View style={{ width: 32, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: team.is_own_team ? 'hsl(var(--primary))' : 'hsl(var(--foreground))' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: team.is_own_team ? teamPrimary : 'hsl(var(--foreground))' }}>
                         #{team.rank}
                       </Text>
                     </View>
@@ -114,7 +116,7 @@ export default function MyTeamScreen() {
                       <Text style={{ fontSize: 14, fontWeight: team.is_own_team ? '700' : '500', color: 'hsl(var(--foreground))' }}>
                         {team.team_name}
                         {team.is_own_team && (
-                          <Text style={{ fontSize: 11, color: 'hsl(var(--primary))', marginLeft: 6 }}>Your Team</Text>
+                          <Text style={{ fontSize: 11, color: teamPrimary, marginLeft: 6 }}>Your Team</Text>
                         )}
                       </Text>
                     </View>

@@ -38,14 +38,17 @@ export default function ResultsScreen() {
     if (filter === 'medal') return r.rank != null && r.rank <= 3;
     return true;
   });
+  const teamPrimary = context?.portal_primary_color || '#0F766E';
+  const teamAccent = context?.portal_accent_color || '#14B8A6';
 
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
-        <View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Results</Text>
-          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-            Published results for your team
+        <View style={{ padding: 18, borderRadius: 16, backgroundColor: `${teamAccent}12`, borderWidth: 1, borderColor: `${teamAccent}45`, borderLeftWidth: 4, borderLeftColor: teamPrimary }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.1, textTransform: 'uppercase', color: teamPrimary }}>Performance</Text>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: 'hsl(var(--foreground))', marginTop: 4 }}>Results</Text>
+          <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 3 }}>
+            {results.length} published result{results.length === 1 ? '' : 's'} for your team
           </Text>
         </View>
 
