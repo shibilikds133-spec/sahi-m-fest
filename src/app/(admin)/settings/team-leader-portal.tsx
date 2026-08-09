@@ -86,6 +86,7 @@ export default function TeamLeaderPortalAdmin() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [tempCredentials, setTempCredentials] = useState<{ username: string | null, email: string, password: string } | null>(null);
+  const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
 
   const [openDropdown, setOpenDropdown] = useState<'participant' | 'team' | null>(null);
 
@@ -97,7 +98,8 @@ export default function TeamLeaderPortalAdmin() {
       } else {
         Clipboard.setString(value);
       }
-      Alert.alert('Copied', `${label} copied to clipboard.`);
+      setCopiedCredential(label);
+      setTimeout(() => setCopiedCredential(null), 1800);
     } catch (error) {
       console.error(`Failed to copy ${label}:`, error);
       Alert.alert('Copy failed', 'Clipboard is unavailable on this device.');
@@ -541,23 +543,33 @@ export default function TeamLeaderPortalAdmin() {
                       {tempCredentials.username && (
                         <View className="flex-row items-center justify-between py-1">
                           <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Username: {tempCredentials.username}</Text>
-                          <TouchableOpacity onPress={() => copyCredential(tempCredentials.username, 'Username')} className="p-1">
-                            <Copy size={16} color="#15803d" />
+                          <TouchableOpacity onPress={() => copyCredential(tempCredentials.username, 'Username')} className="flex-row items-center px-2 py-1 rounded border border-green-300">
+                            <Copy size={14} color="#15803d" />
+                            <Text className="text-xs text-green-700 ml-1">{copiedCredential === 'Username' ? 'Copied' : 'Copy username'}</Text>
                           </TouchableOpacity>
                         </View>
                       )}
                       <View className="flex-row items-center justify-between py-1">
                         <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Email: {tempCredentials.email}</Text>
-                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.email, 'Email')} className="p-1">
-                          <Copy size={16} color="#15803d" />
+                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.email, 'Email')} className="flex-row items-center px-2 py-1 rounded border border-green-300">
+                          <Copy size={14} color="#15803d" />
+                          <Text className="text-xs text-green-700 ml-1">{copiedCredential === 'Email' ? 'Copied' : 'Copy email'}</Text>
                         </TouchableOpacity>
                       </View>
                       <View className="flex-row items-center justify-between py-1">
                         <Text className="text-sm text-green-700 dark:text-green-400 flex-1">Password: {tempCredentials.password}</Text>
-                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.password, 'Password')} className="p-1">
-                          <Copy size={16} color="#15803d" />
+                        <TouchableOpacity onPress={() => copyCredential(tempCredentials.password, 'Password')} className="flex-row items-center px-2 py-1 rounded border border-green-300">
+                          <Copy size={14} color="#15803d" />
+                          <Text className="text-xs text-green-700 ml-1">{copiedCredential === 'Password' ? 'Copied' : 'Copy password'}</Text>
                         </TouchableOpacity>
                       </View>
+                      <TouchableOpacity
+                        onPress={() => copyCredential(`Username: ${tempCredentials.username || tempCredentials.email}\nEmail: ${tempCredentials.email}\nPassword: ${tempCredentials.password}`, 'All credentials')}
+                        className="flex-row items-center justify-center mt-2 px-3 py-2 rounded bg-green-700"
+                      >
+                        <Copy size={14} color="#ffffff" />
+                        <Text className="text-xs text-white font-medium ml-1">{copiedCredential === 'All credentials' ? 'Copied all credentials' : 'Copy all credentials'}</Text>
+                      </TouchableOpacity>
                       <Text className="text-xs text-muted-foreground mt-2 italic">Save or copy these credentials now. The password is not stored for later retrieval.</Text>
                     </View>
                   )}
@@ -660,17 +672,17 @@ export default function TeamLeaderPortalAdmin() {
                         </Text>
                         <TouchableOpacity
                           onPress={() => copyCredential(assignment.leader_code, 'Username')}
-                          className="p-1"
+                          className="px-2 py-1 rounded border border-border"
                           accessibilityLabel={`Copy username for ${assignment.leader_name}`}
                         >
-                          <Copy size={15} color="#64748b" />
+                          <Text className="text-xs text-muted-foreground">{copiedCredential === 'Username' ? 'Copied' : 'Copy username'}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => copyCredential(assignment.leader_email, 'Email')}
-                          className="p-1 ml-1"
+                          className="px-2 py-1 rounded border border-border ml-1"
                           accessibilityLabel={`Copy email for ${assignment.leader_name}`}
                         >
-                          <Copy size={15} color="#64748b" />
+                          <Text className="text-xs text-muted-foreground">{copiedCredential === 'Email' ? 'Copied' : 'Copy email'}</Text>
                         </TouchableOpacity>
                       </View>
                     )}
