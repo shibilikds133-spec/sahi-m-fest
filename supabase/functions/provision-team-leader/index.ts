@@ -78,6 +78,7 @@ serve(async (req) => {
     }
 
     const idempotencyKey = body?.idempotency_key || crypto.randomUUID();
+    const resetPassword = body?.reset_password === true;
 
     // 3. Create Caller Client (for RLS and visibility checks in RPC)
     const callerClient = createClient(supabaseUrl, anonKey, {
@@ -104,14 +105,9 @@ serve(async (req) => {
     if (participantError || !participant) {
       return json(404, { error: 'PARTICIPANT_NOT_FOUND', message: 'The selected participant is not accessible.' });
     }
-    if (participant.user_id) {
+    if (participant.user_id && !resetPassword) {
       return json(409, { error: 'PARTICIPANT_ALREADY_LINKED', message: 'This participant already has a linked account.' });
     }
-
-    const generated = makeLoginCredentials(participant.name || 'participant');
-    const email = requestedEmail || generated.email;
-    const password = requestedPassword || generated.password;
-    const username = requestedEmail ? null : generated.username;
 
     const { data: festival, error: festivalError } = await callerClient
       .from('festival_calendar')
@@ -121,6 +117,45 @@ serve(async (req) => {
     if (festivalError || !festival || festival.is_active !== true) {
       return json(409, { error: 'FESTIVAL_NOT_ACTIVE', message: 'The participant does not belong to an active festival.' });
     }
+
+    if (resetPassword && participant.user_id) {
+      const [{ data: linkedProfile, error: linkedProfileError }, { data: linkedAuthUser, error: linkedAuthError }] = await Promise.all([
+        admin
+          .from('profiles')
+          .select('team_leader_code, team_leader_email, role')
+          .eq('id', participant.user_id)
+          .maybeSingle(),
+        admin.auth.admin.getUserById(participant.user_id),
+      ]);
+
+      if (linkedProfileError || linkedAuthError || !linkedAuthUser?.user || linkedProfile?.role !== 'team_leader') {
+        return json(409, { error: 'TEAM_LEADER_ACCOUNT_NOT_FOUND', message: 'A valid Team Leader account was not found for this participant.' });
+      }
+
+      const generated = makeLoginCredentials(participant.name || 'participant');
+      const { error: passwordError } = await admin.auth.admin.updateUserById(participant.user_id, {
+        password: generated.password,
+      });
+      if (passwordError) {
+        return json(502, { error: 'PASSWORD_RESET_FAILED', message: 'Could not generate a new Team Leader password.' });
+      }
+
+      return json(200, {
+        success: true,
+        reset: true,
+        participant_id: participantId,
+        user_id: participant.user_id,
+        username: linkedProfile.team_leader_code || linkedProfile.team_leader_email || linkedAuthUser.user.email,
+        email: linkedProfile.team_leader_email || linkedAuthUser.user.email,
+        password: generated.password,
+        message: 'A new Team Leader password was generated successfully.',
+      });
+    }
+
+    const generated = makeLoginCredentials(participant.name || 'participant');
+    const email = requestedEmail || generated.email;
+    const password = requestedPassword || generated.password;
+    const username = requestedEmail ? null : generated.username;
 
     // 5. Create Auth User securely (Service Role)
     const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
