@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Alert,
   ScrollView,
@@ -7,19 +7,18 @@ import {
   TouchableOpacity,
   View,
   Platform,
-  LayoutChangeEvent,
   Clipboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Button } from '@/components/ui/shadcn/button';
-import { Label } from '@/components/ui/shadcn/label';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { supabase } from '@/core/config/supabase';
 import { useFestival } from '@/core/hooks/useFestival';
 import { useAuthStore } from '@/core/store/authStore';
-import { ChevronLeft, Search, Trash2, Users, X, ChevronDown, Check, AlertCircle, Copy } from 'lucide-react-native';
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox';
+import { ChevronLeft, Search, Trash2, Users, Check, AlertCircle, Copy } from 'lucide-react-native';
 
 interface Participant {
   id: string;
@@ -72,8 +71,6 @@ const TEAM_COLOR_PRESETS = [
   { name: 'Slate', primary: '#334155', accent: '#94A3B8' },
 ];
 
-import { SearchableCombobox } from '@/components/ui/SearchableCombobox';
-
 export default function TeamLeaderPortalAdmin() {
   const router = useRouter();
   const { useActiveFestival } = useFestival();
@@ -121,13 +118,7 @@ export default function TeamLeaderPortalAdmin() {
     }
   };
 
-  useEffect(() => {
-    if (activeFestival?.id && tenantId) {
-      loadData();
-    }
-  }, [activeFestival?.id, tenantId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!activeFestival?.id || !tenantId) return;
 
     try {
@@ -232,9 +223,15 @@ export default function TeamLeaderPortalAdmin() {
       setLoading(false);
       setLoadingDropdowns(false);
     }
-  };
+  }, [activeFestival?.id, tenantId]);
 
-  const checkParticipantProfile = async (participant: Participant) => {
+  useEffect(() => {
+    if (activeFestival?.id && tenantId) {
+      loadData();
+    }
+  }, [activeFestival?.id, tenantId, loadData]);
+
+  const checkParticipantProfile = useCallback(async (participant: Participant) => {
     setCheckingProfile(true);
     setParticipantProfile(null);
     setExistingAssignment(null);
@@ -264,7 +261,7 @@ export default function TeamLeaderPortalAdmin() {
     } finally {
       setCheckingProfile(false);
     }
-  };
+  }, [assignments]);
 
   const handleCreateAccount = async () => {
     if (!selectedParticipant) {
@@ -361,7 +358,7 @@ export default function TeamLeaderPortalAdmin() {
         setSelectedTeam(matchedTeam);
       }
     }
-  }, [teams]);
+  }, [checkParticipantProfile, teams]);
 
   const handleTeamSelect = useCallback((team: any) => {
     setSelectedTeam(team as FestivalTeam);
@@ -505,7 +502,7 @@ export default function TeamLeaderPortalAdmin() {
                 .eq('status', 'active');
               if (error) throw error;
               loadData();
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to remove assignment.');
             }
           },
