@@ -216,6 +216,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
+  async deleteRegistration(registrationId: string): Promise<QueryResult<void>> {
+    const { error } = await supabase
+      .from('registrations')
+      .delete()
+      .eq('id', registrationId);
+    return { data: undefined, error: normalizeError(error) };
+  }
+
   async updateParticipant<T>(
     participantId: string,
     updates: Record<string, unknown>,

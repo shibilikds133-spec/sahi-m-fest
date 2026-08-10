@@ -385,6 +385,11 @@ export const participantService = {
     return { data, warnings: validation.warnings };
   },
 
+  async deleteRegistration(registrationId: string): Promise<void> {
+    const { error } = await participantRepository.deleteRegistration(registrationId);
+    throwIfError(error);
+  },
+
   async getDuplicateKeys(tenantId: string): Promise<Set<string>> {
     const { data, error } = await participantRepository.listParticipantDuplicateKeys(tenantId);
     throwIfError(error);

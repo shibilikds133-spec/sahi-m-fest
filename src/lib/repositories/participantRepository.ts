@@ -29,6 +29,10 @@ export const participantRepository = {
     return databaseProvider.updateRegistration<T>(registrationId, updates);
   },
 
+  deleteRegistration(registrationId: string) {
+    return databaseProvider.deleteRegistration(registrationId);
+  },
+
   getParticipantConflicts(participantIds: string[], currentScheduleId: string) {
     return databaseProvider.getParticipantConflicts(participantIds, currentScheduleId);
   },

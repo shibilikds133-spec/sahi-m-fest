@@ -120,7 +120,9 @@ export default function ParticipantDetails() {
     deleteParticipant,
     isUpdatingParticipant,
     registerParticipant,
-    isRegistering
+    isRegistering,
+    deleteRegistration,
+    isDeletingRegistration,
   } = useParticipants(participantId);
 
   const { useActiveFestival, useItems } = useFestival();
@@ -351,6 +353,35 @@ export default function ParticipantDetails() {
     } catch (error: any) {
       setAddEventError(error.message);
       Alert.alert('Error', error.message);
+    }
+  };
+
+  const handleRemoveEvent = async (event: any) => {
+    if (!event?.id || !participantId) return;
+    const itemName = event.items?.item_name_en || event.items?.item_code || 'this item';
+    const message = `Remove ${itemName} from this participant? The assignment can be added again later. If marks, results, or stage records already exist, the system will safely block the removal.`;
+
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(message)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Remove Assignment', message, [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Remove', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        });
+    if (!confirmed) return;
+
+    try {
+      await deleteRegistration({ registrationId: event.id, itemId: event.item_id });
+      Alert.alert('Removed', 'The item assignment was removed.');
+    } catch (error: any) {
+      const messageText = String(error?.message || 'Unable to remove this assignment.');
+      const protectedRecord = /foreign key|violates|referenced|constraint/i.test(messageText);
+      const safeMessage = protectedRecord
+        ? 'This assignment already has competition records (such as marks, results, or stage data), so it was not removed. This protects the existing history.'
+        : messageText;
+      if (Platform.OS === 'web') window.alert(safeMessage);
+      else Alert.alert('Assignment Not Removed', safeMessage);
     }
   };
 
@@ -925,6 +956,17 @@ export default function ParticipantDetails() {
                     <View className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1">
                       <Text className="font-poppins-bold text-[9px] text-blue-700">{ev.items.item_code}</Text>
                     </View>
+                  )}
+                  {!locked && !isBanned && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveEvent(ev)}
+                      disabled={isDeletingRegistration}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${ev.items?.item_name_en || ev.items?.item_code || 'item'} assignment`}
+                      className="ml-2 h-8 w-8 items-center justify-center rounded-lg border border-red-100 bg-red-50"
+                    >
+                      <Trash2 size={14} color="#DC2626" />
+                    </TouchableOpacity>
                   )}
                 </View>
              ))}

@@ -34,6 +34,7 @@ export interface DatabaseProvider {
   getRegistrationsByItem<T>(itemId: string, tenantId: string): Promise<ListResult<T>>;
   listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>>;
   updateRegistration<T>(registrationId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;
+  deleteRegistration(registrationId: string): Promise<QueryResult<void>>;
   updateParticipant<T>(participantId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;
   deleteParticipant(participantId: string): Promise<QueryResult<void>>;
   deleteParticipants(participantIds: string[]): Promise<QueryResult<void>>;

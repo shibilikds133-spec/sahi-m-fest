@@ -174,6 +174,19 @@ export const useParticipants = (participantId?: string) => {
     },
   });
 
+  const deleteRegistrationMutation = useMutation({
+    mutationFn: ({ registrationId, itemId }: { registrationId: string; itemId?: string }) =>
+      participantService.deleteRegistration(registrationId).then(() => ({ itemId })),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['participantRegistrations', participantId] });
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      if (variables.itemId) {
+        const tenantId = useAuthStore.getState().tenant_id;
+        queryClient.invalidateQueries({ queryKey: ['itemRegistrations', variables.itemId, tenantId] });
+      }
+    },
+  });
+
   return {
     participants: listQuery.data || [],
     isLoadingList: listQuery.isLoading,
@@ -207,6 +220,9 @@ export const useParticipants = (participantId?: string) => {
 
     registerParticipant: registerParticipantMutation.mutateAsync,
     isRegistering: registerParticipantMutation.isPending,
+
+    deleteRegistration: deleteRegistrationMutation.mutateAsync,
+    isDeletingRegistration: deleteRegistrationMutation.isPending,
 
     useItemRegistrations,
     useFestivalRegistrations,
