@@ -175,11 +175,22 @@ export const useParticipants = (participantId?: string) => {
   });
 
   const deleteRegistrationMutation = useMutation({
-    mutationFn: ({ registrationId, itemId }: { registrationId: string; itemId?: string }) =>
-      participantService.deleteRegistration(registrationId).then(() => ({ itemId })),
-    onSuccess: (_data, variables) => {
+    mutationFn: ({ registrationId, itemId, reason }: { registrationId: string; itemId?: string; reason?: string | null }) =>
+      participantService.safeUnassignRegistration<any>(registrationId, reason).then((result) => ({ ...result, itemId })),
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['participantRegistrations', participantId] });
       queryClient.invalidateQueries({ queryKey: ['participants'] });
+      if (data.status !== 'removed') return;
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['public-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations'] });
+      queryClient.invalidateQueries({ queryKey: ['public-registrations'] });
+      queryClient.invalidateQueries({ queryKey: ['markEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['results'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['public-leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['public-published-results'] });
+      queryClient.invalidateQueries({ queryKey: ['festival-results'] });
       if (variables.itemId) {
         const tenantId = useAuthStore.getState().tenant_id;
         queryClient.invalidateQueries({ queryKey: ['itemRegistrations', variables.itemId, tenantId] });

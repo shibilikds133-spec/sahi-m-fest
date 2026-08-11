@@ -372,8 +372,18 @@ export default function ParticipantDetails() {
     if (!confirmed) return;
 
     try {
-      await deleteRegistration({ registrationId: event.id, itemId: event.item_id });
-      Alert.alert('Removed', 'The item assignment was removed.');
+      const result = await deleteRegistration({
+        registrationId: event.id,
+        itemId: event.item_id,
+        reason: 'Admin removed participant-item assignment during festival preparation.',
+      });
+      if (result?.status === 'blocked') {
+        const blockedMessage = result.message || 'This assignment has dependent competition data and was not removed.';
+        if (Platform.OS === 'web') window.alert(blockedMessage);
+        else Alert.alert('Assignment Not Removed', blockedMessage);
+        return;
+      }
+      Alert.alert('Removed', 'The item assignment was safely removed.');
     } catch (error: any) {
       const messageText = String(error?.message || 'Unable to remove this assignment.');
       const protectedRecord = /foreign key|violates|referenced|constraint/i.test(messageText);

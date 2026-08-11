@@ -385,9 +385,11 @@ export const participantService = {
     return { data, warnings: validation.warnings };
   },
 
-  async deleteRegistration(registrationId: string): Promise<void> {
-    const { error } = await participantRepository.deleteRegistration(registrationId);
+  async safeUnassignRegistration<T>(registrationId: string, reason?: string | null): Promise<T> {
+    const { data, error } = await participantRepository.safeUnassignRegistration<T>(registrationId, reason);
     throwIfError(error);
+    if (!data) throw new Error('No unassignment result was returned');
+    return data;
   },
 
   async getDuplicateKeys(tenantId: string): Promise<Set<string>> {

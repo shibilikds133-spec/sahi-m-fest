@@ -29,8 +29,8 @@ export const participantRepository = {
     return databaseProvider.updateRegistration<T>(registrationId, updates);
   },
 
-  deleteRegistration(registrationId: string) {
-    return databaseProvider.deleteRegistration(registrationId);
+  safeUnassignRegistration<T>(registrationId: string, reason?: string | null) {
+    return databaseProvider.safeUnassignRegistration<T>(registrationId, reason);
   },
 
   getParticipantConflicts(participantIds: string[], currentScheduleId: string) {

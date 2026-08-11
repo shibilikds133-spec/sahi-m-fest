@@ -216,12 +216,12 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
-  async deleteRegistration(registrationId: string): Promise<QueryResult<void>> {
-    const { error } = await supabase
-      .from('registrations')
-      .delete()
-      .eq('id', registrationId);
-    return { data: undefined, error: normalizeError(error) };
+  async safeUnassignRegistration<T>(registrationId: string, reason?: string | null): Promise<QueryResult<T>> {
+    const { data, error } = await supabase.rpc('safe_unassign_registration', {
+      p_registration_id: registrationId,
+      p_reason: reason ?? null,
+    });
+    return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
   async updateParticipant<T>(
