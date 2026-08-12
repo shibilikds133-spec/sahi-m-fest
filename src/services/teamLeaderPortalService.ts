@@ -89,8 +89,13 @@ export const teamLeaderPortalService = {
       .select('portal_primary_color, portal_accent_color')
       .eq('id', festivalTeamId)
       .maybeSingle();
-    if (error) throw error;
-    return data;
+    // Branding is optional presentation data. A missing/blocked branding
+    // read must not hide an otherwise valid, securely resolved portal.
+    if (error) {
+      console.warn('Team Leader branding unavailable:', error.message);
+      return { portal_primary_color: null, portal_accent_color: null };
+    }
+    return data ?? { portal_primary_color: null, portal_accent_color: null };
   },
   getParticipants: () => readRpc<TeamLeaderParticipant>('get_team_leader_participants'),
   getSchedule: () => readRpc<TeamLeaderScheduleRow>('get_team_leader_schedule'),
