@@ -3,6 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Pla
 import { useRouter } from 'expo-router';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { useParticipants } from '../../../core/hooks/useParticipants';
+import { useFestival } from '../../../core/hooks/useFestival';
+import { useAuthStore } from '../../../core/store/authStore';
+import { downloadParticipantItemsPdf, downloadParticipantPdf } from '../../../services/participantItemsPdfService';
 import { UserPlus, ChevronRight, Upload, CheckSquare, Square, X, Search, FileDown, CheckCircle, Trash2, GitCompare, RotateCcw } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
@@ -15,6 +18,10 @@ export default function ParticipantsList() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktopTable = width >= 980;
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
+  const { tenant_id: tenantId, is_superadmin: isSuperadmin } = useAuthStore();
+  const [isExportingItemsPdf, setIsExportingItemsPdf] = useState(false);
   
   const {
     participants,
@@ -95,6 +102,56 @@ export default function ParticipantsList() {
       } else {
         Alert.alert('Error', 'Sharing not available on this device');
       }
+    }
+  };
+
+  const exportItemsPdf = async (allTenants = false) => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('Web download only', 'Open the admin portal in a browser to download this PDF.');
+      return;
+    }
+    if (!activeFestival?.id && !tenantId) {
+      window.alert('No active festival or tenant was found for this export.');
+      return;
+    }
+    try {
+      setIsExportingItemsPdf(true);
+      const result = await downloadParticipantItemsPdf({
+        festivalId: activeFestival?.id,
+        tenantId,
+        allTenants,
+        participants: allTenants ? undefined : participants,
+      });
+      window.alert(`PDF downloaded: ${result.participantCount} participants across ${result.itemCount} items.`);
+    } catch (error: any) {
+      window.alert(error?.message || 'Unable to generate the participant item PDF.');
+    } finally {
+      setIsExportingItemsPdf(false);
+    }
+  };
+
+  const exportParticipantPdf = async (allTenants = false) => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('Web download only', 'Open the admin portal in a browser to download this PDF.');
+      return;
+    }
+    if (!activeFestival?.id && !tenantId) {
+      window.alert('No active festival or tenant was found for this export.');
+      return;
+    }
+    try {
+      setIsExportingItemsPdf(true);
+      const result = await downloadParticipantPdf({
+        festivalId: activeFestival?.id,
+        tenantId,
+        allTenants,
+        participants: allTenants ? undefined : participants,
+      });
+      window.alert(`PDF downloaded: ${result.participantCount} participants.`);
+    } catch (error: any) {
+      window.alert(error?.message || 'Unable to generate the participant PDF.');
+    } finally {
+      setIsExportingItemsPdf(false);
     }
   };
 
@@ -248,6 +305,42 @@ export default function ParticipantsList() {
           <TouchableOpacity onPress={exportToExcel} className="p-2 bg-white border border-ssf-border rounded-lg">
             <FileDown size={20} color="#1B6B3A" />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => exportItemsPdf(false)}
+            disabled={isExportingItemsPdf}
+            className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-1"
+          >
+            <FileDown size={18} color="#123B63" />
+            <Text className="font-poppins-bold text-xs text-[#123B63]">Item PDF</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => exportParticipantPdf(false)}
+            disabled={isExportingItemsPdf}
+            className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-1"
+          >
+            <FileDown size={18} color="#123B63" />
+            <Text className="font-poppins-bold text-xs text-[#123B63]">Participant PDF</Text>
+          </TouchableOpacity>
+          {isSuperadmin && (
+            <TouchableOpacity
+              onPress={() => exportItemsPdf(true)}
+              disabled={isExportingItemsPdf}
+              className="p-2 bg-[#123B63] border border-[#123B63] rounded-lg flex-row items-center gap-x-1"
+            >
+              <FileDown size={18} color="#FFFFFF" />
+              <Text className="font-poppins-bold text-xs text-white">All-Tenant PDF</Text>
+            </TouchableOpacity>
+          )}
+          {isSuperadmin && (
+            <TouchableOpacity
+              onPress={() => exportParticipantPdf(true)}
+              disabled={isExportingItemsPdf}
+              className="p-2 bg-[#123B63] border border-[#123B63] rounded-lg flex-row items-center gap-x-1"
+            >
+              <FileDown size={18} color="#FFFFFF" />
+              <Text className="font-poppins-bold text-xs text-white">All-Tenant Participant PDF</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => router.push('/(admin)/participants/import')} className="p-2 bg-white border border-ssf-border rounded-lg">
             <Upload size={20} color="#1B6B3A" />
           </TouchableOpacity>
