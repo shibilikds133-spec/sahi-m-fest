@@ -21,6 +21,7 @@ export interface TeamLeaderParticipant {
   status: string | null;
   festival_id: string;
   organisation_id: string | null;
+  profile_slug?: string | null;
 }
 
 export interface TeamLeaderScheduleRow {
@@ -72,7 +73,13 @@ async function readRpc<T>(name: string): Promise<T[]> {
 
 async function readRpcSingle<T>(name: string): Promise<T | null> {
   const { data, error } = await supabase.rpc(name);
-  if (error) throw error;
+  // PostgREST can surface an empty single-row RPC result as PGRST116.
+  // Treat it as an absent context so the portal can show a useful state
+  // instead of breaking on a raw database error.
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
   const rows = (data ?? []) as T[];
   return rows.length > 0 ? rows[0] : null;
 }

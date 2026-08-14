@@ -26,8 +26,11 @@ import {
   Volume2
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { getAdminReadOnlyAgentResponse } from '../../services/adminReadOnlyAgentService';
 
 interface AdminChatBotProps {
+  tenantId?: string | null;
+  festivalId?: string | null;
   schedules?: any[];
   venues?: any[];
   registrations?: any[];
@@ -42,7 +45,7 @@ interface Message {
   timestamp: Date;
 }
 
-export function AdminScheduleChatBot({ schedules = [], venues = [], registrations = [], results = [], judges = [] }: AdminChatBotProps) {
+export function AdminScheduleChatBot({ tenantId, festivalId, schedules = [], venues = [], registrations = [], results = [], judges = [] }: AdminChatBotProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
   
@@ -50,7 +53,7 @@ export function AdminScheduleChatBot({ schedules = [], venues = [], registration
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Welcome to the Admin Portal Assistant. I have full read access to system data. How can I assist you today?\n\n[OPTION:How many events are scheduled?|Events Count] [OPTION:Show me unpublished results|Results Status]',
+      content: 'Welcome to the Admin Portal Assistant. I have read-only access to this tenant\'s operational data. I can also read public schedules and published results for the active festival. I cannot modify data or access another tenant\'s private data.\n\n[OPTION:How many events are scheduled?|Events Count] [OPTION:Show me unpublished results|Results Status]',
       timestamp: new Date(),
     },
   ]);
@@ -155,7 +158,7 @@ export function AdminScheduleChatBot({ schedules = [], venues = [], registration
     fallbackTTS(cleanText);
   };
 
-  const handleSend = (textToSend: string) => {
+  const handleSend = async (textToSend: string) => {
     const trimmed = textToSend.trim();
     if (!trimmed || isLoading) return;
 
@@ -172,23 +175,29 @@ export function AdminScheduleChatBot({ schedules = [], venues = [], registration
     setMessages(prev => [...prev, userMsg]);
 
     const lowerInput = trimmed.toLowerCase();
-    let response = "I am a secure Admin Assistant. I can tell you about total schedules, venues, participants, judges, or results!";
+    let response = tenantId
+      ? await getAdminReadOnlyAgentResponse(trimmed, { tenantId, festivalId })
+      : null;
+
+    if (!response) {
+      response = "I am a secure Admin Assistant. I can tell you about total schedules, venues, participants, judges, or results. This chat is read-only and tenant-scoped.";
+    }
     
-    if (lowerInput.match(/(judg|judj|vidhiyal|jedge)/)) {
+    if (!tenantId && lowerInput.match(/(judg|judj|vidhiyal|jedge)/)) {
       if (lowerInput.match(/(list|name|peru|ethoke|ethokke|aar|arellam|arellaman)/)) {
         response = `The registered judges are: ${judges.map(j => j.name).join(', ')}.`;
       } else {
         response = `There are a total of ${judges.length} judges registered in the system.\n\n[OPTION:Who are they?|List Judges]`;
       }
-    } else if (lowerInput.match(/(schedule|event|pari|program)/)) {
+    } else if (!tenantId && lowerInput.match(/(schedule|event|pari|program)/)) {
       response = `There are currently ${schedules.length} scheduled events in the system.\n\n[OPTION:Show me venues|View Venues]`;
-    } else if (lowerInput.match(/(venue|vedhi|stage)/)) {
+    } else if (!tenantId && lowerInput.match(/(venue|vedhi|stage)/)) {
       if (lowerInput.match(/(list|name|peru|ethoke|ethokke)/)) {
         response = `The configured venues are: ${venues.map(v => v.name).join(', ')}.`;
       } else {
         response = `There are ${venues.length} venues configured.\n\n[OPTION:List venue names|List Venues]`;
       }
-    } else if (lowerInput.match(/(participant|registration|student|piller|alukar|candidate|cantidate|profile|prophile)/)) {
+    } else if (!tenantId && lowerInput.match(/(participant|registration|student|piller|alukar|candidate|cantidate|profile|prophile)/)) {
       const isSearch = lowerInput.match(/(profile|prophile|candidate|cantidate|search|find|details|about)/);
       const searchName = trimmed.replace(/(profile|prophile|candidate|cantidate|participant|registration|student|piller|alukar|show|me|the|of|for|about|details|search|find|ok|who|is)/gi, '').trim().toLowerCase();
       
@@ -208,7 +217,7 @@ export function AdminScheduleChatBot({ schedules = [], venues = [], registration
       } else {
         response = `There are ${registrations.length} total registrations across all events. To search for a specific profile, type their name followed by "profile".`;
       }
-    } else if (lowerInput.match(/(result|publish|winner|phalam|jeyicha)/)) {
+    } else if (!tenantId && lowerInput.match(/(result|publish|winner|phalam|jeyicha)/)) {
       const published = results.filter(r => r.published === true || r.result_status === 'published').length;
       const unpublished = results.length - published;
       response = `Out of ${results.length} total results, ${published} are published and ${unpublished} are unpublished.\n\n[OPTION:What about schedules?|Check Schedules]`;

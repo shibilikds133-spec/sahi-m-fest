@@ -20,6 +20,8 @@ export default function ParticipantsList() {
   const isDesktopTable = width >= 980;
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
+  const { useItems } = useFestival();
+  const { data: activeItems = [], isLoading: isLoadingItems } = useItems(activeFestival?.id);
   const { tenant_id: tenantId, is_superadmin: isSuperadmin } = useAuthStore();
   const [isExportingItemsPdf, setIsExportingItemsPdf] = useState(false);
   
@@ -29,17 +31,58 @@ export default function ParticipantsList() {
     updateStatus,
     deleteMultiple,
     approveMultiple,
+    useFestivalRegistrations,
     isDeleting,
     isApprovingMultiple
   } = useParticipants();
+  const { data: festivalRegistrations = [], isLoading: isLoadingRegistrations } = useFestivalRegistrations(activeFestival?.id);
 
   // Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCompetition, setSelectedCompetition] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedGender, setSelectedGender] = useState<string>('All');
 
-  const categories = ['All', 'LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS', 'GENERAL'];
+  const categories = [
+    'All',
+    ...Array.from(new Set([
+      'LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS', 'GENERAL',
+      ...participants.map((participant: any) => participant.category_code).filter(Boolean),
+    ])).sort((a, b) => (a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b))),
+  ];
+  const itemOptions = [
+    { id: 'All', label: 'All items' },
+    ...(activeItems as any[])
+      .filter((item: any) => item?.id)
+      .map((item: any) => ({
+        id: item.id,
+        label: item.item_code ? `${item.item_code} · ${item.item_name_en || item.item_name_ml || 'Unnamed item'}` : item.item_name_en || item.item_name_ml || 'Unnamed item',
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+  const itemRecords = (activeItems as any[]).length > 0
+    ? (activeItems as any[])
+    : itemOptions.map((item: any) => ({ id: item.id, item_code: item.label, item_name_en: null, item_name_ml: null, category_codes: [null] }));
+  const competitionOptions = [
+    { id: 'All', label: 'All competitions', itemId: null as string | null, categoryCode: null as string | null },
+    ...itemRecords.flatMap((item: any) => {
+      if (!item?.id) return [];
+      const rawCategories = Array.isArray(item.category_codes)
+        ? item.category_codes
+        : item.category_codes ? [item.category_codes] : [null];
+      const itemLabel = item.item_code
+        ? `${item.item_code} · ${item.item_name_en || item.item_name_ml || 'Unnamed item'}`
+        : item.item_name_en || item.item_name_ml || 'Unnamed item';
+      return rawCategories.map((categoryCode: string | null, index: number) => ({
+        id: `${item.id}::${categoryCode || 'ALL'}::${index}`,
+        label: categoryCode ? `${itemLabel} · ${categoryCode}` : itemLabel,
+        itemId: item.id as string,
+        categoryCode: categoryCode || null,
+      }));
+    }).sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+  const selectedCompetitionDetails = competitionOptions.find((option) => option.id === selectedCompetition);
   const statuses = ['All', 'Pending', 'Approved', 'Rejected'];
   const genders = ['All', 'Boys', 'Girls'];
 
@@ -53,10 +96,18 @@ export default function ParticipantsList() {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.chest_number && p.chest_number.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCat = selectedCategory === 'All' || p.category_code === selectedCategory;
+    const matchesCompetition = selectedCompetition === 'All' || (
+      !!selectedCompetitionDetails?.itemId && festivalRegistrations.some((registration: any) =>
+        registration.participant_id === p.id &&
+        registration.item_id === selectedCompetitionDetails.itemId &&
+        registration.status !== 'rejected' &&
+        (!selectedCompetitionDetails.categoryCode || (p.category_code || '').trim().toUpperCase() === selectedCompetitionDetails.categoryCode.trim().toUpperCase())
+      )
+    );
     const matchesStatus = selectedStatus === 'All' || (p.status || 'pending').toLowerCase() === selectedStatus.toLowerCase();
     const matchesGender = selectedGender === 'All' || (p.gender || '').toLowerCase() === selectedGender.toLowerCase();
 
-    return matchesSearch && matchesCat && matchesStatus && matchesGender;
+    return matchesSearch && matchesCompetition && matchesCat && matchesStatus && matchesGender;
   });
 
   const exportToExcel = async () => {
@@ -114,15 +165,21 @@ export default function ParticipantsList() {
       window.alert('No active festival or tenant was found for this export.');
       return;
     }
+    if (!allTenants && filteredParticipants.length === 0) {
+      window.alert('No participants match the selected item and category filters.');
+      return;
+    }
     try {
       setIsExportingItemsPdf(true);
       const result = await downloadParticipantItemsPdf({
         festivalId: activeFestival?.id,
         tenantId,
         allTenants,
-        participants: allTenants ? undefined : participants,
+        itemId: allTenants ? undefined : selectedCompetitionDetails?.itemId,
+        categoryCode: allTenants ? undefined : (selectedCompetitionDetails?.categoryCode || selectedCategory),
+        participants: allTenants ? undefined : filteredParticipants,
       });
-      window.alert(`PDF downloaded: ${result.participantCount} participants across ${result.itemCount} items.`);
+      window.alert(`PDF downloaded: ${result.participantCount} participants across ${result.itemCount} item-category competitions.`);
     } catch (error: any) {
       window.alert(error?.message || 'Unable to generate the participant item PDF.');
     } finally {
@@ -237,12 +294,20 @@ export default function ParticipantsList() {
   };
 
   const hasActiveFilters =
-    selectedCategory !== 'All' || selectedStatus !== 'All' || selectedGender !== 'All';
+    selectedCompetition !== 'All' || selectedCategory !== 'All' || selectedStatus !== 'All' || selectedGender !== 'All';
 
   const clearFilters = () => {
+    setSelectedCompetition('All');
     setSelectedCategory('All');
     setSelectedStatus('All');
     setSelectedGender('All');
+  };
+
+  const selectCompetition = (value: string) => {
+    setSelectedCompetition(value);
+    // A competition already contains its item category; avoid a stale
+    // standalone category filter producing an empty or misleading export.
+    setSelectedCategory('All');
   };
 
   const CompactFilter = ({
@@ -253,7 +318,7 @@ export default function ParticipantsList() {
     width: filterWidth,
   }: {
     label: string;
-    items: string[];
+    items: (string | { id: string; label: string })[];
     selectedValue: string;
     onSelect: (value: string) => void;
     width: number;
@@ -266,8 +331,10 @@ export default function ParticipantsList() {
       compact
       active={selectedValue !== 'All'}
       options={items.map((item) => ({
-        label: item === 'All' ? `${label}: All` : `${label}: ${item}`,
-        value: item,
+        label: typeof item === 'string'
+          ? (item === 'All' ? `${label}: All` : `${label}: ${item}`)
+          : (item.id === 'All' ? `${label}: All` : item.label),
+        value: typeof item === 'string' ? item : item.id,
       }))}
     />
   );
@@ -374,6 +441,13 @@ export default function ParticipantsList() {
           contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10 }}
         >
           <CompactFilter
+            label="Competition"
+            items={competitionOptions}
+            selectedValue={selectedCompetition}
+            onSelect={selectCompetition}
+            width={280}
+          />
+          <CompactFilter
             label="Category"
             items={categories}
             selectedValue={selectedCategory}
@@ -445,7 +519,7 @@ export default function ParticipantsList() {
 
       {/* List */}
       <SsfCard className="mb-20 p-0 overflow-hidden">
-        {isLoadingList ? (
+        {isLoadingList || isLoadingItems || isLoadingRegistrations ? (
           <View className="p-4">
             <SsfTableSkeleton rows={7} columns={6} compact={!isDesktopTable} />
           </View>

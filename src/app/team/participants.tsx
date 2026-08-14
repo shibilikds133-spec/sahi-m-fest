@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderParticipant } from '@/services/teamLeaderPortalService';
@@ -9,18 +10,47 @@ import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/shadcn/tabs';
 
 export default function ParticipantsScreen() {
+  const router = useRouter();
   const { context, loading: contextLoading } = useTeamLeaderContext();
   const [participants, setParticipants] = useState<TeamLeaderParticipant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    if (!context) return;
-    teamLeaderPortalService.getParticipants().then((data) => {
-      setParticipants(data);
+    if (contextLoading) return;
+    if (!context) {
+      setParticipants([]);
+      setLoadError('Team details are unavailable for this account. Please sign in again or contact the festival administrator.');
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [context]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('The participant list took too long to load.')), 15000);
+    });
+
+    Promise.race([teamLeaderPortalService.getParticipants(), timeout])
+      .then((data) => {
+        if (cancelled) return;
+        setParticipants(data as TeamLeaderParticipant[]);
+      })
+      .catch((error: any) => {
+        if (cancelled) return;
+        setParticipants([]);
+        setLoadError(error?.message || 'Unable to load participants.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [context, contextLoading]);
 
   if (contextLoading || loading) {
     return (
@@ -31,6 +61,19 @@ export default function ParticipantsScreen() {
             <Skeleton key={i} style={{ height: 60, borderRadius: 12 }} />
           ))}
         </View>
+      </TeamLeaderAppShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <TeamLeaderAppShell>
+        <Card>
+          <CardContent style={{ padding: 24, alignItems: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: 'hsl(var(--foreground))' }}>Unable to load participants</Text>
+            <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 8, textAlign: 'center' }}>{loadError}</Text>
+          </CardContent>
+        </Card>
       </TeamLeaderAppShell>
     );
   }
@@ -73,7 +116,14 @@ export default function ParticipantsScreen() {
                 {filtered.map((p) => (
                   <Card key={p.id}>
                     <CardContent style={{ padding: 12 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <TouchableOpacity
+                        accessible={!!p.profile_slug}
+                        accessibilityRole={p.profile_slug ? 'button' : undefined}
+                        accessibilityLabel={p.profile_slug ? `Open ${p.name || 'participant'} candidate profile` : undefined}
+                        onPress={p.profile_slug ? () => router.push(`/candidate/${p.profile_slug}` as any) : undefined}
+                        disabled={!p.profile_slug}
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                      >
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 14, fontWeight: '600', color: 'hsl(var(--foreground))' }}>
                             {p.name || 'Participant'}
@@ -93,7 +143,7 @@ export default function ParticipantsScreen() {
                         <Badge variant={p.status === 'active' || p.status === 'registered' ? 'success' : 'secondary'}>
                           {p.status || 'N/A'}
                         </Badge>
-                      </View>
+                      </TouchableOpacity>
                     </CardContent>
                   </Card>
                 ))}

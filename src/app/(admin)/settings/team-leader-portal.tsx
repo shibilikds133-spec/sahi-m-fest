@@ -97,7 +97,7 @@ export default function TeamLeaderPortalAdmin() {
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [tempCredentials, setTempCredentials] = useState<{ username: string | null, email: string, password: string } | null>(null);
   const [resetCredentials, setResetCredentials] = useState<{ username: string | null, email: string, password: string } | null>(null);
-  const [resettingAccount, setResettingAccount] = useState(false);
+  const [resettingAssignmentId, setResettingAssignmentId] = useState<string | null>(null);
   const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
 
   const [openDropdown, setOpenDropdown] = useState<'participant' | 'team' | null>(null);
@@ -328,7 +328,7 @@ export default function TeamLeaderPortalAdmin() {
     }
 
     try {
-      setResettingAccount(true);
+      setResettingAssignmentId(assignment.id);
       setResetCredentials(null);
       const { data, error } = await supabase.functions.invoke('provision-team-leader', {
         body: { participant_id: linkedParticipant.id, reset_password: true },
@@ -343,7 +343,7 @@ export default function TeamLeaderPortalAdmin() {
     } catch (error: any) {
       Alert.alert('Password generation failed', error?.message || 'Please try again.');
     } finally {
-      setResettingAccount(false);
+      setResettingAssignmentId(null);
     }
   };
 
@@ -812,11 +812,11 @@ export default function TeamLeaderPortalAdmin() {
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleResetPassword(assignment)}
-                          className={`px-2 py-1 rounded border border-border ml-1 ${resettingAccount ? 'opacity-50' : ''}`}
-                          disabled={resettingAccount}
+                          className={`px-2 py-1 rounded border border-border ml-1 ${resettingAssignmentId === assignment.id ? 'opacity-50' : ''}`}
+                          disabled={resettingAssignmentId === assignment.id}
                           accessibilityLabel={`Generate password for ${assignment.leader_name}`}
                         >
-                          <Text className="text-xs text-muted-foreground">{resettingAccount ? 'Generating...' : 'Generate password'}</Text>
+                          <Text className="text-xs text-muted-foreground">{resettingAssignmentId === assignment.id ? 'Generating...' : 'Generate password'}</Text>
                         </TouchableOpacity>
                       </View>
                     )}

@@ -8,6 +8,8 @@ export type ParticipantItemPdfScope = {
   festivalId?: string | null;
   tenantId?: string | null;
   allTenants?: boolean;
+  itemId?: string | null;
+  categoryCode?: string | null;
   participants?: {
     id: string;
     name: string;
@@ -34,7 +36,7 @@ type RegistrationRow = {
   status: string | null;
 };
 
-type ItemRow = { id: string; item_name_en: string | null; item_name_ml: string | null; item_code: string | null };
+type ItemRow = { id: string; item_name_en: string | null; item_name_ml: string | null; item_code: string | null; category_codes?: string[] | null };
 type OrganisationRow = { id: string; name: string | null };
 
 const resolveFestival = async (scope: ParticipantItemPdfScope) => {
@@ -117,7 +119,7 @@ const fetchRows = async (scope: ParticipantItemPdfScope) => {
   ].filter(Boolean))] as string[];
 
   const [{ data: items, error: itemError }, { data: organisations, error: organisationError }] = await Promise.all([
-    supabase.from('items').select('id,item_name_en,item_name_ml,item_code').in('id', itemIds),
+    supabase.from('items').select('id,item_name_en,item_name_ml,item_code,category_codes').in('id', itemIds),
     organisationIds.length > 0
       ? supabase.from('organisations').select('id,name').in('id', organisationIds)
       : Promise.resolve({ data: [], error: null }),
@@ -139,16 +141,24 @@ export async function downloadParticipantItemsPdf(scope: ParticipantItemPdfScope
   const participantMap = new Map(data.participants.map((row) => [row.id, row]));
   const itemMap = new Map(data.items.map((row) => [row.id, row]));
   const organisationMap = new Map(data.organisations.map((row) => [row.id, row.name || '-']));
+  const requestedItemId = scope.itemId?.trim();
+  const requestedCategory = scope.categoryCode?.trim().toUpperCase();
   const grouped = new Map<string, { item: string; rows: [string, string, string, string][] }>();
 
   for (const registration of data.registrations) {
+    if (requestedItemId && requestedItemId !== 'ALL' && registration.item_id !== requestedItemId) continue;
     const participant = participantMap.get(registration.participant_id);
     const item = registration.item_id ? itemMap.get(registration.item_id) : null;
     if (!participant || !item) continue;
-    const itemName = item.item_name_en || item.item_name_ml || item.item_code || 'Unnamed item';
-    if (!grouped.has(itemName)) grouped.set(itemName, { item: itemName, rows: [] });
+    if (requestedCategory && requestedCategory !== 'ALL' && (participant.category_code || '').trim().toUpperCase() !== requestedCategory) continue;
+    const categoryLabel = participant.category_code || 'Uncategorised';
+    const itemName = item.item_code
+      ? `${item.item_code} · ${item.item_name_en || item.item_name_ml || 'Unnamed item'}`
+      : item.item_name_en || item.item_name_ml || 'Unnamed item';
+    const competitionKey = `${item.id}::${categoryLabel}`;
+    if (!grouped.has(competitionKey)) grouped.set(competitionKey, { item: `${itemName} · ${categoryLabel}`, rows: [] });
     const organisationId = participant.organisation_id || registration.organisation_id;
-    grouped.get(itemName)!.rows.push([
+    grouped.get(competitionKey)!.rows.push([
       participant.chest_number || '-',
       participant.name || 'Unnamed participant',
       participant.category_code || '-',
@@ -223,7 +233,13 @@ export async function downloadParticipantItemsPdf(scope: ParticipantItemPdfScope
   writeFooter();
   const scopeName = scope.allTenants ? 'all-tenants' : 'tenant';
   doc.save(`item-participants-${scopeName}-${data.festivalId}.pdf`);
-  return { participantCount: data.participants.length, itemCount: grouped.size, festivalId: data.festivalId };
+  return {
+    participantCount: new Set([...grouped.values()].flatMap((group) => group.rows.map((row) => row[0] + row[1]))).size,
+    itemCount: grouped.size,
+    festivalId: data.festivalId,
+    itemId: scope.itemId || 'All',
+    categoryCode: scope.categoryCode || 'All',
+  };
 }
 
 export async function downloadParticipantPdf(scope: ParticipantItemPdfScope = {}) {

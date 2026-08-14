@@ -15,6 +15,30 @@ import { supabase } from '../../../core/config/supabase';
 import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
 import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 import { SsfActionMenu } from '../../../components/ui/SsfActionMenu';
+import { downloadAdminSchedulePdf, downloadBlankSchedulePdf, AdminSchedulePdfMode } from '../../../services/schedulePdfService';
+
+const getItemCategoryCodes = (schedule: any): string[] => {
+  const rawCodes = schedule?.items?.category_codes;
+  const codes = Array.isArray(rawCodes) ? rawCodes : rawCodes ? [rawCodes] : [];
+  return codes.map((code) => String(code).trim()).filter(Boolean);
+};
+
+const normalizeCategory = (value: string) => value.trim().toUpperCase();
+
+const categoryAliases: Record<string, string[]> = {
+  LP: ['LP'],
+  UP: ['UP'],
+  HS: ['HS'],
+  HSS: ['HSS'],
+  JUNIOR: ['JUNIOR', 'JR'],
+  JR: ['JUNIOR', 'JR'],
+  SENIOR: ['SENIOR', 'SR'],
+  SR: ['SENIOR', 'SR'],
+  CAMPUS: ['CAMPUS', 'CA'],
+  CA: ['CAMPUS', 'CA'],
+  GENERAL: ['GENERAL', 'GN'],
+  GN: ['GENERAL', 'GN'],
+};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ScheduleStatusBadge({ scheduleId }: { scheduleId: string }) {
@@ -141,9 +165,10 @@ function ScheduleWorkflowBadges({
 export default function ScheduleDashboard() {
   const router = useRouter();
   const { schedules, isLoadingSchedules, venues, isLoadingVenues, deleteSchedule } = useSchedule();
-  const { useActiveFestival } = useFestival();
+  const { useActiveFestival, useItems } = useFestival();
   const { data: festival, isLoading: isLoadingFest } = useActiveFestival();
-  const { useFestivalRegistrations } = useParticipants();
+  const { data: activeItems = [], isLoading: isLoadingItems } = useItems(festival?.id);
+  const { participants, useFestivalRegistrations } = useParticipants();
   const { data: allRegistrations = [], isLoading: isLoadingRegs } = useFestivalRegistrations(festival?.id);
   const { judges } = useJudges();
 
@@ -153,11 +178,39 @@ export default function ScheduleDashboard() {
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [mobileActionMenuId, setMobileActionMenuId] = React.useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = React.useState('All');
   const [selectedCategory, setSelectedCategory] = React.useState('All');
   const [selectedVenue, setSelectedVenue] = React.useState('All');
   const [selectedStatus, setSelectedStatus] = React.useState('All');
+  const [isExportingSchedule, setIsExportingSchedule] = React.useState(false);
 
-  const categoriesList = ['All', 'LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS', 'GENERAL'];
+  const categoriesList = React.useMemo(() => {
+    const sourceItems = (activeItems as any[]).length > 0
+      ? activeItems as any[]
+      : schedules.map((schedule: any) => schedule.items).filter(Boolean);
+    const tenantCategories = sourceItems.flatMap((item: any) => {
+      const rawCodes = item?.category_codes;
+      const codes = Array.isArray(rawCodes) ? rawCodes : rawCodes ? [rawCodes] : [];
+      return codes.map((code: unknown) => normalizeCategory(String(code))).filter(Boolean);
+    });
+    return ['All', ...Array.from(new Set(tenantCategories)).sort((a, b) => a.localeCompare(b))];
+  }, [activeItems, schedules]);
+
+  const itemsList = React.useMemo(() => {
+    const uniqueItems = new Map<string, { id: string; label: string }>();
+    (activeItems as any[]).forEach((item: any) => {
+      if (!item?.id) return;
+      const name = item.item_name_en || item.item_name_ml || 'Unnamed item';
+      uniqueItems.set(item.id, {
+        id: item.id,
+        label: item.item_code ? `${item.item_code} · ${name}` : name,
+      });
+    });
+    return [
+      { id: 'All', label: 'Item: All' },
+      ...Array.from(uniqueItems.values()).sort((a, b) => a.label.localeCompare(b.label)),
+    ];
+  }, [activeItems]);
 
   const venuesList = React.useMemo(() => {
     return [{ id: 'All', name: 'All Venues' }, ...venues.map((v: any) => ({ id: v.id, name: v.name }))];
@@ -211,32 +264,30 @@ export default function ScheduleDashboard() {
         const query = searchQuery.toLowerCase().trim();
         const matchNameEn = schedule.items?.item_name_en?.toLowerCase().includes(query);
         const matchNameMl = schedule.items?.item_name_ml?.toLowerCase().includes(query);
-        const matchCategory = schedule.items?.category_codes?.some((code: string) => 
+        const matchCategory = getItemCategoryCodes(schedule).some((code) =>
           code.toLowerCase().includes(query)
         );
         matchesSearch = matchNameEn || matchNameMl || matchCategory;
       }
       
-      // 2. Category Filter
+      // 2. Item Filter
+      const matchesItem = selectedItem === 'All' || schedule.item_id === selectedItem;
+
+      // 3. Item Category Filter
       let matchesCategory = true;
       if (selectedCategory !== 'All') {
-        const codes = Array.isArray(schedule.items?.category_codes) 
-          ? schedule.items.category_codes 
-          : (schedule.items?.category_codes ? [schedule.items.category_codes] : []);
-        
-        const catShort = selectedCategory === 'SENIOR' ? 'SR' : (selectedCategory === 'JUNIOR' ? 'JR' : (selectedCategory === 'CAMPUS' ? 'CA' : (selectedCategory === 'GENERAL' ? 'GN' : selectedCategory)));
-        const catLong = selectedCategory === 'SR' ? 'SENIOR' : (selectedCategory === 'JR' ? 'JUNIOR' : (selectedCategory === 'CA' ? 'CAMPUS' : (selectedCategory === 'GN' ? 'GENERAL' : selectedCategory)));
-
-        matchesCategory = codes.includes(selectedCategory) || codes.includes(catShort) || codes.includes(catLong);
+        const selectedCodes = categoryAliases[normalizeCategory(selectedCategory)] || [normalizeCategory(selectedCategory)];
+        const scheduleCodes = getItemCategoryCodes(schedule).map(normalizeCategory);
+        matchesCategory = scheduleCodes.some((code) => selectedCodes.includes(code));
       }
       
-      // 3. Venue Filter
+      // 4. Venue Filter
       let matchesVenue = true;
       if (selectedVenue !== 'All') {
         matchesVenue = schedule.venue_id === selectedVenue || schedule.venues?.id === selectedVenue;
       }
 
-      // 4. Status/Workflow Filter
+      // 5. Status/Workflow Filter
       let matchesStatus = true;
       if (selectedStatus !== 'All') {
         const scheduleRegs = allRegistrations.filter((r: any) => r.item_id === schedule.item_id && r.status !== 'rejected');
@@ -275,9 +326,54 @@ export default function ScheduleDashboard() {
         }
       }
       
-      return matchesSearch && matchesCategory && matchesVenue && matchesStatus;
+      return matchesSearch && matchesItem && matchesCategory && matchesVenue && matchesStatus;
     });
-  }, [schedules, searchQuery, selectedCategory, selectedVenue, selectedStatus, allRegistrations, allResults, allJudgeWorkflowStatuses]);
+  }, [schedules, searchQuery, selectedItem, selectedCategory, selectedVenue, selectedStatus, allRegistrations, allResults, allJudgeWorkflowStatuses]);
+
+  const exportSchedulePdf = async (mode: AdminSchedulePdfMode) => {
+    if (!filteredSchedules.length) {
+      if (Platform.OS === 'web') window.alert('No schedules found for the current filters.');
+      else Alert.alert('No schedules', 'No schedules found for the current filters.');
+      return;
+    }
+    try {
+      setIsExportingSchedule(true);
+      await downloadAdminSchedulePdf({
+        mode,
+        itemId: selectedItem,
+        itemCategory: selectedCategory,
+        festivalName: festival?.custom_name || (festival?.festival_year ? `Festival ${festival.festival_year}` : null),
+        schedules: filteredSchedules as any,
+        registrations: allRegistrations as any,
+        participants: participants as any,
+      });
+      if (Platform.OS === 'web') window.alert('Schedule PDF downloaded successfully.');
+      else Alert.alert('Export complete', 'Schedule PDF is ready.');
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error?.message || 'Unable to generate schedule PDF.');
+      else Alert.alert('Export failed', error?.message || 'Unable to generate schedule PDF.');
+    } finally {
+      setIsExportingSchedule(false);
+    }
+  };
+
+  const exportBlankSchedule = () => {
+    try {
+      setIsExportingSchedule(true);
+      downloadBlankSchedulePdf({
+        festivalName: festival?.custom_name || (festival?.festival_year ? `Festival ${festival.festival_year}` : null),
+        tenantName: tenant_id,
+        items: activeItems as any,
+      });
+      if (Platform.OS === 'web') window.alert('Blank schedule PDF downloaded successfully.');
+      else Alert.alert('Export complete', 'Blank schedule PDF is ready.');
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error?.message || 'Unable to generate blank schedule PDF.');
+      else Alert.alert('Export failed', error?.message || 'Unable to generate blank schedule PDF.');
+    } finally {
+      setIsExportingSchedule(false);
+    }
+  };
 
   const handleDelete = async (id: string, itemName: string) => {
     const confirmMsg = `Are you sure you want to delete the schedule for "${itemName}"? This action cannot be undone.`;
@@ -321,7 +417,7 @@ export default function ScheduleDashboard() {
     }
   };
 
-  if (isLoadingSchedules || isLoadingVenues || isLoadingRegs || isLoadingFest) {
+  if (isLoadingSchedules || isLoadingVenues || isLoadingRegs || isLoadingFest || isLoadingItems) {
     return (
       <View className="flex-1 bg-ssf-bg p-5">
         <SsfTableSkeleton rows={8} columns={6} />
@@ -334,6 +430,36 @@ export default function ScheduleDashboard() {
       <View className="mb-4">
         <Text className="text-3xl font-poppins-black text-ssf-text">Schedules</Text>
         <Text className="text-sm font-poppins text-ssf-text-muted mt-1">{filteredSchedules.length} showing</Text>
+      </View>
+
+      <View className="bg-white border border-ui-border rounded-xl p-3 mb-6">
+        <Text className="font-poppins-bold text-xs text-ui-text mb-2">Download schedule PDFs</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {([
+            ['master', 'Master Schedule'],
+            ['venue', 'Venue-wise Schedule'],
+            ['organisation', 'Organisation-wise Schedule'],
+          ] as [AdminSchedulePdfMode, string][]).map(([mode, label]) => (
+            <TouchableOpacity
+              key={mode}
+              onPress={() => exportSchedulePdf(mode)}
+              disabled={isExportingSchedule}
+              className={`px-3 py-2 rounded-lg border ${isExportingSchedule ? 'bg-gray-100 border-gray-200' : 'bg-white border-ui-border'}`}
+            >
+              <Text className="font-poppins-bold text-[10px] text-ui-text">{isExportingSchedule ? 'Preparing…' : label}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            onPress={exportBlankSchedule}
+            disabled={isExportingSchedule}
+            className="px-3 py-2 rounded-lg border border-[#123B63] bg-[#123B63]"
+          >
+            <Text className="font-poppins-bold text-[10px] text-white">Blank Schedule PDF</Text>
+          </TouchableOpacity>
+        </View>
+        <Text className="font-poppins text-[10px] text-ui-text-muted mt-2">
+          Exports use the current item, item category, venue and workflow filters. Items available: {Math.max(0, itemsList.length - 1)}.
+        </Text>
       </View>
       
       <View className="flex-row flex-wrap gap-3 mb-6">
@@ -399,14 +525,28 @@ export default function ScheduleDashboard() {
         <View className="bg-white border border-ui-border rounded-xl p-3 mb-6">
           <View className="flex-row flex-wrap items-center gap-2">
             <SsfSelectMenu
+              value={selectedItem}
+              onValueChange={setSelectedItem}
+              accessibilityLabel="Filter by item"
+              searchable
+              searchPlaceholder="Search item..."
+              width={isMobile ? Math.max(220, width - 56) : 250}
+              compact
+              active={selectedItem !== 'All'}
+              options={itemsList.map((item) => ({
+                label: item.label,
+                value: item.id,
+              }))}
+            />
+            <SsfSelectMenu
               value={selectedCategory}
               onValueChange={setSelectedCategory}
-              accessibilityLabel="Filter by category"
+              accessibilityLabel="Filter by item category"
               width={isMobile ? Math.max(120, (width - 72) / 2) : 148}
               compact
               active={selectedCategory !== 'All'}
               options={categoriesList.map((item) => ({
-                label: item === 'All' ? 'Category: All' : `Category: ${item}`,
+                label: item === 'All' ? 'Item category: All' : `Item category: ${item}`,
                 value: item,
               }))}
             />
@@ -436,9 +576,10 @@ export default function ScheduleDashboard() {
                 value: item.id,
               }))}
             />
-            {(selectedCategory !== 'All' || selectedVenue !== 'All' || selectedStatus !== 'All') && (
+            {(selectedItem !== 'All' || selectedCategory !== 'All' || selectedVenue !== 'All' || selectedStatus !== 'All') && (
               <TouchableOpacity
                 onPress={() => {
+                  setSelectedItem('All');
                   setSelectedCategory('All');
                   setSelectedVenue('All');
                   setSelectedStatus('All');
@@ -458,7 +599,7 @@ export default function ScheduleDashboard() {
         <View className="gap-y-3 mb-6">
           {/* Category Dropdown */}
           <View>
-            <Text className="font-poppins-bold text-[10px] text-ssf-text-muted uppercase tracking-wider mb-1 ml-1">Filter by Category</Text>
+            <Text className="font-poppins-bold text-[10px] text-ssf-text-muted uppercase tracking-wider mb-1 ml-1">Filter by Item Category</Text>
             {Platform.OS === 'web' ? (
               <select
                 value={selectedCategory}
@@ -951,7 +1092,7 @@ export default function ScheduleDashboard() {
         </View>
         )
       )}
-      <AdminScheduleChatBot schedules={schedules} venues={venues} registrations={allRegistrations} results={allResults} judges={judges} />
+      <AdminScheduleChatBot tenantId={tenant_id} festivalId={festival?.id} schedules={schedules} venues={venues} registrations={allRegistrations} results={allResults} judges={judges} />
     </ScrollView>
   );
 }

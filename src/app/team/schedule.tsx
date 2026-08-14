@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/shadcn/badge';
 import { Button } from '@/components/ui/shadcn/button';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/shadcn/tabs';
+import { downloadTeamLeaderSchedulePdf } from '@/services/schedulePdfService';
 
 export default function ScheduleScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
   const [schedule, setSchedule] = useState<TeamLeaderScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [isExporting, setIsExporting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,6 +43,19 @@ export default function ScheduleScreen() {
   const teamPrimary = context?.portal_primary_color || '#0F766E';
   const teamAccent = context?.portal_accent_color || '#14B8A6';
 
+  const exportMyTeamSchedule = async () => {
+    if (!context || !filtered.length) return;
+    try {
+      setIsExporting(true);
+      await downloadTeamLeaderSchedulePdf(context, filtered);
+      if (Platform.OS === 'web') window.alert('My Team Schedule PDF downloaded successfully.');
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error?.message || 'Unable to generate team schedule PDF.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 16 }}>
@@ -52,9 +67,14 @@ export default function ScheduleScreen() {
               {schedule.length} event{schedule.length === 1 ? '' : 's'} for your team
             </Text>
           </View>
-          <Button variant="outline" size="sm" onPress={() => router.push('/team/schedule/full')}>
-            Full Schedule
-          </Button>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <Button variant="outline" size="sm" onPress={() => router.push('/team/schedule/full')}>
+              Full Schedule
+            </Button>
+            <Button variant="default" size="sm" disabled={isExporting || !filtered.length} onPress={exportMyTeamSchedule}>
+              {isExporting ? 'Preparing…' : 'Download My Team PDF'}
+            </Button>
+          </View>
         </View>
 
         <Tabs value={filter} onValueChange={setFilter}>

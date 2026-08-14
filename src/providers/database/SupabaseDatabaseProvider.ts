@@ -201,7 +201,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>> {
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, item_id, status, is_verified, code_letter')
+      .select('id, item_id, participant_id, organisation_id, status, is_verified, code_letter')
       .eq('festival_id', festivalId);
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }

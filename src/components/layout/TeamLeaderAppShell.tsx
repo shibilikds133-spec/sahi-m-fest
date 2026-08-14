@@ -85,6 +85,7 @@ const navItems: NavItem[] = [
 export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const logout = useAuthStore((s) => s.logout);
@@ -113,7 +114,7 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
         {/* Sidebar */}
         <View
           style={{
-            width: sidebarOpen ? 220 : 56,
+            width: sidebarOpen ? 260 : 58,
             backgroundColor: teamPrimary,
             paddingTop: 16,
             paddingBottom: 16,
@@ -219,7 +220,7 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
           {/* Top bar */}
           <View
             style={{
-              height: 48,
+              height: 64,
               backgroundColor: 'hsl(var(--card))',
               borderBottomWidth: 1,
               borderBottomColor: teamAccent,
@@ -235,14 +236,20 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
                 {context?.team_name || (context?.festival_id ? 'Festival Portal' : 'Team Portal')}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity accessibilityLabel="Open notifications" style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${teamAccent}12`, alignItems: 'center', justifyContent: 'center' }}>
+                <MessageSquare size={15} color={teamPrimary} />
+              </TouchableOpacity>
               <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: `${teamAccent}18` }}>
                 <Text style={{ fontSize: 10, fontWeight: '700', color: teamPrimary }}>LIVE</Text>
               </View>
+              <TouchableOpacity onPress={() => navigate('/team/profile')} accessibilityLabel="Open team profile" style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: teamPrimary, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>{teamInitial}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+          <ScrollView style={{ flex: 1, backgroundColor: '#F7F9FA' }} contentContainerStyle={{ padding: 20 }}>
             {children}
           </ScrollView>
         </View>
@@ -269,10 +276,12 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
         <TouchableOpacity onPress={() => setMobileMenuOpen(true)} hitSlop={8}>
           <Menu size={20} color="hsl(var(--foreground))" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: 'hsl(var(--foreground))' }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: 'hsl(var(--foreground))' }} numberOfLines={1}>
           {context?.team_name || 'Team Portal'}
         </Text>
-        <View style={{ width: 20 }} />
+        <TouchableOpacity onPress={() => navigate('/team/profile')} accessibilityLabel="Open team profile" style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: teamPrimary, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>{teamInitial}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Mobile menu overlay */}
@@ -337,13 +346,13 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
           paddingTop: 8,
         }}
       >
-        {navItems.slice(0, 5).map((item) => {
+        {[...navItems.slice(0, 4), { label: 'More', shortLabel: 'More', path: '/team/more', icon: Menu, match: () => moreOpen }].map((item) => {
           const active = item.match(pathname);
           const Icon = item.icon;
           return (
             <TouchableOpacity
               key={item.path}
-              onPress={() => navigate(item.path)}
+              onPress={() => item.path === '/team/more' ? setMoreOpen(true) : navigate(item.path)}
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
             >
               <Icon size={20} color={active ? teamPrimary : 'hsl(var(--muted-foreground))'} />
@@ -354,6 +363,17 @@ export function TeamLeaderAppShell({ children }: { children: React.ReactNode }) 
           );
         })}
       </View>
+
+      {moreOpen && (
+        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 74, zIndex: 60, borderRadius: 16, backgroundColor: 'hsl(var(--card))', borderWidth: 1, borderColor: 'hsl(var(--border))', padding: 8, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8 }}>
+            <Text style={{ color: 'hsl(var(--foreground))', fontSize: 13, fontWeight: '800' }}>More</Text>
+            <TouchableOpacity onPress={() => setMoreOpen(false)}><X size={17} color="hsl(var(--muted-foreground))" /></TouchableOpacity>
+          </View>
+          {navItems.slice(4).map((item) => { const Icon = item.icon; return <TouchableOpacity key={item.path} onPress={() => { setMoreOpen(false); navigate(item.path); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10 }}><Icon size={17} color={teamPrimary} /><Text style={{ marginLeft: 10, color: 'hsl(var(--foreground))', fontSize: 13, fontWeight: '600' }}>{item.label}</Text></TouchableOpacity>; })}
+          <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: 'hsl(var(--border))', marginTop: 4 }}><LogOut size={17} color="#DC2626" /><Text style={{ marginLeft: 10, color: '#DC2626', fontSize: 13, fontWeight: '700' }}>Logout</Text></TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

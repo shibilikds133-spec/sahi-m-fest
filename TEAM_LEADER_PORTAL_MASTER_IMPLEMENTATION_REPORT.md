@@ -184,7 +184,7 @@ not, a separate team model must be designed before any UI work.
 - Root cause: the context RPC treated a missing `team_portal_settings` row as
   disabled, so an otherwise valid active assignment returned no context. The
   same failure blocked downstream Team Leader data RPCs.
-- Fix: migration `134_team_leader_context_default_settings.sql` preserves the
+- Fix: migration `136_team_leader_context_default_settings.sql` preserves the
   assignment, role, active festival/team, validity-window, and tenant/festival
   checks while treating only an absent settings row as enabled. An explicit
   disabled row or configured open/close window still blocks access.
