@@ -31,7 +31,7 @@ export interface DatabaseProvider {
   getParticipant<T>(participantId: string): Promise<QueryResult<T>>;
   getPublicCandidateProfile<T>(slug: string): Promise<QueryResult<T>>;
   getParticipantRegistrations<T>(participantId: string): Promise<ListResult<T>>;
-  getRegistrationsByItem<T>(itemId: string, tenantId: string): Promise<ListResult<T>>;
+  getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<ListResult<T>>;
   listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>>;
   updateRegistration<T>(registrationId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;
   safeUnassignRegistration<T>(registrationId: string, reason?: string | null): Promise<QueryResult<T>>;
@@ -77,8 +77,9 @@ export interface DatabaseProvider {
   deleteSchedule(id: string): Promise<QueryResult<void>>;
 
   // Code Letter Management Methods
-  getParticipantConflicts(participantIds: string[], currentScheduleId: string): Promise<QueryResult<Record<string, Set<string>>>>;
+  getParticipantConflicts(participantIds: string[], currentScheduleId: string, tenantId?: string): Promise<QueryResult<Record<string, Set<string>>>>;
   updateCodeLetter(registrationId: string, codeLetter: string): Promise<QueryResult<void>>;
+  stageUpdateCodeLetter(scheduleId: string, registrationId: string, codeLetter: string): Promise<QueryResult<unknown>>;
 
   // Judge Methods
   listJudges<T>(tenantId: string): Promise<ListResult<T>>;

@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
-import { useSchedule, usePublicSchedule } from '../../../core/hooks/useSchedule';
+import { useStageManagement } from '../../../core/hooks/useStageManagement';
 import { useParticipants } from '../../../core/hooks/useParticipants';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { ArrowLeft, RefreshCw, Lock, AlertTriangle, XCircle, Edit2 } from 'lucide-react-native';
-import { TextInput } from 'react-native';
-import { useGetPublicLeaderboardSettings } from '../../../core/hooks/useLeaderboardSettings';
 import { useAuthStore } from '../../../core/store/authStore';
 
 export default function CodeLetterGeneration() {
@@ -16,17 +14,14 @@ export default function CodeLetterGeneration() {
   const scheduleId = Array.isArray(id) ? id[0] : id;
   const goBack = useGoBack('/stage-management');
 
-  const settingsQuery = useGetPublicLeaderboardSettings();
-  const festivalId = settingsQuery.data?.festival_id;
-  const schedulesQuery = usePublicSchedule(festivalId);
-  const schedules = schedulesQuery.data || [];
-  const isLoadingSchedules = schedulesQuery.isLoading || settingsQuery.isLoading;
-
-  const { updateSchedule } = useSchedule();
+  const stage = useStageManagement({ scheduleId });
+  const schedules = stage.schedules;
+  const isLoadingSchedules = stage.contextQuery.isLoading || stage.schedulesQuery.isLoading;
   const schedule = schedules.find((s: any) => s.id === scheduleId);
 
-  const { useItemRegistrations, generateCodeLetters, isGeneratingCodeLetters, updateCodeLetter, isUpdatingCodeLetter, useParticipantConflicts } = useParticipants();
-  const { data: registrations, isLoading: isLoadingRegs } = useItemRegistrations(schedule?.item_id);
+  const { generateCodeLetters, isGeneratingCodeLetters, useParticipantConflicts } = useParticipants();
+  const registrations = stage.registrations;
+  const isLoadingRegs = stage.registrationsQuery.isLoading;
 
   const activeRegistrations = React.useMemo(() => {
     return (registrations || [])
@@ -52,7 +47,7 @@ export default function CodeLetterGeneration() {
   const [isLocking, setIsLocking] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval>;
     if (showLockModal && lockCountdown > 0) {
       timer = setInterval(() => {
         setLockCountdown((prev) => prev - 1);
@@ -77,13 +72,7 @@ export default function CodeLetterGeneration() {
   const handleUnlock = async () => {
     setIsLocking(true);
     try {
-      await updateSchedule({
-        id: scheduleId,
-        payload: {
-          is_shuffle_locked: false,
-          shuffle_locked_at: null,
-        }
-      });
+      await stage.updateScheduleLock({ scheduleId, locked: false });
       if (Platform.OS === 'web') {
         window.alert('🔓 Event unlocked successfully.');
       } else {
@@ -126,10 +115,13 @@ export default function CodeLetterGeneration() {
     const action = async () => {
       try {
         const result = await generateCodeLetters({
-          scheduleId,
-          itemId: schedule.item_id,
-          overwrite: hasExistingLetters,
-        });
+           scheduleId,
+           itemId: schedule.item_id,
+           festivalId: schedule.festival_id,
+           overwrite: hasExistingLetters,
+           secureStage: true,
+         });
+        await stage.registrationsQuery.refetch();
         const isSmart = result && (result as any).smartPriorityApplied;
         const msg = isSmart 
           ? '✅ Code letters assigned successfully!\n(Smart conflict-safe priority applied)' 
@@ -210,7 +202,8 @@ export default function CodeLetterGeneration() {
     }
 
     try {
-      await updateCodeLetter({ registrationId: editingReg.id, codeLetter: letter, itemId: schedule.item_id });
+      await stage.updateCodeLetter({ scheduleId, registrationId: editingReg.id, codeLetter: letter });
+      await stage.registrationsQuery.refetch();
       setEditingReg(null);
       setNewLetter('');
     } catch (err: any) {
@@ -221,13 +214,7 @@ export default function CodeLetterGeneration() {
   const handleFinalLockApprove = async () => {
     setIsLocking(true);
     try {
-      await updateSchedule({
-        id: schedule.id,
-        payload: {
-          is_shuffle_locked: true,
-          shuffle_locked_at: new Date().toISOString(),
-        }
-      });
+      await stage.updateScheduleLock({ scheduleId: schedule.id, locked: true });
       setShowLockModal(false);
       if (Platform.OS === 'web') {
         window.alert('🔒 Code letters are now locked permanently.');
@@ -422,10 +409,10 @@ export default function CodeLetterGeneration() {
                 onPress={() => { setEditingReg(null); setEditError(''); }} 
               />
               <SsfButton 
-                label={isUpdatingCodeLetter ? 'Saving...' : 'Save'} 
+                label={stage.isUpdatingCodeLetter ? 'Saving...' : 'Save'}
                 className="flex-1" 
                 onPress={validateAndSaveEdit} 
-                disabled={isUpdatingCodeLetter}
+                disabled={stage.isUpdatingCodeLetter}
               />
             </View>
           </View>

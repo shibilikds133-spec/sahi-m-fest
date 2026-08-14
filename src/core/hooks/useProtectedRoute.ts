@@ -28,6 +28,11 @@ export function useProtectedRoute() {
       return;
     }
 
+    if (user && segments[0] === 'stage-management' && role !== 'admin' && !is_superadmin) {
+      router.replace('/(public)');
+      return;
+    }
+
     // Team Leaders have a dedicated namespace. Keep this check separate from
     // navigation visibility so a manually entered core URL is denied before
     // the protected screen can issue its own queries.
@@ -42,7 +47,6 @@ export function useProtectedRoute() {
         !inPublicGroup && 
         !inAuthGroup && 
         !inTeamLogin &&
-        segments[0] !== 'stage-management' && 
         segments[0] !== 'candidate' && 
         segments[0] !== 'unit-profile' && 
         !inJudgeGroup && 

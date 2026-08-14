@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Platform, TextInput, useWindowDimensions, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SsfCard } from '../../components/ui/SsfCard';
 import { SsfButton } from '../../components/ui/SsfButton';
-import { usePublicSchedule, usePublicRegistrations } from '../../core/hooks/useSchedule';
+import { useStageManagement } from '../../core/hooks/useStageManagement';
 import { Calendar, MapPin, Clock, Search, X, Lock, Bell, RefreshCw, Copy, Check, ExternalLink, RotateCcw } from 'lucide-react-native';
-import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { SsfSelectMenu } from '../../components/ui/SsfSelectMenu';
 import { SsfTableSkeleton } from '../../components/ui/SsfSkeleton';
+import { useAuthStore } from '../../core/store/authStore';
 
 function ScheduleWorkflowBadges({ registrations = [] }: { registrations?: any[] }) {
   const activeRegs = registrations.filter((r: any) => r.status !== 'rejected');
@@ -50,36 +50,14 @@ function ScheduleWorkflowBadges({ registrations = [] }: { registrations?: any[] 
 
 export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?: string } = {}) {
   const router = useRouter();
-  
-  // Simple Lightweight Passcode Protection
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  
-  const CORRECT_PASSCODE = '9999'; // Default simple passcode for stage coordinators
+  const { user, role, is_superadmin, initialized } = useAuthStore();
+  const hasStageAccess = !!user && (role === 'admin' || is_superadmin);
 
-  const handleLogin = () => {
-    if (passcode === CORRECT_PASSCODE) {
-      setIsAuthenticated(true);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Incorrect Passcode');
-    }
-  };
-
-  const settingsQuery = useGetPublicLeaderboardSettings();
-  const festivalId = settingsQuery.data?.festival_id;
-
-  const schedulesQuery = usePublicSchedule(festivalId);
-  const schedules = React.useMemo(() => schedulesQuery.data || [], [schedulesQuery.data]);
-  const isLoadingSchedules = schedulesQuery.isLoading;
-
-  const registrationsQuery = usePublicRegistrations(festivalId);
-  const allRegistrations = React.useMemo(
-    () => registrationsQuery.data || [],
-    [registrationsQuery.data],
-  );
-  const isLoadingRegs = registrationsQuery.isLoading;
+  const stage = useStageManagement();
+  const schedules = React.useMemo(() => stage.schedules || [], [stage.schedules]);
+  const allRegistrations = React.useMemo(() => stage.registrations || [], [stage.registrations]);
+  const isLoadingSchedules = stage.contextQuery.isLoading || stage.schedulesQuery.isLoading;
+  const isLoadingRegs = stage.registrationsQuery.isLoading;
 
   const venues = React.useMemo(() => {
     const venueMap = new Map<string, any>();
@@ -93,7 +71,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
   }, [schedules]);
 
   const isLoadingVenues = isLoadingSchedules;
-  const isLoadingFest = settingsQuery.isLoading;
+  const isLoadingFest = stage.contextQuery.isLoading;
   
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -102,11 +80,11 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      schedulesQuery.refetch(),
-      registrationsQuery.refetch()
+      stage.schedulesQuery.refetch(),
+      stage.registrationsQuery.refetch()
     ]);
     setRefreshing(false);
-  }, [schedulesQuery, registrationsQuery]);
+  }, [stage.schedulesQuery, stage.registrationsQuery]);
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('All');
@@ -211,7 +189,15 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
     });
   }, [schedules, searchQuery, selectedCategory, selectedVenue, selectedStatus, allRegistrations]);
 
-  if (!isAuthenticated) {
+  if (!initialized || (!hasStageAccess && stage.contextQuery.isLoading)) {
+    return (
+      <View className="flex-1 bg-ssf-bg justify-center items-center px-4">
+        <SsfTableSkeleton rows={5} columns={4} />
+      </View>
+    );
+  }
+
+  if (!hasStageAccess) {
     return (
       <View className="flex-1 bg-ssf-bg justify-center items-center px-4">
         <SsfCard className="w-full max-w-sm p-6 items-center">
@@ -220,29 +206,11 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
           </View>
           <Text className="text-xl font-poppins-black text-ssf-text text-center mb-2">Stage Management</Text>
           <Text className="font-poppins text-ssf-text-muted text-center mb-6 text-sm">
-            Please enter the passcode to access the stage portal.
+            Sign in with a festival administrator account to access the tenant-scoped stage portal.
           </Text>
-          
-          <TextInput
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-poppins-bold text-center text-xl tracking-widest text-ssf-text mb-2"
-            placeholder="****"
-            secureTextEntry
-            keyboardType="numeric"
-            value={passcode}
-            onChangeText={(text) => {
-              setPasscode(text);
-              setErrorMsg('');
-            }}
-            onSubmitEditing={handleLogin}
-          />
-          
-          {errorMsg ? (
-            <Text className="font-poppins text-red-500 text-xs mb-4">{errorMsg}</Text>
-          ) : <View className="h-4 mb-4" />}
-          
-          <SsfButton 
-            label="Enter Portal" 
-            onPress={handleLogin}
+          <SsfButton
+            label="Go to Sign In"
+            onPress={() => router.replace('/login')}
             className="w-full"
           />
         </SsfCard>

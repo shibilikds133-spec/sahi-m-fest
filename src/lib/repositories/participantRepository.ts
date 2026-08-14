@@ -17,8 +17,8 @@ export const participantRepository = {
     return databaseProvider.getParticipantRegistrations<T>(participantId);
   },
 
-  getRegistrationsByItem<T>(itemId: string, tenantId: string) {
-    return databaseProvider.getRegistrationsByItem<T>(itemId, tenantId);
+  getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string) {
+    return databaseProvider.getRegistrationsByItem<T>(itemId, tenantId, festivalId);
   },
 
   listRegistrationsByFestival<T>(festivalId: string) {
@@ -33,12 +33,16 @@ export const participantRepository = {
     return databaseProvider.safeUnassignRegistration<T>(registrationId, reason);
   },
 
-  getParticipantConflicts(participantIds: string[], currentScheduleId: string) {
-    return databaseProvider.getParticipantConflicts(participantIds, currentScheduleId);
+  getParticipantConflicts(participantIds: string[], currentScheduleId: string, tenantId?: string) {
+    return databaseProvider.getParticipantConflicts(participantIds, currentScheduleId, tenantId);
   },
 
   updateCodeLetter(registrationId: string, codeLetter: string) {
     return databaseProvider.updateCodeLetter(registrationId, codeLetter);
+  },
+
+  stageUpdateCodeLetter(scheduleId: string, registrationId: string, codeLetter: string) {
+    return databaseProvider.stageUpdateCodeLetter(scheduleId, registrationId, codeLetter);
   },
 
   updateParticipant<T>(participantId: string, updates: Record<string, unknown>) {

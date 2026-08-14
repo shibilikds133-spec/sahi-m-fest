@@ -48,21 +48,22 @@ export const useParticipants = (participantId?: string) => {
   };
 
   const useParticipantConflicts = (participantIds: string[], scheduleId: string | undefined) => {
+    const { tenant_id } = useAuthStore();
     return useQuery({
-      queryKey: ['participantConflicts', participantIds, scheduleId],
+      queryKey: ['participantConflicts', participantIds, scheduleId, tenant_id],
       queryFn: async () => {
-        const { data, error } = await (await import('../../lib/repositories/participantRepository')).participantRepository.getParticipantConflicts(participantIds, scheduleId!);
+        const { data, error } = await (await import('../../lib/repositories/participantRepository')).participantRepository.getParticipantConflicts(participantIds, scheduleId!, tenant_id ?? undefined);
         if (error) throw error;
         return data || {};
       },
-      enabled: !!scheduleId && participantIds.length > 0,
+      enabled: !!scheduleId && participantIds.length > 0 && !!tenant_id,
     });
   };
 
   const generateCodeLettersMutation = useMutation({
-    mutationFn: ({ scheduleId, itemId, overwrite }: { scheduleId: string; itemId: string; overwrite?: boolean }) => {
+    mutationFn: ({ scheduleId, itemId, festivalId, overwrite, secureStage }: { scheduleId: string; itemId: string; festivalId?: string; overwrite?: boolean; secureStage?: boolean }) => {
       const tenantId = useAuthStore.getState().tenant_id;
-      return participantService.generateCodeLetters(scheduleId, itemId, tenantId!, overwrite);
+      return participantService.generateCodeLetters(scheduleId, itemId, tenantId!, overwrite, festivalId, secureStage);
     },
     onSuccess: (data, variables) => {
       const tenantId = useAuthStore.getState().tenant_id;
@@ -71,10 +72,12 @@ export const useParticipants = (participantId?: string) => {
   });
 
   const updateCodeLetterMutation = useMutation({
-    mutationFn: ({ registrationId, codeLetter, itemId }: { registrationId: string; codeLetter: string; itemId: string }) => {
-      const tenantId = useAuthStore.getState().tenant_id;
+    mutationFn: ({ registrationId, codeLetter, itemId, scheduleId, secureStage }: { registrationId: string; codeLetter: string; itemId: string; scheduleId?: string; secureStage?: boolean }) => {
       return (async () => {
-         const { error } = await (await import('../../lib/repositories/participantRepository')).participantRepository.updateCodeLetter(registrationId, codeLetter);
+         const repository = (await import('../../lib/repositories/participantRepository')).participantRepository;
+         const { error } = secureStage && scheduleId
+           ? await repository.stageUpdateCodeLetter(scheduleId, registrationId, codeLetter)
+           : await repository.updateCodeLetter(registrationId, codeLetter);
          if (error) throw error;
       })();
     },

@@ -93,8 +93,8 @@ export const participantService = {
     return data;
   },
 
-  async getRegistrationsByItem<T>(itemId: string, tenantId: string): Promise<T[]> {
-    const { data, error } = await participantRepository.getRegistrationsByItem<T>(itemId, tenantId);
+  async getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<T[]> {
+    const { data, error } = await participantRepository.getRegistrationsByItem<T>(itemId, tenantId, festivalId);
     throwIfError(error);
     return data;
   },
@@ -105,8 +105,15 @@ export const participantService = {
     return data;
   },
 
-  async generateCodeLetters(scheduleId: string, itemId: string, tenantId: string, overwrite = false): Promise<{ smartPriorityApplied: boolean } | void> {
-    const allRegistrations = await this.getRegistrationsByItem<any>(itemId, tenantId);
+  async generateCodeLetters(
+    scheduleId: string,
+    itemId: string,
+    tenantId: string,
+    overwrite = false,
+    festivalId?: string,
+    secureStage = false,
+  ): Promise<{ smartPriorityApplied: boolean } | void> {
+    const allRegistrations = await this.getRegistrationsByItem<any>(itemId, tenantId, festivalId);
     const registrations = (allRegistrations || []).filter(
       (r: any) => r.status !== 'rejected' && r.is_verified === true
     );
@@ -193,7 +200,9 @@ export const participantService = {
 
         if (!assignedLetter) throw new Error(`Not enough unique code letters available for participant ${reg.participant_id}`);
 
-        return participantRepository.updateRegistration(reg.id, { code_letter: assignedLetter });
+        return secureStage
+          ? participantRepository.stageUpdateCodeLetter(scheduleId, reg.id, assignedLetter)
+          : participantRepository.updateRegistration(reg.id, { code_letter: assignedLetter });
       })
     );
 

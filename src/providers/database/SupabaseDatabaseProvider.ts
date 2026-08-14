@@ -189,12 +189,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
-  async getRegistrationsByItem<T>(itemId: string, _tenantId: string): Promise<ListResult<T>> {
-    const { data, error } = await supabase
+  async getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<ListResult<T>> {
+    let query = supabase
       .from('registrations')
       .select('*, participants(*, organisations(id, name, org_type))')
-      .eq('item_id', itemId);
-      // RLS automatically handles hybrid tenant visibility
+      .eq('item_id', itemId)
+      .eq('tenant_id', tenantId);
+    if (festivalId) query = query.eq('festival_id', festivalId);
+    const { data, error } = await query;
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
@@ -625,14 +627,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   // --- Code Letter Management ---
-  async getParticipantConflicts(participantIds: string[], currentScheduleId: string): Promise<QueryResult<Record<string, Set<string>>>> {
+  async getParticipantConflicts(participantIds: string[], currentScheduleId: string, tenantId?: string): Promise<QueryResult<Record<string, Set<string>>>> {
     try {
       if (!participantIds.length) return { data: {}, error: null };
 
       // 1. Fetch current schedule to get its time
       const { data: currentSchedule, error: err1 } = await supabase
         .from('schedules')
-        .select('start_time, end_time')
+        .select('start_time, end_time, tenant_id, festival_id')
         .eq('id', currentScheduleId)
         .single();
       
@@ -643,11 +645,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       }
 
       // 2. Fetch all OTHER registrations for these participants that HAVE a code letter assigned
-      const { data: otherRegs, error: err2 } = await supabase
+      let otherRegsQuery = supabase
         .from('registrations')
         .select('participant_id, code_letter, item_id')
         .in('participant_id', participantIds)
         .not('code_letter', 'is', null);
+      if (tenantId) otherRegsQuery = otherRegsQuery.eq('tenant_id', tenantId);
+      if (currentSchedule.festival_id) otherRegsQuery = otherRegsQuery.eq('festival_id', currentSchedule.festival_id);
+      const { data: otherRegs, error: err2 } = await otherRegsQuery;
 
       if (err2) throw err2;
 
@@ -655,10 +660,13 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       if (!itemIds.length) return { data: {}, error: null };
 
       // 3. Fetch schedules for these items
-      const { data: schedules, error: err3 } = await supabase
+      let schedulesQuery = supabase
         .from('schedules')
         .select('id, item_id, start_time, end_time')
         .in('item_id', itemIds);
+      if (tenantId) schedulesQuery = schedulesQuery.eq('tenant_id', tenantId);
+      if (currentSchedule.festival_id) schedulesQuery = schedulesQuery.eq('festival_id', currentSchedule.festival_id);
+      const { data: schedules, error: err3 } = await schedulesQuery;
 
       if (err3) throw err3;
 
@@ -703,6 +711,15 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .update({ code_letter: codeLetter })
       .eq('id', registrationId);
     return { data: null, error: normalizeError(error) };
+  }
+
+  async stageUpdateCodeLetter(scheduleId: string, registrationId: string, codeLetter: string): Promise<QueryResult<unknown>> {
+    const { data, error } = await supabase.rpc('stage_update_code_letter', {
+      p_schedule_id: scheduleId,
+      p_registration_id: registrationId,
+      p_code_letter: codeLetter,
+    });
+    return { data: data ?? null, error: normalizeError(error) };
   }
 
   // --- Leaderboard Settings & Poster Template Methods ---
