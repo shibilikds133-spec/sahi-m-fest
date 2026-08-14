@@ -25,6 +25,15 @@ export type StageScheduleRow = {
   venue_name: string | null;
 };
 
+export type StageVenueRow = {
+  id: string;
+  tenant_id: string;
+  festival_id: string;
+  name: string;
+  location: string | null;
+  capacity: number | null;
+};
+
 export type StageRegistrationRow = {
   id: string;
   item_id: string;
@@ -57,6 +66,14 @@ export const stageManagementService = {
     });
     throwIfError(error);
     return (data as StageScheduleRow[] | null) ?? [];
+  },
+
+  async getVenues(festivalId: string): Promise<StageVenueRow[]> {
+    const { data, error } = await supabase.rpc('get_stage_management_venues', {
+      p_festival_id: festivalId,
+    });
+    throwIfError(error);
+    return (data as StageVenueRow[] | null) ?? [];
   },
 
   async getRegistrations(options: { scheduleId?: string; festivalId?: string }): Promise<StageRegistrationRow[]> {

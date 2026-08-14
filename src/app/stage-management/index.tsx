@@ -55,22 +55,11 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
 
   const stage = useStageManagement();
   const schedules = React.useMemo(() => stage.schedules || [], [stage.schedules]);
+  const venues = React.useMemo(() => stage.venues || [], [stage.venues]);
   const allRegistrations = React.useMemo(() => stage.registrations || [], [stage.registrations]);
   const isLoadingSchedules = stage.contextQuery.isLoading || stage.schedulesQuery.isLoading;
   const isLoadingRegs = stage.registrationsQuery.isLoading;
-
-  const venues = React.useMemo(() => {
-    const venueMap = new Map<string, any>();
-    schedules.forEach((s: any) => {
-      const v = s.venues;
-      if (v) {
-        venueMap.set(v.id || v.name, { id: v.id, name: v.name });
-      }
-    });
-    return Array.from(venueMap.values());
-  }, [schedules]);
-
-  const isLoadingVenues = isLoadingSchedules;
+  const isLoadingVenues = stage.venuesQuery.isLoading;
   const isLoadingFest = stage.contextQuery.isLoading;
   
   const { width } = useWindowDimensions();
@@ -81,10 +70,11 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
     setRefreshing(true);
     await Promise.all([
       stage.schedulesQuery.refetch(),
+      stage.venuesQuery.refetch(),
       stage.registrationsQuery.refetch()
     ]);
     setRefreshing(false);
-  }, [stage.schedulesQuery, stage.registrationsQuery]);
+  }, [stage.schedulesQuery, stage.venuesQuery, stage.registrationsQuery]);
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('All');

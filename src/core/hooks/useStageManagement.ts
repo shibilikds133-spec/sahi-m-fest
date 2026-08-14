@@ -50,6 +50,13 @@ export const useStageManagement = (options: { scheduleId?: string } = {}) => {
     staleTime: 15_000,
   });
 
+  const venuesQuery = useQuery({
+    queryKey: ['stage-management-venues', context?.tenant_id, context?.festival_id],
+    queryFn: async () => (context ? stageManagementService.getVenues(context.festival_id) : []),
+    enabled: hasStageAccess && !!context?.tenant_id && !!context?.festival_id,
+    staleTime: 15_000,
+  });
+
   const registrationsQuery = useQuery({
     queryKey: [
       'stage-management-registrations',
@@ -97,6 +104,8 @@ export const useStageManagement = (options: { scheduleId?: string } = {}) => {
     contextQuery,
     schedules: schedulesQuery.data ?? [],
     schedulesQuery,
+    venues: venuesQuery.data ?? [],
+    venuesQuery,
     registrations: registrationsQuery.data ?? [],
     registrationsQuery,
     updateRegistration: updateRegistrationMutation.mutateAsync,
