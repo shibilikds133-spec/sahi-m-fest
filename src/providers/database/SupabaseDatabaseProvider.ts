@@ -527,12 +527,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   // --- Schedule & Venue Methods ---
-  async listVenues<T>(tenantId: string): Promise<ListResult<T>> {
-    const { data, error } = await supabase
+  async listVenues<T>(tenantId: string, festivalId?: string): Promise<ListResult<T>> {
+    let query = supabase
       .from('venues')
       .select('*')
       .eq('tenant_id', tenantId)
       .order('name');
+    if (festivalId) query = query.or(`festival_id.eq.${festivalId},festival_id.is.null`);
+    const { data, error } = await query;
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
@@ -563,12 +565,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: null, error: normalizeError(error) };
   }
 
-  async listSchedules<T>(tenantId: string): Promise<ListResult<T>> {
-    const { data, error } = await supabase
+  async listSchedules<T>(tenantId: string, festivalId?: string): Promise<ListResult<T>> {
+    let schedulesQuery = supabase
       .from('schedules')
       .select('*, venues(*), items(*)')
       .eq('tenant_id', tenantId)
       .order('start_time');
+    if (festivalId) schedulesQuery = schedulesQuery.eq('festival_id', festivalId);
+    const { data, error } = await schedulesQuery;
 
     if (error || !data) {
       return { data: [], error: normalizeError(error) };
@@ -606,6 +610,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .select()
       .single();
     return { data: (data as T) ?? null, error: normalizeError(error) };
+  }
+
+  async createSchedules<T>(festivalId: string, payloads: Record<string, unknown>[]): Promise<ListResult<T>> {
+    const { data, error } = await supabase.rpc('bulk_create_schedules', {
+      p_festival_id: festivalId,
+      p_schedules: payloads,
+    });
+    return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
   async updateSchedule<T>(id: string, payload: Record<string, unknown>): Promise<QueryResult<T>> {

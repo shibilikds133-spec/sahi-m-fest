@@ -43,9 +43,130 @@ type PreviewRow = {
 type BreakRule = {
   id: string;
   title: string;
-  startTime: string;
-  endTime: string;
+  startTime: TimeParts;
+  endTime: TimeParts;
 };
+
+type TimeParts = {
+  hour: string;
+  minute: string;
+  period: '' | 'AM' | 'PM';
+};
+
+const defaultStartTime: TimeParts = { hour: '09', minute: '00', period: 'AM' };
+const emptyTime = (): TimeParts => ({ hour: '', minute: '', period: '' });
+
+const to24Hour = (value: TimeParts): string | null => {
+  if (!value.hour || !value.minute || !value.period) return null;
+  const hour = Number(value.hour);
+  const minute = Number(value.minute);
+  if (!Number.isInteger(hour) || hour < 1 || hour > 12 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+  const hour24 = value.period === 'AM'
+    ? (hour === 12 ? 0 : hour)
+    : (hour === 12 ? 12 : hour + 12);
+  return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+};
+
+const toMinutes = (value: TimeParts): number | null => {
+  const normalized = to24Hour(value);
+  if (!normalized) return null;
+  const [hour, minute] = normalized.split(':').map(Number);
+  return hour * 60 + minute;
+};
+
+const toDateTime = (date: string, value: TimeParts): Date | null => {
+  const normalized = to24Hour(value);
+  return normalized ? new Date(`${date}T${normalized}:00`) : null;
+};
+
+const getBreakTimeError = (entry: BreakRule): string | null => {
+  const start = toMinutes(entry.startTime);
+  const end = toMinutes(entry.endTime);
+  if (start === null || end === null) return 'Select hour, minute and AM/PM';
+  if (end <= start) return 'End must be later';
+  return null;
+};
+
+function TimePicker({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: TimeParts;
+  onChange: (value: TimeParts) => void;
+  ariaLabel: string;
+}) {
+  const update = (patch: Partial<TimeParts>) => onChange({ ...value, ...patch });
+  const hours = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
+
+  if (Platform.OS !== 'web') {
+    return (
+      <View className="flex-row items-center gap-x-1">
+        <TextInput
+          value={value.hour}
+          onChangeText={(hour) => update({ hour })}
+          placeholder="HH"
+          keyboardType="numeric"
+          accessibilityLabel={`${ariaLabel} hour`}
+          style={{ ...nativeInputStyle, width: 52, paddingHorizontal: 8 }}
+        />
+        <Text className="font-poppins-bold text-xs text-ui-text-muted">:</Text>
+        <TextInput
+          value={value.minute}
+          onChangeText={(minute) => update({ minute })}
+          placeholder="MM"
+          keyboardType="numeric"
+          accessibilityLabel={`${ariaLabel} minute`}
+          style={{ ...nativeInputStyle, width: 52, paddingHorizontal: 8 }}
+        />
+        <TextInput
+          value={value.period}
+          onChangeText={(period) => update({ period: period.toUpperCase() === 'PM' ? 'PM' : period.toUpperCase() === 'AM' ? 'AM' : '' })}
+          placeholder="AM/PM"
+          accessibilityLabel={`${ariaLabel} period`}
+          style={{ ...nativeInputStyle, width: 72, paddingHorizontal: 8 }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-row items-center gap-x-1">
+      <select
+        aria-label={`${ariaLabel} hour`}
+        value={value.hour}
+        onChange={(event) => update({ hour: event.target.value })}
+        style={{ ...timeSelectStyle, width: 72 }}
+      >
+        <option value="">Hour</option>
+        {hours.map((hour) => <option key={hour} value={hour}>{Number(hour)}</option>)}
+      </select>
+      <Text className="font-poppins-bold text-xs text-ui-text-muted">:</Text>
+      <select
+        aria-label={`${ariaLabel} minute`}
+        value={value.minute}
+        onChange={(event) => update({ minute: event.target.value })}
+        style={{ ...timeSelectStyle, width: 72 }}
+      >
+        <option value="">Min</option>
+        {minutes.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
+      </select>
+      <select
+        aria-label={`${ariaLabel} AM or PM`}
+        value={value.period}
+        onChange={(event) => update({ period: event.target.value as TimeParts['period'] })}
+        style={{ ...timeSelectStyle, width: 78 }}
+      >
+        <option value="">AM/PM</option>
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </View>
+  );
+}
 
 const toLocalDate = (date: Date) => {
   const year = date.getFullYear();
@@ -62,7 +183,7 @@ const showMessage = (title: string, message: string) => {
 export default function BulkCreateSchedule() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { venues, schedules, createSchedule } = useSchedule();
+  const { venues, schedules, createSchedules } = useSchedule();
   const { useActiveFestival, useItems } = useFestival();
   const { data: festival } = useActiveFestival();
   const { data: items = [], isLoading } = useItems(festival?.id);
@@ -73,8 +194,8 @@ export default function BulkCreateSchedule() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [venueId, setVenueId] = React.useState('');
   const [date, setDate] = React.useState(() => toLocalDate(new Date()));
-  const [startTime, setStartTime] = React.useState('09:00');
-  const [bufferMinutes, setBufferMinutes] = React.useState('15');
+  const [startTime, setStartTime] = React.useState<TimeParts>(defaultStartTime);
+  const [bufferMinutes, setBufferMinutes] = React.useState('0');
   const [judgeCount, setJudgeCount] = React.useState('3');
   const [breaks, setBreaks] = React.useState<BreakRule[]>([]);
   const [durationOverrides, setDurationOverrides] = React.useState<Record<string, string>>({});
@@ -115,16 +236,17 @@ export default function BulkCreateSchedule() {
   );
 
   const preview = React.useMemo<PreviewRow[]>(() => {
-    if (!date || !startTime || !venueId) return [];
-    let cursor = new Date(`${date}T${startTime}:00`);
+    const startDateTime = toDateTime(date, startTime);
+    if (!date || !startDateTime || !venueId) return [];
+    let cursor = startDateTime;
     const buffer = Math.max(0, Number(bufferMinutes) || 0);
     const validBreaks = breaks
-      .map((entry) => ({
-        ...entry,
-        start: new Date(`${date}T${entry.startTime}:00`),
-        end: new Date(`${date}T${entry.endTime}:00`),
-      }))
-      .filter((entry) => entry.startTime && entry.endTime && entry.end > entry.start)
+      .map((entry) => {
+        const start = toDateTime(date, entry.startTime);
+        const end = toDateTime(date, entry.endTime);
+        return start && end ? { ...entry, start, end } : null;
+      })
+      .filter((entry): entry is BreakRule & { start: Date; end: Date } => Boolean(entry && entry.end > entry.start))
       .sort((a, b) => a.start.getTime() - b.start.getTime());
 
     return selectedItems.map((item: any) => {
@@ -159,8 +281,19 @@ export default function BulkCreateSchedule() {
   const hasConflicts = preview.some((row) => row.conflict);
   const hasDuplicates = preview.some((row) => row.duplicate);
   const hasInvalidBreaks = breaks.some(
-    (entry) => !entry.title.trim() || !entry.startTime || !entry.endTime || entry.endTime <= entry.startTime,
+    (entry) => {
+      const start = toMinutes(entry.startTime);
+      const end = toMinutes(entry.endTime);
+      return !entry.title.trim() || start === null || end === null || end <= start;
+    },
   );
+  const hasOverlappingBreaks = React.useMemo(() => {
+    const ordered = breaks
+      .map((entry) => ({ start: toMinutes(entry.startTime), end: toMinutes(entry.endTime) }))
+      .filter((entry): entry is { start: number; end: number } => entry.start !== null && entry.end !== null && entry.end > entry.start)
+      .sort((a, b) => a.start - b.start);
+    return ordered.some((entry, index) => index > 0 && entry.start < ordered[index - 1].end);
+  }, [breaks]);
   const allVisibleSelected = selectableVisibleItems.length > 0
     && selectableVisibleItems.every((item: any) => selectedIds.has(item.id));
 
@@ -188,8 +321,8 @@ export default function BulkCreateSchedule() {
       {
         id: `${Date.now()}-${current.length}`,
         title: current.length === 0 ? 'Lunch Break' : `Break ${current.length + 1}`,
-        startTime: current.length === 0 ? '13:00' : '',
-        endTime: current.length === 0 ? '14:00' : '',
+        startTime: emptyTime(),
+        endTime: emptyTime(),
       },
     ]);
   };
@@ -203,12 +336,12 @@ export default function BulkCreateSchedule() {
   };
 
   const handleCreateAll = async () => {
-    if (!festival?.id || !venueId || !date || !startTime || preview.length === 0) {
-      showMessage('Missing details', 'Select items, venue, date, and start time.');
+    if (!festival?.id || !venueId || !date || !to24Hour(startTime) || preview.length === 0) {
+      showMessage('Missing details', 'Select items, venue, date, and a complete start time (hour, minute, and AM/PM).');
       return;
     }
-    if (hasInvalidBreaks) {
-      showMessage('Invalid break', 'Complete every break and ensure its end time is later than its start time.');
+    if (hasInvalidBreaks || hasOverlappingBreaks) {
+      showMessage('Invalid break', 'Complete every break, choose AM/PM, keep the end time later than the start time, and do not overlap breaks.');
       return;
     }
     if (hasDuplicates) {
@@ -223,10 +356,13 @@ export default function BulkCreateSchedule() {
     }
 
     setIsSaving(true);
-    let created = 0;
     try {
-      for (const row of preview) {
-        await createSchedule({
+      const breakContext = breaks.map((entry) => ({
+        title: entry.title.trim(),
+        start_time: to24Hour(entry.startTime),
+        end_time: to24Hour(entry.endTime),
+      }));
+      const payloads = preview.map((row) => ({
           festival_id: festival.id,
           item_id: row.item.id,
           venue_id: venueId,
@@ -235,13 +371,14 @@ export default function BulkCreateSchedule() {
           status: 'scheduled',
           buffer_minutes: Math.max(0, Number(bufferMinutes) || 0),
           expected_judge_count: Math.max(1, Number(judgeCount) || 3),
-        });
-        created += 1;
-      }
+          bulk_break_context: breakContext,
+      }));
+      const createdRows = await createSchedules({ festivalId: festival.id, payloads });
+      const created = createdRows.length;
       showMessage('Schedules created', `${created} schedules created successfully.`);
       router.replace('/(admin)/schedule');
     } catch (error: any) {
-      showMessage('Partial save', `${created} schedules were created. ${error.message || 'The remaining rows failed.'}`);
+      showMessage('Bulk save failed', `No schedules were saved. ${error.message || 'Please review the selected items and try again.'}`);
     } finally {
       setIsSaving(false);
     }
@@ -304,9 +441,7 @@ export default function BulkCreateSchedule() {
           </View>
           <View className="min-w-[145px]">
             <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Start Time</Text>
-            {Platform.OS === 'web' ? (
-              <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} style={inputStyle} />
-            ) : <TextInput value={startTime} onChangeText={setStartTime} style={nativeInputStyle} />}
+            <TimePicker value={startTime} onChange={setStartTime} ariaLabel="Schedule start time" />
           </View>
           <View className="w-[110px]">
             <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Buffer</Text>
@@ -350,31 +485,27 @@ export default function BulkCreateSchedule() {
         ) : (
           <View className="gap-y-2">
             {breaks.map((entry) => {
-              const invalid = !!entry.startTime && !!entry.endTime && entry.endTime <= entry.startTime;
+              const error = getBreakTimeError(entry);
               return (
-                <View key={entry.id} className={`flex-row items-center gap-x-2 rounded-xl border p-2 ${invalid ? 'border-red-200 bg-red-50' : 'border-ui-border bg-ui-muted'}`}>
+                <View key={entry.id} className={`flex-row items-center gap-x-2 rounded-xl border p-2 ${error ? 'border-red-200 bg-red-50' : 'border-ui-border bg-ui-muted'}`}>
                   <TextInput
                     value={entry.title}
                     onChangeText={(title) => updateBreak(entry.id, { title })}
                     placeholder="Break title"
                     className="h-10 min-w-[180px] flex-1 rounded-lg border border-ui-border bg-white px-3 font-poppins text-xs outline-none"
                   />
-                  <input
-                    type="time"
-                    aria-label={`${entry.title || 'Break'} start time`}
+                  <TimePicker
                     value={entry.startTime}
-                    onChange={(event) => updateBreak(entry.id, { startTime: event.target.value })}
-                    style={{ ...inputStyle, width: 145 }}
+                    onChange={(startTime) => updateBreak(entry.id, { startTime })}
+                    ariaLabel={`${entry.title || 'Break'} start time`}
                   />
                   <Text className="font-poppins text-xs text-ui-text-muted">to</Text>
-                  <input
-                    type="time"
-                    aria-label={`${entry.title || 'Break'} end time`}
+                  <TimePicker
                     value={entry.endTime}
-                    onChange={(event) => updateBreak(entry.id, { endTime: event.target.value })}
-                    style={{ ...inputStyle, width: 145 }}
+                    onChange={(endTime) => updateBreak(entry.id, { endTime })}
+                    ariaLabel={`${entry.title || 'Break'} end time`}
                   />
-                  {invalid && <Text className="font-poppins-bold text-[10px] text-red-600">End must be later</Text>}
+                  {error && <Text className="font-poppins-bold text-[10px] text-red-600">{error}</Text>}
                   <TouchableOpacity
                     onPress={() => removeBreak(entry.id)}
                     accessibilityLabel={`Remove ${entry.title || 'break'}`}
@@ -388,6 +519,15 @@ export default function BulkCreateSchedule() {
           </View>
         )}
       </View>
+
+      {selectedItems.length > 0 && preview.length === 0 && (
+        <View className="bg-white border border-amber-200 rounded-xl p-4 mb-4">
+          <Text className="font-poppins-bold text-sm text-ui-text">Schedule Preview</Text>
+          <Text className="font-poppins text-xs text-amber-700 mt-1">
+            {selectedItems.length} item{selectedItems.length === 1 ? '' : 's'} selected. Select a venue, date, and complete start time to show the generated schedule here.
+          </Text>
+        </View>
+      )}
 
       <View className="bg-white border border-ui-border rounded-xl overflow-hidden mb-4">
         <View className="p-3 border-b border-ui-border">
@@ -510,11 +650,82 @@ export default function BulkCreateSchedule() {
         </ScrollView>
       </View>
 
-      {(hasConflicts || hasDuplicates) && (
-        <View className={`mb-4 p-3 rounded-xl border flex-row items-start gap-x-2 ${hasDuplicates ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-          <AlertTriangle size={17} color={hasDuplicates ? '#DC2626' : '#B45309'} />
+      {selectedItems.length > 0 && preview.length > 0 && (
+        <View className="bg-white border border-ui-border rounded-xl overflow-hidden mb-4">
+          <View className="p-4 border-b border-ui-border flex-row items-center justify-between">
+            <View>
+              <Text className="font-poppins-bold text-sm text-ui-text">Schedule Preview</Text>
+              <Text className="font-poppins text-[11px] text-ui-text-muted mt-0.5">
+                Review the selected items and generated timings before creating schedules.
+              </Text>
+            </View>
+            <View className={`px-2.5 py-1 rounded-full border ${preview.length === selectedItems.length ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+              <Text className={`font-poppins-bold text-[10px] ${preview.length === selectedItems.length ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {preview.length}/{selectedItems.length} ready
+              </Text>
+            </View>
+          </View>
+
+          {preview.length === 0 ? (
+            <View className="px-4 py-5">
+              <Text className="font-poppins text-xs text-amber-700">
+                Select a venue, date, and complete start time to generate the preview.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator>
+              <View style={{ minWidth: 920 }}>
+                <View className="h-11 px-4 flex-row items-center bg-ui-muted border-b border-ui-border">
+                  <Text style={{ width: 110 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Code</Text>
+                  <Text style={{ flex: 1.8 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Item</Text>
+                  <Text style={{ width: 125 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Date</Text>
+                  <Text style={{ width: 180 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Scheduled Time</Text>
+                  <Text style={{ width: 100 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Duration</Text>
+                  <Text style={{ flex: 1.2 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Break Rule</Text>
+                  <Text style={{ width: 105 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Status</Text>
+                </View>
+                {preview.map((row) => (
+                  <View key={row.item.id} className="min-h-14 px-4 flex-row items-center border-b border-ui-border bg-white">
+                    <Text style={{ width: 110 }} className="font-poppins-bold text-xs text-ui-text">
+                      {row.item.item_code || '—'}
+                    </Text>
+                    <Text style={{ flex: 1.8 }} numberOfLines={1} className="font-poppins text-xs text-ui-text pr-3">
+                      {row.item.item_name_en || row.item.item_name_ml || 'Unnamed item'}
+                    </Text>
+                    <Text style={{ width: 125 }} className="font-poppins text-xs text-ui-text-muted">
+                      {row.start.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Text>
+                    <Text style={{ width: 180 }} className="font-poppins-bold text-xs text-teal-700">
+                      {row.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {' – '}
+                      {row.end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </Text>
+                    <Text style={{ width: 100 }} className="font-poppins text-xs text-ui-text-muted">
+                      {row.duration} min
+                    </Text>
+                    <Text style={{ flex: 1.2 }} numberOfLines={1} className="font-poppins text-xs text-amber-700">
+                      {row.shiftedBy.length ? `After ${row.shiftedBy.join(', ')}` : '—'}
+                    </Text>
+                    <View style={{ width: 105 }}>
+                      {row.conflict
+                        ? <StatusBadge label="Conflict" tone="red" />
+                        : <StatusBadge label="Ready" tone="green" />}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {(hasConflicts || hasDuplicates || hasInvalidBreaks || hasOverlappingBreaks) && (
+        <View className={`mb-4 p-3 rounded-xl border flex-row items-start gap-x-2 ${(hasDuplicates || hasInvalidBreaks || hasOverlappingBreaks) ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+          <AlertTriangle size={17} color={(hasDuplicates || hasInvalidBreaks || hasOverlappingBreaks) ? '#DC2626' : '#B45309'} />
           <Text className={`flex-1 font-poppins text-xs ${hasDuplicates ? 'text-red-700' : 'text-amber-700'}`}>
-            {hasDuplicates
+            {hasInvalidBreaks || hasOverlappingBreaks
+              ? 'Complete each break with hour, minute, and AM/PM. Breaks must be ordered without overlap.'
+              : hasDuplicates
               ? 'Already-scheduled items must be deselected. Time conflicts are warnings and can still be created.'
               : 'Warning: some slots overlap an existing schedule. You can still create them after confirmation.'}
           </Text>
@@ -535,7 +746,7 @@ export default function BulkCreateSchedule() {
           label={isSaving ? 'Creating...' : `Create ${selectedItems.length} Schedules`}
           icon={isSaving ? undefined : <WandSparkles size={15} color="#FFFFFF" />}
           onPress={handleCreateAll}
-          disabled={isSaving || selectedItems.length === 0 || !venueId || hasDuplicates || hasInvalidBreaks}
+          disabled={isSaving || selectedItems.length === 0 || !venueId || !to24Hour(startTime) || hasDuplicates || hasInvalidBreaks || hasOverlappingBreaks}
         />
       </View>
     </ScrollView>
@@ -562,6 +773,17 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   height: 44,
   padding: '0 12px',
+  borderRadius: 12,
+  border: '1px solid #D8E0EA',
+  background: '#FFFFFF',
+  color: '#0F172A',
+  fontFamily: 'Poppins_400Regular',
+  outline: 'none',
+};
+
+const timeSelectStyle: React.CSSProperties = {
+  height: 44,
+  padding: '0 8px',
   borderRadius: 12,
   border: '1px solid #D8E0EA',
   background: '#FFFFFF',

@@ -6,8 +6,8 @@ const throwIfError = (error: { message: string } | null) => {
 
 export const scheduleService = {
   // Venues
-  async listVenues<T>(tenantId: string): Promise<T[]> {
-    const { data, error } = await scheduleRepository.listVenues<T>(tenantId);
+  async listVenues<T>(tenantId: string, festivalId?: string): Promise<T[]> {
+    const { data, error } = await scheduleRepository.listVenues<T>(tenantId, festivalId);
     throwIfError(error);
     return data;
   },
@@ -32,8 +32,8 @@ export const scheduleService = {
   },
 
   // Schedules
-  async listSchedules<T>(tenantId: string): Promise<T[]> {
-    const { data, error } = await scheduleRepository.listSchedules<T>(tenantId);
+  async listSchedules<T>(tenantId: string, festivalId?: string): Promise<T[]> {
+    const { data, error } = await scheduleRepository.listSchedules<T>(tenantId, festivalId);
     throwIfError(error);
     return data;
   },
@@ -42,6 +42,17 @@ export const scheduleService = {
     const { data, error } = await scheduleRepository.createSchedule<T>({ ...payload, tenant_id: tenantId });
     throwIfError(error);
     if (!data) throw new Error('Schedule not returned after creation');
+    return data;
+  },
+
+  async createSchedules<T>(tenantId: string, festivalId: string, payloads: Record<string, unknown>[]): Promise<T[]> {
+    if (!payloads.length) return [];
+    const { data, error } = await scheduleRepository.createSchedules<T>(festivalId, payloads.map((payload) => ({
+      ...payload,
+      tenant_id: tenantId,
+      festival_id: festivalId,
+    })));
+    throwIfError(error);
     return data;
   },
 

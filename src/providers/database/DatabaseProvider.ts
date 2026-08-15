@@ -66,13 +66,14 @@ export interface DatabaseProvider {
   }>>;
   
   // Schedule & Venue Methods
-  listVenues<T>(tenantId: string): Promise<ListResult<T>>;
+  listVenues<T>(tenantId: string, festivalId?: string): Promise<ListResult<T>>;
   createVenue<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   updateVenue<T>(id: string, payload: Record<string, unknown>): Promise<QueryResult<T>>;
   deleteVenue(id: string): Promise<QueryResult<void>>;
   
-  listSchedules<T>(tenantId: string): Promise<ListResult<T>>;
+  listSchedules<T>(tenantId: string, festivalId?: string): Promise<ListResult<T>>;
   createSchedule<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
+  createSchedules<T>(festivalId: string, payloads: Record<string, unknown>[]): Promise<ListResult<T>>;
   updateSchedule<T>(id: string, payload: Record<string, unknown>): Promise<QueryResult<T>>;
   deleteSchedule(id: string): Promise<QueryResult<void>>;
 

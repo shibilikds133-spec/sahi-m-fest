@@ -2,20 +2,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduleService } from '../../services/scheduleService';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../config/supabase';
+import { useFestival } from './useFestival';
 
 export const useSchedule = () => {
   const { tenant_id } = useAuthStore();
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
   const queryClient = useQueryClient();
 
   // Venues
   const venuesQuery = useQuery({
-    queryKey: ['venues', tenant_id],
-    queryFn: () => scheduleService.listVenues<any>(tenant_id!),
+    queryKey: ['venues', tenant_id, activeFestival?.id],
+    queryFn: () => scheduleService.listVenues<any>(tenant_id!, activeFestival?.id),
     enabled: !!tenant_id,
   });
 
   const createVenueMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => scheduleService.createVenue<any>(tenant_id!, payload),
+    mutationFn: (payload: Record<string, unknown>) => scheduleService.createVenue<any>(tenant_id!, {
+      ...payload,
+      festival_id: payload.festival_id ?? activeFestival?.id ?? null,
+    }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['venues', tenant_id] }),
   });
 
@@ -31,13 +37,22 @@ export const useSchedule = () => {
 
   // Schedules
   const schedulesQuery = useQuery({
-    queryKey: ['schedules', tenant_id],
-    queryFn: () => scheduleService.listSchedules<any>(tenant_id!),
+    queryKey: ['schedules', tenant_id, activeFestival?.id],
+    queryFn: () => scheduleService.listSchedules<any>(tenant_id!, activeFestival?.id),
     enabled: !!tenant_id,
   });
 
   const createScheduleMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => scheduleService.createSchedule<any>(tenant_id!, payload),
+    mutationFn: (payload: Record<string, unknown>) => scheduleService.createSchedule<any>(tenant_id!, {
+      ...payload,
+      festival_id: payload.festival_id ?? activeFestival?.id ?? null,
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['schedules', tenant_id] }),
+  });
+
+  const createSchedulesMutation = useMutation({
+    mutationFn: ({ festivalId, payloads }: { festivalId: string; payloads: Record<string, unknown>[] }) =>
+      scheduleService.createSchedules<any>(tenant_id!, festivalId, payloads),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['schedules', tenant_id] }),
   });
 
@@ -65,6 +80,8 @@ export const useSchedule = () => {
     isLoadingSchedules: schedulesQuery.isLoading,
     createSchedule: createScheduleMutation.mutateAsync,
     isCreatingSchedule: createScheduleMutation.isPending,
+    createSchedules: createSchedulesMutation.mutateAsync,
+    isCreatingSchedules: createSchedulesMutation.isPending,
     updateSchedule: updateScheduleMutation.mutateAsync,
     isUpdatingSchedule: updateScheduleMutation.isPending,
     deleteSchedule: deleteScheduleMutation.mutateAsync,
@@ -108,4 +125,3 @@ export const usePublicRegistrations = (festivalId?: string | null) => {
     gcTime: 1800000, // 30 minutes
   });
 };
-
