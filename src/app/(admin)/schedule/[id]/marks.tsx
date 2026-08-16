@@ -38,8 +38,8 @@ export default function MarkEntryPage() {
   // the same item registrations; the old schedule RPC applied a stricter
   // organisation-tree filter and could hide participants that already had
   // code letters assigned.
-  const { useItemRegistrations } = useParticipants();
-  const { data: itemRegistrations, isLoading: loadingRegs } = useItemRegistrations(schedule?.item_id);
+  const { useScheduleRegistrations } = useParticipants();
+  const { data: itemRegistrations, isLoading: loadingRegs } = useScheduleRegistrations(scheduleId);
   const registrations = React.useMemo(
     () => (itemRegistrations || []).filter((registration: any) =>
       registration.status !== 'rejected' && registration.is_verified === true && !!registration.code_letter

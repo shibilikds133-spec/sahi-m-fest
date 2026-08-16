@@ -63,7 +63,10 @@ export default function CodeLetterGeneration() {
           scheduleId,
           itemId: schedule.item_id,
           festivalId: schedule.festival_id,
-          overwrite: hasExistingLetters,
+          // Preserve every already assigned letter when only restored/new
+          // participants need a letter. Overwrite is reserved for the
+          // explicit full re-draw confirmation below.
+          overwrite: allHaveLetters,
           secureStage: true,
         });
         const isSmart = result && (result as any).smartPriorityApplied;
@@ -103,7 +106,7 @@ export default function CodeLetterGeneration() {
       }
     } else if (hasExistingLetters) {
       // Partial assignment case
-      const msg = 'Some participants already have code letters. Draw again to normalize all approved participants as A, B, C...?';
+      const msg = 'Some participants already have code letters. Existing assignments will stay unchanged; only new verified participants will receive the next available letters. Continue?';
       if (Platform.OS === 'web') {
         if (window.confirm(msg)) {
           await action();
@@ -114,7 +117,7 @@ export default function CodeLetterGeneration() {
           msg,
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Normalize & Draw', style: 'default', onPress: action }
+            { text: 'Assign New Letters', style: 'default', onPress: action }
           ]
         );
       }
