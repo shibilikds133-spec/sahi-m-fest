@@ -141,11 +141,10 @@ export const participantService = {
     // reads are tenant-local and can omit registrations belonging to visible
     // child organisations shown on the schedule/check-in page.
     const allRegistrations = await this.getRegistrationsBySchedule<any>(scheduleId);
-    // The stage RPC intentionally requires both approval and verification.
-    // Keep generation aligned with that contract so pending registrations are
-    // not presented as eligible and then rejected by the backend.
+    // Verification is the operational gate for code letters. Registration
+    // approval is not a separate prerequisite in this flow.
     const registrations = (allRegistrations || []).filter(
-      (r: any) => r.status === 'approved' && r.is_verified === true
+      (r: any) => r.status !== 'rejected' && r.is_verified === true
     );
     if (!registrations || registrations.length === 0) {
       throw new Error('No verified and active participants registered for this event yet.');

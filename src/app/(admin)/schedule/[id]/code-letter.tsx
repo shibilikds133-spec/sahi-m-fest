@@ -22,7 +22,7 @@ export default function CodeLetterGeneration() {
 
   const activeRegistrations = React.useMemo(() => {
     return (registrations || [])
-      .filter((r: any) => r.status === 'approved' && r.is_verified === true)
+      .filter((r: any) => r.status !== 'rejected' && r.is_verified === true)
       .sort((a: any, b: any) => {
         if (a.code_letter && b.code_letter) return a.code_letter.localeCompare(b.code_letter);
         if (a.code_letter) return -1;
@@ -30,11 +30,6 @@ export default function CodeLetterGeneration() {
         return (a.participants?.chest_number || '').localeCompare(b.participants?.chest_number || '');
       });
   }, [registrations]);
-
-  const pendingVerifiedCount = React.useMemo(
-    () => (registrations || []).filter((r: any) => r.status !== 'approved' && r.status !== 'rejected' && r.is_verified === true).length,
-    [registrations],
-  );
 
   const participantIds = React.useMemo(() => activeRegistrations.map((r:any) => r.participant_id), [activeRegistrations]);
   const { data: conflictsMap } = useParticipantConflicts(participantIds, scheduleId);
@@ -195,14 +190,6 @@ export default function CodeLetterGeneration() {
             />
           )}
         </View>
-
-        {pendingVerifiedCount > 0 && (
-          <View className="bg-amber-50 border-b border-amber-200 px-3 py-2">
-            <Text className="font-poppins text-xs text-amber-800">
-              {pendingVerifiedCount} verified participant{pendingVerifiedCount === 1 ? '' : 's'} still need admin approval before receiving a code letter.
-            </Text>
-          </View>
-        )}
 
         {activeRegistrations.length === 0 ? (
           <Text className="font-poppins text-ssf-text-muted">No active participants registered for this item yet.</Text>
