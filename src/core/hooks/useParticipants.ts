@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { participantService, ParticipantStatus } from '../../services/participantService';
+import { stageManagementService } from '../../services/stageManagementService';
 import { useAuthStore } from '../store/authStore';
 
 export const usePublicCandidateProfile = (slug?: string | null) =>
@@ -39,6 +40,33 @@ export const useParticipants = (participantId?: string) => {
     });
   };
 
+  // Operational screens must resolve registration scope from the selected
+  // schedule. Item-only reads remain available for participant management,
+  // but are not used by check-in, code letters, marks, or results.
+  const useScheduleRegistrations = (scheduleId: string | undefined) => useQuery({
+    queryKey: ['scheduleRegistrations', scheduleId],
+    queryFn: async () => {
+      const rows = await stageManagementService.getRegistrations({ scheduleId: scheduleId! });
+      return rows.map((row: any) => ({
+        ...row,
+        participants: {
+          id: row.participant_id,
+          name: row.participant_name,
+          chest_number: row.participant_chest_number,
+          category_code: row.participant_category_code,
+          organisations: row.organisation_id
+            ? {
+                id: row.organisation_id,
+                name: row.organisation_name,
+                org_type: row.organisation_type,
+              }
+            : null,
+        },
+      }));
+    },
+    enabled: !!scheduleId,
+  });
+
   const useFestivalRegistrations = (festivalId: string | undefined) => {
     return useQuery({
       queryKey: ['festivalRegistrations', festivalId],
@@ -68,6 +96,7 @@ export const useParticipants = (participantId?: string) => {
     onSuccess: (data, variables) => {
       const tenantId = useAuthStore.getState().tenant_id;
       queryClient.invalidateQueries({ queryKey: ['itemRegistrations', variables.itemId, tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations', variables.scheduleId] });
     },
   });
 
@@ -84,6 +113,7 @@ export const useParticipants = (participantId?: string) => {
     onSuccess: (data, variables) => {
       const tenantId = useAuthStore.getState().tenant_id;
       queryClient.invalidateQueries({ queryKey: ['itemRegistrations', variables.itemId, tenantId] });
+      if (variables.scheduleId) queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations', variables.scheduleId] });
     },
   });
 
@@ -239,6 +269,7 @@ export const useParticipants = (participantId?: string) => {
     isDeletingRegistration: deleteRegistrationMutation.isPending,
 
     useItemRegistrations,
+    useScheduleRegistrations,
     useFestivalRegistrations,
     useParticipantConflicts,
     generateCodeLetters: generateCodeLettersMutation.mutateAsync,
