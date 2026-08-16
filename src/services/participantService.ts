@@ -1,6 +1,7 @@
 import { participantRepository } from '../lib/repositories/participantRepository';
 import { ruleEngine } from '../core/rules/ruleEngine';
 import { uploadService } from './storage/uploadService';
+import { stageManagementService } from './stageManagementService';
 import { getCollegeFestChestPrefix, isCollegeFestCategory } from '../core/festival/templatePolicy';
 
 export type ParticipantStatus = 'pending' | 'approved' | 'rejected';
@@ -100,9 +101,26 @@ export const participantService = {
   },
 
   async getRegistrationsBySchedule<T>(scheduleId: string): Promise<T[]> {
-    const { data, error } = await participantRepository.getAdminRegistrationsBySchedule<T>(scheduleId);
-    throwIfError(error);
-    return data;
+    // Code-letter generation must use the same tenant/festival/schedule-scoped
+    // read path as check-in. Do not depend on a repository helper that may be
+    // absent from an older production bundle.
+    const rows = await stageManagementService.getRegistrations({ scheduleId });
+    return rows.map((row: any) => ({
+      ...row,
+      participants: {
+        id: row.participant_id,
+        name: row.participant_name,
+        chest_number: row.participant_chest_number,
+        category_code: row.participant_category_code,
+        organisations: row.organisation_id
+          ? {
+              id: row.organisation_id,
+              name: row.organisation_name,
+              org_type: row.organisation_type,
+            }
+          : null,
+      },
+    })) as T[];
   },
 
   async listRegistrationsByFestival<T>(festivalId: string): Promise<T[]> {
