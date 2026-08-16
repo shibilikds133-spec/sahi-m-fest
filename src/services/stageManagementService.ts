@@ -36,6 +36,7 @@ export type StageVenueRow = {
 
 export type StageRegistrationRow = {
   id: string;
+  schedule_id?: string | null;
   item_id: string;
   participant_id: string;
   organisation_id: string | null;
@@ -54,10 +55,44 @@ const throwIfError = (error: { message: string } | null) => {
 };
 
 export const stageManagementService = {
-  async getContext(): Promise<StageManagementContext | null> {
+  async getContext(tenantId?: string | null): Promise<StageManagementContext | null> {
     const { data, error } = await supabase.rpc('get_stage_management_context');
-    throwIfError(error);
-    return ((data as StageManagementContext[] | null) ?? [])[0] ?? null;
+    const rpcError = error as any;
+    const rpcUnavailable = rpcError && ['42883', 'PGRST202'].includes(rpcError.code);
+
+    if (error && !rpcUnavailable) {
+      throwIfError(error);
+    }
+
+    const rpcContext = ((data as StageManagementContext[] | null) ?? [])[0] ?? null;
+    if (rpcContext && (!tenantId || rpcContext.tenant_id === tenantId)) {
+      return rpcContext;
+    }
+
+    // Older deployments may still expose an unscoped context RPC. Never use
+    // that result for another tenant; resolve the active festival locally.
+    if (!tenantId) return rpcContext;
+
+    const { data: festival, error: festivalError } = await supabase
+      .from('festival_calendar')
+      .select('id, tenant_id, custom_name, level')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .order('festival_year', { ascending: false })
+      .order('start_date', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    throwIfError(festivalError);
+    if (!festival) return null;
+
+    return {
+      tenant_id: festival.tenant_id,
+      festival_id: festival.id,
+      festival_name: festival.custom_name?.trim()
+        || String(festival.level || 'festival').replace(/^./, (letter) => letter.toUpperCase()) + ' Festival',
+      festival_level: festival.level,
+    };
   },
 
   async getSchedules(festivalId: string): Promise<StageScheduleRow[]> {
@@ -77,11 +112,34 @@ export const stageManagementService = {
   },
 
   async getRegistrations(options: { scheduleId?: string; festivalId?: string }): Promise<StageRegistrationRow[]> {
-    const { data, error } = await supabase.rpc('get_stage_management_registrations', {
+    let { data, error } = await supabase.rpc('get_stage_management_registrations_scoped', {
       p_schedule_id: options.scheduleId ?? null,
       p_festival_id: options.festivalId ?? null,
     });
+    const rpcMissingFromSchemaCache = error
+      && ['42883', 'PGRST202'].includes((error as any).code);
+    if (rpcMissingFromSchemaCache) {
+      ({ data, error } = await supabase.rpc('get_stage_management_registrations', {
+        p_schedule_id: options.scheduleId ?? null,
+        p_festival_id: options.festivalId ?? null,
+      }));
+    }
     throwIfError(error);
+
+    // Keep production check-in compatible with deployments whose scoped RPC
+    // was refreshed before the latest schema-cache notification. The legacy
+    // RPC is also tenant/festival scoped on the database and is only used
+    // when the scoped call succeeds but returns no rows.
+    if (!error && (!data || data.length === 0) && options.scheduleId) {
+      const fallback = await supabase.rpc('get_stage_management_registrations', {
+        p_schedule_id: options.scheduleId,
+        p_festival_id: options.festivalId ?? null,
+      });
+      if (!fallback.error && fallback.data && fallback.data.length > 0) {
+        return fallback.data as StageRegistrationRow[];
+      }
+    }
+
     return (data as StageRegistrationRow[] | null) ?? [];
   },
 
