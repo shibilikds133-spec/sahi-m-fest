@@ -234,7 +234,7 @@ export default function ScheduleDashboard() {
       if (!festival?.id) return [];
       const { data, error } = await supabase
         .from('results')
-        .select('item_id, published, result_status')
+        .select('schedule_id, tenant_id, festival_id, item_id, published, result_status')
         .eq('festival_id', festival.id);
       if (error) throw error;
       return data ?? [];
@@ -290,7 +290,7 @@ export default function ScheduleDashboard() {
       // 5. Status/Workflow Filter
       let matchesStatus = true;
       if (selectedStatus !== 'All') {
-        const scheduleRegs = allRegistrations.filter((r: any) => r.item_id === schedule.item_id && r.status !== 'rejected');
+         const scheduleRegs = allRegistrations.filter((r: any) => r.schedule_id === schedule.id && r.status !== 'rejected');
         const verifiedRegs = scheduleRegs.filter((r: any) => r.is_verified);
         
         const checkinDone = scheduleRegs.length > 0 && scheduleRegs.every((r: any) => r.is_verified);
@@ -300,7 +300,7 @@ export default function ScheduleDashboard() {
         const codesPending = verifiedRegs.length > 0 && verifiedRegs.some((r: any) => r.code_letter === null || r.code_letter === undefined);
         
         const isPublished = allResults.some((res: any) => 
-          res.item_id === schedule.item_id && 
+          res.schedule_id === schedule.id &&
           (res.published === true || res.result_status === 'published')
         );
         
@@ -889,7 +889,7 @@ export default function ScheduleDashboard() {
                 <View style={{ flex: 1.4 }} className="pr-3">
                   <ScheduleWorkflowBadges
                     scheduleId={schedule.id}
-                    registrations={allRegistrations.filter((r: any) => r.item_id === schedule.item_id)}
+                    registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
                     isShuffleLocked={schedule.is_shuffle_locked}
                     expectedJudgeCount={schedule.expected_judge_count || 3}
                     marksCompleted={allJudgeWorkflowStatuses.find((status: any) => status.schedule_id === schedule.id)?.marks_completed === true}
@@ -1042,7 +1042,7 @@ export default function ScheduleDashboard() {
 
               <ScheduleWorkflowBadges 
                 scheduleId={schedule.id} 
-                registrations={allRegistrations.filter((r: any) => r.item_id === schedule.item_id)} 
+                registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
                 isShuffleLocked={schedule.is_shuffle_locked}
                 expectedJudgeCount={schedule.expected_judge_count || 3}
                 compact

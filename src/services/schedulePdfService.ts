@@ -7,6 +7,8 @@ const MUTED = '#64748B';
 
 type ScheduleRow = {
   id: string;
+  tenant_id?: string | null;
+  festival_id?: string | null;
   item_id: string;
   start_time?: string | null;
   end_time?: string | null;
@@ -22,6 +24,10 @@ type ScheduleRow = {
 };
 
 type RegistrationRow = {
+  id?: string | null;
+  tenant_id?: string | null;
+  festival_id?: string | null;
+  schedule_id?: string | null;
   item_id?: string | null;
   participant_id?: string | null;
   status?: string | null;
@@ -93,7 +99,10 @@ const registrationsForSchedule = (
   registrations: RegistrationRow[],
   participantMap: Map<string, ParticipantRow>,
 ) => registrations
-  .filter((registration) => registration.item_id === schedule.item_id && registration.status !== 'rejected')
+  .filter((registration) => {
+    if (registration.status === 'rejected') return false;
+    return registration.schedule_id === schedule.id;
+  })
   .map((registration) => registration.participant_id ? participantMap.get(registration.participant_id) : null)
   .filter(Boolean) as ParticipantRow[];
 
@@ -295,14 +304,17 @@ export async function downloadAdminSchedulePdf(input: AdminSchedulePdfInput) {
     writeHeader(doc, title, subtitle);
     const body = rows.map((schedule) => {
       const participants = registrationsForSchedule(schedule, registrations, participantMap);
-      const verified = registrations.filter((registration) => registration.item_id === schedule.item_id && registration.status !== 'rejected' && registration.is_verified).length;
+      const scopedRegistrations = registrations.filter((registration) => {
+        return registration.schedule_id === schedule.id;
+      });
+      const verified = scopedRegistrations.filter((registration) => registration.status !== 'rejected' && registration.is_verified).length;
       return [
         formatDate(schedule.start_time),
         `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`,
         itemLabel(schedule),
         categoryLabel(schedule),
         schedule.venues?.name || '-',
-        String(participants.length || registrations.filter((registration) => registration.item_id === schedule.item_id && registration.status !== 'rejected').length),
+        String(participants.length || scopedRegistrations.filter((registration) => registration.status !== 'rejected').length),
         `${verified}/${participants.length || '-'}`,
         schedule.status || 'scheduled',
       ];

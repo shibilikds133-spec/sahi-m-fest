@@ -155,7 +155,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
       // 4. Status/Workflow Filter
       let matchesStatus = true;
       if (selectedStatus !== 'All') {
-        const scheduleRegs = allRegistrations.filter((r: any) => r.item_id === schedule.item_id && r.status !== 'rejected');
+        const scheduleRegs = allRegistrations.filter((r: any) => r.schedule_id === schedule.id && r.status !== 'rejected');
         const verifiedRegs = scheduleRegs.filter((r: any) => r.is_verified);
         
         const checkinDone = scheduleRegs.length > 0 && scheduleRegs.every((r: any) => r.is_verified);
@@ -212,6 +212,39 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
     return (
       <View className="flex-1 bg-ssf-bg p-5">
         <SsfTableSkeleton rows={8} columns={5} />
+      </View>
+    );
+  }
+
+  const stageError = stage.contextQuery.error || stage.schedulesQuery.error || stage.venuesQuery.error || stage.registrationsQuery.error;
+  if (stageError) {
+    return (
+      <View className="flex-1 bg-ssf-bg justify-center items-center px-4">
+        <SsfCard className="w-full max-w-lg p-6 items-center">
+          <Text className="font-poppins-bold text-lg text-ui-text text-center mb-2">Unable to load Stage Management</Text>
+          <Text className="font-poppins text-sm text-ui-text-muted text-center mb-5">{(stageError as any)?.message || 'Please retry the tenant-scoped stage data request.'}</Text>
+          <SsfButton label="Retry" onPress={onRefresh} icon={<RefreshCw size={15} color="#FFFFFF" />} />
+        </SsfCard>
+      </View>
+    );
+  }
+
+  if (!stage.context) {
+    return (
+      <View className="flex-1 bg-ssf-bg justify-center items-center px-4">
+        <SsfCard className="w-full max-w-lg p-6 items-center">
+          <Calendar size={42} color="#94A3B8" />
+          <Text className="font-poppins-bold text-lg text-ui-text text-center mt-3 mb-2">
+            No active festival for this tenant
+          </Text>
+          <Text className="font-poppins text-sm text-ui-text-muted text-center mb-5">
+            Create or activate this tenant&apos;s festival calendar before setting up venues and stages.
+          </Text>
+          <SsfButton
+            label="Open Festival Calendar"
+            onPress={() => router.push('/(admin)/settings/calendar' as any)}
+          />
+        </SsfCard>
       </View>
     );
   }
@@ -681,7 +714,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
                 </View>
               </View>
               <View style={{ flex: 1.3 }} className="pr-3">
-                <ScheduleWorkflowBadges registrations={allRegistrations.filter((r: any) => r.item_id === schedule.item_id)} />
+                <ScheduleWorkflowBadges registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)} />
               </View>
               <View style={{ width: 190 }} className="flex-row justify-end gap-x-2">
                 <TouchableOpacity
@@ -752,7 +785,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
               </View>
 
               <ScheduleWorkflowBadges 
-                registrations={allRegistrations.filter((r: any) => r.item_id === schedule.item_id)} 
+                registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
               />
 
               {/* Action buttons — 2×2 grid on mobile */}
