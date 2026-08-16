@@ -210,6 +210,23 @@ export default function BulkCreateSchedule() {
     return ['All', ...Array.from(values).sort()];
   }, [items]);
 
+  // Stages are stored as tenant/festival-scoped venues. Prefer venues marked
+  // as `stage`, while retaining legacy hall/open venues when classification is
+  // not yet populated for a festival.
+  const stageOptions = React.useMemo(() => {
+    const stageVenues = venues.filter((venue: any) =>
+      String(venue.venue_type || '').toLowerCase() === 'stage',
+    );
+    const selectableVenues = stageVenues.length > 0 ? stageVenues : venues;
+    return selectableVenues
+      .slice()
+      .sort((a: any, b: any) => String(a.name || '').localeCompare(String(b.name || '')))
+      .map((venue: any) => ({
+        label: `${venue.name || 'Unnamed stage'}${venue.location ? ` — ${venue.location}` : ''}`,
+        value: venue.id,
+      }));
+  }, [venues]);
+
   const visibleItems = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     return items
@@ -337,7 +354,7 @@ export default function BulkCreateSchedule() {
 
   const handleCreateAll = async () => {
     if (!festival?.id || !venueId || !date || !to24Hour(startTime) || preview.length === 0) {
-      showMessage('Missing details', 'Select items, venue, date, and a complete start time (hour, minute, and AM/PM).');
+      showMessage('Missing details', 'Select items, stage, date, and a complete start time (hour, minute, and AM/PM).');
       return;
     }
     if (hasInvalidBreaks || hasOverlappingBreaks) {
@@ -420,16 +437,16 @@ export default function BulkCreateSchedule() {
       <View className="bg-white border border-ui-border rounded-xl p-4 mb-4">
         <View className="flex-row flex-wrap gap-3">
           <View className="min-w-[210px] flex-1">
-            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Venue</Text>
+            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Stage</Text>
             <SsfSelectMenu
               value={venueId}
               onValueChange={setVenueId}
-              accessibilityLabel="Select bulk schedule venue"
+              accessibilityLabel="Select bulk schedule stage"
               searchable
-              searchPlaceholder="Search venue..."
+              searchPlaceholder="Search stage..."
               options={[
-                { label: 'Choose venue', value: '' },
-                ...venues.map((venue: any) => ({ label: venue.name, value: venue.id })),
+                { label: 'Choose stage', value: '' },
+                ...stageOptions,
               ]}
             />
           </View>
@@ -524,7 +541,7 @@ export default function BulkCreateSchedule() {
         <View className="bg-white border border-amber-200 rounded-xl p-4 mb-4">
           <Text className="font-poppins-bold text-sm text-ui-text">Schedule Preview</Text>
           <Text className="font-poppins text-xs text-amber-700 mt-1">
-            {selectedItems.length} item{selectedItems.length === 1 ? '' : 's'} selected. Select a venue, date, and complete start time to show the generated schedule here.
+            {selectedItems.length} item{selectedItems.length === 1 ? '' : 's'} selected. Select a stage, date, and complete start time to show the generated schedule here.
           </Text>
         </View>
       )}
@@ -669,7 +686,7 @@ export default function BulkCreateSchedule() {
           {preview.length === 0 ? (
             <View className="px-4 py-5">
               <Text className="font-poppins text-xs text-amber-700">
-                Select a venue, date, and complete start time to generate the preview.
+                Select a stage, date, and complete start time to generate the preview.
               </Text>
             </View>
           ) : (
@@ -738,7 +755,7 @@ export default function BulkCreateSchedule() {
           <View className="flex-row items-center gap-x-1 mt-1">
             <Clock3 size={13} color="#64748B" />
             <Text className="font-poppins text-xs text-ui-text-muted">
-              {preview.length ? `${preview[0].start.toLocaleString()} → ${preview[preview.length - 1].end.toLocaleString()}` : 'Configure venue and time to preview.'}
+              {preview.length ? `${preview[0].start.toLocaleString()} → ${preview[preview.length - 1].end.toLocaleString()}` : 'Configure stage and time to preview.'}
             </Text>
           </View>
         </View>
