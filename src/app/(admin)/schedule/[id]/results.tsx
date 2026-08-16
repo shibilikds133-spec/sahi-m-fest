@@ -56,8 +56,8 @@ export default function ResultsPage() {
 
   const { updateSchedule } = useSchedule();
 
-  const { useItemRegistrations } = useParticipants();
-  const { data: itemRegistrations, isLoading } = useItemRegistrations(schedule?.item_id);
+  const { useScheduleRegistrations } = useParticipants();
+  const { data: itemRegistrations, isLoading } = useScheduleRegistrations(scheduleId);
   const registrations = React.useMemo(
     () => (itemRegistrations || []).filter((registration: any) =>
       registration.status !== 'rejected' && registration.is_verified === true && !!registration.code_letter
@@ -343,6 +343,7 @@ export default function ResultsPage() {
           tenant_id: schedule?.tenant_id,
           festival_id: resolvedFestivalId,   // always populated via fallback
           item_id: schedule?.item_id,
+          schedule_id: scheduleId,
           registration_id: r.registration_id,
           total_score: avgMark,
           rank: rankNum,
