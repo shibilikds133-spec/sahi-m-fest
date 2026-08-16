@@ -13,8 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
-import { useParticipants } from '../../../../core/hooks/useParticipants';
-import { participantRepository } from '../../../../lib/repositories/participantRepository';
+import { useStageManagement } from '../../../../core/hooks/useStageManagement';
+import { stageManagementService } from '../../../../services/stageManagementService';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -35,12 +35,11 @@ export default function CheckIn() {
   const { schedules, isLoadingSchedules } = useSchedule();
   const schedule = schedules.find((s: any) => s.id === scheduleId);
 
-  const { useItemRegistrations } = useParticipants();
+  const { registrations, registrationsQuery } = useStageManagement({ scheduleId });
   const {
-    data: registrations,
     isLoading: isLoadingRegs,
     refetch,
-  } = useItemRegistrations(schedule?.item_id);
+  } = registrationsQuery;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -154,8 +153,7 @@ export default function CheckIn() {
   const handleVerify = async (regId: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await participantRepository.updateRegistration(regId, { is_verified: true });
-      if (error) throw error;
+      await stageManagementService.updateRegistration(scheduleId!, regId, 'verify');
       setVerifyModal({ reg: null, visible: false });
       refetch();
     } catch (error: any) {
@@ -168,8 +166,7 @@ export default function CheckIn() {
   const handleUnverify = async (regId: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await participantRepository.updateRegistration(regId, { is_verified: false });
-      if (error) throw error;
+      await stageManagementService.updateRegistration(scheduleId!, regId, 'unverify');
       refetch();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to unverify participant');
@@ -181,8 +178,7 @@ export default function CheckIn() {
   const handleReject = async (regId: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await participantRepository.updateRegistration(regId, { status: 'rejected', is_verified: false, code_letter: null });
-      if (error) throw error;
+      await stageManagementService.updateRegistration(scheduleId!, regId, 'reject');
       setVerifyModal({ reg: null, visible: false });
       refetch();
     } catch (error: any) {
@@ -196,8 +192,7 @@ export default function CheckIn() {
   const handleRestore = async (regId: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await participantRepository.updateRegistration(regId, { status: 'approved', is_verified: false });
-      if (error) throw error;
+      await stageManagementService.updateRegistration(scheduleId!, regId, 'restore');
       refetch();
     } catch (error: any) {
       if (Platform.OS === 'web') window.alert('Error: ' + error.message);
@@ -217,7 +212,7 @@ export default function CheckIn() {
       try {
         await Promise.all(
           unverifiedRegs.map((r: any) =>
-            participantRepository.updateRegistration(r.id, { status: 'rejected', is_verified: false, code_letter: null })
+            stageManagementService.updateRegistration(scheduleId!, r.id, 'reject')
           )
         );
         refetch();
