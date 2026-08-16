@@ -203,6 +203,37 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async getAdminRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>> {
+    const scoped = await supabase.rpc('get_stage_management_registrations_scoped', {
+      p_schedule_id: scheduleId,
+      p_festival_id: null,
+    });
+
+    if (!scoped.error && scoped.data && scoped.data.length > 0) {
+      const normalized = (scoped.data as any[]).map((row) => ({
+        ...row,
+        participants: {
+          id: row.participant_id,
+          name: row.participant_name,
+          chest_number: row.participant_chest_number,
+          category_code: row.participant_category_code,
+          organisations: row.organisation_id
+            ? {
+                id: row.organisation_id,
+                name: row.organisation_name,
+                org_type: row.organisation_type,
+              }
+            : null,
+        },
+      }));
+      return { data: normalized as T[], error: null };
+    }
+
+    const scopedRpcUnavailable = scoped.error
+      && ['42883', 'PGRST202'].includes((scoped.error as any).code);
+    if (scoped.error && !scopedRpcUnavailable) {
+      return { data: [], error: normalizeError(scoped.error) };
+    }
+
     const { data, error } = await supabase.rpc('get_schedule_registrations', {
       p_schedule_id: scheduleId,
     });
