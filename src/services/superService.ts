@@ -50,4 +50,10 @@ export const superService = {
     const { error } = await superRepository.enableTenantAccess(orgId, reason);
     throwIfError(error);
   },
+
+  async getTenantLeaderboardAgentPrompt<T>(tenantId: string) {
+    const { data, error } = await superRepository.getTenantLeaderboardAgentPrompt<T>(tenantId);
+    throwIfError(error);
+    return data;
+  },
 };

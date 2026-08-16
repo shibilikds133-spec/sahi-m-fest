@@ -26,7 +26,9 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .from('points_config')
       .select('*')
       .eq('festival_id', festivalId)
-      .single();
+      .order('config_version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     return { data: (data as T) ?? null, error: normalizeError(error) };
   }
@@ -34,7 +36,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async upsertPointsConfig<T>(payload: Record<string, unknown>): Promise<QueryResult<T>> {
     const { data, error } = await supabase
       .from('points_config')
-      .upsert(payload)
+      .upsert(payload, { onConflict: 'tenant_id,festival_id' })
       .select()
       .single();
 
@@ -200,10 +202,32 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
+  async getAdminRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>> {
+    const { data, error } = await supabase.rpc('get_schedule_registrations', {
+      p_schedule_id: scheduleId,
+    });
+    if (error && (error as any).code === '42883') {
+      const { data: schedule, error: scheduleError } = await supabase
+        .from('schedules')
+        .select('tenant_id, festival_id, item_id')
+        .eq('id', scheduleId)
+        .single();
+      if (scheduleError || !schedule) return { data: [], error: normalizeError(scheduleError ?? error) };
+      const legacy = await supabase
+        .from('registrations')
+        .select('*, participants(*, organisations(id, name, org_type))')
+        .eq('tenant_id', schedule.tenant_id)
+        .eq('festival_id', schedule.festival_id)
+        .eq('item_id', schedule.item_id);
+      return { data: (legacy.data as T[]) ?? [], error: normalizeError(legacy.error) };
+    }
+    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+  }
+
   async listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>> {
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, item_id, participant_id, organisation_id, status, is_verified, code_letter')
+      .select('id, item_id, participant_id, organisation_id, tenant_id, festival_id, status, is_verified, code_letter')
       .eq('festival_id', festivalId);
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
@@ -558,11 +582,19 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async deleteVenue(id: string): Promise<QueryResult<void>> {
-    const { error } = await supabase
-      .from('venues')
-      .delete()
-      .eq('id', id);
-    return { data: null, error: normalizeError(error) };
+    const { data, error } = await supabase.rpc('safe_delete_venue', {
+      p_venue_id: id,
+      p_reason: 'Deleted from Schedule Management',
+    });
+    if (error && error.code !== '42883') return { data: null, error: normalizeError(error) };
+    if (!error && data?.status === 'blocked') {
+      return { data: null, error: normalizeError({ code: '409', message: data.message || 'Venue has dependent schedules.' }) };
+    }
+    if (!error) return { data: null, error: null };
+
+    // Compatibility fallback for local databases before the hardening migration.
+    const { error: legacyError } = await supabase.from('venues').delete().eq('id', id);
+    return { data: null, error: normalizeError(legacyError) };
   }
 
   async listSchedules<T>(tenantId: string, festivalId?: string): Promise<ListResult<T>> {
@@ -631,11 +663,19 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async deleteSchedule(id: string): Promise<QueryResult<void>> {
-    const { error } = await supabase
-      .from('schedules')
-      .delete()
-      .eq('id', id);
-    return { data: null, error: normalizeError(error) };
+    const { data, error } = await supabase.rpc('safe_delete_schedule', {
+      p_schedule_id: id,
+      p_reason: 'Deleted from Schedule Management',
+    });
+    if (error && error.code !== '42883') return { data: null, error: normalizeError(error) };
+    if (!error && data?.status === 'blocked') {
+      return { data: null, error: normalizeError({ code: '409', message: data.message || 'Schedule has dependent operational data.' }) };
+    }
+    if (!error) return { data: null, error: null };
+
+    // Compatibility fallback for local databases before the hardening migration.
+    const { error: legacyError } = await supabase.from('schedules').delete().eq('id', id);
+    return { data: null, error: normalizeError(legacyError) };
   }
 
   // --- Code Letter Management ---
@@ -888,6 +928,13 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       return { data: undefined, error: normalizeError(error || new Error(data?.error || 'Failed to enable tenant access')) };
     }
     return { data: undefined, error: null };
+  }
+
+  async getTenantLeaderboardAgentPrompt<T>(tenantId: string): Promise<QueryResult<T>> {
+    const { data, error } = await supabase.rpc('get_tenant_leaderboard_agent_prompt', {
+      p_tenant_id: tenantId,
+    });
+    return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
   // ─── Judge Methods ───────────────────────────────────────────────────────────
@@ -1156,7 +1203,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async listResults<T>(scheduleId: string): Promise<ListResult<T>> {
     const { data: scheduleData, error: scheduleError } = await supabase
       .from('schedules')
-      .select('item_id')
+      .select('tenant_id, festival_id, item_id')
       .eq('id', scheduleId)
       .single();
 
@@ -1164,11 +1211,21 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       return { data: [], error: normalizeError(scheduleError) };
     }
 
-    const { data, error } = await supabase
+    const scoped = await supabase
       .from('results')
       .select('*')
+      .eq('schedule_id', scheduleId);
+    if (!scoped.error) return { data: (scoped.data as T[]) ?? [], error: null };
+
+    // Compatibility with databases before migration 143. This fallback is
+    // intentionally tenant + festival + item scoped, never item-only.
+    const legacy = await supabase
+      .from('results')
+      .select('*')
+      .eq('tenant_id', scheduleData.tenant_id)
+      .eq('festival_id', scheduleData.festival_id)
       .eq('item_id', scheduleData.item_id);
-    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+    return { data: (legacy.data as T[]) ?? [], error: normalizeError(legacy.error) };
   }
 
   async publishResults(payloads: Record<string, unknown>[]): Promise<QueryResult<void>> {
@@ -1178,9 +1235,17 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     // This prevents accidental duplicate rows while correctly handling:
     // - Multiple participants in the same group item (each has their own registration_id)
     // - Re-publishing an item (updates the existing row instead of creating a duplicate)
-    const { error } = await supabase
+    let { error } = await supabase
       .from('results')
       .upsert(payloads, { onConflict: 'registration_id,item_id' });
+    // Keep older local environments usable until migration 143 is applied;
+    // production/new databases retain schedule_id for exact scope.
+    if (error && (error as any).code === '42703') {
+      const legacyPayloads = payloads.map(({ schedule_id: _scheduleId, ...payload }) => payload);
+      ({ error } = await supabase
+        .from('results')
+        .upsert(legacyPayloads, { onConflict: 'registration_id,item_id' }));
+    }
       
     return { data: undefined, error: normalizeError(error) };
   }
@@ -1189,10 +1254,20 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     tenantId?: string | null,
     festivalId?: string | null,
   ): Promise<ListResult<T>> {
-    const { data, error } = await supabase.rpc('get_public_leaderboard', {
+    let { data, error } = await supabase.rpc('get_public_leaderboard_scoped', {
       p_tenant_id: tenantId ?? null,
       p_festival_id: festivalId ?? null,
     });
+
+    // Keep older environments usable until migration 146 is applied. The
+    // fallback still receives both scope identifiers; it never auto-detects a
+    // global festival from this tenant-scoped call site.
+    if (error && ['PGRST202', '42883'].includes((error as any).code)) {
+      ({ data, error } = await supabase.rpc('get_public_leaderboard', {
+        p_tenant_id: tenantId ?? null,
+        p_festival_id: festivalId ?? null,
+      }));
+    }
 
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
@@ -1214,11 +1289,19 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     festivalId?: string | null,
     includeParticipantDetails = true,
   ): Promise<ListResult<T>> {
-    const { data, error } = await supabase.rpc('get_public_published_results', {
+    let { data, error } = await supabase.rpc('get_public_published_results_scoped', {
       p_tenant_id: tenantId ?? null,
       p_festival_id: festivalId ?? null,
       p_include_participant_details: includeParticipantDetails,
     });
+
+    if (error && ['PGRST202', '42883'].includes((error as any).code)) {
+      ({ data, error } = await supabase.rpc('get_public_published_results', {
+        p_tenant_id: tenantId ?? null,
+        p_festival_id: festivalId ?? null,
+        p_include_participant_details: includeParticipantDetails,
+      }));
+    }
 
     if (error || !data) {
       return { data: [], error: normalizeError(error) };

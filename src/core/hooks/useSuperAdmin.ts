@@ -57,6 +57,12 @@ export function useSuperAdmin() {
     },
   });
 
+  const useTenantLeaderboardAgentPrompt = <T>(tenantId?: string | null) => useQuery({
+    queryKey: ['superadmin', 'tenant-agent-prompt', tenantId],
+    queryFn: () => superService.getTenantLeaderboardAgentPrompt<T>(tenantId!),
+    enabled: !!tenantId,
+  });
+
   const useProvisionRootTenant = () => useMutation({
     mutationFn: (input: ProvisionRootTenantInput) => tenantProvisioningService.provisionRootTenant(input),
     onSuccess: () => {
@@ -80,6 +86,7 @@ export function useSuperAdmin() {
     useRevokeTenantAccess,
     useDisableTenantAccess,
     useEnableTenantAccess,
+    useTenantLeaderboardAgentPrompt,
     useProvisionRootTenant,
     useResetRootTenantCredential,
   };

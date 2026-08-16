@@ -32,4 +32,8 @@ export const superRepository = {
   enableTenantAccess(orgId: string, reason?: string) {
     return databaseProvider.enableTenantAccess(orgId, reason);
   },
+
+  getTenantLeaderboardAgentPrompt<T>(tenantId: string) {
+    return databaseProvider.getTenantLeaderboardAgentPrompt<T>(tenantId);
+  },
 };

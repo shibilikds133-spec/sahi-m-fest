@@ -32,6 +32,7 @@ export interface DatabaseProvider {
   getPublicCandidateProfile<T>(slug: string): Promise<QueryResult<T>>;
   getParticipantRegistrations<T>(participantId: string): Promise<ListResult<T>>;
   getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<ListResult<T>>;
+  getAdminRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>>;
   listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>>;
   updateRegistration<T>(registrationId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;
   safeUnassignRegistration<T>(registrationId: string, reason?: string | null): Promise<QueryResult<T>>;
@@ -149,6 +150,7 @@ export interface DatabaseProvider {
   revokeTenantAccess(orgId: string): Promise<QueryResult<void>>;
   disableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>>;
   enableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>>;
+  getTenantLeaderboardAgentPrompt<T>(tenantId: string): Promise<QueryResult<T>>;
 
   // Bulk Unit Reassignment Methods
   previewBulkUnitAssignment(participantIds: string[], targetUnitId: string, tenantId: string): Promise<ListResult<any>>;

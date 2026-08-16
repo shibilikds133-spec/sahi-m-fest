@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ArrowLeft,
   ArrowRight,
@@ -36,7 +36,7 @@ import {
 import { LeaderboardRow, PublicPublishedResultRow, leaderboardService } from '../../services/leaderboardService';
 import { usePublicLeaderboard, usePublicPublishedResults } from '../../core/hooks/useLeaderboard';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
-import { usePublicSchedule, usePublicRegistrations } from '../../core/hooks/useSchedule';
+import { fetchPublicSchedules, usePublicSchedule } from '../../core/hooks/useSchedule';
 import PublicAiChatbot from '../../components/leaderboard/PublicAiChatbot';
 import { useAuthStore } from '../../core/store/authStore';
 import { Bell } from 'lucide-react-native';
@@ -280,6 +280,7 @@ const toItemSections = (results: PublicPublishedResultRow[]): ItemResultSection[
 
 export function PublicLeaderboardExperience({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
   const router = useRouter();
+  const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { width } = useWindowDimensions();
   const viewportWidth = width || 1024;
   const breakpoint: Breakpoint = viewportWidth >= 1120 ? 'desktop' : viewportWidth >= 760 ? 'tablet' : 'mobile';
@@ -287,7 +288,7 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
   const isMobile = breakpoint === 'mobile';
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('organisations');
-  const { user } = useAuthStore();
+  const { tenant_id: authTenantId } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [visibleCounts, setVisibleCounts] = useState<Record<PublicLeaderboardPage, number>>({
@@ -297,29 +298,71 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
     schedule: PAGE_SIZE,
   });
 
-  const settingsQuery = useGetPublicLeaderboardSettings();
+  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
+  const settingsQuery = useGetPublicLeaderboardSettings(tenantId);
   const showIndividuals = settingsQuery.data?.show_individual_rankings === true;
   const festivalId = settingsQuery.data?.festival_id;
+  const publicFestivalName = settingsQuery.data?.public_festival_name?.trim() || 'Festival';
 
-  const organisationQuery = usePublicLeaderboard(undefined, festivalId);
-  const publishedResultsQuery = usePublicPublishedResults(undefined, festivalId, true, true);
-  const scheduleQuery = usePublicSchedule(festivalId);
-  const registrationsQuery = usePublicRegistrations(festivalId);
-
+  const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
+  const publishedResultsQuery = usePublicPublishedResults(tenantId, festivalId, !!tenantId && !!festivalId, true);
+  const scheduleQuery = usePublicSchedule(festivalId, tenantId);
   const queryClient = useQueryClient();
+
+  // Keep the public board live without broad/global subscriptions. Every
+  // channel is scoped to the tenant and active festival, and only invalidates
+  // the existing read-only queries; it never writes or bypasses the RPC layer.
+  useEffect(() => {
+    if (!tenantId || !festivalId) return;
+
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboard(tenantId, festivalId) });
+      queryClient.invalidateQueries({ queryKey: LEADERBOARD_QUERY_KEYS.publicPublishedResults(tenantId, festivalId, true) });
+      queryClient.invalidateQueries({ queryKey: ['public-schedules', tenantId, festivalId] });
+      queryClient.invalidateQueries({ queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboardSettings(tenantId, festivalId) });
+    };
+
+    const channel = supabase
+      .channel(`public-leaderboard:${tenantId}:${festivalId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'results', filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules', filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'festival_leaderboard_settings', filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'festival_calendar', filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [festivalId, queryClient, tenantId]);
 
   // 1. Asynchronously load cached data from AsyncStorage on mount to populate the React Query cache instantly
   useEffect(() => {
     const initCache = async () => {
       try {
+        // Remove cache entries written by the old global public-board flow.
+        // Keeping them around could resurrect another tenant's podium after
+        // a tenant switch or a hot reload.
+        await Promise.all([
+          AsyncStorage.removeItem('cache:leaderboard_settings'),
+          AsyncStorage.removeItem('cache:public_leaderboard'),
+          AsyncStorage.removeItem('cache:public_published_results'),
+          AsyncStorage.removeItem('cache:public_schedule'),
+        ]);
+        queryClient.removeQueries({ queryKey: ['public-leaderboard', 'all', 'active'] });
+        queryClient.removeQueries({ queryKey: ['public-published-results', 'all', 'active'] });
+        queryClient.removeQueries({ queryKey: ['public-leaderboard-settings', 'all', 'active'] });
+        queryClient.removeQueries({ queryKey: ['public-schedules', 'none', 'none'] });
+
+        if (!tenantId) return;
+
         // First load settings cache to get the festivalId immediately
-        const settingsCacheStr = await AsyncStorage.getItem('cache:leaderboard_settings');
+        const settingsCacheStr = await AsyncStorage.getItem('cache:leaderboard_settings:' + tenantId);
         let cachedFestivalId: string | null = null;
         if (settingsCacheStr) {
           const settingsCache = JSON.parse(settingsCacheStr);
           cachedFestivalId = settingsCache.festival_id;
           queryClient.setQueryData(
-            LEADERBOARD_QUERY_KEYS.publicLeaderboardSettings(undefined, undefined),
+            LEADERBOARD_QUERY_KEYS.publicLeaderboardSettings(tenantId, cachedFestivalId),
             settingsCache
           );
         }
@@ -328,127 +371,92 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
         const activeFestivalId = festivalId || cachedFestivalId;
 
         // Populate other caches using the festivalId
-        const lbCacheStr = await AsyncStorage.getItem('cache:public_leaderboard');
+        const lbCacheStr = await AsyncStorage.getItem('cache:public_leaderboard:' + tenantId);
         if (lbCacheStr) {
           queryClient.setQueryData(
-            LEADERBOARD_QUERY_KEYS.publicLeaderboard(undefined, activeFestivalId),
+            LEADERBOARD_QUERY_KEYS.publicLeaderboard(tenantId, activeFestivalId),
             JSON.parse(lbCacheStr)
           );
         }
 
-        const resultsCacheStr = await AsyncStorage.getItem('cache:public_published_results');
+        const resultsCacheStr = await AsyncStorage.getItem('cache:public_published_results:' + tenantId);
         if (resultsCacheStr) {
           queryClient.setQueryData(
-            LEADERBOARD_QUERY_KEYS.publicPublishedResults(undefined, activeFestivalId, true),
+            LEADERBOARD_QUERY_KEYS.publicPublishedResults(tenantId, activeFestivalId, true),
             JSON.parse(resultsCacheStr)
           );
         }
 
-        const scheduleCacheStr = await AsyncStorage.getItem('cache:public_schedule');
+        const scheduleCacheStr = await AsyncStorage.getItem('cache:public_schedule:' + tenantId);
         if (scheduleCacheStr) {
           queryClient.setQueryData(
-            ['public-schedules', activeFestivalId],
+            ['public-schedules', tenantId, activeFestivalId],
             JSON.parse(scheduleCacheStr)
           );
         }
 
-        const registrationsCacheStr = await AsyncStorage.getItem('cache:public_registrations');
-        if (registrationsCacheStr) {
-          queryClient.setQueryData(
-            ['public-registrations', activeFestivalId],
-            JSON.parse(registrationsCacheStr)
-          );
-        }
       } catch (err) {
         console.warn('Failed to restore leaderboard local cache:', err);
       }
     };
     initCache();
-  }, [queryClient, festivalId]);
+  }, [queryClient, festivalId, tenantId]);
 
   // 2. Silently sync fresh results to AsyncStorage when queries complete
   useEffect(() => {
     if (settingsQuery.data) {
-      AsyncStorage.setItem('cache:leaderboard_settings', JSON.stringify(settingsQuery.data)).catch(() => {});
+      AsyncStorage.setItem('cache:leaderboard_settings:' + tenantId, JSON.stringify(settingsQuery.data)).catch(() => {});
     }
-  }, [settingsQuery.data]);
+  }, [settingsQuery.data, tenantId]);
 
   useEffect(() => {
     if (organisationQuery.data && festivalId) {
-      AsyncStorage.setItem('cache:public_leaderboard', JSON.stringify(organisationQuery.data)).catch(() => {});
+      AsyncStorage.setItem('cache:public_leaderboard:' + tenantId, JSON.stringify(organisationQuery.data)).catch(() => {});
     }
-  }, [organisationQuery.data, festivalId]);
+  }, [organisationQuery.data, festivalId, tenantId]);
 
   useEffect(() => {
     if (publishedResultsQuery.data && festivalId) {
-      AsyncStorage.setItem('cache:public_published_results', JSON.stringify(publishedResultsQuery.data)).catch(() => {});
+      AsyncStorage.setItem('cache:public_published_results:' + tenantId, JSON.stringify(publishedResultsQuery.data)).catch(() => {});
     }
-  }, [publishedResultsQuery.data, festivalId]);
+  }, [publishedResultsQuery.data, festivalId, tenantId]);
 
   useEffect(() => {
     if (scheduleQuery.data && festivalId) {
-      AsyncStorage.setItem('cache:public_schedule', JSON.stringify(scheduleQuery.data)).catch(() => {});
+      AsyncStorage.setItem('cache:public_schedule:' + tenantId, JSON.stringify(scheduleQuery.data)).catch(() => {});
     }
-  }, [scheduleQuery.data, festivalId]);
-
-  useEffect(() => {
-    if (registrationsQuery.data && festivalId) {
-      AsyncStorage.setItem('cache:public_registrations', JSON.stringify(registrationsQuery.data)).catch(() => {});
-    }
-  }, [registrationsQuery.data, festivalId]);
+  }, [scheduleQuery.data, festivalId, tenantId]);
 
   // 3. Background prefetching of all other tabs' data to ensure instant transitions
   useEffect(() => {
     if (festivalId) {
       // Prefetch leaderboard (Unit Standings)
       queryClient.prefetchQuery({
-        queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboard(undefined, festivalId),
-        queryFn: () => leaderboardService.listPublicLeaderboard(undefined, festivalId),
+        queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboard(tenantId, festivalId),
+        queryFn: () => leaderboardService.listPublicLeaderboard(tenantId, festivalId),
         staleTime: 300000,
       });
 
       // Prefetch published results (Item Results)
       queryClient.prefetchQuery({
-        queryKey: LEADERBOARD_QUERY_KEYS.publicPublishedResults(undefined, festivalId, true),
-        queryFn: () => leaderboardService.listPublicPublishedResults(undefined, festivalId, true),
+        queryKey: LEADERBOARD_QUERY_KEYS.publicPublishedResults(tenantId, festivalId, true),
+        queryFn: () => leaderboardService.listPublicPublishedResults(tenantId, festivalId, true),
         staleTime: 300000,
       });
 
       // Prefetch schedules
       queryClient.prefetchQuery({
-        queryKey: ['public-schedules', festivalId],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .from('schedules')
-            .select('*, venues(*), items(*)')
-            .eq('festival_id', festivalId)
-            .order('start_time');
-          if (error) throw new Error(error.message);
-          return data || [];
-        },
+        queryKey: ['public-schedules', tenantId, festivalId],
+        queryFn: () => fetchPublicSchedules(festivalId),
         staleTime: 300000,
       });
 
-      // Prefetch registrations
-      queryClient.prefetchQuery({
-        queryKey: ['public-registrations', festivalId],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('id, item_id, status, is_verified, code_letter')
-            .eq('festival_id', festivalId);
-          if (error) throw new Error(error.message);
-          return data || [];
-        },
-        staleTime: 300000,
-      });
     }
-  }, [festivalId, queryClient]);
+  }, [festivalId, queryClient, tenantId]);
 
   const organisationData = useMemo(() => organisationQuery.data ?? [], [organisationQuery.data]);
   const publishedResults = useMemo(() => publishedResultsQuery.data ?? [], [publishedResultsQuery.data]);
   const schedules = useMemo(() => scheduleQuery.data ?? [], [scheduleQuery.data]);
-  const allRegistrations = useMemo(() => registrationsQuery.data ?? [], [registrationsQuery.data]);
 
   const latestUpdate = useMemo(() => maxDate([
     ...organisationData.map((row) => row.latest_published_at),
@@ -588,7 +596,6 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
     publishedResultsQuery.refetch();
     settingsQuery.refetch();
     scheduleQuery.refetch();
-    registrationsQuery.refetch();
   };
 
   const openCandidateProfile = (profileSlug?: string | null) => {
@@ -609,7 +616,7 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
 
   const renderNav = () => (
     <View style={styles.navBarGlass}>
-      <Text style={styles.navBarText}>Sahithyolsav</Text>
+      <Text style={styles.navBarText}>{publicFestivalName}</Text>
       <TouchableOpacity
         onPress={() => router.push('/notifications' as any)}
         style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20 }}
@@ -630,14 +637,14 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
         <Text style={styles.backButtonText}>Back to Portal</Text>
       </TouchableOpacity>
       <Text style={styles.compactHeaderTitle}>{title}</Text>
-      <Text style={styles.compactHeaderSubtitle}>Kodasseri Sector Sahithyolsav 2026</Text>
+      <Text style={styles.compactHeaderSubtitle}>{publicFestivalName} · Official public results</Text>
     </View>
   );
 
   const renderHero = () => (
     <View style={styles.heroContent}>
       <View style={styles.heroCopy}>
-        <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>Sahityotsav{'\n'}Kodasseri Sector</Text>
+        <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>{publicFestivalName}</Text>
         <View style={styles.kicker}>
           <Award size={16} color={palette.gold} />
           <Text style={styles.kickerText}>Official public results board</Text>
@@ -1072,20 +1079,14 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
               </View>
               <View style={styles.timelineItemsList}>
                 {group.items.map((item) => {
-                  const isLive = item.status === 'live';
-                  const isCompleted = item.status === 'completed';
-
-                  // Calculate checkin and code shuffled status for this schedule dynamically
-                  const scheduleRegs = allRegistrations.filter((r: any) => r.item_id === item.item_id && r.status !== 'rejected');
-                  const verifiedRegs = scheduleRegs.filter((r: any) => r.is_verified);
-                  const checkinDone = scheduleRegs.length > 0 && scheduleRegs.every((r: any) => r.is_verified);
-                  const codesShuffled = verifiedRegs.length > 0 && verifiedRegs.every((r: any) => r.code_letter !== null && r.code_letter !== undefined);
+                  const normalizedStatus = String(item.status || '').toLowerCase();
+                  const isLive = ['live', 'ongoing', 'in_progress'].includes(normalizedStatus);
+                  const isCompleted = ['completed', 'complete', 'finished'].includes(normalizedStatus);
 
                   let statusText = item.status ? titleCase(item.status) : 'Scheduled';
                   let badgeStyle: any = [];
                   let textStyle: any = [];
                   let showGreenDot = isLive;
-                  let showGoldDot = false;
 
                   if (isCompleted) {
                     statusText = 'Completed';
@@ -1095,15 +1096,6 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
                     statusText = 'Live';
                     badgeStyle = [styles.statusBadgeLive];
                     textStyle = [styles.statusBadgeTextLive];
-                  } else if (codesShuffled) {
-                    statusText = 'End Reporting';
-                    badgeStyle = [styles.statusBadgeShuffled];
-                    textStyle = [styles.statusBadgeTextShuffled];
-                  } else if (checkinDone) {
-                    statusText = 'Reporting...';
-                    badgeStyle = [styles.statusBadgeReporting];
-                    textStyle = [styles.statusBadgeTextReporting];
-                    showGoldDot = true;
                   } else {
                     badgeStyle = [];
                     textStyle = [];
@@ -1136,7 +1128,6 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
                             ...badgeStyle
                           ]}>
                             {showGreenDot && <View style={styles.pulseGreenDot} />}
-                            {showGoldDot && <View style={styles.pulseGoldDot} />}
                             <Text style={[
                               styles.statusBadgeText,
                               ...textStyle
@@ -1185,6 +1176,26 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
 
   const isLandingPage = page === 'landing';
   const isRefreshing = organisationQuery.isRefetching || publishedResultsQuery.isRefetching || scheduleQuery.isRefetching;
+
+  if (!tenantId) {
+    return (
+      <View style={styles.screen}>
+        <LinearGradient
+          colors={['#030F26', '#021E1B', '#02241F']}
+          start={{ x: 0.1, y: 0.1 }}
+          end={{ x: 0.9, y: 0.9 }}
+          style={[styles.gradientBg, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}
+        >
+          <View style={{ maxWidth: 520, width: '100%', backgroundColor: 'rgba(15, 31, 51, 0.92)', borderRadius: 20, padding: 28, borderWidth: 1, borderColor: palette.line }}>
+            <Text style={[styles.heroTitle, { fontSize: isMobile ? 28 : 36, textAlign: 'center' }]}>Tenant-specific public results</Text>
+            <Text style={[styles.kickerText, { textAlign: 'center', marginTop: 14 }]}>
+              Open the public leaderboard from a tenant-specific link, or sign in to view that tenant&apos;s festival.
+            </Text>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
