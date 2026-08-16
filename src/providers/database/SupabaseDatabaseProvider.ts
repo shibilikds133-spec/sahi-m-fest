@@ -647,8 +647,20 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       .eq('tenant_id', tenantId)
       .eq('status', 'active');
 
+    // Judge assignments are enrichment data for the schedule list. If that
+    // secondary read is unavailable (for example because an older production
+    // schema/cache does not expose it), do not hide otherwise valid schedules.
+    // The schedule itself remains tenant/festival scoped; the UI simply gets
+    // an empty assigned-judge list until the enrichment query is available.
     if (assignmentsError) {
-      return { data: [], error: normalizeError(assignmentsError) };
+      console.warn('[listSchedules] Unable to load judge assignments; returning schedules without panel metadata.', assignmentsError);
+      return {
+        data: (data as T[]).map((schedule: any) => ({
+          ...schedule,
+          assigned_judge_ids: [],
+        })),
+        error: null,
+      };
     }
 
     const judgeIdsBySchedule = new Map<string, string[]>();

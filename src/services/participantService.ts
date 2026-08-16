@@ -99,6 +99,12 @@ export const participantService = {
     return data;
   },
 
+  async getRegistrationsBySchedule<T>(scheduleId: string): Promise<T[]> {
+    const { data, error } = await participantRepository.getAdminRegistrationsBySchedule<T>(scheduleId);
+    throwIfError(error);
+    return data;
+  },
+
   async listRegistrationsByFestival<T>(festivalId: string): Promise<T[]> {
     const { data, error } = await participantRepository.listRegistrationsByFestival<T>(festivalId);
     throwIfError(error);
@@ -113,7 +119,10 @@ export const participantService = {
     festivalId?: string,
     secureStage = false,
   ): Promise<{ smartPriorityApplied: boolean } | void> {
-    const allRegistrations = await this.getRegistrationsByItem<any>(itemId, tenantId, festivalId);
+    // Code-letter generation must use the selected schedule scope. Item-only
+    // reads are tenant-local and can omit registrations belonging to visible
+    // child organisations shown on the schedule/check-in page.
+    const allRegistrations = await this.getRegistrationsBySchedule<any>(scheduleId);
     const registrations = (allRegistrations || []).filter(
       (r: any) => r.status !== 'rejected' && r.is_verified === true
     );
