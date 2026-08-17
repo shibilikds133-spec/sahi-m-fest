@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
@@ -8,7 +8,7 @@ import { useSchedule } from '../../../core/hooks/useSchedule';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
 
-const TimeSelect = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onChange: (val: string) => void, fullWidth?: boolean }) => {
   const [hour, setHour] = useState('12');
   const [minute, setMinute] = useState('00');
   const [ampm, setAmpm] = useState('AM');
@@ -32,7 +32,7 @@ const TimeSelect = ({ value, onChange }: { value: string, onChange: (val: string
   };
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.5, gap: 4 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', flex: fullWidth ? undefined : 1.5, width: fullWidth ? '100%' : undefined, gap: 4 }}>
       <select 
         value={hour} 
         onChange={(e) => {
@@ -77,6 +77,8 @@ const TimeSelect = ({ value, onChange }: { value: string, onChange: (val: string
 export default function CreateSchedule() {
   const router = useRouter();
   const goBack = useGoBack('/(admin)/schedule');
+  const { width } = useWindowDimensions();
+  const isCompactLayout = width < 640;
   
   const { venues, schedules, createSchedule, isCreatingSchedule } = useSchedule();
   const { useActiveFestival, useItems } = useFestival();
@@ -254,34 +256,34 @@ export default function CreateSchedule() {
           </View>
         </View>
 
-        <View className="flex-row gap-x-4">
-          <View className="flex-1">
+        <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 16 }}>
+          <View style={{ flex: isCompactLayout ? undefined : 1 }}>
             <Text className="font-poppins text-ssf-text-muted mb-2">Start Time *</Text>
             {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
+                  style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined, boxSizing: 'border-box', padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
                 />
-                <TimeSelect value={startTimeStr} onChange={setStartTimeStr} />
+                <TimeSelect value={startTimeStr} onChange={setStartTimeStr} fullWidth={isCompactLayout} />
               </View>
             ) : (
               <Text className="text-red-500">Use Web for Date/Time picking</Text>
             )}
           </View>
-          <View className="flex-1">
+          <View style={{ flex: isCompactLayout ? undefined : 1 }}>
             <Text className="font-poppins text-ssf-text-muted mb-2">End Time *</Text>
             {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
                 <input 
                   type="date" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
+                  style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined, boxSizing: 'border-box', padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
                 />
-                <TimeSelect value={endTimeStr} onChange={setEndTimeStr} />
+                <TimeSelect value={endTimeStr} onChange={setEndTimeStr} fullWidth={isCompactLayout} />
               </View>
             ) : (
               <Text className="text-red-500">Use Web for Date/Time picking</Text>
