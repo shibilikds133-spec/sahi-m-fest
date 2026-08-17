@@ -1039,12 +1039,13 @@ export default function ParticipantDetails() {
                   <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
                     {allItems?.filter(i => {
                       const codes = Array.isArray(i.category_codes) ? i.category_codes : (i.category_codes ? [i.category_codes] : []);
+                      const normalizedCodes = codes.map(code => String(code ?? '').trim().toUpperCase());
                       
-                      const pCat = participant.category_code;
+                      const pCat = String(participant.category_code ?? '').trim().toUpperCase();
                       const pCatShort = pCat === 'SENIOR' ? 'SR' : (pCat === 'JUNIOR' ? 'JR' : (pCat === 'CAMPUS' ? 'CA' : pCat));
                       const pCatLong = pCat === 'SR' ? 'SENIOR' : (pCat === 'JR' ? 'JUNIOR' : (pCat === 'CA' ? 'CAMPUS' : pCat));
 
-                      const matchesCategory = codes.includes(pCat) || codes.includes(pCatShort) || codes.includes(pCatLong) || codes.includes('GN');
+                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN');
                       const matchesGender = !i.gender || i.gender === 'both' || i.gender === participant.gender;
                       
                       if (!itemSearchText) return matchesCategory && matchesGender;
@@ -1074,10 +1075,11 @@ export default function ParticipantDetails() {
                     ))}
                     {allItems?.filter(i => {
                       const codes = Array.isArray(i.category_codes) ? i.category_codes : (i.category_codes ? [i.category_codes] : []);
-                      const pCat = participant.category_code;
+                      const normalizedCodes = codes.map(code => String(code ?? '').trim().toUpperCase());
+                      const pCat = String(participant.category_code ?? '').trim().toUpperCase();
                       const pCatShort = pCat === 'SENIOR' ? 'SR' : (pCat === 'JUNIOR' ? 'JR' : (pCat === 'CAMPUS' ? 'CA' : pCat));
                       const pCatLong = pCat === 'SR' ? 'SENIOR' : (pCat === 'JR' ? 'JUNIOR' : (pCat === 'CA' ? 'CAMPUS' : pCat));
-                      const matchesCategory = codes.includes(pCat) || codes.includes(pCatShort) || codes.includes(pCatLong) || codes.includes('GN');
+                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN');
                       const matchesGender = !i.gender || i.gender === 'both' || i.gender === participant.gender;
                       if (!itemSearchText) return matchesCategory && matchesGender;
                       const search = itemSearchText.toLowerCase();
