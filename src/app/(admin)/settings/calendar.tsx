@@ -213,14 +213,12 @@ export default function FestivalCalendarSettings() {
           {updateFestival.isPending ? 'Saving...' : 'Save Calendar'}
         </Button>
 
-        {festival?.festival_template === 'college_fest' && (
-          <Button
-            variant="outline"
-            onPress={() => router.push('/(admin)/settings/categories' as any)}
-          >
-            Manage College Fest Categories
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          onPress={() => router.push('/(admin)/settings/categories' as any)}
+        >
+          Manage Categories
+        </Button>
 
         <Button
           variant="ghost"

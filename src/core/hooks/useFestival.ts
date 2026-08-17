@@ -15,6 +15,7 @@ type FestivalCalendarRecord = {
   registration_close?: string | null;
   is_active: boolean;
   festival_template: FestivalTemplate;
+  general_category_enabled?: boolean;
 };
 
 type PointsConfigRecord = {
