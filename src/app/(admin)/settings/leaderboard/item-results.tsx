@@ -21,6 +21,7 @@ import {
   User as UserIcon,
 } from 'lucide-react-native';
 import { useFestival } from '../../../../core/hooks/useFestival';
+import { useFestivalCategories } from '../../../../core/hooks/useFestivalCategories';
 import { useResultVisibility } from '../../../../core/hooks/useResultVisibility';
 import { useAuthStore } from '../../../../core/store/authStore';
 import { FestivalResult, ResultStatus } from '../../../../services/resultVisibilityService';
@@ -94,9 +95,11 @@ export default function ItemResultsPage() {
   const { tenant_id } = useAuthStore();
 
   // Load active festival ID
-  const { useActiveFestival } = useFestival();
+  const { useActiveFestival, useItems } = useFestival();
   const { data: activeFestival } = useActiveFestival();
   const festivalId = activeFestival?.id;
+  const { data: festivalCategories = [] } = useFestivalCategories(festivalId, true);
+  const { data: festivalItems = [] } = useItems(festivalId);
 
   // Load results
   const {
@@ -111,10 +114,26 @@ export default function ItemResultsPage() {
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'LP' | 'UP' | 'HS' | 'HSS'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'individual' | 'group'>('all');
   const [resultStatusFilter, setResultStatusFilter] = useState<'all' | ResultStatus>('all');
   const [previewGroup, setPreviewGroup] = useState<ItemGroup | null>(null);
+
+  const categoryOptions = useMemo(
+    () => ['all', ...festivalCategories.map((category) => category.code.toLowerCase())],
+    [festivalCategories],
+  );
+
+  const itemCategoryCodes = useMemo(() => new Map(
+    festivalItems.map((item: any) => [
+      item.id,
+      (Array.isArray(item.category_codes) ? item.category_codes : []).map((code: string) => code.toLowerCase()),
+    ]),
+  ), [festivalItems]);
+
+  React.useEffect(() => {
+    if (!categoryOptions.includes(selectedCategory)) setSelectedCategory('all');
+  }, [categoryOptions, selectedCategory]);
 
   // Filtered results
   const filteredResults = useMemo(() => {
@@ -130,8 +149,7 @@ export default function ItemResultsPage() {
 
       // 3. Category filter
       const categoryMatch = selectedCategory === 'all'
-        || (r.item_name && r.item_name.toUpperCase().includes(selectedCategory.toUpperCase()))
-        || (r.item_name_ml && r.item_name_ml.toUpperCase().includes(selectedCategory.toUpperCase()));
+        || itemCategoryCodes.get(r.item_id ?? '')?.includes(selectedCategory) === true;
 
       // 4. Search query match
       const query = searchQuery.trim().toLowerCase();
@@ -144,7 +162,7 @@ export default function ItemResultsPage() {
 
       return typeMatch && statusMatch && categoryMatch && searchMatch;
     });
-  }, [festivalResults, resultTypeFilter, resultStatusFilter, selectedCategory, searchQuery]);
+  }, [festivalResults, resultTypeFilter, resultStatusFilter, selectedCategory, searchQuery, itemCategoryCodes]);
 
   // Grouped Results
   const groupedResults = useMemo(() => {
@@ -232,14 +250,14 @@ export default function ItemResultsPage() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
           <View style={styles.chipRow}>
             {/* Categories */}
-            {(['all', 'LP', 'UP', 'HS', 'HSS'] as const).map(cat => (
+            {categoryOptions.map(cat => (
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCategory(cat)}
                 style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
               >
                 <Text style={[styles.filterChipText, selectedCategory === cat && styles.filterChipTextActive]}>
-                  {cat === 'all' ? 'All Categories' : cat}
+                  {cat === 'all' ? 'All Categories' : cat.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}

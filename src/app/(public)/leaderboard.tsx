@@ -103,8 +103,6 @@ const palette = {
   bronze: '#D97706',
 };
 
-const categoryOptions = ['All', 'LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS'];
-
 const titleCase = (value: string | null | undefined) => {
   if (!value) return 'Unit';
   return value
@@ -457,6 +455,21 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
   const organisationData = useMemo(() => organisationQuery.data ?? [], [organisationQuery.data]);
   const publishedResults = useMemo(() => publishedResultsQuery.data ?? [], [publishedResultsQuery.data]);
   const schedules = useMemo(() => scheduleQuery.data ?? [], [scheduleQuery.data]);
+  const categoryOptions = useMemo(() => {
+    const codes = new Set<string>();
+    publishedResults.forEach((result) => {
+      result.item_category_codes.forEach((code) => codes.add(code));
+      if (result.participant_category_code) codes.add(result.participant_category_code);
+    });
+    schedules.forEach((schedule) => {
+      (schedule.items?.category_codes ?? []).forEach((code: string) => codes.add(code));
+    });
+    return ['All', ...Array.from(codes).sort((a, b) => a.localeCompare(b))];
+  }, [publishedResults, schedules]);
+
+  useEffect(() => {
+    if (!categoryOptions.includes(categoryFilter)) setCategoryFilter('All');
+  }, [categoryFilter, categoryOptions]);
 
   const latestUpdate = useMemo(() => maxDate([
     ...organisationData.map((row) => row.latest_published_at),

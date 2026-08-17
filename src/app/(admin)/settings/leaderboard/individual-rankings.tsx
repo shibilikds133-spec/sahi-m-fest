@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useFestival } from '../../../../core/hooks/useFestival';
+import { useFestivalCategories } from '../../../../core/hooks/useFestivalCategories';
 import { useResultVisibility } from '../../../../core/hooks/useResultVisibility';
 import { useAuthStore } from '../../../../core/store/authStore';
 import { participantService } from '../../../../services/participantService';
@@ -62,9 +63,11 @@ export default function IndividualRankingsPage() {
   const isMobile = width < 760;
 
   // Load active festival ID
-  const { useActiveFestival } = useFestival();
+  const { useActiveFestival, useItems } = useFestival();
   const { data: activeFestival } = useActiveFestival();
   const festivalId = activeFestival?.id;
+  const { data: festivalCategories = [] } = useFestivalCategories(festivalId, true);
+  const { data: festivalItems = [] } = useItems(festivalId);
 
   // Load results for aggregation
   const {
@@ -77,9 +80,25 @@ export default function IndividualRankingsPage() {
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'LP' | 'UP' | 'HS' | 'HSS'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'published' | 'all'>('published');
   const [openingProfileKey, setOpeningProfileKey] = useState<string | null>(null);
+
+  const categoryOptions = useMemo(
+    () => ['all', ...festivalCategories.map((category) => category.code.toLowerCase())],
+    [festivalCategories],
+  );
+
+  const itemCategoryCodes = useMemo(() => new Map(
+    festivalItems.map((item: any) => [
+      item.id,
+      (Array.isArray(item.category_codes) ? item.category_codes : []).map((code: string) => code.toLowerCase()),
+    ]),
+  ), [festivalItems]);
+
+  React.useEffect(() => {
+    if (!categoryOptions.includes(selectedCategory)) setSelectedCategory('all');
+  }, [categoryOptions, selectedCategory]);
 
   // Aggregated Individual Rankings
   const participantRankings = useMemo(() => {
@@ -92,8 +111,7 @@ export default function IndividualRankingsPage() {
 
       // 3. Category match based on item name/ml prefix
       const categoryMatch = selectedCategory === 'all'
-        || (r.item_name && r.item_name.toUpperCase().includes(selectedCategory.toUpperCase()))
-        || (r.item_name_ml && r.item_name_ml.toUpperCase().includes(selectedCategory.toUpperCase()));
+        || itemCategoryCodes.get(r.item_id ?? '')?.includes(selectedCategory) === true;
 
       return categoryMatch;
     });
@@ -177,7 +195,7 @@ export default function IndividualRankingsPage() {
         || p.chest_number.toLowerCase().includes(query)
         || p.organisation_name.toLowerCase().includes(query);
     });
-  }, [festivalResults, searchQuery, selectedCategory, statusFilter]);
+  }, [festivalResults, searchQuery, selectedCategory, statusFilter, itemCategoryCodes]);
 
   const openCandidateProfile = async (participantId: string | null) => {
     if (!participantId) {
@@ -412,14 +430,14 @@ export default function IndividualRankingsPage() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
           <View style={styles.chipRow}>
             {/* Category Chips */}
-            {(['all', 'LP', 'UP', 'HS', 'HSS'] as const).map(cat => (
+            {categoryOptions.map(cat => (
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCategory(cat)}
                 style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
               >
                 <Text style={[styles.filterChipText, selectedCategory === cat && styles.filterChipTextActive]}>
-                  {cat === 'all' ? 'All Categories' : cat}
+                  {cat === 'all' ? 'All Categories' : cat.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
