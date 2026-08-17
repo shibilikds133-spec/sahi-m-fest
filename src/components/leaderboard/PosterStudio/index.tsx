@@ -30,6 +30,7 @@ import CreateTemplateModal from './Templates/CreateTemplateModal';
 import { supabase } from '../../../core/config/supabase';
 import OffscreenRenderer from './Canvas/OffscreenRenderer';
 import { uploadService } from '../../../services/storage/uploadService';
+import { useRouter } from 'expo-router';
 
 interface PosterStudioProps {
   festivalId: string;
@@ -37,6 +38,7 @@ interface PosterStudioProps {
 }
 
 export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps) {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const isTablet = width >= 768 && width < 1180;
@@ -58,9 +60,11 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showResizePopover, setShowResizePopover] = useState(false);
   const [isDebug, setIsDebug] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'layers' | 'text' | 'assets' | 'templates' | null>('layers');
   const bgInputRef = useRef<HTMLInputElement>(null);
   const historyUndo = useHistoryStore((s) => s.undo);
   const historyRedo = useHistoryStore((s) => s.redo);
@@ -387,6 +391,27 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
         {/* Row 1: Brand + template name + status */}
         <div style={styles.topbarRow1}>
           <div style={styles.topbarLeft}>
+            <button 
+              onClick={() => router.back()}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94A3B8',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                padding: '6px 8px',
+                borderRadius: '4px'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#2a2a2a')}
+              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              ⟵ Back
+            </button>
+            <span style={{ width: 1, height: 16, backgroundColor: '#2a2a2a', margin: '0 4px' }} />
             <span style={styles.studioTitle}>🎨 Poster Studio</span>
             {/* Template selector — DB templates only; demo templates shown only in ?debug=1 mode */}
             {(dbTemplates.length > 0 || isDebug) ? (
@@ -501,9 +526,50 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                 ↩ Back to Base Template
               </button>
             )}
+            
+            {/* Canvas Resize Button */}
+            {activeTemplate && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowResizePopover(!showResizePopover)}
+                  style={{
+                    marginLeft: '8px',
+                    padding: '4px 10px',
+                    backgroundColor: showResizePopover ? '#334155' : 'transparent',
+                    color: '#E2E8F0',
+                    border: '1px solid #475569',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  ⛶ Resize
+                </button>
+                {showResizePopover && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    marginTop: 8,
+                    background: '#F8FAFC',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    zIndex: 1000,
+                    border: '1px solid #CBD5E1',
+                    width: 320
+                  }}>
+                    <CanvasSizeBlock />
+                  </div>
+                )}
+              </div>
+            )}
             {activeTemplate && <span style={{...styles.templateName, display: 'none'}}>{activeTemplate.name}</span>}
           </div>
-          <div style={styles.topbarRight}>
+          <div style={{...styles.topbarRight, flexWrap: 'wrap'}}>
             {!currentResultId && (
               <button
                 onClick={async () => {
@@ -557,28 +623,28 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
             <button
               onClick={toggleTypographyMode}
               title={`Typography Mode: ${typographyMode === 'A' ? 'BIG first / small second' : 'small first / BIG second'}. Click to swap.`}
-              style={{ ...styles.topBtn, backgroundColor: typographyMode === 'A' ? '#4F46E5' : '#7C3AED', color: '#fff', borderColor: 'transparent', fontWeight: 700, letterSpacing: 1, minWidth: 44 }}
+              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: typographyMode === 'A' ? '#4F46E5' : '#7C3AED', color: '#fff', borderColor: 'transparent', fontWeight: 600, minWidth: 44 }}
             >
-              ⇅ {typographyMode === 'A' ? 'BIG/small' : 'small/BIG'}
+              ⇅ {typographyMode === 'A' ? 'Font: BIG/small' : 'Font: small/BIG'}
             </button>
             {/* ── Result Number Switcher ── */}
             <button
               onClick={handleResultModeSwitch}
               title={`Result Number Mode: ${resultNumberMode}. Click to cycle presets.`}
-              style={{ ...styles.topBtn, backgroundColor: '#BE185D', color: '#fff', borderColor: 'transparent', fontWeight: 600 }}
+              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#BE185D', color: '#fff', borderColor: 'transparent', fontWeight: 600 }}
             >
-              🔢 {resultNumberMode}
+              🔢 Size: {resultNumberMode}
             </button>
             {/* ── Insert Event Name Layers ── */}
             <button
               onClick={insertEventNameLayers}
               title="Insert pre-styled Event Name Primary + Secondary layers"
-              style={{ ...styles.topBtn, backgroundColor: '#0369A1', color: '#fff', borderColor: 'transparent' }}
+              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#0369A1', color: '#fff', borderColor: 'transparent' }}
             >
-              ✦ Event Layers
+              ✦ Events
             </button>
             {!currentResultId && (
-              <button onClick={() => setShowPublish(true)} style={{ ...styles.topBtn, backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}>🚀 Publish Template</button>
+              <button onClick={() => setShowPublish(true)} style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}>🚀 Publish</button>
             )}
             <button
               onClick={async () => {
@@ -593,7 +659,7 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                 }
                 useTemplateStore.getState().markSaved();
               }}
-              style={{ ...styles.topBtn, borderColor: '#F87171', color: '#F87171' }}
+              style={{ ...styles.topBtn, padding: '4px 8px', borderColor: '#F87171', color: '#F87171' }}
             >
               🔄 Reset
             </button>
@@ -602,17 +668,17 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                 const result = historyUndo(layers);
                 if (result) useLayerStore.getState().setLayers(result);
               }}
-              style={{ ...styles.topBtn, opacity: canUndo ? 1 : 0.4 }}
+              style={{ ...styles.topBtn, padding: '4px 8px', opacity: canUndo ? 1 : 0.4 }}
               title="Undo (Ctrl+Z)"
-            >↩ Undo</button>
+            >↩</button>
             <button
               onClick={() => {
                 const result = historyRedo(layers);
                 if (result) useLayerStore.getState().setLayers(result);
               }}
-              style={{ ...styles.topBtn, opacity: canRedo ? 1 : 0.4 }}
+              style={{ ...styles.topBtn, padding: '4px 8px', opacity: canRedo ? 1 : 0.4 }}
               title="Redo (Ctrl+Y)"
-            >↪ Redo</button>
+            >↪</button>
             <span style={styles.saveStatus}>{saveStatus}</span>
           </div>
         </div>
@@ -670,45 +736,109 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
 
       {/* ---- MAIN WORKSPACE ---- */}
       <div style={{ ...styles.workspace, flexDirection: isDesktop ? 'row' : 'column' }}>
-        {/* ---- LEFT PANEL (Desktop) ---- */}
+        {/* ---- LEFT RIBBON (Canva Style) ---- */}
         {isDesktop && (
-          <div style={styles.leftPanel}>
-            <div style={styles.panelSection}>
-              <h3 style={styles.panelTitle}>Layers</h3>
-              {layers.length === 0 && <p style={styles.emptyMsg}>No layers yet.</p>}
-              {[...layers].sort((a, b) => b.zIndex - a.zIndex).map((l) => (
-                <div
-                  key={l.id}
-                  onClick={() => useLayerStore.getState().setSelectedIds([l.id])}
-                  style={{
-                    ...styles.layerItem,
-                    backgroundColor: selectedIds.includes(l.id) ? '#2a2a2a' : '#171717',
-                    borderColor: selectedIds.includes(l.id) ? '#38bdf8' : '#2a2a2a',
-                    opacity: l.isVisible ? 1 : 0.45,
-                  }}
-                >
-                  <span style={styles.layerIcon}>{l.type === 'text' ? 'T' : l.type === 'image' ? '🖼' : '⬜'}</span>
-                  <span style={styles.layerName}>{l.name}</span>
-                  <div style={styles.layerActions}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleVisibility(l.id); }}
-                      style={styles.miniBtn}
-                      title={l.isVisible ? 'Hide' : 'Show'}
-                    >{l.isVisible ? '👁' : '👁‍🗨'}</button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleLock(l.id); }}
-                      style={styles.miniBtn}
-                      title={l.isLocked ? 'Unlock' : 'Lock'}
-                    >{l.lockProfile === 'fully-locked' ? '🔒' : '🔓'}</button>
+          <div style={styles.leftRibbon}>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeTab === 'templates' ? styles.ribbonBtnActive : {}) }}
+              onClick={() => setActiveTab('templates')}
+            >
+              <div style={styles.ribbonIcon}>📑</div>
+              <span style={styles.ribbonLabel}>Templates</span>
+            </button>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeTab === 'text' ? styles.ribbonBtnActive : {}) }}
+              onClick={() => setActiveTab('text')}
+            >
+              <div style={styles.ribbonIcon}>T</div>
+              <span style={styles.ribbonLabel}>Text</span>
+            </button>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeTab === 'assets' ? styles.ribbonBtnActive : {}) }}
+              onClick={() => setActiveTab('assets')}
+            >
+              <div style={styles.ribbonIcon}>🖼</div>
+              <span style={styles.ribbonLabel}>Assets</span>
+            </button>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeTab === 'layers' ? styles.ribbonBtnActive : {}) }}
+              onClick={() => setActiveTab('layers')}
+            >
+              <div style={styles.ribbonIcon}>📚</div>
+              <span style={styles.ribbonLabel}>Layers</span>
+            </button>
+          </div>
+        )}
+
+        {/* ---- LEFT FLYOUT PANEL ---- */}
+        {isDesktop && activeTab && (
+          <div style={styles.leftFlyout}>
+            {activeTab === 'layers' && (
+              <div style={styles.panelSection}>
+                <h3 style={styles.panelTitle}>Layers</h3>
+                {layers.length === 0 && <p style={styles.emptyMsg}>No layers yet.</p>}
+                {[...layers].sort((a, b) => b.zIndex - a.zIndex).map((l) => (
+                  <div
+                    key={l.id}
+                    onClick={() => useLayerStore.getState().setSelectedIds([l.id])}
+                    style={{
+                      ...styles.layerItem,
+                      backgroundColor: selectedIds.includes(l.id) ? '#2a2a2a' : '#171717',
+                      borderColor: selectedIds.includes(l.id) ? '#38bdf8' : '#2a2a2a',
+                      opacity: l.isVisible ? 1 : 0.45,
+                    }}
+                  >
+                    <span style={styles.layerIcon}>{l.type === 'text' ? 'T' : l.type === 'image' ? '🖼' : '⬜'}</span>
+                    <span style={styles.layerName}>{l.name}</span>
+                    <div style={styles.layerActions}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleVisibility(l.id); }}
+                        style={styles.miniBtn}
+                        title={l.isVisible ? 'Hide' : 'Show'}
+                      >{l.isVisible ? '👁' : '👁‍🗨'}</button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleLock(l.id); }}
+                        style={styles.miniBtn}
+                        title={l.isLocked ? 'Unlock' : 'Lock'}
+                      >{l.lockProfile === 'fully-locked' ? '🔒' : '🔓'}</button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+            {activeTab === 'text' && (
+              <div style={styles.panelSection}>
+                <h3 style={styles.panelTitle}>Add Text</h3>
+                <button onClick={handleAddText} style={styles.emptyStateCta}>+ Add a text box</button>
+              </div>
+            )}
+            {/* Collapse Button */}
+            <div style={{ position: 'absolute', top: '50%', right: -12, width: 24, height: 48, backgroundColor: '#171717', border: '1px solid #2a2a2a', borderLeft: 'none', borderRadius: '0 8px 8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 100 }} onClick={() => setActiveTab(null)}>
+              <span style={{ color: '#E2E8F0', fontSize: 16 }}>◀</span>
             </div>
           </div>
         )}
 
         {/* ---- CANVAS CENTER ---- */}
         <div style={styles.canvasArea}>
+          {/* ---- CANVA STYLE FLOATING CONTEXT TOOLBAR ---- */}
+          {activeTemplate && (
+            <div style={styles.contextToolbarPill}>
+              {selectedLayer ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>Editing: {selectedLayer.name}</span>
+                  {selectedLayer.type === 'text' && <TextToolbar />}
+                  {/* We will refactor TransformBlock and EffectsBlock to fit here later */}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>Canvas Settings</span>
+                  <BackgroundBlock />
+                </div>
+              )}
+            </div>
+          )}
+
           {!activeTemplate ? (
             // Empty state — no DB template loaded yet
             <div style={styles.emptyStateCenter}>
@@ -743,37 +873,6 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
             </div>
           )}
         </div>
-
-
-        {/* ---- RIGHT PANEL (Desktop) ---- */}
-        {isDesktop && (
-          <div style={styles.rightPanel}>
-            {selectedLayer ? (
-              <>
-                <div style={styles.rightPanelStickyHeader}>
-                  <h3 style={styles.stickyTitle}>PROPERTIES — {selectedLayer.name}</h3>
-                </div>
-                <div style={styles.rightPanelContent}>
-                  {selectedLayer.type === 'text' && <TextToolbar />}
-                  <TransformBlock layer={selectedLayer} />
-                  <EffectsBlock layer={selectedLayer} />
-                  {selectedLayer.type === 'text' && <VariablePreview layerId={selectedLayer.id} variables={safeVariables} />}
-                  <VariableBindingPanel variables={safeVariables} />
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={styles.rightPanelStickyHeader}>
-                  <h3 style={styles.stickyTitle}>POSTER SETTINGS</h3>
-                </div>
-                <div style={styles.rightPanelContent}>
-                  <CanvasSizeBlock />
-                  <BackgroundBlock />
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ---- PUBLISHED RESULTS PANEL (Phase 6) ---- */}
@@ -891,36 +990,38 @@ const styles: Record<string, React.CSSProperties> = {
   templateName: { fontSize: 12, color: '#94A3B8', backgroundColor: 'rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: 6, fontWeight: 500 },
   saveStatus: { fontSize: 11, color: '#94A3B8', fontFamily: 'monospace' },
   // Professional tool buttons
-  topBtn: { padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', backgroundColor: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#CBD5E1', touchAction: 'manipulation', whiteSpace: 'nowrap', transition: 'all 0.12s' },
+  topBtn: { padding: '6px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', backgroundColor: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#CBD5E1', touchAction: 'manipulation', whiteSpace: 'nowrap', transition: 'all 0.12s' },
   toolGroup: { display: 'flex', alignItems: 'center', gap: 2 },
   toolDivider: { width: 1, height: 22, backgroundColor: '#2a2a2a', margin: '0 8px', flexShrink: 0 },
-  toolBtn: { padding: '7px 11px', borderRadius: 7, border: '1px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#94A3B8', touchAction: 'manipulation', whiteSpace: 'nowrap', transition: 'all 0.12s' },
+  toolBtn: { padding: '7px 11px', borderRadius: 4, border: '1px solid transparent', backgroundColor: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#94A3B8', touchAction: 'manipulation', whiteSpace: 'nowrap', transition: 'all 0.12s' },
   zoomLabel: { fontSize: 12, color: '#CBD5E1', width: 46, textAlign: 'center', fontVariantNumeric: 'tabular-nums' },
-  topSelect: { height: 32, borderRadius: 7, border: '1px solid #2a2a2a', backgroundColor: '#171717', color: '#94A3B8', fontSize: 12, fontWeight: 600, padding: '0 4px' },
+  topSelect: { height: 32, borderRadius: 4, border: '1px solid #2a2a2a', backgroundColor: '#171717', color: '#94A3B8', fontSize: 12, fontWeight: 600, padding: '0 4px' },
   workspace: { display: 'flex', flex: 1, overflow: 'hidden' },
-  leftPanel: { width: 260, flexShrink: 0, backgroundColor: '#171717', borderRight: '1px solid #2a2a2a', overflowY: 'auto', overflowX: 'visible', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 30 },
-  rightPanel: { width: 420, flexShrink: 0, backgroundColor: '#171717', borderLeft: '1px solid #2a2a2a', overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', zIndex: 30 },
-  rightPanelStickyHeader: { padding: '14px 20px', borderBottom: '1px solid #2a2a2a', backgroundColor: '#1f1f1f', zIndex: 10 },
-  stickyTitle: { fontSize: 11, fontWeight: 800, color: '#E2E8F0', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 },
-  rightPanelContent: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 },
-  canvasArea: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', zIndex: 10, backgroundColor: '#0f0f0f', backgroundImage: 'radial-gradient(#2a2a2a 1px, transparent 1px)', backgroundSize: '24px 24px' },
+  leftRibbon: { width: 72, flexShrink: 0, backgroundColor: '#18191B', display: 'flex', flexDirection: 'column', padding: '16px 0', zIndex: 40 },
+  ribbonBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 0', gap: 4, cursor: 'pointer', background: 'transparent', border: 'none', color: '#94A3B8', transition: 'color 0.15s' },
+  ribbonBtnActive: { color: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.05)' },
+  ribbonIcon: { fontSize: 20 },
+  ribbonLabel: { fontSize: 10, fontWeight: 500 },
+  leftFlyout: { width: 320, flexShrink: 0, backgroundColor: '#171717', borderRight: '1px solid #2a2a2a', overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 30, position: 'relative' },
+  canvasArea: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', zIndex: 10, backgroundColor: '#e5e7eb', backgroundImage: 'radial-gradient(#d1d5db 1px, transparent 1px)', backgroundSize: '24px 24px' },
+  contextToolbarPill: { backgroundColor: '#2B2D31', borderRadius: 8, margin: '12px auto 0 auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 50 },
   canvasWrapper: { flex: 1, position: 'relative', overflow: 'hidden' },
   emptyStateCenter: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyStateCard: { textAlign: 'center', maxWidth: 440, padding: 40, backgroundColor: '#171717', borderRadius: 10, border: '1px solid #2a2a2a', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' },
+  emptyStateCard: { textAlign: 'center', maxWidth: 440, padding: 40, backgroundColor: '#171717', borderRadius: 6, border: '1px solid #2a2a2a', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' },
   emptyStateTitle: { fontSize: 22, fontWeight: 800, color: '#E2E8F0', marginBottom: 12, marginTop: 0 },
   emptyStateMsg: { fontSize: 14, color: '#94A3B8', lineHeight: '1.6', marginBottom: 24 },
-  emptyStateCta: { padding: '12px 28px', borderRadius: 10, border: 'none', backgroundColor: '#0F766E', color: '#FFFFFF', fontSize: 14, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em' },
+  emptyStateCta: { padding: '12px 28px', borderRadius: 6, border: 'none', backgroundColor: '#0F766E', color: '#FFFFFF', fontSize: 14, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em' },
   panelSection: { display: 'flex', flexDirection: 'column', gap: 8 },
   panelTitle: { fontSize: 11, fontWeight: 700, color: '#E2E8F0', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, margin: '0 0 8px' },
   emptyMsg: { fontSize: 12, color: '#94A3B8', textAlign: 'center', padding: '20px 0' },
-  layerItem: { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 10px', borderRadius: 8, border: '1px solid', cursor: 'pointer', transition: 'all 0.15s' },
+  layerItem: { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 10px', borderRadius: 4, border: '1px solid', cursor: 'pointer', transition: 'all 0.15s' },
   layerIcon: { fontSize: 13, flexShrink: 0, width: 22, textAlign: 'center', color: '#94A3B8' },
   layerName: { flex: 1, fontSize: 12, fontWeight: 500, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   layerActions: { display: 'flex', gap: 4 },
-  miniBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '3px 5px', borderRadius: 5, lineHeight: 1, transition: 'background 0.1s' },
+  miniBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '3px 5px', borderRadius: 4, lineHeight: 1, transition: 'background 0.1s' },
   modalBackdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: '#171717', borderRadius: 12, padding: 20, width: 400, maxWidth: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: '1px solid #2a2a2a' },
+  modalBox: { backgroundColor: '#171717', borderRadius: 6, padding: 20, width: 400, maxWidth: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: '1px solid #2a2a2a' },
   modalTitle: { fontSize: 16, fontWeight: 700, color: '#E2E8F0', borderBottom: '1px solid #2a2a2a', paddingBottom: 8, margin: 0 },
-  issueRow: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 8, border: '1px solid', marginBottom: 8 },
-  modalBtn: { padding: '8px 16px', backgroundColor: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 6, fontSize: 13, fontWeight: 600, color: '#E2E8F0', cursor: 'pointer' },
+  issueRow: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 4, border: '1px solid', marginBottom: 8 },
+  modalBtn: { padding: '8px 16px', backgroundColor: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 4, fontSize: 13, fontWeight: 600, color: '#E2E8F0', cursor: 'pointer' },
 };
