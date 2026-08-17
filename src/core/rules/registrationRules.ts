@@ -60,38 +60,14 @@ export const CategoryMatchRule: RegistrationRule = {
   }
 };
 
-// REG-05: Group items level restriction
+// REG-05: Group items are supported at every organisation level.
 export const GroupItemLevelRule: RegistrationRule = {
   id: 'REG-05',
-  description: 'Group items start from specific levels based on config (default Division)',
+  description: 'Group items are allowed at unit, sector, division and higher levels',
   evaluate(context: RuleContext): RuleResult | null {
-    const { item, festivalConfig } = context;
-    
-    if (item.participation_type !== 'group') return null;
-
-    const currentLevel = festivalConfig?.level || 'unit';
-    const allowedStartLevel = festivalConfig?.group_items_start_level || 'division';
-
-    // Basic hierarchy weights for comparison
-    const levels: Record<string, number> = { 'unit': 1, 'sector': 2, 'division': 3, 'district': 4, 'state': 5 };
-    
-    if (levels[currentLevel] < levels[allowedStartLevel]) {
-      // Sector friendly match behavior
-      if (currentLevel === 'sector' && festivalConfig?.allow_sector_friendly_groups) {
-         return {
-           ruleId: this.id,
-           severity: 'warning',
-           message: 'Sector-level group items are for friendly matches only. Points go to the unit.',
-         };
-      }
-
-      return {
-        ruleId: this.id,
-        severity: 'error',
-        message: `Group items are only allowed from ${allowedStartLevel} level onwards.`,
-      };
-    }
-
+    // Group items are valid at every organisation level. Keep this rule in
+    // the registry for compatibility with existing rule configurations, but
+    // do not reject or warn for unit/sector registrations.
     return null;
   }
 };

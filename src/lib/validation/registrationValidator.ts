@@ -46,26 +46,13 @@ export class RegistrationValidator {
     return { isValid: true, errors: [], warnings: [] };
   }
 
-  // Rule 5: Group items Division level മുതൽ
+  // Rule 5: Group items are allowed at every organisation level.
   static checkGroupItemLevel(
     item: Item,
     currentLevel: string
   ): ValidationResult {
-    if (item.participation_type === 'group' && 
-        ['unit', 'sector'].includes(currentLevel)) {
-      if (currentLevel === 'sector') {
-        return {
-          isValid: true,
-          errors: [],
-          warnings: ['Sector-ൽ group items സൗഹൃദ മത്സരം മാത്രം. Points unit-ന് (Rule 5,6)']
-        };
-      }
-      return {
-        isValid: false,
-        errors: ['Group items Division level മുതൽ മാത്രം (Rule 5)'],
-        warnings: []
-      };
-    }
+    // Keep the method for callers that still reference REG-05. The rule is
+    // intentionally permissive now, including unit and sector levels.
     return { isValid: true, errors: [], warnings: [] };
   }
 
