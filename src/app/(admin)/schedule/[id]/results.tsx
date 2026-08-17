@@ -94,42 +94,53 @@ export default function ResultsPage() {
       setOfficialBracket(schedule.official_participant_bracket || '1');
     }
     
-    if (registrations && existingResults && !hasInitialized.current) {
-      const init: Record<string, ResultEntry> = {};
-      
-      // First populate with registrations
-      (registrations as any[]).forEach(reg => {
-        init[reg.id] = {
-          registration_id: reg.id,
-          code_letter: reg.code_letter,
-          rank: null,
-          grade: null,
-        };
-      });
-      
-      const existingRows = existingResults as any[];
-      const hasPublishedRows = existingRows.some(res =>
-        res.published === true || res.result_status === 'published'
-      );
-      setPublished(hasPublishedRows);
-      
-      const savedMethod = existingRows.find(res => res.collection_method)?.collection_method;
-      if (savedMethod === 'manual' || savedMethod === 'judges') {
-        setMode(savedMethod === 'manual' ? 'direct' : 'marks');
-      }
-      
-      existingRows.forEach(res => {
-        if (init[res.registration_id]) {
-          init[res.registration_id] = {
-            ...init[res.registration_id],
-            rank: res.rank ? res.rank.toString() + (res.rank === 1 ? 'st' : res.rank === 2 ? 'nd' : res.rank === 3 ? 'rd' : 'th') : null,
-            grade: res.grade,
-          };
+    if (registrations && existingResults !== undefined) {
+      setResults(prev => {
+        let changed = false;
+        const next = { ...prev };
+        
+        // Ensure all registrations exist in results
+        (registrations as any[]).forEach(reg => {
+          if (!next[reg.id]) {
+            next[reg.id] = {
+              registration_id: reg.id,
+              code_letter: reg.code_letter,
+              rank: null,
+              grade: null,
+            };
+            changed = true;
+          }
+        });
+        
+        // Load existing results on first pass
+        if (!hasInitialized.current) {
+          const existingRows = existingResults as any[];
+          const hasPublishedRows = existingRows.some(res =>
+            res.published === true || res.result_status === 'published'
+          );
+          setPublished(hasPublishedRows);
+          
+          const savedMethod = existingRows.find(res => res.collection_method)?.collection_method;
+          if (savedMethod === 'manual' || savedMethod === 'judges') {
+            setMode(savedMethod === 'manual' ? 'direct' : 'marks');
+          }
+          
+          existingRows.forEach(res => {
+            if (next[res.registration_id]) {
+              next[res.registration_id] = {
+                ...next[res.registration_id],
+                rank: res.rank ? res.rank.toString() + (res.rank === 1 ? 'st' : res.rank === 2 ? 'nd' : res.rank === 3 ? 'rd' : 'th') : null,
+                grade: res.grade,
+              };
+            }
+          });
+          
+          hasInitialized.current = true;
+          changed = true;
         }
+        
+        return changed ? next : prev;
       });
-      
-      setResults(init);
-      hasInitialized.current = true;
     }
   }, [registrations, existingResults, schedule]);
 
