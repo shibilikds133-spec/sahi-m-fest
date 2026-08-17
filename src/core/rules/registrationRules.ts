@@ -17,11 +17,13 @@ export const CategoryMatchRule: RegistrationRule = {
   evaluate(context: RuleContext): RuleResult | null {
     const { participant, item } = context;
     
-    const pCat = participant.category_code;
+    const pCat = String(participant.category_code ?? '').trim().toUpperCase();
     const pCatShort = pCat === 'SENIOR' ? 'SR' : (pCat === 'JUNIOR' ? 'JR' : (pCat === 'CAMPUS' ? 'CA' : pCat));
     const pCatLong = pCat === 'SR' ? 'SENIOR' : (pCat === 'JR' ? 'JUNIOR' : (pCat === 'CA' ? 'CAMPUS' : pCat));
 
-    const itemCodes = item.category_codes || [];
+    const itemCodes = (Array.isArray(item.category_codes) ? item.category_codes : [item.category_codes])
+      .filter(Boolean)
+      .map((code: unknown) => String(code).trim().toUpperCase());
     const matchesCategory = itemCodes.includes(pCat) || 
                             itemCodes.includes(pCatShort) || 
                             itemCodes.includes(pCatLong) || 
