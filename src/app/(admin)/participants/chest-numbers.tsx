@@ -1,97 +1,31 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
-import { SsfButton } from '../../../components/ui/SsfButton';
 import { useParticipants } from '../../../core/hooks/useParticipants';
-import { ArrowLeft, KeyRound, AlertTriangle, CheckCircle } from 'lucide-react-native';
+import { useFestival } from '../../../core/hooks/useFestival';
+import { ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react-native';
 import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 
-const CATEGORIES = ['LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS'];
-
 export default function ChestNumberGeneration() {
-  const router = useRouter();
   const goBack = useGoBack('/(admin)/participants');
-  const { participants, isLoadingList, updateParticipant } = useParticipants();
-  
-  const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const { participants, isLoadingList } = useParticipants();
+  const { useActiveFestival } = useFestival();
+  const { data: festival } = useActiveFestival();
 
-  // Calculate stats per category
-  const stats = useMemo(() => {
-    const result: Record<string, { total: number; approvedWithoutNo: number; withNo: number; participantsToUpdate: any[] }> = {};
-    CATEGORIES.forEach(cat => {
-      result[cat] = { total: 0, approvedWithoutNo: 0, withNo: 0, participantsToUpdate: [] };
+  const categoryStats = useMemo(() => {
+    const stats = new Map<string, { category: string; total: number; numeric: number }>();
+    participants.forEach((participant: any) => {
+      const category = String(participant.category_code || 'Uncategorised').trim();
+      const current = stats.get(category) ?? { category, total: 0, numeric: 0 };
+      current.total += 1;
+      if (/^\d+$/.test(String(participant.chest_number || ''))) current.numeric += 1;
+      stats.set(category, current);
     });
-
-    participants.forEach((p: any) => {
-      const cat = p.category_code;
-      if (result[cat]) {
-        result[cat].total++;
-        if (p.chest_number) {
-          result[cat].withNo++;
-        } else if (p.status === 'approved') {
-          result[cat].approvedWithoutNo++;
-          result[cat].participantsToUpdate.push(p);
-        }
-      }
-    });
-
-    return result;
+    return Array.from(stats.values()).sort((a, b) => a.category.localeCompare(b.category));
   }, [participants]);
 
-  const handleGenerate = async (categoryCode: string) => {
-    const data = stats[categoryCode];
-    if (data.approvedWithoutNo === 0) return;
-
-    const msg = `Generate chest numbers for ${data.approvedWithoutNo} approved participants in ${categoryCode}?`;
-    
-    const doGenerate = async () => {
-      setIsGenerating(categoryCode);
-      try {
-        // Find the maximum existing chest number number for this category
-        let maxNo = 0;
-        participants.forEach((p: any) => {
-          if (p.category_code === categoryCode && p.chest_number && p.chest_number.startsWith(`${categoryCode}-`)) {
-            const numPart = parseInt(p.chest_number.split('-')[1] || '0', 10);
-            if (!isNaN(numPart) && numPart > maxNo) {
-              maxNo = numPart;
-            }
-          }
-        });
-
-        // Assign sequentially
-        let currentNo = maxNo + 1;
-        
-        // We do sequential updates to ensure stable numbering. 
-        // In a real robust system, this should be an RPC call to avoid race conditions.
-        // For now, doing it sequentially via the repository.
-        const promises = data.participantsToUpdate.map((p, index) => {
-          const newChestNo = `${categoryCode}-${(currentNo + index).toString().padStart(3, '0')}`;
-          return updateParticipant({ id: p.id, updates: { chest_number: newChestNo } });
-        });
-
-        await Promise.all(promises);
-
-        if (Platform.OS === 'web') window.alert('Successfully generated chest numbers!');
-        else Alert.alert('Success', 'Successfully generated chest numbers!');
-      } catch (error: any) {
-        if (Platform.OS === 'web') window.alert(error.message);
-        else Alert.alert('Error', error.message);
-      } finally {
-        setIsGenerating(null);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(msg)) doGenerate();
-    } else {
-      Alert.alert('Generate Chest Numbers', msg, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Generate', onPress: doGenerate },
-      ]);
-    }
-  };
+  const range = festival?.chest_number_category_range ?? 100;
 
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
@@ -102,60 +36,31 @@ export default function ChestNumberGeneration() {
         <Text className="text-2xl font-poppins-black text-ssf-text">Chest Numbers</Text>
       </View>
 
-      <View className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 flex-row gap-x-3">
-        <AlertTriangle size={24} color="#1D4ED8" />
+      <View className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4 flex-row gap-x-3">
+        <AlertTriangle size={22} color="#1D4ED8" />
         <View className="flex-1">
-          <Text className="font-poppins-bold text-blue-800">Auto-Generation Rules</Text>
+          <Text className="font-poppins-bold text-blue-800">Numeric category ranges</Text>
           <Text className="font-poppins text-xs text-blue-700 mt-1">
-            Chest numbers (e.g. LP-001) can only be generated for participants whose status is &quot;Approved&quot;. Pending or Rejected participants will be skipped.
+            Category 1 starts at {range}, category 2 starts at {range * 2}, and so on. Each category can contain up to {range} participants.
           </Text>
         </View>
       </View>
 
       {isLoadingList ? (
-        <SsfTableSkeleton rows={7} columns={3} compact />
-      ) : (
-        CATEGORIES.map(cat => {
-          const data = stats[cat];
-          const isProcessing = isGenerating === cat;
-          
-          return (
-            <SsfCard key={cat} className="mb-4">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-x-3">
-                  <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center border border-gray-200">
-                    <Text className="font-poppins-black text-lg text-ssf-primary">{cat}</Text>
-                  </View>
-                  <View>
-                    <Text className="font-poppins-bold text-ssf-text">Category {cat}</Text>
-                    <Text className="font-poppins text-xs text-ssf-text-muted">Total: {data.total} • Assigned: {data.withNo}</Text>
-                  </View>
-                </View>
-
-                {data.approvedWithoutNo > 0 ? (
-                  <View className="items-end">
-                    <Text className="font-poppins-bold text-orange-600 text-xs mb-2">
-                      {data.approvedWithoutNo} needs number
-                    </Text>
-                    <SsfButton 
-                      label={isProcessing ? "Processing..." : "Generate"} 
-                      size="sm" 
-                      icon={!isProcessing ? <KeyRound size={14} color="white" /> : undefined}
-                      onPress={() => handleGenerate(cat)}
-                      disabled={isProcessing}
-                    />
-                  </View>
-                ) : (
-                  <View className="items-center justify-center flex-row gap-x-2 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-                    <CheckCircle size={16} color="#15803D" />
-                    <Text className="font-poppins-bold text-xs text-green-700">All Set</Text>
-                  </View>
-                )}
-              </View>
-            </SsfCard>
-          );
-        })
-      )}
+        <SsfTableSkeleton rows={6} columns={3} compact />
+      ) : categoryStats.length === 0 ? (
+        <SsfCard><Text className="font-poppins text-ssf-text-muted">No participants found for this festival.</Text></SsfCard>
+      ) : categoryStats.map((stat) => (
+        <SsfCard key={stat.category} className="mb-3">
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className="font-poppins-bold text-ssf-text">Category {stat.category}</Text>
+              <Text className="font-poppins text-xs text-ssf-text-muted">{stat.total} participants · {stat.numeric}/{stat.total} numeric chest numbers</Text>
+            </View>
+            {stat.numeric === stat.total ? <CheckCircle size={20} color="#15803D" /> : <AlertTriangle size={20} color="#D97706" />}
+          </View>
+        </SsfCard>
+      ))}
     </ScrollView>
   );
 }
