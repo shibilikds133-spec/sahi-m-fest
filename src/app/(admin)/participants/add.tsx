@@ -62,14 +62,13 @@ export default function AddParticipant() {
   const { tenant_id } = useAuthStore();
   const { useActiveFestival } = useFestival();
   const { data: activeFestival, isLoading: isFestivalLoading } = useActiveFestival();
-  const validTenantId = tenant_id === 'test-unit-001'
-    ? '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
-    : tenant_id;
+  const validTenantId = tenant_id;
   const festivalId = activeFestival?.id;
   const festivalYear = activeFestival?.festival_year ?? DEFAULT_FESTIVAL_YEAR;
   const isCollegeFest = activeFestival?.festival_template === 'college_fest';
   const { data: collegeCategories = [], isLoading: categoriesLoading, error: categoriesError } =
     useFestivalCategories(isCollegeFest ? festivalId : undefined, true);
+  const participantCollegeCategories = collegeCategories.filter(category => category.code.toUpperCase() !== 'GN');
 
 
   // Form state
@@ -244,7 +243,7 @@ export default function AddParticipant() {
     try {
       if (isCollegeFest) {
         const selected = collegeCategory;
-        if (!selected || !collegeCategories.some(item => item.code === selected)) {
+        if (!selected || !participantCollegeCategories.some(item => item.code === selected)) {
           Alert.alert('Validation Error', 'Please select an active College Fest category.');
           return;
         }
@@ -351,7 +350,7 @@ export default function AddParticipant() {
       else Alert.alert('Error', msg);
     } else {
       const savedCategoryLabel = isCollegeFest
-        ? collegeCategories.find(item => item.code === category)?.name ?? category
+        ? participantCollegeCategories.find(item => item.code === category)?.name ?? category
         : getCategoryLabel(category as CategoryCode);
       const successMsg = `${name} saved under ${savedCategoryLabel}.\nChest No: ${chest_number}`;
       const photoMsg = photoUploadError
@@ -498,7 +497,7 @@ export default function AddParticipant() {
             <Text className="font-poppins text-ssf-text-muted mb-2">Category *</Text>
             {categoriesLoading ? <ActivityIndicator color="#1B6B3A" /> : categoriesError ? (
               <Text className="font-poppins text-sm text-red-600">Unable to load College Fest categories.</Text>
-            ) : collegeCategories.length === 0 ? (
+            ) : participantCollegeCategories.length === 0 ? (
               <View className="rounded-xl border border-amber-300 bg-amber-50 p-4">
                 <Text className="font-poppins text-sm text-amber-800">No College Fest categories have been created yet.</Text>
                 <TouchableOpacity onPress={() => router.push('/(admin)/settings/categories' as any)} className="mt-3">
@@ -506,7 +505,7 @@ export default function AddParticipant() {
                 </TouchableOpacity>
               </View>
             ) : <View className="flex-row flex-wrap gap-2">
-              {collegeCategories.map(category => (
+              {participantCollegeCategories.map(category => (
                 <TouchableOpacity
                   key={category.id}
                   className={`min-w-[120px] px-3 py-3 rounded-xl border items-center ${collegeCategory === category.code ? 'bg-ssf-primary border-ssf-primary' : 'bg-ssf-surface border-ssf-border'}`}

@@ -51,4 +51,10 @@ export const festivalCategoryService = {
     if (!data) throw new Error('The category status was not returned after update.');
     return data;
   },
+  async remove(id: string) {
+    const { data, error } = await festivalCategoryRepository.remove(id);
+    if (error) friendlyError(error);
+    if (data?.status === 'blocked') throw new Error(data.message || 'This category is in use and cannot be deleted.');
+    return data;
+  },
 };

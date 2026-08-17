@@ -6,10 +6,10 @@
 BEGIN;
 
 ALTER TABLE public.festival_calendar
-  ADD COLUMN IF NOT EXISTS general_category_enabled boolean NOT NULL DEFAULT true;
+  ADD COLUMN IF NOT EXISTS general_category_enabled boolean NOT NULL DEFAULT false;
 
 COMMENT ON COLUMN public.festival_calendar.general_category_enabled IS
-  'Whether the tenant allows General-category events for this festival. Defaults to true; existing records are never changed by toggling this setting.';
+  'Whether the tenant allows General-category events for this festival. Defaults to false; existing registrations and results are never changed by toggling this setting.';
 
 COMMIT;
 

@@ -33,4 +33,8 @@ export const festivalCategoryRepository = {
       .select('*')
       .single<FestivalCategory>();
   },
+
+  remove(id: string) {
+    return supabase.rpc('delete_festival_category_safely', { p_category_id: id });
+  },
 };

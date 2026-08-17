@@ -411,7 +411,7 @@ export default function ParticipantDetails() {
   const categoryOptions = isCollegeFest
     ? [
         { label: '-- Select Category --', value: '' },
-        ...collegeCategories.filter(category => category.is_active || category.code === participant.category_code).map((category) => ({
+        ...collegeCategories.filter(category => category.code.toUpperCase() !== 'GN' && (category.is_active || category.code === participant.category_code)).map((category) => ({
           label: `${category.name}${category.is_active ? '' : ' (Archived)'}`,
           value: category.code,
         })),

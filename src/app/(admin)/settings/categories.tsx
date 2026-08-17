@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Archive, Plus, RotateCcw } from 'lucide-react-native';
+import { ArrowLeft, Archive, Plus, RotateCcw, Trash2 } from 'lucide-react-native';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { useFestival } from '../../../core/hooks/useFestival';
@@ -14,7 +14,7 @@ export default function CollegeFestCategoriesScreen() {
   const { useActiveFestival, useUpdateFestival } = useFestival();
   const { data: festival, isLoading: festivalLoading } = useActiveFestival();
   const isCollegeFest = festival?.festival_template === 'college_fest';
-  const { data = [], isLoading, error, create, update, setActive } = useFestivalCategories(
+  const { data = [], isLoading, error, create, update, setActive, remove } = useFestivalCategories(
     isCollegeFest ? festival?.id : undefined,
   );
   const updateFestival = useUpdateFestival();
@@ -24,11 +24,92 @@ export default function CollegeFestCategoriesScreen() {
   const [sortOrder, setSortOrder] = useState('0');
   const [codeTouched, setCodeTouched] = useState(false);
   const [desiredActive, setDesiredActive] = useState(true);
-  const [generalCategoryEnabled, setGeneralCategoryEnabled] = useState(true);
+  const [generalCategoryEnabled, setGeneralCategoryEnabled] = useState(false);
+  const [generalSetupOpen, setGeneralSetupOpen] = useState(false);
+
+  const generalCategory = data.find((category) => category.code.toLowerCase() === 'gn');
+  const customCategories = data.filter((category) => category.code.toLowerCase() !== 'gn');
 
   useEffect(() => {
-    if (festival) setGeneralCategoryEnabled(festival.general_category_enabled !== false);
+    if (festival) setGeneralCategoryEnabled(festival.general_category_enabled === true);
   }, [festival]);
+
+  const setGeneralCategory = (nextValue: boolean) => {
+    if (nextValue) {
+      setGeneralSetupOpen(true);
+      return;
+    }
+    const message = nextValue
+      ? 'General category will be available for this festival.'
+      : 'This only disables General category for new use. Existing registrations, schedules, marks, and results will remain unchanged.';
+    Alert.alert(
+      nextValue ? 'Enable General category?' : 'Disable General category?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: nextValue ? 'Enable' : 'Disable',
+          style: nextValue ? 'default' : 'destructive',
+          onPress: async () => {
+            try {
+              await updateFestival.mutateAsync({
+                id: festival?.id,
+                general_category_enabled: nextValue,
+              });
+              setGeneralCategoryEnabled(nextValue);
+              Alert.alert('Saved', `General category ${nextValue ? 'enabled' : 'disabled'}.`);
+            } catch (statusError) {
+              Alert.alert('Unable to update', statusError instanceof Error ? statusError.message : 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const saveGeneralCategory = async () => {
+    if (!festival) return;
+    try {
+      const input = { name: 'General', code: 'gn', sort_order: 0 };
+      const saved = generalCategory
+        ? await update.mutateAsync({ id: generalCategory.id, input })
+        : await create.mutateAsync({ tenantId: festival.tenant_id, input });
+      if (!saved.is_active) await setActive.mutateAsync({ id: saved.id, isActive: true });
+      await updateFestival.mutateAsync({ id: festival.id, general_category_enabled: true });
+      setGeneralCategoryEnabled(true);
+      setGeneralSetupOpen(false);
+      Alert.alert('Saved', 'General category is now available for item creation.');
+    } catch (saveError) {
+      Alert.alert('Unable to save General category', saveError instanceof Error ? saveError.message : 'Please try again.');
+    }
+  };
+
+  const deleteCategory = (category: FestivalCategory) => {
+    Alert.alert(
+      'Delete category?',
+      `Delete "${category.name}"? This is allowed only when no participant or item uses it. Existing history will never be deleted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await remove.mutateAsync(category.id);
+              if (category.code.toLowerCase() === 'gn') {
+                await updateFestival.mutateAsync({ id: festival?.id, general_category_enabled: false });
+                setGeneralCategoryEnabled(false);
+                setGeneralSetupOpen(false);
+              }
+              Alert.alert('Deleted', 'The unused category was deleted.');
+            } catch (deleteError) {
+              Alert.alert('Cannot delete category', deleteError instanceof Error ? deleteError.message : 'Please archive it instead.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   useEffect(() => {
     if (!editing && !codeTouched) setCode(generateCategoryCode(name));
@@ -78,46 +159,34 @@ export default function CollegeFestCategoriesScreen() {
           <View className="flex-1 pr-4">
             <Text className="font-poppins-bold text-base">General Category</Text>
             <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">
-              Enabled by default for every tenant. The tenant admin can turn it off when this festival does not use General-category events.
+              Disabled by default. Turn it on to configure General before using it for items.
             </Text>
             <Text className="mt-2 font-poppins text-xs text-ssf-text-muted">
-              Current status: {generalCategoryEnabled ? 'Available' : 'Disabled for new use'}
+              Current status: {generalCategoryEnabled ? 'Available' : 'Disabled'}
             </Text>
           </View>
           <Switch
             value={generalCategoryEnabled}
             disabled={updateFestival.isPending}
-            onValueChange={(nextValue) => {
-              const message = nextValue
-                ? 'General category will be available for this festival.'
-                : 'This only disables General category for new use. Existing registrations, schedules, marks, and results will remain unchanged.';
-              Alert.alert(
-                nextValue ? 'Enable General category?' : 'Disable General category?',
-                message,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: nextValue ? 'Enable' : 'Disable',
-                    style: nextValue ? 'default' : 'destructive',
-                    onPress: async () => {
-                      try {
-                        await updateFestival.mutateAsync({
-                          id: festival.id,
-                          general_category_enabled: nextValue,
-                        });
-                        setGeneralCategoryEnabled(nextValue);
-                        Alert.alert('Saved', `General category ${nextValue ? 'enabled' : 'disabled'}.`);
-                      } catch (statusError) {
-                        Alert.alert('Unable to update', statusError instanceof Error ? statusError.message : 'Please try again.');
-                      }
-                    },
-                  },
-                ],
-              );
-            }}
+            onValueChange={setGeneralCategory}
           />
         </View>
       </SsfCard>
+
+      {isCollegeFest && generalSetupOpen && !generalCategoryEnabled && <SsfCard className="mb-5 border border-emerald-200 bg-emerald-50 p-4">
+        <Text className="mb-1 font-poppins-bold text-base">Create General Category</Text>
+        <Text className="mb-4 font-poppins text-xs text-ssf-text-muted">
+          Save this setup to make General (GN) available in item creation. It accepts participants from every existing participant category.
+        </Text>
+        <Text className="mb-1 font-poppins text-xs text-ssf-text-muted">Category Name</Text>
+        <TextInput value="General" editable={false} className="mb-3 rounded-xl border border-ssf-border bg-white p-3 font-poppins" />
+        <Text className="mb-1 font-poppins text-xs text-ssf-text-muted">Category Code</Text>
+        <TextInput value="gn" editable={false} className="mb-4 rounded-xl border border-ssf-border bg-white p-3 font-poppins" />
+        <View className="flex-row gap-x-2">
+          <SsfButton label={create.isPending || update.isPending || updateFestival.isPending ? 'Saving…' : 'Save General Category'} onPress={saveGeneralCategory} disabled={create.isPending || update.isPending || setActive.isPending || updateFestival.isPending} className="flex-1" />
+          <SsfButton label="Cancel" variant="outline" onPress={() => setGeneralSetupOpen(false)} />
+        </View>
+      </SsfCard>}
 
       {isCollegeFest && <SsfCard className="mb-5 p-4">
         <Text className="mb-3 font-poppins-bold text-base">{editing ? 'Edit Category' : 'Create Category'}</Text>
@@ -137,13 +206,37 @@ export default function CollegeFestCategoriesScreen() {
         </View>
       </SsfCard>}
 
+      <Text className="mb-3 font-poppins-bold text-base">Created Categories</Text>
+      {generalCategory && <SsfCard className="mb-3 p-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="font-poppins-bold text-base">{generalCategory.name}</Text>
+            <Text className="font-poppins text-xs text-ssf-text-muted">{generalCategory.code} · Order {generalCategory.sort_order} · {generalCategory.is_active ? 'Active' : 'Archived'}{generalCategoryEnabled ? '' : ' · Feature disabled'}</Text>
+          </View>
+          <TouchableOpacity onPress={() => beginEdit(generalCategory)} className="px-3 py-2"><Text className="font-poppins-bold text-emerald-700">Edit</Text></TouchableOpacity>
+          <TouchableOpacity disabled={setActive.isPending} onPress={async () => {
+            if (!generalCategory.is_active) {
+              setGeneralSetupOpen(true);
+              return;
+            }
+            setGeneralCategory(false);
+            return;
+          }} className="p-2">
+            {generalCategory.is_active ? <Archive size={18} color="#B45309" /> : <RotateCcw size={18} color="#047857" />}
+          </TouchableOpacity>
+          <TouchableOpacity disabled={remove.isPending} onPress={() => deleteCategory(generalCategory)} className="p-2">
+            <Trash2 size={18} color="#B91C1C" />
+          </TouchableOpacity>
+        </View>
+      </SsfCard>}
+
       {isCollegeFest && (isLoading ? <ActivityIndicator /> : error ? (
         <Text className="text-red-700">Unable to load categories. Please refresh.</Text>
-      ) : data.length === 0 ? (
+      ) : customCategories.length === 0 ? (
         <View className="items-center rounded-xl border border-dashed border-ssf-border p-8">
-          <Plus size={28} color="#64748B" /><Text className="mt-2 font-poppins">No College Fest categories have been created yet.</Text>
+          <Plus size={28} color="#64748B" /><Text className="mt-2 font-poppins">No custom College Fest categories have been created yet.</Text>
         </View>
-      ) : data.map((category) => (
+      ) : customCategories.map((category) => (
         <SsfCard key={category.id} className="mb-3 p-4">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
@@ -160,6 +253,9 @@ export default function CollegeFestCategoriesScreen() {
               className="p-2"
             >
               {category.is_active ? <Archive size={18} color="#B45309" /> : <RotateCcw size={18} color="#047857" />}
+            </TouchableOpacity>
+            <TouchableOpacity disabled={remove.isPending} onPress={() => deleteCategory(category)} className="p-2">
+              <Trash2 size={18} color="#B91C1C" />
             </TouchableOpacity>
           </View>
         </SsfCard>

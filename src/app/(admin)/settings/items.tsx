@@ -24,6 +24,12 @@ export default function ItemActivationSettings() {
     isCollegeFest ? festival?.id : undefined,
     true,
   );
+  const itemCategoryOptions = useMemo(() => {
+    if (!isCollegeFest || festival?.general_category_enabled !== true) {
+      return collegeCategories.filter(category => category.code.toUpperCase() !== 'GN');
+    }
+    return collegeCategories;
+  }, [collegeCategories, festival?.general_category_enabled, isCollegeFest]);
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
   const { data: persistedItems = [], isLoading: persistedItemsLoading } = useItems(festival?.id);
   const updateActiveItems = useUpdateActiveItems(festival?.id);
@@ -69,14 +75,14 @@ export default function ItemActivationSettings() {
   }, [showTenantItemsOnly, tenantFilterLoaded, tenantFilterStorageKey]);
 
   useEffect(() => {
-    if (isCollegeFest && collegeCategories.length > 0) {
-      setCustomForm(current => ({ ...current, cat: current.cat && collegeCategories.some(category => category.code === current.cat)
+    if (isCollegeFest && itemCategoryOptions.length > 0) {
+      setCustomForm(current => ({ ...current, cat: current.cat && itemCategoryOptions.some(category => category.code === current.cat)
         ? current.cat
-        : collegeCategories[0].code }));
+        : itemCategoryOptions[0].code }));
     } else if (!isCollegeFest) {
       setCustomForm(current => ({ ...current, cat: 'GN' }));
     }
-  }, [isCollegeFest, collegeCategories]);
+  }, [isCollegeFest, itemCategoryOptions]);
 
   useEffect(() => {
     if (activeCodes) {
@@ -148,7 +154,7 @@ export default function ItemActivationSettings() {
     setSelectedCodes([...selectedCodes, newItem.item_code]);
     setIsAddModalOpen(false);
     setCategoryMenuOpen(false);
-    setCustomForm({ code: '', name: '', cat: isCollegeFest ? (collegeCategories[0]?.code || '') : 'GN', type: 'individual' });
+    setCustomForm({ code: '', name: '', cat: isCollegeFest ? (itemCategoryOptions[0]?.code || '') : 'GN', type: 'individual' });
   };
 
   const handleSave = async () => {
@@ -198,7 +204,7 @@ export default function ItemActivationSettings() {
               onChangeText={setSearch}
             />
           </View>
-          <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || collegeCategories.length === 0)} onPress={() => setIsAddModalOpen(true)}>
+          <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || itemCategoryOptions.length === 0)} onPress={() => setIsAddModalOpen(true)}>
             + Custom
           </Button>
           <Button variant="ghost" size="sm" onPress={() => setSelectedCodes(availableItems.map(i => i.item_code))}>
@@ -362,12 +368,12 @@ export default function ItemActivationSettings() {
                     accessibilityLabel="Select item category"
                   >
                     <Text className="font-poppins text-sm text-ui-text">
-                      {collegeCategories.find(category => category.code === customForm.cat)?.name || 'Select a category'}
+                      {itemCategoryOptions.find(category => category.code === customForm.cat)?.name || 'Select a category'}
                     </Text>
                   </TouchableOpacity>
                   {categoryMenuOpen && (
                     <View className="mt-1 rounded-md border border-ui-border bg-white">
-                      {collegeCategories.map(category => (
+                      {itemCategoryOptions.map(category => (
                         <TouchableOpacity
                           key={category.id}
                           className="border-b border-ui-border px-3 py-2.5 last:border-b-0"

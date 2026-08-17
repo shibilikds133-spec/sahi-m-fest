@@ -24,5 +24,9 @@ export const useFestivalCategories = (festivalId?: string, activeOnly = false) =
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => festivalCategoryService.setActive(id, isActive),
     onSuccess: invalidate,
   });
-  return { ...categories, create, update, setActive };
+  const remove = useMutation({
+    mutationFn: (id: string) => festivalCategoryService.remove(id),
+    onSuccess: invalidate,
+  });
+  return { ...categories, create, update, setActive, remove };
 };
