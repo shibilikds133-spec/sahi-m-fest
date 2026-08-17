@@ -39,6 +39,10 @@ export default function CollegeFestCategoriesScreen() {
       setGeneralSetupOpen(true);
       return;
     }
+    if (generalSetupOpen && !generalCategoryEnabled) {
+      setGeneralSetupOpen(false);
+      return;
+    }
     const message = nextValue
       ? 'General category will be available for this festival.'
       : 'This only disables General category for new use. Existing registrations, schedules, marks, and results will remain unchanged.';
@@ -162,11 +166,11 @@ export default function CollegeFestCategoriesScreen() {
               Disabled by default. Turn it on to configure General before using it for items.
             </Text>
             <Text className="mt-2 font-poppins text-xs text-ssf-text-muted">
-              Current status: {generalCategoryEnabled ? 'Available' : 'Disabled'}
+              Current status: {generalCategoryEnabled ? 'Available' : generalSetupOpen ? 'Setup pending — save below' : 'Disabled'}
             </Text>
           </View>
           <Switch
-            value={generalCategoryEnabled}
+            value={generalCategoryEnabled || generalSetupOpen}
             disabled={updateFestival.isPending}
             onValueChange={setGeneralCategory}
           />
