@@ -34,6 +34,8 @@ const resolveVariables = (text: string, vars: Record<string, string | undefined>
   });
 };
 
+import { useResolvedImageUrl } from '../../../../core/hooks/useResolvedImageUrl';
+
 export default function OffscreenRenderer({
   layers,
   variables,
@@ -48,12 +50,13 @@ export default function OffscreenRenderer({
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
-  const [bgImage, bgStatus] = useImage(backgroundUrl || '', 'anonymous');
+  const resolvedBgUrl = useResolvedImageUrl(backgroundUrl);
+  const [bgImage, bgStatus] = useImage(resolvedBgUrl || '', 'anonymous');
 
   useEffect(() => {
     let isMounted = true;
 
-    // Wait for background image
+    // Wait for background image (using the original backgroundUrl for presence check, but waiting on status)
     if (backgroundUrl && bgStatus !== 'loaded') {
       if (bgStatus === 'failed') {
         console.warn('[OffscreenRenderer] BG image failed, continuing anyway');
@@ -135,15 +138,12 @@ export default function OffscreenRenderer({
       <Stage width={width} height={height} ref={stageRef}>
         <Layer ref={layerRef}>
           {/* Background image */}
-          {bgImage && (
-            <KonvaImage
-              image={bgImage}
+          {backgroundUrl && (
+            <BackgroundImage
+              src={resolvedBgUrl || ''}
               width={width}
               height={height}
-              x={backgroundTransform?.x ?? 0}
-              y={backgroundTransform?.y ?? 0}
-              scaleX={backgroundTransform?.scale ?? 1}
-              scaleY={backgroundTransform?.scale ?? 1}
+              transform={backgroundTransform}
             />
           )}
 

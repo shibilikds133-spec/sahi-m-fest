@@ -13,6 +13,7 @@ import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useJudges } from '../../../../core/hooks/useJudges';
 import { useParticipants } from '../../../../core/hooks/useParticipants';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
+import { useEntrySizes } from './useEntrySizes';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import {
   calculateFlexiblePoints,
@@ -144,20 +145,30 @@ export default function ResultsPage() {
     }
   }, [registrations, existingResults, schedule]);
 
-  const participantCount = Math.max((registrations as any[])?.length ?? 0, 1);
   const isGroupEvent =
     schedule?.items?.participation_type === 'group'
     || (registrations as any[])?.some((registration) => registration.is_group_registration === true)
     || false;
+
+  const { data: entrySizes } = useEntrySizes(scheduleId, registrations as any[]);
+  const defaultGroupSize = React.useMemo(() => {
+    if (!entrySizes) return 1;
+    const sizes = Object.values(entrySizes) as number[];
+    if (sizes.length === 0) return 1;
+    return Math.max(...sizes); // Safe assumption: all entries in a group event have the same size.
+  }, [entrySizes]);
+
   const automaticBracket = resolvePointBracket(
     flexiblePointsConfig,
-    participantCount,
+    defaultGroupSize,
     isGroupEvent,
   );
   const resolvedBracketKey =
-    flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden && !published
-      ? automaticBracket?.key ?? officialBracket
-      : officialBracket;
+    !isGroupEvent
+      ? (automaticBracket?.key ?? '1')
+      : flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden && !published
+        ? automaticBracket?.key ?? officialBracket
+        : officialBracket;
 
   // ── Judge marks helper ─────────────────────────────────────────────────────
   const getJudgeMarks = React.useCallback(
@@ -193,10 +204,11 @@ export default function ResultsPage() {
 
   const getPointsPreview = (grade: string | null, rank: string | null) => {
     const rankNum = typeof rank === 'string' ? parseInt(rank.replace(/\D/g, ''), 10) : null;
+    
     const calculation = calculateFlexiblePoints({
       grade,
       rank: Number.isFinite(rankNum) ? rankNum : null,
-      participantCount,
+      participantCount: 1, // Reverted: server will use bracketOverride anyway
       isGroup: isGroupEvent,
       config: flexiblePointsConfig,
       bracketOverride: resolvedBracketKey,
@@ -235,6 +247,12 @@ export default function ResultsPage() {
     }
     return { label: '🟡 Waiting for judge submissions', color: 'bg-yellow-50', textColor: 'text-yellow-700' };
   }, [registrations, expectedJudges, published, getJudgeMarks]);
+
+  const hasAtLeastOneResult = React.useMemo(() => {
+    return Object.values(results).some(
+      r => (r.rank && r.rank !== '-') || (r.grade && r.grade !== '-')
+    );
+  }, [results]);
 
   const autoFillFromMarks = React.useCallback(() => {
     if (!registrations || !markEntries) return;
@@ -312,6 +330,38 @@ export default function ResultsPage() {
       return;
     }
 
+    if (mode === 'marks') {
+      const regs = (registrations as any[]) || [];
+      let missingMarksCount = 0;
+      let anySubmissions = false;
+
+      regs.forEach(reg => {
+        const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final);
+        if (marks.length === 0) {
+          missingMarksCount++;
+        } else {
+          anySubmissions = true;
+        }
+      });
+
+      if (anySubmissions && missingMarksCount > 0) {
+        const warnMsg = `⚠️ WARNING: ${missingMarksCount} participant(s) have NOT received any marks from the judges, while others have! Are you absolutely sure you want to publish the results now?`;
+        
+        if (Platform.OS === 'web') {
+          const confirmed = window.confirm(warnMsg);
+          if (!confirmed) return;
+        } else {
+          const confirmed = await new Promise((resolve) => {
+            Alert.alert('Incomplete Marks Warning', warnMsg, [
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Publish Anyway', style: 'destructive', onPress: () => resolve(true) }
+            ]);
+          });
+          if (!confirmed) return;
+        }
+      }
+    }
+
     // Lock guard for republishing
     if (published && !forceRepublishConfirmed) {
       const warnMsg = 'Republishing will recalculate grade points using the currently selected official participant bracket. Are you sure you want to republish?';
@@ -340,11 +390,12 @@ export default function ResultsPage() {
         
         // The server is authoritative; the shared client engine is used for preview.
         const normalizedGrade = r.grade && r.grade !== '-' ? r.grade : null;
+        
         const calculation = await pointsService.calculateAward({
           festivalId: resolvedFestivalId,
           grade: normalizedGrade,
           rank: rankNum,
-          participantCount,
+          participantCount: defaultGroupSize,
           isGroup: isGroupEvent,
           bracketOverride: resolvedBracketKey,
         });
@@ -458,22 +509,24 @@ export default function ResultsPage() {
           </TouchableOpacity>
 
           {/* Mode B: Direct entry */}
-          <TouchableOpacity
-            onPress={() => setMode('direct')}
-            className="bg-white border border-gray-200 rounded-lg p-4"
-          >
-            <View className="flex-row items-center gap-x-3 mb-2">
-              <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-                <PenLine size={20} color="#6B7280" />
+          {(!markEntries || (markEntries as any[]).length === 0) && (
+            <TouchableOpacity
+              onPress={() => setMode('direct')}
+              className="bg-white border border-gray-200 rounded-lg p-4"
+            >
+              <View className="flex-row items-center gap-x-3 mb-2">
+                <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
+                  <PenLine size={20} color="#6B7280" />
+                </View>
+                <Text className="font-poppins-black text-ssf-text text-base">
+                  Direct Entry (Manual)
+                </Text>
               </View>
-              <Text className="font-poppins-black text-ssf-text text-base">
-                Direct Entry (Manual)
+              <Text className="font-poppins text-ssf-text-muted text-sm">
+                ജഡ്ജിമാർ system use ചെയ്തിട്ടില്ല. Committee തീരുമാനിച്ച rank + grade directly enter ചെയ്യുക.
               </Text>
-            </View>
-            <Text className="font-poppins text-ssf-text-muted text-sm">
-              ജഡ്ജിമാർ system use ചെയ്തിട്ടില്ല. Committee തീരുമാനിച്ച rank + grade directly enter ചെയ്യുക.
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -492,8 +545,8 @@ export default function ResultsPage() {
             {mode === 'marks' ? '📊 Mark-Based Result' : '✏️ Direct Entry'}
           </Text>
         </View>
-        <Text className="text-ssf-text-muted font-poppins text-[10px] ml-12">
-          {schedule?.items?.item_name_ml ?? 'Event'} · {Object.keys(results).length} participants
+        <Text className="ml-12 text-[11px] font-poppins text-ssf-text-muted">
+          {schedule?.items?.item_name_ml ?? 'Event'} 
           {published && schedule?.official_participant_bracket && ` · Official Bracket: ${schedule.official_participant_bracket}`}
         </Text>
       </View>
@@ -523,13 +576,14 @@ export default function ResultsPage() {
         )}
 
         {/* Official Participant Bracket Configuration */}
+        {isGroupEvent && (
         <SsfCard className="mb-3 border-blue-200 p-3">
           <Text className="font-poppins-bold text-blue-900 text-[12px] mb-0.5">
-            🎭 Official Participant Bracket
+            👥 ഈ മത്സരത്തിൽ ഒരു ടീമിൽ എത്ര കുട്ടികളുണ്ട്?
           </Text>
           <Text className="font-poppins text-[10px] text-blue-700 mb-2 leading-4">
             {flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden
-              ? `${participantCount} eligible ${isGroupEvent ? 'teams' : 'participants'} → ${resolvedBracketKey} bracket selected automatically.`
+              ? `Calculated from ${defaultGroupSize} members per entry → ${resolvedBracketKey} default bracket selected automatically.`
               : 'Select the participant bracket for grade calculation. Manual overrides are stored with the result.'}
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
@@ -565,6 +619,7 @@ export default function ResultsPage() {
             })}
           </View>
         </SsfCard>
+        )}
 
         {(registrations as any[])?.map(reg => {
           const entry = results[reg.id];
@@ -762,7 +817,8 @@ export default function ResultsPage() {
           label={(published && !forceRepublishConfirmed) ? '✅ Results Published' : '🚀 Publish Results'}
           onPress={handlePublish}
           isLoading={saving}
-          className={`${published && !forceRepublishConfirmed ? 'opacity-80' : ''}`}
+          disabled={!hasAtLeastOneResult}
+          className={`${published && !forceRepublishConfirmed ? 'opacity-80' : ''} ${!hasAtLeastOneResult ? 'opacity-50' : ''}`}
         />
       </View>
     </View>
