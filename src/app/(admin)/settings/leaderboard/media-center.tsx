@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, TextInput } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Download, RefreshCw, Share2, Archive } from 'lucide-react-native';
 import { supabase } from '@/core/config/supabase';
 import { useFestival } from '@/core/hooks/useFestival';
 import { useExportQueueStore } from '@/services/exportQueueService';
+import { storageService } from '@/services/storage/storageService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const colors = {
   navy: '#0B1F3A',
@@ -20,6 +22,8 @@ const colors = {
   soft: '#EAF7FA',
   whatsapp: '#25D366'
 };
+
+const signedUrlCache = new Map<string, { url: string, expires: number }>();
 
 export default function MediaCenterPage() {
   const { useActiveFestival } = useFestival();
@@ -61,25 +65,181 @@ export default function MediaCenterPage() {
         return acc;
       }, {} as Record<string, any>);
       
-      return Object.values(grouped);
+      const resultAssets = Object.values(grouped);
+      
+      // Resolve r2:// URLs to presigned HTTP URLs
+      for (const asset of resultAssets) {
+        for (const res of Object.keys(asset.resolutions)) {
+          let url = asset.resolutions[res];
+          if (url && url.startsWith('r2://')) {
+            const objectKey = url.replace('r2://', '');
+            try {
+              const now = Date.now();
+              const storageKey = `presigned_${objectKey}`;
+              let cachedUrl = signedUrlCache.get(objectKey)?.url;
+              
+              // If not in memory, check AsyncStorage
+              if (!cachedUrl) {
+                const persisted = await AsyncStorage.getItem(storageKey);
+                if (persisted) {
+                   const parsed = JSON.parse(persisted);
+                   if (parsed.expires > now) {
+                     cachedUrl = parsed.url;
+                     signedUrlCache.set(objectKey, { url: parsed.url, expires: parsed.expires });
+                   }
+                }
+              }
+
+              if (cachedUrl) {
+                asset.resolutions[res] = cachedUrl;
+              } else {
+                const signedUrl = await storageService.getPresignedUrl(objectKey, 'image/jpeg', 'download');
+                asset.resolutions[res] = signedUrl;
+                const expires = now + 55 * 60 * 1000;
+                signedUrlCache.set(objectKey, { url: signedUrl, expires });
+                AsyncStorage.setItem(storageKey, JSON.stringify({ url: signedUrl, expires })).catch(console.error);
+              }
+            } catch (e) {
+              console.error('Failed to presign URL', e);
+            }
+          }
+        }
+      }
+      
+      return resultAssets;
     },
     enabled: !!activeFestival?.id,
     refetchInterval: isProcessing ? 3000 : false, // Poll if queue is processing
   });
 
-  const handleWhatsAppShare = (asset: any) => {
-    // Generate text
-    const text = `🏆 *${activeFestival?.custom_name || 'Sahithyolsav'} Result* 🏆\n\n` +
-      `*Event:* ${asset.event_name}\n` +
-      (asset.result_no ? `*Result No:* ${asset.result_no}\n` : '') +
-      `\nView Poster: ${asset.resolutions?.share || asset.resolutions?.hd || asset.resolutions?.standard}\n` +
-      `\nShared from Media Center`;
+  const [waNumber, setWaNumber] = useState('');
+  const [waCaption, setWaCaption] = useState('🏆 *{festival_name}* 🏆\n━━━━━━━━━━━━━━━━━━━━\n\n*മത്സരഫലം പ്രസിദ്ധീകരിച്ചു!* 🎉\n\n🔹 *ഇനം:* {event_name}\n{result_no_text}\n\nവിജയികൾക്ക് അഭിനന്ദനങ്ങൾ! 🌟');
+  const [isSharingId, setIsSharingId] = useState<string | null>(null);
 
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url);
+  React.useEffect(() => {
+    const loadWaSettings = async () => {
+      try {
+        const savedNumber = await AsyncStorage.getItem('waTargetNumber');
+        if (savedNumber) setWaNumber(savedNumber);
+        
+        const savedCaption = await AsyncStorage.getItem('waCaptionTemplate_v2');
+        if (savedCaption) setWaCaption(savedCaption);
+      } catch (e) {
+        console.error('Failed to load WA settings', e);
+      }
+    };
+    loadWaSettings();
+  }, []);
+
+  const saveWaNumber = async (val: string) => {
+    setWaNumber(val);
+    await AsyncStorage.setItem('waTargetNumber', val).catch(console.error);
+  };
+
+  const saveWaCaption = async (val: string) => {
+    setWaCaption(val);
+    await AsyncStorage.setItem('waCaptionTemplate_v2', val).catch(console.error);
+  };
+
+  const handleWhatsAppShare = async (asset: any) => {
+    if (!waNumber.trim()) {
+      alert('Please enter a WhatsApp number at the top of the page first.');
+      // Focus could be done if we had a ref
+      return;
+    }
+    
+    // Format number: remove non-digits
+    let cleanNumber = waNumber.replace(/\D/g, '');
+    if (cleanNumber.length === 10) cleanNumber = '91' + cleanNumber; // default to India if just 10 digits
+
+    try {
+      setIsSharingId(asset.render_hash);
+      const imageUrl = asset.resolutions?.share || asset.resolutions?.hd || asset.resolutions?.standard;
+      
+      // Generate text
+      const text = waCaption
+        .replace(/{event_name}/g, asset.event_name || '')
+        .replace(/{result_no}/g, asset.result_no || '')
+        .replace(/{result_no_text}/g, asset.result_no ? `🔹 *റിസൾട്ട് നമ്പർ:* ${asset.result_no}` : '')
+        .replace(/{festival_name}/g, activeFestival?.custom_name || 'Sahithyolsav');
+
+      if (Platform.OS === 'web') {
+        try {
+          // In modern browsers, fetching takes time, which invalidates the user gesture.
+          // To fix this, we pass a Promise directly into ClipboardItem.
+          const makeImagePromise = async () => {
+            let response = await fetch(imageUrl).catch(() => null);
+            if (!response || !response.ok) {
+              response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`);
+            }
+            const blob = await response.blob();
+            
+            const img = new window.Image();
+            img.crossOrigin = 'anonymous';
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = URL.createObjectURL(blob);
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('No canvas context');
+            ctx.drawImage(img, 0, 0);
+
+            return new Promise<Blob>((resolve, reject) => {
+              canvas.toBlob((b) => {
+                if (b) resolve(b);
+                else reject(new Error('Canvas toBlob failed'));
+              }, 'image/png');
+            });
+          };
+
+          const clipboardItem = new (window as any).ClipboardItem({
+            'image/png': makeImagePromise()
+          });
+
+          await navigator.clipboard.write([clipboardItem]);
+          
+          const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text + '\n\n[Please paste the image that was just copied to your clipboard!]')}`;
+          window.open(waUrl, '_blank');
+          alert('✅ Image copied to clipboard!\n\nWhatsApp will now open. Just press Paste (Ctrl+V) in the chat to send the image.');
+        } catch (clipboardError) {
+          console.error('Clipboard write failed:', clipboardError);
+          // Fallback if clipboard fails
+          const fallbackUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text + '\n\nView Poster: ' + imageUrl)}`;
+          window.open(fallbackUrl, '_blank');
+          alert('Could not copy image automatically. Sent link instead.');
+        }
+      } else {
+        // Mobile fallback
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'poster.jpg', { type: blob.type || 'image/jpeg' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: text,
+              text: text,
+            });
+            return;
+          } catch (shareErr) {
+            console.log('Mobile share failed, falling back to link');
+          }
+        }
+        
+        const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text + '\n\nView Poster: ' + imageUrl)}`;
+        Linking.openURL(url);
+      }
+    } catch (e) {
+      console.error('Share error:', e);
+      alert('Failed to share image.');
+    } finally {
+      setIsSharingId(null);
     }
   };
 
@@ -127,8 +287,51 @@ export default function MediaCenterPage() {
             <Text style={styles.emptySub}>Publish results in Poster Studio to see them here.</Text>
           </View>
         ) : (
-          <View style={styles.grid}>
-            {assets.map((asset: any) => (
+          <>
+            <View style={{ marginBottom: 20, padding: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+                <View style={{ flex: 1, minWidth: 250 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.navy }}>WhatsApp Target Number</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Enter the phone number (with country code).</Text>
+                </View>
+                <TextInput 
+                  value={waNumber}
+                  onChangeText={saveWaNumber}
+                  placeholder="e.g. 919876543210"
+                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 10, width: 200, fontSize: 14 }}
+                  keyboardType="phone-pad"
+                />
+              </View>
+              
+              <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 16, marginTop: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.navy }}>WhatsApp Image Caption Template</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity onPress={() => saveWaCaption(waCaption + ' *bold text*')} style={{ paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 4 }}>
+                      <Text style={{ fontSize: 12, fontWeight: 'bold' }}>B</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => saveWaCaption(waCaption + ' _italic text_')} style={{ paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 4 }}>
+                      <Text style={{ fontSize: 12, fontStyle: 'italic' }}>I</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => saveWaCaption(waCaption + ' ~strikethrough~')} style={{ paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 4 }}>
+                      <Text style={{ fontSize: 12, textDecorationLine: 'line-through' }}>S</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <TextInput 
+                  value={waCaption}
+                  onChangeText={saveWaCaption}
+                  multiline
+                  numberOfLines={4}
+                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 10, fontSize: 14, minHeight: 80, textAlignVertical: 'top' }}
+                />
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6 }}>
+                  Placeholders: {'{event_name}'}, {'{result_no}'}, {'{result_no_text}'}, {'{festival_name}'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.grid}>
+              {assets.map((asset: any) => (
               <View key={asset.render_hash} style={styles.card}>
                 <View style={styles.imageContainer}>
                   <Image 
@@ -145,6 +348,9 @@ export default function MediaCenterPage() {
                 
                 <View style={styles.cardBody}>
                   <Text style={styles.eventName} numberOfLines={1}>{asset.event_name}</Text>
+                  <Text style={{fontSize: 9, color: 'red', marginTop: 4}} numberOfLines={2}>
+                    URL: {asset.resolutions?.thumb || asset.resolutions?.standard || asset.resolutions?.hd || 'No URL'}
+                  </Text>
                   <Text style={styles.metaText}>
                     {asset.result_no ? `Result #${asset.result_no}` : 'General Poster'} • {new Date(asset.created_at).toLocaleDateString()}
                   </Text>
@@ -194,6 +400,7 @@ export default function MediaCenterPage() {
               </View>
             ))}
           </View>
+          </>
         )}
       </ScrollView>
     </View>
