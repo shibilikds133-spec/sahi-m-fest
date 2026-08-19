@@ -7,6 +7,7 @@ import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderScheduleRow, TeamLeaderPublishedResult, TeamLeaderAnnouncement, TeamLeaderStanding } from '@/services/teamLeaderPortalService';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
+import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 const NAVY = '#102A43';
 const TEAL = '#087C72';
@@ -58,10 +59,13 @@ export default function TeamLeaderDashboard() {
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [announcements, setAnnouncements] = useState<TeamLeaderAnnouncement[]>([]);
   const [standings, setStandings] = useState<TeamLeaderStanding[]>([]);
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!context) return;
     let cancelled = false;
+    setDataError(null);
     Promise.all([
       teamLeaderPortalService.getSchedule(),
       teamLeaderPortalService.getPublishedResults(),
@@ -70,12 +74,15 @@ export default function TeamLeaderDashboard() {
     ]).then(([s, r, a, standingRows]) => {
       if (cancelled) return;
       setSchedule(s); setResults(r); setAnnouncements(a); setStandings(standingRows);
-    }).catch((error) => console.error('Dashboard load error:', error));
+    }).catch((error: any) => {
+      if (!cancelled) setDataError(error?.message || 'Please retry the team dashboard request.');
+    });
     return () => { cancelled = true; };
-  }, [context]);
+  }, [context, reloadKey]);
 
   if (contextLoading) return <TeamLeaderAppShell><View style={{ gap: 12 }}><Skeleton style={{ height: 200, borderRadius: 20 }} /><Skeleton style={{ height: 110, borderRadius: 16 }} /><Skeleton style={{ height: 160, borderRadius: 16 }} /></View></TeamLeaderAppShell>;
   if (contextError || !context) return <TeamLeaderAppShell><Card><CardContent style={{ padding: 24, alignItems: 'center' }}><Text style={{ color: MUTED, textAlign: 'center' }}>{contextError || 'Unable to load portal context. Please try again.'}</Text></CardContent></Card></TeamLeaderAppShell>;
+  if (dataError) return <TeamLeaderAppShell><TeamLeaderDataError message={dataError} onRetry={() => setReloadKey((key) => key + 1)} /></TeamLeaderAppShell>;
 
   const teamName = context.team_name || 'Your Team';
   const teamPrimary = context.portal_primary_color || TEAL;

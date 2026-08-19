@@ -2,10 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { leaderboardService } from '../../services/leaderboardService';
 import { LEADERBOARD_QUERY_KEYS } from '../../constants/leaderboard';
 
-export const usePublicLeaderboard = (tenantId?: string | null, festivalId?: string | null) => {
+export const usePublicLeaderboard = (
+  tenantId?: string | null,
+  festivalId?: string | null,
+  enabled = true,
+) => {
   return useQuery({
     queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboard(tenantId, festivalId),
     queryFn: () => leaderboardService.listPublicLeaderboard(tenantId, festivalId),
+    enabled: enabled && !!tenantId && !!festivalId,
     staleTime: 300000, // 5 minutes
     gcTime: 1800000, // 30 minutes
   });

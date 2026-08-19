@@ -71,6 +71,14 @@ const TEAM_COLOR_PRESETS = [
   { name: 'Slate', primary: '#334155', accent: '#94A3B8' },
 ];
 
+type TeamLeaderManagementCache = {
+  participants: Participant[];
+  teams: FestivalTeam[];
+  assignments: Assignment[];
+};
+
+const teamLeaderManagementCache = new Map<string, TeamLeaderManagementCache>();
+
 export default function TeamLeaderPortalAdmin() {
   const router = useRouter();
   const { useActiveFestival } = useFestival();
@@ -118,12 +126,31 @@ export default function TeamLeaderPortalAdmin() {
     }
   };
 
-  const loadData = useCallback(async () => {
-    if (!activeFestival?.id || !tenantId) return;
+  const loadData = useCallback(async (forceRefresh = false) => {
+    if (!activeFestival?.id || !tenantId) {
+      setLoading(false);
+      setLoadingDropdowns(false);
+      return [];
+    }
+
+    const cacheKey = `${tenantId}:${activeFestival.id}`;
+    const cached = teamLeaderManagementCache.get(cacheKey);
+    if (cached && !forceRefresh) {
+      setParticipants(cached.participants);
+      setTeams(cached.teams);
+      setAssignments(cached.assignments);
+      setLoading(false);
+      setLoadingDropdowns(false);
+      return cached.participants;
+    }
 
     try {
-      setLoading(true);
-      setLoadingDropdowns(true);
+      // Keep cached rows visible during refresh. Only the first load shows
+      // skeletons; mutations refresh in the background.
+      if (!cached) {
+        setLoading(true);
+        setLoadingDropdowns(true);
+      }
 
       const { data: visibleOrganisations, error: visibilityError } = await supabase.rpc('get_visible_organisations', {
         p_tenant_id: tenantId,
@@ -136,6 +163,7 @@ export default function TeamLeaderPortalAdmin() {
         setParticipants([]);
         setTeams([]);
         setAssignments([]);
+        teamLeaderManagementCache.set(cacheKey, { participants: [], teams: [], assignments: [] });
         return [];
       }
 
@@ -215,6 +243,11 @@ export default function TeamLeaderPortalAdmin() {
       });
 
       setAssignments(formatted);
+      teamLeaderManagementCache.set(cacheKey, {
+        participants: participantList,
+        teams: teamList,
+        assignments: formatted,
+      });
       return participantList;
     } catch (error) {
       console.error('Error loading data:', error);
@@ -294,7 +327,7 @@ export default function TeamLeaderPortalAdmin() {
       setSelectedParticipant(updatedParticipant);
 
       // Refresh assignments / participants from server
-      await loadData();
+      await loadData(true);
 
       // Re-run the profile check immediately so UI shows "Account Linked"
       await checkParticipantProfile(updatedParticipant);
@@ -305,7 +338,7 @@ export default function TeamLeaderPortalAdmin() {
       const errorMessage = err?.message || '';
       if (errorMessage.includes('PARTICIPANT_ALREADY_LINKED') || errorMessage.includes('already has a linked account')) {
         const participantId = selectedParticipant.id;
-        const refreshedParticipants = (await loadData()) || [];
+        const refreshedParticipants = (await loadData(true)) || [];
         const refreshedParticipant = refreshedParticipants.find((participant) => participant.id === participantId);
         if (refreshedParticipant) {
           setSelectedParticipant(refreshedParticipant);
@@ -475,7 +508,7 @@ export default function TeamLeaderPortalAdmin() {
       setSelectedTeam(null);
       setParticipantProfile(null);
       setExistingAssignment(null);
-      loadData();
+      loadData(true);
     } catch (error: any) {
       console.error('Error assigning:', error);
       Alert.alert('Error', error.message || 'Failed to assign team leader.');
@@ -501,7 +534,7 @@ export default function TeamLeaderPortalAdmin() {
                 .eq('id', assignment.id)
                 .eq('status', 'active');
               if (error) throw error;
-              loadData();
+              loadData(true);
             } catch {
               Alert.alert('Error', 'Failed to remove assignment.');
             }

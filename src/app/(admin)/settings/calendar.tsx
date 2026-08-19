@@ -20,6 +20,7 @@ export default function FestivalCalendarSettings() {
     end_date: '',
     registration_open: '',
     registration_close: '',
+    chest_number_category_range: 100 as 100 | 1000,
   });
 
   const [saved, setSaved] = useState(false);
@@ -33,6 +34,7 @@ export default function FestivalCalendarSettings() {
         end_date: festival.end_date ? festival.end_date.split('T')[0] : '',
         registration_open: festival.registration_open ? festival.registration_open.split('T')[0] : '',
         registration_close: festival.registration_close ? festival.registration_close.split('T')[0] : '',
+        chest_number_category_range: festival.chest_number_category_range ?? 100,
       });
     }
   }, [festival]);
@@ -199,6 +201,26 @@ export default function FestivalCalendarSettings() {
               )}
               <Text className="text-xs font-poppins text-ui-text-muted mt-1">Last date to register participants</Text>
             </View>
+          </View>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Chest Number Range</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View>
+            <Label>Participants per category</Label>
+            <select
+              value={String(formData.chest_number_category_range)}
+              onChange={(event) => setFormData({ ...formData, chest_number_category_range: Number(event.target.value) as 100 | 1000 })}
+              className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+            >
+              <option value="100">Under 100 (default): 100–199, 200–299…</option>
+              <option value="1000">Under 1000: 1000–1999, 2000–2999…</option>
+            </select>
+            <Text className="text-xs font-poppins text-ui-text-muted mt-2">Changing this setting affects future generation. Use Chest Numbers → Regenerate All to replace existing numbers.</Text>
           </View>
         </CardContent>
       </Card>

@@ -18,11 +18,11 @@ export default function ImportParticipants() {
   const router = useRouter();
   const goBack = useGoBack('/(admin)/participants');
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = authTenantId || '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
-  const festivalId = '550e8400-e29b-41d4-a716-446655440000'; 
+  const tenantId = authTenantId || '';
 
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
+  const festivalId = activeFestival?.id;
   const isCollegeFest = activeFestival?.festival_template === 'college_fest';
 
   const {
@@ -144,6 +144,10 @@ export default function ImportParticipants() {
 
   const processImport = async () => {
     if (!validatedData) return;
+    if (!tenantId || !festivalId) {
+      Alert.alert('Import unavailable', 'Your tenant and active festival context are still loading. Please try again.');
+      return;
+    }
     try {
       const targetOrg = organisations.find(o => o.id === selectedOrgId);
       const targetTenantId = targetOrg?.tenant_id || tenantId;

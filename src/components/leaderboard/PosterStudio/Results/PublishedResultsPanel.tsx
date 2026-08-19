@@ -31,21 +31,28 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pending' | 'exported'>('pending');
   const { setVariables, setCurrentResultId, loadResultOverride } = useTemplateStore();
   const [itemCategories, setItemCategories] = useState<Record<string, { name_en: string; name_ml: string }>>({});
+  const [exportedResultIds, setExportedResultIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [data, itemsResult] = await Promise.all([
+      const [data, itemsResult, assetsResult] = await Promise.all([
         resultVisibilityService.listFestivalResults(tenantId, festivalId),
-        supabase.from('items').select('id, category_codes').eq('festival_id', festivalId)
+        supabase.from('items').select('id, category_codes').eq('festival_id', festivalId),
+        supabase.from('generated_assets').select('result_id').eq('festival_id', festivalId).not('result_id', 'is', null)
       ]);
-      // Only show published results
+      
+      // ONLY show results that are published and publicly visible
       const published = data.filter(r => r.published && r.public_visible);
       setResults(published);
+
+      if (assetsResult.data) {
+        setExportedResultIds(new Set(assetsResult.data.map((a: any) => a.result_id)));
+      }
 
       const catMap: Record<string, { name_en: string; name_ml: string }> = {};
       if (itemsResult.data) {
@@ -121,11 +128,16 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
   }, [results, itemCategories, setVariables, setCurrentResultId, loadResultOverride]);
 
   // Group by item for display
-  const filtered = results.filter(r =>
-    r.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.participant_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.organisation_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = results.filter(r => {
+    const isExported = exportedResultIds.has(r.result_id);
+    if (activeTab === 'exported' && !isExported) return false;
+    if (activeTab === 'pending' && isExported) return false;
+
+    const query = searchQuery.toLowerCase();
+    return r.item_name?.toLowerCase().includes(query) ||
+           r.participant_name?.toLowerCase().includes(query) ||
+           r.organisation_name?.toLowerCase().includes(query);
+  });
 
   // Deduplicate by item_id to show one card per event
   const uniqueItems = Array.from(
@@ -134,21 +146,24 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
 
   return (
     <div style={styles.root}>
-      {/* Header */}
-      <div style={styles.header} onClick={() => setIsCollapsed(v => !v)}>
-        <div style={styles.headerLeft}>
-          <span style={styles.headerIcon}>📋</span>
-          <span style={styles.headerTitle}>Published Results</span>
-          <span style={styles.badge}>{results.length}</span>
-        </div>
-        <div style={styles.headerRight}>
-          <button onClick={(e) => { e.stopPropagation(); load(); }} style={styles.refreshBtn} title="Refresh">↻</button>
-          <span style={styles.chevron}>{isCollapsed ? '▲' : '▼'}</span>
-        </div>
+      {/* Tabs */}
+      <div style={styles.tabsRow}>
+        <button 
+          style={activeTab === 'pending' ? styles.tabActive : styles.tabInactive}
+          onClick={() => setActiveTab('pending')}
+        >
+          Pending
+        </button>
+        <button 
+          style={activeTab === 'exported' ? styles.tabActive : styles.tabInactive}
+          onClick={() => setActiveTab('exported')}
+        >
+          Exported
+        </button>
+        <button onClick={load} style={styles.refreshBtn} title="Refresh">↻</button>
       </div>
 
-      {!isCollapsed && (
-        <div style={styles.body}>
+      <div style={styles.body}>
           {/* Search */}
           <div style={styles.searchRow}>
             <input
@@ -175,7 +190,7 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
 
           {!loading && !error && uniqueItems.length === 0 && (
             <div style={styles.statusRow}>
-              <span style={styles.emptyText}>No published results found. Publish results from the Leaderboard panel first.</span>
+              <span style={styles.emptyText}>No results found in this view.</span>
             </div>
           )}
 
@@ -220,8 +235,8 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
 
                   {/* Footer */}
                   <div style={styles.cardFooter}>
-                    <span style={{ ...styles.statusPill, backgroundColor: '#064e3b', color: '#34d399' }}>
-                      ✓ Published
+                    <span style={{ ...styles.statusPill, backgroundColor: activeTab === 'exported' ? '#064e3b' : '#451a1a', color: activeTab === 'exported' ? '#34d399' : '#fca5a5' }}>
+                      {activeTab === 'exported' ? '✓ Poster Exported' : '⏳ Poster Pending'}
                     </span>
                     {isSelected && (
                       <span style={styles.bindingIndicator}>⚡ Bound to template</span>
@@ -232,75 +247,61 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
             })}
           </div>
         </div>
-      )}
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   root: {
-    borderTop: '1px solid #2a2a2a',
-    backgroundColor: '#171717',
-    flexShrink: 0,
-    maxHeight: 380,
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden'
   },
-  header: {
+  tabsRow: {
     display: 'flex',
+    padding: '0 16px',
+    borderBottom: '1px solid #2a2a2a',
+    gap: 16,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 16px',
-    backgroundColor: '#000000',
-    cursor: 'pointer',
-    userSelect: 'none',
     flexShrink: 0,
   },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: 8 },
-  headerRight: { display: 'flex', alignItems: 'center', gap: 8 },
-  headerIcon: { fontSize: 16 },
-  headerTitle: { fontSize: 13, fontWeight: 700, color: '#E2E8F0', letterSpacing: '0.02em' },
-  badge: { fontSize: 11, fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: 999 },
-  chevron: { fontSize: 10, color: '#94A3B8' },
-  refreshBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: 16, padding: '2px 6px', borderRadius: 6 },
-  body: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
-  searchRow: { padding: '10px 14px', borderBottom: '1px solid #2a2a2a', flexShrink: 0 },
+  tabActive: {
+    background: 'none', border: 'none', padding: '12px 0', fontSize: 13, fontWeight: 600, color: '#38bdf8', borderBottom: '2px solid #38bdf8', cursor: 'pointer'
+  },
+  tabInactive: {
+    background: 'none', border: 'none', padding: '12px 0', fontSize: 13, fontWeight: 500, color: '#94A3B8', borderBottom: '2px solid transparent', cursor: 'pointer'
+  },
+  refreshBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: 16, padding: '4px', borderRadius: 6, marginLeft: 'auto' },
+  body: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingBottom: 60 },
+  searchRow: { padding: '10px 16px', borderBottom: '1px solid #2a2a2a', flexShrink: 0 },
   searchInput: {
-    width: '100%',
-    height: 36,
-    padding: '0 12px',
-    borderRadius: 8,
-    border: '1px solid #2a2a2a',
-    fontSize: 13,
-    backgroundColor: '#1f1f1f',
-    color: '#E2E8F0',
-    outline: 'none',
-    boxSizing: 'border-box',
+    width: '100%', height: 32, padding: '0 12px', borderRadius: 6, border: '1px solid #2a2a2a', fontSize: 12, backgroundColor: '#1f1f1f', color: '#E2E8F0', outline: 'none', boxSizing: 'border-box',
   },
   statusRow: { padding: '24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   loadingText: { fontSize: 13, color: '#94A3B8' },
   emptyText: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 1.6 },
   errorRow: { padding: '12px 16px', backgroundColor: '#451a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 13, color: '#fca5a5' },
   retryBtn: { padding: '4px 10px', borderRadius: 6, border: '1px solid #7f1d1d', backgroundColor: '#1f1f1f', cursor: 'pointer', fontSize: 12, color: '#fca5a5', fontWeight: 600 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, padding: 14, alignContent: 'start' },
+  grid: { display: 'flex', flexDirection: 'column', gap: 8, padding: 16 },
   card: {
-    borderRadius: 10,
+    borderRadius: 8,
     border: '1px solid',
-    padding: 14,
+    padding: 10,
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    transition: 'all 0.1s ease',
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 6,
   },
-  cardEventName: { fontSize: 13, fontWeight: 700, color: '#E2E8F0', lineHeight: 1.3 },
-  cardEventNameMl: { fontSize: 12, color: '#94A3B8', fontFamily: 'Noto Sans Malayalam, sans-serif' },
-  cardRanks: { display: 'flex', flexDirection: 'column', gap: 4 },
+  cardEventName: { fontSize: 12, fontWeight: 600, color: '#E2E8F0', lineHeight: 1.2 },
+  cardEventNameMl: { fontSize: 11, color: '#94A3B8', fontFamily: 'Noto Sans Malayalam, sans-serif' },
+  cardRanks: { display: 'flex', flexDirection: 'column', gap: 2 },
   rankRow: { display: 'flex', alignItems: 'center', gap: 6 },
-  rankBadge: { width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 },
-  participantName: { flex: 1, fontSize: 12, fontWeight: 600, color: '#CBD5E1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  orgName: { fontSize: 10, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 80 },
-  cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  statusPill: { fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, letterSpacing: '0.03em' },
-  bindingIndicator: { fontSize: 10, fontWeight: 700, color: '#38bdf8' },
+  rankBadge: { width: 22, height: 22, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 },
+  participantName: { flex: 1, fontSize: 11, fontWeight: 600, color: '#CBD5E1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  orgName: { fontSize: 9, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 80 },
+  cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  statusPill: { fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 999, letterSpacing: '0.02em' },
+  bindingIndicator: { fontSize: 9, fontWeight: 700, color: '#38bdf8' },
 };

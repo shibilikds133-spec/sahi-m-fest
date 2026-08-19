@@ -3,6 +3,7 @@ import { ruleEngine } from '../core/rules/ruleEngine';
 import { uploadService } from './storage/uploadService';
 import { stageManagementService } from './stageManagementService';
 import { getCollegeFestChestPrefix, isCollegeFestCategory } from '../core/festival/templatePolicy';
+import { supabase } from '../core/config/supabase';
 
 export type ParticipantStatus = 'pending' | 'approved' | 'rejected';
 
@@ -353,6 +354,15 @@ export const participantService = {
   },
 
   async generateChestNumber(categoryCode: string, festivalId?: string): Promise<string> {
+    if (festivalId) {
+      const { data, error } = await supabase.rpc('get_next_festival_chest_number', {
+        p_festival_id: festivalId,
+        p_category_code: categoryCode,
+      });
+      throwIfError(error);
+      if (!data) throw new Error('Unable to generate a chest number.');
+      return String(data);
+    }
     const { data, error } = await participantRepository.countParticipantsByCategory(categoryCode, festivalId);
     throwIfError(error);
     let next = (data ?? 0) + 1;
@@ -370,6 +380,14 @@ export const participantService = {
       next += 1;
     }
     throw new Error('Unable to generate a unique chest number. Please try again.');
+  },
+
+  async regenerateFestivalChestNumbers(festivalId: string): Promise<{ participant_count: number; category_range: number }> {
+    const { data, error } = await supabase.rpc('regenerate_festival_chest_numbers', { p_festival_id: festivalId });
+    throwIfError(error);
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result) throw new Error('Chest-number regeneration did not return a result.');
+    return result;
   },
 
   async createParticipant<T>(payload: Record<string, unknown>): Promise<T> {

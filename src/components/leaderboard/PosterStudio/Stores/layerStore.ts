@@ -73,6 +73,7 @@ interface LayerStore {
   setLayers: (layers: LayerData[]) => void;
   addLayer: (layer: LayerData) => void;
   updateLayer: (id: string, patch: Partial<LayerData>) => void;
+  updateLayerLinked: (id: string, patch: Partial<LayerData>) => void;
   removeLayer: (id: string) => void;
   duplicateLayer: (id: string) => void;
   setSelectedIds: (ids: string[]) => void;
@@ -95,6 +96,32 @@ export const useLayerStore = create<LayerStore>((set, get) => ({
   addLayer: (layer) => set((s) => ({ layers: [...s.layers, layer] })),
   updateLayer: (id, patch) =>
     set((s) => ({ layers: s.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)) })),
+  updateLayerLinked: (id, patch) =>
+    set((s) => {
+      const sourceLayer = s.layers.find((l) => l.id === id);
+      if (!sourceLayer) return { layers: s.layers };
+
+      let groupType: 'name' | 'unit' | 'rank' | null = null;
+      if (sourceLayer.dynamicBinding?.startsWith('name_')) groupType = 'name';
+      else if (sourceLayer.dynamicBinding?.startsWith('unit_')) groupType = 'unit';
+      else if (sourceLayer.id.endsWith('r') && ['1', '2', '3'].includes(sourceLayer.text || '')) groupType = 'rank';
+      else if (sourceLayer.name.includes('Rank')) groupType = 'rank';
+
+      if (!groupType) {
+        return { layers: s.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)) };
+      }
+
+      return {
+        layers: s.layers.map((l) => {
+          let matchesGroup = false;
+          if (groupType === 'name' && l.dynamicBinding?.startsWith('name_')) matchesGroup = true;
+          else if (groupType === 'unit' && l.dynamicBinding?.startsWith('unit_')) matchesGroup = true;
+          else if (groupType === 'rank' && (l.id.endsWith('r') || l.name.includes('Rank'))) matchesGroup = true;
+
+          return matchesGroup ? { ...l, ...patch } : l;
+        }),
+      };
+    }),
   removeLayer: (id) =>
     set((s) => ({
       layers: s.layers.filter((l) => l.id !== id),

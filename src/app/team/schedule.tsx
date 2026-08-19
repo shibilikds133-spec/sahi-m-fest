@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/shadcn/button';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/shadcn/tabs';
 import { downloadTeamLeaderSchedulePdf } from '@/services/schedulePdfService';
+import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 export default function ScheduleScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
@@ -17,15 +18,19 @@ export default function ScheduleScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [isExporting, setIsExporting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
     if (!context) return;
+    setLoadError(null);
+    setLoading(true);
     teamLeaderPortalService.getSchedule().then((data) => {
       setSchedule(data);
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [context]);
+    }).catch((error: any) => { setLoadError(error?.message || 'Please retry the schedule request.'); setLoading(false); });
+  }, [context, reloadKey]);
 
   if (contextLoading || loading) {
     return (
@@ -38,6 +43,7 @@ export default function ScheduleScreen() {
       </TeamLeaderAppShell>
     );
   }
+  if (loadError) return <TeamLeaderAppShell><TeamLeaderDataError message={loadError} onRetry={() => setReloadKey((key) => key + 1)} /></TeamLeaderAppShell>;
 
   const filtered = filter === 'all' ? schedule : schedule.filter((s) => s.event_status === filter);
   const teamPrimary = context?.portal_primary_color || '#0F766E';

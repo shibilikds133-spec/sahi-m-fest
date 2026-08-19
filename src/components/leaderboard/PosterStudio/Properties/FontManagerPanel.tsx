@@ -30,7 +30,7 @@ export default function FontManagerPanel({ onClose, onUploadSuccess }: FontManag
     }
 
     const baseName = nameParts.join('.');
-    const scope = festivalId ? 'festival' : 'tenant';
+    const scope = 'tenant';
 
     try {
       setUploading(true);
@@ -85,7 +85,7 @@ export default function FontManagerPanel({ onClose, onUploadSuccess }: FontManag
             {uploading ? 'Uploading...' : 'Browse Font File'}
           </button>
           <span style={styles.hint}>
-            Fonts uploaded here are available to this {festivalId ? 'festival' : 'organization'}.
+            Fonts uploaded here are available to all festivals in this organization.
           </span>
         </div>
 

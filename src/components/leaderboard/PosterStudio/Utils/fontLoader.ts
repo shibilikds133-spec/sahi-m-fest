@@ -3,28 +3,70 @@ import { useCanvasStore } from '../Stores/canvasStore';
 export interface FontDefinition {
   family: string;
   url: string;
+  category?: string;
 }
 
 export const ML_FONTS: FontDefinition[] = [
-  { family: 'Manjari', url: 'https://fonts.gstatic.com/s/manjari/v10/k3kVo8UPMOBO2w1UdWLNC8Q.woff2' },
-  { family: 'Noto Sans Malayalam', url: 'https://fonts.gstatic.com/s/notosansmalayalam/v28/sJoG3LFXjsSdcnzn071rL37lpAOsUThnDZIfPdbeSNzVakglNM-Qw8EFdB3Rwg.woff2' },
-  { family: 'Rachana', url: 'https://fonts.gstatic.com/s/rachana/v16/syk0-yBxa0fYrFQq8dMR.woff2' },
-  { family: 'Baloo Chettan 2', url: 'https://fonts.gstatic.com/s/baloochettan2/v14/0QIvMX1D_o-N8F6tK2t-yCq9B8M.woff2' },
-  { family: 'Meera', url: 'https://fonts.gstatic.com/s/meera/v22/8QINdih9S8C7sHnC_A.woff2' },
-  { family: 'Gayathri', url: 'https://fonts.gstatic.com/s/gayathri/v11/nwpxtK-o8i8t65i30L2d.woff2' },
-  { family: 'Chilanka', url: 'https://fonts.gstatic.com/s/chilanka/v16/wwXXz-a6q0216m18mYk.woff2' },
-  { family: 'AnjaliOldLipi', url: 'https://fonts.gstatic.com/s/anjalioldlipi/v19/5u91qrpYwLStA7vE3K8x2uP-eA.woff2' },
-  { family: 'Dyuthi', url: 'https://fonts.gstatic.com/s/dyuthi/v14/2-ct9JJt6ZY1p8eU.woff2' },
-  { family: 'Karumbi', url: 'https://fonts.gstatic.com/s/karumbi/v15/K2FzfZWElr6U737d.woff2' },
+  { family: 'Noto Sans Malayalam', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '300,400,500,600,700' },
+  { family: 'Noto Serif Malayalam', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '300,400,500,600,700' },
+  { family: 'Manjari', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '100,400,700' },
+  { family: 'Baloo Chettan 2', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400,500,600,700' },
+  { family: 'Gayathri', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '100,400,700' },
+  { family: 'Anek Malayalam', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '300,400,500,600,700' },
+  { family: 'Rachana', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
+  { family: 'Meera', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
+  { family: 'Chilanka', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
+  { family: 'AnjaliOldLipi', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
+  { family: 'Dyuthi', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
+  { family: 'Karumbi', url: 'https://fonts.gstatic.com/', category: 'Malayalam', weights: '400' },
 ];
 
-
 export const EN_FONTS: FontDefinition[] = [
-  "Poppins", "Inter", "Montserrat", "Oswald", "Bebas Neue", 
-  "Roboto", "Open Sans", "Lato", "Raleway", "Playfair Display", 
-  "Anton", "Nunito", "DM Sans", "League Spartan", "Work Sans",
-  "Cormorant Garamond", "Abril Fatface", "DM Serif Display", "Libre Bodoni"
-].map(family => ({ family, url: 'https://fonts.gstatic.com/' }));
+  // Recommended
+  { family: 'Poppins', category: 'Recommended', weights: '300,400,500,600,700' },
+  { family: 'Inter', category: 'Recommended', weights: '300,400,500,600,700' },
+  { family: 'Montserrat', category: 'Recommended', weights: '300,400,500,600,700' },
+  
+  // Sans / Modern
+  { family: 'Manrope', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Plus Jakarta Sans', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Outfit', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Sora', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Urbanist', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Space Grotesk', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Lexend', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Rubik', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Barlow', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  { family: 'Archivo', category: 'Sans / Modern', weights: '300,400,500,600,700' },
+  
+  // Display / Poster
+  { family: 'Bebas Neue', category: 'Display / Poster', weights: '400' },
+  { family: 'Anton', category: 'Display / Poster', weights: '400' },
+  { family: 'Archivo Black', category: 'Display / Poster', weights: '400' },
+  { family: 'League Spartan', category: 'Display / Poster', weights: '300,400,500,600,700' },
+  { family: 'Oswald', category: 'Display / Poster', weights: '300,400,500,600,700' },
+  { family: 'Barlow Condensed', category: 'Display / Poster', weights: '300,400,500,600,700' },
+  { family: 'Teko', category: 'Display / Poster', weights: '300,400,500,600,700' },
+  { family: 'Exo 2', category: 'Display / Poster', weights: '300,400,500,600,700' },
+  
+  // Serif / Elegant
+  { family: 'Playfair Display', category: 'Serif / Elegant', weights: '400,500,600,700' },
+  { family: 'DM Serif Display', category: 'Serif / Elegant', weights: '400' },
+  { family: 'Libre Baskerville', category: 'Serif / Elegant', weights: '400,700' },
+  { family: 'Libre Bodoni', category: 'Serif / Elegant', weights: '400,500,600,700' },
+  { family: 'Cormorant Garamond', category: 'Serif / Elegant', weights: '300,400,500,600,700' },
+  { family: 'Lora', category: 'Serif / Elegant', weights: '400,500,600,700' },
+  { family: 'Merriweather', category: 'Serif / Elegant', weights: '300,400,700' },
+  { family: 'Bodoni Moda', category: 'Serif / Elegant', weights: '400,500,600,700' },
+  
+  // Friendly / Editorial
+  { family: 'Nunito', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
+  { family: 'Quicksand', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
+  { family: 'Josefin Sans', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
+  { family: 'Raleway', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
+  { family: 'Cabin', category: 'Friendly / Editorial', weights: '400,500,600,700' },
+  { family: 'Karla', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
+].map(f => ({ ...f, url: 'https://fonts.gstatic.com/' }));
 
 const loadedFonts = new Set<string>();
 const fontLoadCache = new Map<string, Promise<'loaded' | 'failed'>>();
@@ -47,9 +89,10 @@ export async function loadFont(font: FontDefinition): Promise<'loaded' | 'failed
           resolve('failed');
           return;
         }
+        const weightsStr = font.weights ? `:${font.weights}` : ':400,700';
         webFontLoader.load({
           google: {
-            families: [`${font.family}:300,400,500,600,700,800,900`]
+            families: [`${font.family}${weightsStr}`]
           },
           active: () => {
             loadedFonts.add(font.family);

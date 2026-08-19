@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {
   ChevronDown,
+  Copy,
   RefreshCw,
   Rocket,
   ShieldCheck,
@@ -75,8 +76,28 @@ export default function LeaderboardControlsPage() {
   const [posterTopCount, setPosterTopCount] = useState(3);
   const [showIndividualRankings, setShowIndividualRankings] = useState(true);
   const [teamPointStatus, setTeamPointStatus] = useState<string>('');
+  const [publicFestivalName, setPublicFestivalName] = useState<string>('');
+  const [publicLinkCopied, setPublicLinkCopied] = useState(false);
   const [rankingMode, setRankingMode] = useState<string>('ALL');
   const [itemLimit, setItemLimit] = useState<string>('');
+
+  const publicLeaderboardUrl = tenant_id && typeof window !== 'undefined'
+    ? window.location.origin + '/leaderboard?tenant_id=' + tenant_id
+    : '';
+
+  const handleCopyPublicLink = async () => {
+    if (!publicLeaderboardUrl || typeof navigator === 'undefined' || !navigator.clipboard) {
+      alert('Tenant-specific public link is not available yet.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(publicLeaderboardUrl);
+      setPublicLinkCopied(true);
+      setTimeout(() => setPublicLinkCopied(false), 1800);
+    } catch {
+      alert('Could not copy the public link.');
+    }
+  };
 
   // Sync state with db loaded settings
   React.useEffect(() => {
@@ -94,10 +115,11 @@ export default function LeaderboardControlsPage() {
       setPosterTopCount(settings.poster_top_count || 3);
       setShowIndividualRankings(settings.show_individual_rankings ?? true);
       setTeamPointStatus(settings.team_point_status || '');
+      setPublicFestivalName(settings.public_festival_name ?? activeFestival?.custom_name ?? '');
       setRankingMode(settings.ranking_mode || 'ALL');
       setItemLimit(settings.item_limit ? settings.item_limit.toString() : '');
     }
-  }, [settings]);
+  }, [settings, activeFestival?.custom_name]);
 
   const buildSettingsPayload = (
     overrides: Partial<LeaderboardSettings> = {},
@@ -115,6 +137,7 @@ export default function LeaderboardControlsPage() {
     poster_top_count: posterTopCount,
     show_individual_rankings: showIndividualRankings,
     team_point_status: teamPointStatus || null,
+    public_festival_name: publicFestivalName.trim() || null,
     ranking_mode: rankingMode,
     item_limit: itemLimit && !isNaN(parseInt(itemLimit, 10)) ? parseInt(itemLimit, 10) : null,
     ...overrides,
@@ -198,6 +221,47 @@ export default function LeaderboardControlsPage() {
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#BAE6FD' }}
                 thumbColor={showIndividualRankings ? colors.cyan : '#FFFFFF'}
+              />
+            </View>
+
+            <View style={[styles.controlRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+              <Text style={styles.controlLabel}>Tenant Public Leaderboard Link</Text>
+              <Text style={styles.controlHint}>Use this link so the public board always opens this tenant&apos;s festival and never another tenant&apos;s data.</Text>
+              <View style={styles.publicLinkRow}>
+                <Text numberOfLines={1} style={styles.publicLinkText}>
+                  {publicLeaderboardUrl || 'Create or select a tenant first'}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleCopyPublicLink}
+                  disabled={!publicLeaderboardUrl}
+                  style={[styles.copyLinkAction, !publicLeaderboardUrl && { opacity: 0.5 }]}
+                  accessibilityLabel="Copy tenant public leaderboard link"
+                >
+                  <Copy size={16} color={colors.teal} />
+                  <Text style={styles.copyLinkText}>{publicLinkCopied ? 'Copied' : 'Copy'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.controlRow, { flexDirection: 'column', alignItems: 'stretch' }]}>
+              <View style={{ marginBottom: 8 }}>
+                <Text style={styles.controlLabel}>Public Festival Name</Text>
+                <Text style={styles.controlHint}>Name shown on the public leaderboard (leave empty to use the active festival name)</Text>
+              </View>
+              <TextInput
+                value={publicFestivalName}
+                onChangeText={setPublicFestivalName}
+                onBlur={async () => {
+                  const fallbackName = activeFestival?.custom_name ?? '';
+                  if ((settings?.public_festival_name ?? fallbackName) !== publicFestivalName.trim()) {
+                    await persistSetting({ public_festival_name: publicFestivalName.trim() || null });
+                  }
+                }}
+                placeholder={activeFestival?.custom_name || 'e.g. Alviora Festival 2026'}
+                style={styles.textInput}
+                placeholderTextColor={colors.muted}
+                editable={!updateSettingsMutation.isPending}
+                maxLength={120}
               />
             </View>
 
@@ -590,6 +654,40 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 13,
+  },
+  publicLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  publicLinkText: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.muted,
+    backgroundColor: '#F6FAFC',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 11,
+  },
+  copyLinkAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: colors.teal,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  copyLinkText: {
+    color: colors.teal,
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 11,
   },
   actionBlock: {
     marginTop: 14,

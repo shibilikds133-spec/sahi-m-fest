@@ -6,19 +6,24 @@ import { teamLeaderPortalService, TeamLeaderAnnouncement } from '@/services/team
 import { Card, CardContent } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
+import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 export default function AnnouncementsScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
   const [announcements, setAnnouncements] = useState<TeamLeaderAnnouncement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!context) return;
+    setLoadError(null);
+    setLoading(true);
     teamLeaderPortalService.getAnnouncements().then((data) => {
       setAnnouncements(data);
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [context]);
+    }).catch((error: any) => { setLoadError(error?.message || 'Please retry the announcements request.'); setLoading(false); });
+  }, [context, reloadKey]);
 
   if (contextLoading || loading) {
     return (
@@ -31,6 +36,7 @@ export default function AnnouncementsScreen() {
       </TeamLeaderAppShell>
     );
   }
+  if (loadError) return <TeamLeaderAppShell><TeamLeaderDataError message={loadError} onRetry={() => setReloadKey((key) => key + 1)} /></TeamLeaderAppShell>;
 
   return (
     <TeamLeaderAppShell>

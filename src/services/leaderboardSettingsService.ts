@@ -18,6 +18,7 @@ export type LeaderboardSettings = {
   show_individual_rankings: boolean;
   theme_config: Record<string, any>;
   team_point_status?: string | null;
+  public_festival_name?: string | null;
   ranking_mode?: string;
   item_limit?: number | null;
 };
@@ -28,6 +29,7 @@ export type PublicLeaderboardSettings = {
   is_public_visible: boolean;
   show_individual_rankings: boolean;
   team_point_status?: string | null;
+  public_festival_name?: string | null;
   ranking_mode?: string;
   item_limit?: number | null;
 };

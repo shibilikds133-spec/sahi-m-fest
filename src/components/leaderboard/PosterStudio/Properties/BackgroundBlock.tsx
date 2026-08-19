@@ -5,9 +5,17 @@ import { ToggleField } from './fields/SliderField';
 import Accordion from './Accordion';
 import { useTemplateStore, BackgroundTransform } from '../Stores/templateStore';
 import useImage from 'use-image';
+import { uploadService } from '../../../../services/storage/uploadService';
+import { UploadCloud } from 'lucide-react';
 
-export default function BackgroundBlock() {
+interface BackgroundBlockProps {
+  festivalId: string;
+  tenantId: string;
+}
+
+export default function BackgroundBlock({ festivalId, tenantId }: BackgroundBlockProps) {
   const { activeTemplate, updateTemplateMeta } = useTemplateStore();
+  const [isUploading, setIsUploading] = useState(false);
   
   const bgTransform = activeTemplate?.background_transform || { scale: 1, x: 0, y: 0, isDraggable: false };
   const [image] = useImage(activeTemplate?.background_url || '', 'anonymous');
@@ -20,6 +28,34 @@ export default function BackgroundBlock() {
     },
     [updateTemplateMeta, bgTransform]
   );
+
+  const handleUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.onchange = async (e: any) => {
+      const file: File = e.target.files[0];
+      if (!file) return;
+      try {
+        setIsUploading(true);
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const metadata = await uploadService.uploadTemplate(
+          file,
+          festivalId,
+          tenantId,
+          'background',
+          ext,
+          () => {} // progress
+        );
+        updateTemplateMeta({ background_url: metadata.file_url });
+      } catch (err) {
+        console.error("Upload failed", err);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    input.click();
+  };
 
   const handleFit = () => {
     if (!image || !activeTemplate) return;
@@ -48,16 +84,28 @@ export default function BackgroundBlock() {
     commit({ scale: 1, x: 0, y: 0 });
   };
 
+  const UploadButton = () => (
+    <button onClick={handleUpload} disabled={isUploading} style={styles.uploadBtn}>
+      <UploadCloud size={16} />
+      {isUploading ? 'Uploading...' : 'Change Background'}
+    </button>
+  );
+
   if (!activeTemplate?.background_url) {
     return (
       <Accordion title="Background Image">
-        <p style={{ fontSize: 12, color: '#94A3B8' }}>No background image uploaded.</p>
+        <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>No background image uploaded.</p>
+        <UploadButton />
       </Accordion>
     );
   }
 
   return (
     <Accordion title="BACKGROUND IMAGE">
+      <div style={{ marginBottom: 16 }}>
+        <UploadButton />
+      </div>
+
       <div style={styles.grid}>
         <NumericField label="X Pos" value={Math.round(bgTransform.x)} onChange={(v) => commit({ x: v })} min={-4000} max={4000} />
         <NumericField label="Y Pos" value={Math.round(bgTransform.y)} onChange={(v) => commit({ y: v })} min={-4000} max={4000} />
@@ -98,12 +146,28 @@ const styles: Record<string, React.CSSProperties> = {
   actionBtn: { 
     padding: '6px 0', 
     borderRadius: 6, 
-    border: '1px solid #2a2a2a', 
-    backgroundColor: '#1f1f1f', 
-    cursor: 'pointer', 
+    border: '1px solid #1E293B', 
+    background: '#0F172A', 
+    color: '#E2E8F0', 
     fontSize: 11, 
-    fontFamily: 'Inter, sans-serif', 
     fontWeight: 600, 
-    color: '#E2E8F0' 
+    cursor: 'pointer',
+    transition: 'background 0.2s'
   },
+  uploadBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+    padding: '8px 0',
+    borderRadius: 6,
+    border: '1px dashed #38BDF8',
+    background: 'rgba(56, 189, 248, 0.1)',
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  }
 };

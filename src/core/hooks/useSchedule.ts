@@ -89,38 +89,33 @@ export const useSchedule = () => {
   };
 };
 
-export const usePublicSchedule = (festivalId?: string | null) => {
-  return useQuery({
-    queryKey: ['public-schedules', festivalId],
-    queryFn: async () => {
-      if (!festivalId) return [];
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*, venues(*), items(*)')
-        .eq('festival_id', festivalId)
-        .order('start_time');
-      if (error) throw new Error(error.message);
-      return data || [];
+export const fetchPublicSchedules = async (festivalId: string) => {
+  const { data, error } = await supabase
+    .from('vw_public_schedule')
+    .select('*')
+    .eq('festival_id', festivalId)
+    .order('start_time');
+  if (error) throw new Error(error.message);
+  return (data || []).map((row: any) => ({
+    ...row,
+    id: row.schedule_id,
+    venues: row.venue_id ? { id: row.venue_id, name: row.venue_name, location: row.venue_location } : null,
+    items: {
+      id: row.item_id,
+      item_code: row.item_code,
+      item_name_en: row.item_name,
+      item_name_ml: row.item_name_ml,
+      item_type: row.item_type,
+      category_codes: row.item_category_codes || [],
     },
-    enabled: !!festivalId,
-    staleTime: 300000, // 5 minutes
-    gcTime: 1800000, // 30 minutes
-  });
+  }));
 };
 
-export const usePublicRegistrations = (festivalId?: string | null) => {
+export const usePublicSchedule = (festivalId?: string | null, tenantId?: string | null) => {
   return useQuery({
-    queryKey: ['public-registrations', festivalId],
-    queryFn: async () => {
-      if (!festivalId) return [];
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('id, item_id, status, is_verified, code_letter')
-        .eq('festival_id', festivalId);
-      if (error) throw new Error(error.message);
-      return data || [];
-    },
-    enabled: !!festivalId,
+    queryKey: ['public-schedules', tenantId ?? 'none', festivalId ?? 'none'],
+    queryFn: () => fetchPublicSchedules(festivalId!),
+    enabled: !!tenantId && !!festivalId,
     staleTime: 300000, // 5 minutes
     gcTime: 1800000, // 30 minutes
   });

@@ -65,7 +65,7 @@ export default function MediaCenterPage() {
         return acc;
       }, {} as Record<string, any>);
       
-      const resultAssets = Object.values(grouped);
+      const resultAssets = Object.values(grouped) as any[];
       
       // Resolve r2:// URLs to presigned HTTP URLs
       for (const asset of resultAssets) {

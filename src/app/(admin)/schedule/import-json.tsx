@@ -17,7 +17,7 @@ export default function ImportScheduleJson() {
   const goBack = useGoBack('/(admin)/schedule');
   
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = authTenantId || '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
+  const tenantId = authTenantId;
   
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
@@ -209,6 +209,14 @@ export default function ImportScheduleJson() {
 
   const executeImport = async () => {
     if (scheduleData.length === 0 || isProcessing) return;
+    if (!tenantId) {
+      Alert.alert('Import blocked', 'Your administrator tenant could not be resolved. Sign in again before importing schedules.');
+      return;
+    }
+    if (!festivalId) {
+      Alert.alert('Import blocked', 'No active festival is selected. Activate a festival before importing schedules.');
+      return;
+    }
     setIsProcessing(true);
     setProgress(0);
     setImportReport(null);
@@ -216,69 +224,59 @@ export default function ImportScheduleJson() {
     const startTime = Date.now();
 
     try {
-      const chunkSize = 50;
-      const chunks = [];
-      for (let i = 0; i < scheduleData.length; i += chunkSize) {
-        const rawChunk = scheduleData.slice(i, i + chunkSize);
-        // WORKAROUND: There is a typo in the DB migration '060_execute_schedule_import.sql'
-        // The format string is 'YYYY-MM-DD HH:12:MI AM' instead of 'YYYY-MM-DD HH12:MI AM'
-        // By injecting ':12:' into the time string (e.g. 07:30 PM -> 07:12:30 PM), it successfully parses the HH and MI.
-        const fixedChunk = rawChunk.map(s => ({
-          ...s,
-          start_time: s.start_time.replace(/(\d{2}):(\d{2})\s?(AM|PM)/i, '$1:12:$2 $3'),
-          end_time: s.end_time.replace(/(\d{2}):(\d{2})\s?(AM|PM)/i, '$1:12:$2 $3')
-        }));
-        chunks.push(fixedChunk);
-      }
-
-      let totalImported = 0;
-      let totalSkipped = 0;
-      let totalConflicts = 0;
-      let totalInvalid = 0;
-      let allErrors: any[] = [];
-      let allConflicts: any[] = [];
-
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-
-        const { data: result, error: chunkErr } = await db.executeScheduleImportChunk({
-          tenant_id: tenantId,
-          festival_id: festivalId,
-          schedules: chunk
-        });
-
-        if (chunkErr) {
-          allErrors.push(`Chunk ${i} Failed: ${chunkErr.message}`);
-          continue;
-        }
-
-        if (result) {
-          totalImported += result.imported_count || 0;
-          totalSkipped += result.skipped_count || 0;
-          totalConflicts += result.conflict_count || 0;
-          totalInvalid += result.invalid_count || 0;
-          
-          if (result.errors) allErrors = allErrors.concat(result.errors);
-          if (result.conflicts) allConflicts = allConflicts.concat(result.conflicts);
-        }
-
-        setProgress(Math.round(((i + 1) / chunks.length) * 100));
-      }
+      const [venuesRes, itemsRes] = await Promise.all([
+        supabase.from('venues').select('id, name').eq('festival_id', festivalId),
+        supabase.from('items').select('id, item_code, item_name_en').eq('festival_id', festivalId).eq('is_active', true),
+      ]);
+      if (venuesRes.error) throw venuesRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+      const venueByName = new Map((venuesRes.data ?? []).map((v: any) => [String(v.name).trim().toLowerCase(), v.id]));
+      const itemByCode = new Map((itemsRes.data ?? []).map((i: any) => [String(i.item_code).trim().toLowerCase(), i]));
+      const toIso = (date: string, time: string) => {
+        const match = String(time).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) throw new Error(`Invalid time "${time}". Use 12-hour time with AM/PM.`);
+        let hour = Number(match[1]);
+        if (hour < 1 || hour > 12) throw new Error(`Invalid hour in "${time}".`);
+        if (match[3].toUpperCase() === 'AM' && hour === 12) hour = 0;
+        if (match[3].toUpperCase() === 'PM' && hour !== 12) hour += 12;
+        const value = new Date(`${date}T${String(hour).padStart(2, '0')}:${match[2]}:00`);
+        if (Number.isNaN(value.getTime())) throw new Error(`Invalid date "${date}".`);
+        return value.toISOString();
+      };
+      const payloads = scheduleData.map((row: any, index: number) => {
+        const item = itemByCode.get(String(row.item_code).trim().toLowerCase());
+        const venueId = venueByName.get(String(row.venue).trim().toLowerCase());
+        if (!item || !venueId) throw new Error(`Row ${index + 1}: item or venue could not be resolved.`);
+        return {
+          item_id: item.id,
+          venue_id: venueId,
+          start_time: toIso(row.date, row.start_time),
+          end_time: toIso(row.date, row.end_time),
+          status: row.status || 'scheduled',
+          buffer_minutes: Number(row.buffer_minutes ?? 0),
+          expected_judge_count: Number(row.expected_judge_count ?? 3),
+          bulk_break_context: row.bulk_break_context ?? null,
+        };
+      });
+      setProgress(35);
+      const { data: created, error: createError } = await db.createSchedules<any>(festivalId, payloads);
+      if (createError) throw createError;
+      setProgress(100);
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
       const finalReport = {
-        imported_count: totalImported,
-        skipped_count: totalSkipped,
-        conflict_count: totalConflicts,
-        invalid_count: totalInvalid,
-        errors: allErrors,
-        conflicts: allConflicts,
+        imported_count: created?.length ?? payloads.length,
+        skipped_count: 0,
+        conflict_count: 0,
+        invalid_count: 0,
+        errors: [],
+        conflicts: [],
         execution_time: `${duration}s`
       };
 
       setImportReport(finalReport);
-      Alert.alert('Import Finished', `Successfully scheduled ${totalImported} items, skipped ${totalSkipped} duplicates.`);
+      Alert.alert('Import Finished', `Successfully scheduled ${finalReport.imported_count} items.`);
 
     } catch (e: any) {
       Alert.alert('Critical Error', e.message);
@@ -338,7 +336,7 @@ export default function ImportScheduleJson() {
           • Double scheduling is blocked in the database via Unique Constraints.{'\n'}
           • Overlap checking prevents booking the same venue for different events at the same time.{'\n'}
           • Conflicting events are highlighted in RED.{'\n'}
-          • Safe partial import continues importing non-conflicting rows.
+          • Import is atomic: if any schedule is invalid or conflicts, no row is saved.
         </Text>
       </SsfCard>
 
