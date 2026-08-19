@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { useParticipants } from '../../../core/hooks/useParticipants';
+import { useFestival } from '../../../core/hooks/useFestival';
+import { useAuthStore } from '../../../core/store/authStore';
+import { uploadService } from '../../../services/storage/uploadService';
 import {
   ArrowLeft,
   Check,
@@ -483,6 +486,9 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 export default function ChestCardsPage() {
   const goBack = useGoBack('/(admin)/participants');
   const { participants, isLoadingList } = useParticipants();
+  const { useActiveFestival } = useFestival();
+  const { data: activeFestival } = useActiveFestival();
+  const { tenant_id: tenantId } = useAuthStore();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1100;
   const isMobile = width < 760;
@@ -497,6 +503,7 @@ export default function ChestCardsPage() {
   const [printedIds, setPrintedIds] = useState<Record<string, boolean>>(() => readIdMap(PRINT_STORAGE_KEY));
   const [selectedField, setSelectedField] = useState<keyof ChestTemplate['fields']>('chest');
   const [printSize, setPrintSize] = useState<'auto' | 'A3'>('auto');
+  const [isUploadingBackground, setIsUploadingBackground] = useState(false);
 
   useEffect(() => saveTemplates(templates), [templates]);
   useEffect(() => saveIdMap(LOCK_STORAGE_KEY, lockedIds), [lockedIds]);
@@ -560,55 +567,55 @@ export default function ChestCardsPage() {
       Alert.alert('Upload unavailable', 'Template upload is currently available on web.');
       return;
     }
+    
+    if (!activeFestival?.id || !tenantId) {
+      Alert.alert('Error', 'Missing festival or tenant context.');
+      return;
+    }
+
     if (!fileInputRef.current) {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/png,image/jpeg';
+      input.accept = 'image/png,image/jpeg,image/webp';
       input.style.display = 'none';
       document.body.appendChild(input);
-      input.onchange = () => {
+      
+      input.onchange = async () => {
         const file = input.files?.[0];
         if (!file) return;
         
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = document.createElement('img');
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1240;
-            const MAX_HEIGHT = 1748;
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-              const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
-              width = Math.round(width * ratio);
-              height = Math.round(height * ratio);
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, width, height);
-              const compressedUri = canvas.toDataURL('image/jpeg', 0.6);
-              
-              updateTemplate(template => ({
-                ...template,
-                backgroundUri: compressedUri,
-                updatedAt: new Date().toISOString(),
-              }));
-            }
-          };
-          img.src = String(e.target?.result);
-        };
-        reader.readAsDataURL(file);
+        try {
+          setIsUploadingBackground(true);
+          const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const metadata = await uploadService.uploadTemplate(
+            file,
+            activeFestival.id,
+            tenantId,
+            'background',
+            ext,
+            () => {} // progress
+          );
+          
+          updateTemplate(template => ({
+            ...template,
+            backgroundUri: metadata.file_url,
+            updatedAt: new Date().toISOString(),
+          }));
+        } catch (err: any) {
+          console.error("Upload failed", err);
+          Alert.alert("Upload Failed", err.message || "Failed to upload background image.");
+        } finally {
+          setIsUploadingBackground(false);
+          // reset value to allow selecting the same file again
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
       };
       fileInputRef.current = input;
     }
-    // reset value to allow selecting the same file again
-    fileInputRef.current.value = '';
-    fileInputRef.current.click();
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const createTemplate = () => {
@@ -792,9 +799,9 @@ export default function ChestCardsPage() {
                 ))}
               </View>
               <View className="flex-row flex-wrap gap-2">
-                <TouchableOpacity onPress={uploadBackground} className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
-                  <ImagePlus size={15} color="#FFF" />
-                  <Text className="font-poppins-bold text-white text-xs">Upload / Replace</Text>
+                <TouchableOpacity onPress={uploadBackground} disabled={isUploadingBackground} className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
+                  {isUploadingBackground ? <ActivityIndicator size="small" color="#FFF" /> : <ImagePlus size={15} color="#FFF" />}
+                  <Text className="font-poppins-bold text-white text-xs">{isUploadingBackground ? 'Uploading...' : 'Upload / Replace'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={createTemplate} className="bg-white border border-ssf-border px-3 py-2 rounded-xl flex-row items-center gap-x-2">
                   <Copy size={15} color="#07143D" />
