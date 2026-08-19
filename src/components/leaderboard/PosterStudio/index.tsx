@@ -440,6 +440,7 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
 
       if (dbError) throw new Error(dbError.message);
 
+      queryClient.invalidateQueries({ queryKey: ['generated-assets', festivalId] });
       useTemplateStore.getState().updateStableLayout();
       alert('✅ Poster published to Media Center!');
     } catch (e: any) {
