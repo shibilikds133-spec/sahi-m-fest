@@ -222,7 +222,7 @@ function DesktopSidebar({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   return (
-    <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+    <View className="no-print" style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
       <View>
         <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
           <View style={styles.brandMark}>
@@ -445,7 +445,7 @@ function MobileBottomBar({
   const primaryItems = navItems.slice(0, 3);
 
   return (
-    <SafeAreaView style={styles.mobileBarSafe}>
+    <SafeAreaView className="no-print" style={styles.mobileBarSafe}>
       <View style={styles.mobileBar}>
         {primaryItems.map((item) => {
           const active = item.match(pathname);
@@ -512,7 +512,7 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
       )}
       <View style={styles.shellMain}>
         {isDesktop && !hasIntegratedSectionHeader && (
-          <View style={styles.topbar}>
+          <View className="no-print" style={styles.topbar}>
             <View>
               <Text style={styles.topbarEyebrow}>{festivalName}</Text>
               <Text style={styles.topbarTitle}>{pageTitle}</Text>
