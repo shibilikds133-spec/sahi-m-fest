@@ -190,6 +190,14 @@ export const useParticipants = (participantId?: string) => {
     mutationFn: (categoryCode: string) => participantService.generateChestNumber(categoryCode),
   });
 
+  const regenerateChestNumbersMutation = useMutation({
+    mutationFn: (festivalId: string) => participantService.regenerateFestivalChestNumbers(festivalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      queryClient.invalidateQueries({ queryKey: ['publicCandidateProfile'] });
+    },
+  });
+
   const createParticipantMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => participantService.createParticipant<any>(payload),
     onSuccess: () => {
@@ -259,6 +267,8 @@ export const useParticipants = (participantId?: string) => {
     isApprovingMultiple: approveMultipleMutation.isPending,
     
     generateChestNumber: generateChestNumberMutation.mutateAsync,
+    regenerateChestNumbers: regenerateChestNumbersMutation.mutateAsync,
+    isRegeneratingChestNumbers: regenerateChestNumbersMutation.isPending,
     createParticipant: createParticipantMutation.mutateAsync,
     isCreating: createParticipantMutation.isPending,
 

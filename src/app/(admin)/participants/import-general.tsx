@@ -10,7 +10,7 @@ import { useAuthStore } from '../../../core/store/authStore';
 import { databaseProvider as db } from '../../../providers/database';
 import { jsonImportService, ImportValidationResult } from '../../../services/jsonImportService';
 import { supabase } from '../../../core/config/supabase';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useFestival } from '../../../core/hooks/useFestival';
 
@@ -30,7 +30,7 @@ export default function ImportUpperPrimaryDataset() {
   const router = useRouter();
   const goBack = useGoBack('/(admin)/participants');
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = authTenantId || '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
+  const tenantId = authTenantId || '';
   
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();

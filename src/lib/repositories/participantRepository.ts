@@ -20,6 +20,9 @@ export const participantRepository = {
   getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string) {
     return databaseProvider.getRegistrationsByItem<T>(itemId, tenantId, festivalId);
   },
+  getAdminRegistrationsBySchedule<T>(scheduleId: string) {
+    return databaseProvider.getAdminRegistrationsBySchedule<T>(scheduleId);
+  },
 
   listRegistrationsByFestival<T>(festivalId: string) {
     return databaseProvider.listRegistrationsByFestival<T>(festivalId);

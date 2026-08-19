@@ -34,7 +34,7 @@ export default function ManageUnits() {
   };
 
   const { tenant_id: authTenantId, user } = useAuthStore();
-  const tenantId = authTenantId || '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
+  const tenantId = authTenantId || '';
   const userId = user?.id || null;
 
   // Active Festival

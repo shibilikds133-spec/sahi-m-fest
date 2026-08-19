@@ -33,11 +33,11 @@ const mapRegistration = (row: any) => ({
 
 export const useStageManagement = (options: { scheduleId?: string } = {}) => {
   const queryClient = useQueryClient();
-  const { user, role, is_superadmin, initialized } = useAuthStore();
+  const { user, tenant_id, role, is_superadmin, initialized } = useAuthStore();
   const hasStageAccess = initialized && !!user && (role === 'admin' || is_superadmin);
   const contextQuery = useQuery({
-    queryKey: ['stage-management-context'],
-    queryFn: () => stageManagementService.getContext(),
+    queryKey: ['stage-management-context', tenant_id],
+    queryFn: () => stageManagementService.getContext(tenant_id),
     enabled: hasStageAccess,
     staleTime: 60_000,
   });

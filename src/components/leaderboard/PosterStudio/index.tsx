@@ -21,6 +21,12 @@ import VariableBindingPanel from './Variables/VariableBindingPanel';
 import VersionHistory from './Templates/VersionHistory';
 import PublishApproval from './Templates/PublishApproval';
 import PublishedResultsPanel from './Results/PublishedResultsPanel';
+import ControlDock from './ControlDock/ControlDock';
+import StudioContextMenu from './ContextMenu/StudioContextMenu';
+import { useContextMenu } from './Hooks/useContextMenu';
+
+export type DockPanelType = 'templates' | 'text' | 'assets' | 'layers' | 'background' | 'results' | 'properties' | null;
+
 import ErrorBoundary from './ErrorBoundary';
 import DiagnosticsOverlay from './DiagnosticsOverlay';
 import { validateTemplateHealth, ValidationIssue } from './Utils/validation';
@@ -31,6 +37,16 @@ import { supabase } from '../../../core/config/supabase';
 import OffscreenRenderer from './Canvas/OffscreenRenderer';
 import { uploadService } from '../../../services/storage/uploadService';
 import { useRouter } from 'expo-router';
+import { fontService, FontMetadata } from '../../../services/fontService';
+import { loadFont } from './Utils/fontLoader';
+import { storageService } from '../../../services/storage/storageService';
+
+import { useQueryClient } from '@tanstack/react-query';
+import { 
+  ArrowLeft, Palette, Maximize2, Eye, Save, Zap, Send, 
+  MoreHorizontal, Grid, Magnet, Square, Ruler, RotateCcw, 
+  LayoutTemplate, Type, Image, Trophy, Undo, Redo, Sparkles, ChevronDown, Layers
+} from 'lucide-react';
 
 interface PosterStudioProps {
   festivalId: string;
@@ -38,6 +54,7 @@ interface PosterStudioProps {
 }
 
 export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -48,7 +65,7 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
   const { layers, selectedIds } = useLayerStore();
   const { activeTemplate, hasUnsavedChanges, saveDraft, draftRecoveryAvailable, restoreDraft, clearDraft, lastSavedAt, variables, currentResultId, saveResultOverride, typographyMode, toggleTypographyMode, resultNumberMode, cycleResultNumberMode } = useTemplateStore();
   const safeVariables = variables || {};
-  const { data: dbTemplates = [] } = useGetPosterTemplates(festivalId);
+  const { data: dbTemplates } = useGetPosterTemplates(festivalId);
   const { isOnline } = useOfflineStore();
   const canUndo = useHistoryStore((s) => s.canUndo());
   const canRedo = useHistoryStore((s) => s.canRedo());
@@ -64,7 +81,9 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
   const [isDebug, setIsDebug] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'layers' | 'text' | 'assets' | 'templates' | null>('layers');
+  const [activeDockPanel, setActiveDockPanel] = useState<DockPanelType>('layers');
+  const [isDockOpen, setIsDockOpen] = useState(false);
+  const { contextMenu, openMenu: openContextMenu, closeMenu: closeContextMenu } = useContextMenu();
   const bgInputRef = useRef<HTMLInputElement>(null);
   const historyUndo = useHistoryStore((s) => s.undo);
   const historyRedo = useHistoryStore((s) => s.redo);
@@ -79,7 +98,14 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
 
   // When DB templates first load, auto-select the last used one, or the first one
   useEffect(() => {
-    if (dbTemplates.length > 0 && !currentTemplateId) {
+    if (!dbTemplates) return; // Wait until data is fetched
+
+    if (dbTemplates.length === 0) {
+      const state = useTemplateStore.getState();
+      if (!state.activeTemplate || state.activeTemplate.id !== 'starter-template') {
+        state.loadStarterTemplate();
+      }
+    } else if (dbTemplates.length > 0 && !currentTemplateId) {
       const lastId = localStorage.getItem('posterStudio_lastTemplateId');
       const exists = lastId && dbTemplates.find((t: any) => t.id === lastId);
       setCurrentTemplateId(exists ? lastId : dbTemplates[0].id!);
@@ -92,6 +118,72 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
       useTemplateStore.getState().loadDraftOnStart(currentTemplateId);
     }
   }, [currentTemplateId]);
+
+  // Load custom tenant fonts at startup
+  useEffect(() => {
+    if (!tenantId) return;
+    const loadCustomFonts = async () => {
+      try {
+        console.log('[PosterStudio] Loading custom tenant fonts...');
+        const fonts = await fontService.getFonts(tenantId);
+        await Promise.all(
+          fonts.map(async (f) => {
+            const meta = f.metadata as FontMetadata;
+            if (!meta) return;
+
+            let url = f.file_url;
+            if (url && url.startsWith('r2://')) {
+              const objectKey = url.replace('r2://', '');
+              try {
+                const ext = objectKey.split('.').pop()?.toLowerCase() || 'ttf';
+                const contentType = ext === 'woff2' ? 'font/woff2' : ext === 'woff' ? 'font/woff' : ext === 'otf' ? 'font/otf' : 'font/ttf';
+                url = await storageService.getPresignedUrl(objectKey, contentType, 'download');
+              } catch (e) {
+                console.error('Failed to resolve font signed URL at startup', e);
+              }
+            }
+
+            if (url) {
+              console.log(`[PosterStudio] Registering custom font: ${meta.family}`);
+              await loadFont({
+                family: meta.family,
+                url: url,
+                category: 'Custom Fonts'
+              });
+            }
+          })
+        );
+      } catch (e) {
+        console.error('Failed to preload custom fonts:', e);
+      }
+    };
+    loadCustomFonts();
+  }, [tenantId]);
+
+  const handleToolClick = useCallback((panel: DockPanelType) => {
+    if (activeDockPanel === panel && isDockOpen) {
+      // Don't auto-close on click if user wants it open, wait, the rule says:
+      // "Clicking a tool should open or switch the corresponding panel."
+      // If they click the *same* tool again, should it close? "Close dock must be user-controlled".
+      // But standard toggles close it. Let's keep it open, or toggle it. Canva toggles it. Let's just switch or open.
+      setIsDockOpen(true);
+    } else {
+      setActiveDockPanel(panel);
+      setIsDockOpen(true);
+    }
+  }, [activeDockPanel, isDockOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDockOpen) {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent useKeyboardShortcuts from clearing selection
+        setIsDockOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isDockOpen]);
 
   // ── Result Number Typography Mode Switcher ──────────
   const handleResultModeSwitch = () => {
@@ -409,122 +501,66 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
               onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#2a2a2a')}
               onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              ⟵ Back
+              <ArrowLeft size={14} /> Back
             </button>
             <span style={{ width: 1, height: 16, backgroundColor: '#2a2a2a', margin: '0 4px' }} />
-            <span style={styles.studioTitle}>🎨 Poster Studio</span>
-            {/* Template selector — DB templates only; demo templates shown only in ?debug=1 mode */}
-            {(dbTemplates.length > 0 || isDebug) ? (
-              <select
-                value={currentTemplateId}
-                onChange={(e) => {
-                  const newId = e.target.value;
-                  setCurrentTemplateId(newId);
-                  localStorage.setItem('posterStudio_lastTemplateId', newId);
-                  useTemplateStore.getState().setCurrentResultId(null);
-                }}
-                style={{
-                  backgroundColor: '#1E293B',
-                  color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  outline: 'none',
-                  marginLeft: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                {dbTemplates.length === 0 && <option value="">-- No templates yet --</option>}
-                {dbTemplates.map((t: any) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-                {/* Debug-only: local demo templates, visible only with ?debug=1 */}
-                {isDebug && (
-                  <optgroup label="🛠 Sandbox (debug only — NOT publishable)">
-                    <option value="demo-template-1">Book Test (Demo)</option>
-                    <option value="template-qawwali">Qawwali (Demo)</option>
-                    <option value="template-reading">Reading (Demo)</option>
-                  </optgroup>
-                )}
-              </select>
-            ) : (
-              // No DB templates yet — show inline CTA instead of dropdown
-              <button
-                onClick={() => setShowCreateModal(true)}
-                style={{
-                  marginLeft: '12px',
-                  padding: '5px 14px',
-                  borderRadius: '7px',
-                  border: '1px dashed #0F766E',
-                  backgroundColor: 'rgba(15,118,110,0.12)',
-                  color: '#5EEAD4',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                + Create your first template
-              </button>
-            )}
-            {/* + New template button always visible */}
+            <span style={{ ...styles.studioTitle, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Palette size={16} color="#38BDF8" /> Poster Studio
+            </span>
+            {/* Template selector has been moved to the Templates Panel in the Right Control Dock */}
+            {/* Change Background Button replacing the old status pill */}
+            <input type="file" ref={bgInputRef} style={{ display: 'none' }} onChange={handleBgUpload} accept="image/*" />
             <button
-              onClick={() => setShowCreateModal(true)}
-              title="Create a new database template"
+              onClick={() => bgInputRef.current?.click()}
               style={{
-                marginLeft: '8px',
-                padding: '4px 10px',
-                borderRadius: '7px',
-                border: '1px solid #0F766E',
-                backgroundColor: 'transparent',
-                color: '#5EEAD4',
+                marginLeft: '16px',
+                padding: '4px 12px',
+                borderRadius: '4px',
                 fontSize: '12px',
-                fontWeight: 700,
+                fontWeight: 'bold',
+                backgroundColor: currentResultId ? '#8B5CF6' : '#3B82F6',
+                color: 'white',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
                 cursor: 'pointer',
+                transition: 'opacity 0.2s'
               }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              + New
+              <Image size={14} /> Change {currentResultId ? 'Result' : 'Template'} BG
             </button>
-            <div style={{
-              marginLeft: '16px',
-              padding: '4px 12px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: currentResultId ? '#8B5CF6' : '#3B82F6',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              {currentResultId ? `EDITING RESULT` : 'EDITING BASE TEMPLATE'}
-            </div>
             {currentResultId && (
-              <button
-                onClick={async () => {
-                  useTemplateStore.getState().setCurrentResultId(null);
-                  const activeTemplate = useTemplateStore.getState().activeTemplate;
-                  if (activeTemplate) {
-                    useLayerStore.getState().setLayers(activeTemplate.layers);
-                  }
-                }}
-                style={{
-                  marginLeft: '8px',
-                  padding: '6px 12px',
-                  backgroundColor: '#475569',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#334155')}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#475569')}
-              >
-                ↩ Back to Base Template
-              </button>
+               <button
+                 onClick={async () => {
+                   useTemplateStore.getState().setCurrentResultId(null);
+                   const activeTemplate = useTemplateStore.getState().activeTemplate;
+                   if (activeTemplate) {
+                     useLayerStore.getState().setLayers(activeTemplate.layers);
+                   }
+                 }}
+                 style={{
+                   marginLeft: '8px',
+                   padding: '6px 12px',
+                   backgroundColor: '#475569',
+                   color: 'white',
+                   border: 'none',
+                   borderRadius: '6px',
+                   fontSize: '12px',
+                   fontWeight: 'bold',
+                   cursor: 'pointer',
+                   transition: 'background-color 0.2s',
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '6px'
+                 }}
+                 onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#334155')}
+                 onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#475569')}
+               >
+                 <Undo size={14} /> Back to Base Template
+               </button>
             )}
             
             {/* Canvas Resize Button */}
@@ -547,7 +583,7 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                     gap: 6
                   }}
                 >
-                  ⛶ Resize
+                  <Maximize2 size={14} /> Resize
                 </button>
                 {showResizePopover && (
                   <div style={{
@@ -567,9 +603,27 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                 )}
               </div>
             )}
-            {activeTemplate && <span style={{...styles.templateName, display: 'none'}}>{activeTemplate.name}</span>}
           </div>
-          <div style={{...styles.topbarRight, flexWrap: 'wrap'}}>
+          <div style={{ ...styles.topbarRight, flexWrap: 'wrap' }}>
+            {/* Viewport Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('view-dropdown');
+                  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                }}
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Eye size={14} /> View <ChevronDown size={12} />
+              </button>
+              <div id="view-dropdown" style={{ display: 'none', position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#171717', border: '1px solid #2a2a2a', borderRadius: 6, padding: 8, zIndex: 100, minWidth: 140 }}>
+                <button onClick={() => setGridVisible(!gridVisible)} style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: gridVisible ? '#5EEAD4' : '#94A3B8' }}><Grid size={14} /> Grid</button>
+                <button onClick={() => setGridSnap(!gridSnap)} style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: gridSnap ? '#5EEAD4' : '#94A3B8' }}><Magnet size={14} /> Snap</button>
+                <button onClick={() => setSafeZoneVisible(!safeZoneVisible)} style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: safeZoneVisible ? '#5EEAD4' : '#94A3B8' }}><Square size={14} /> Safe Zones</button>
+                <button onClick={() => setRulerVisible(!rulerVisible)} style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: rulerVisible ? '#5EEAD4' : '#94A3B8' }}><Ruler size={14} /> Ruler</button>
+              </div>
+            </div>
+
             {!currentResultId && (
               <button
                 onClick={async () => {
@@ -588,13 +642,14 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                         aspect_ratio: activeTemplate.aspect_ratio,
                       })
                       .eq('id', activeTemplate.id);
+                    queryClient.invalidateQueries({ queryKey: ['poster-templates', festivalId] });
                   }
                   setIsSaving(false);
                 }}
                 disabled={isSaving}
-                style={{ ...styles.topBtn, backgroundColor: '#3B82F6', color: '#FFFFFF', borderColor: '#3B82F6' }}
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#3B82F6', color: '#FFFFFF', borderColor: '#3B82F6' }}
               >
-                {isSaving ? 'Saving...' : '💾 Save Template'}
+                <Save size={14} /> {isSaving ? 'Saving...' : 'Save'}
               </button>
             )}
             {currentResultId && (
@@ -605,217 +660,159 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                   setIsSaving(false);
                 }}
                 disabled={isSaving}
-                style={{ ...styles.topBtn, backgroundColor: '#8B5CF6', color: '#FFFFFF', borderColor: '#8B5CF6' }}
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#8B5CF6', color: '#FFFFFF', borderColor: '#8B5CF6' }}
               >
-                {isSaving ? 'Saving...' : '💾 Save Result Edit'}
+                <Save size={14} /> {isSaving ? 'Saving...' : 'Save Edit'}
               </button>
             )}
             {currentResultId && (
               <button 
                 onClick={() => setIsGenerating(true)} 
                 disabled={isGenerating}
-                style={{ ...styles.topBtn, backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}
               >
-                {isGenerating ? 'Generating...' : '🚀 Generate Poster'}
+                <Zap size={14} /> {isGenerating ? 'Generating...' : 'Generate'}
               </button>
             )}
-            {/* ── Typography Mode Toggle ── */}
-            <button
-              onClick={toggleTypographyMode}
-              title={`Typography Mode: ${typographyMode === 'A' ? 'BIG first / small second' : 'small first / BIG second'}. Click to swap.`}
-              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: typographyMode === 'A' ? '#4F46E5' : '#7C3AED', color: '#fff', borderColor: 'transparent', fontWeight: 600, minWidth: 44 }}
-            >
-              ⇅ {typographyMode === 'A' ? 'Font: BIG/small' : 'Font: small/BIG'}
-            </button>
-            {/* ── Result Number Switcher ── */}
-            <button
-              onClick={handleResultModeSwitch}
-              title={`Result Number Mode: ${resultNumberMode}. Click to cycle presets.`}
-              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#BE185D', color: '#fff', borderColor: 'transparent', fontWeight: 600 }}
-            >
-              🔢 Size: {resultNumberMode}
-            </button>
-            {/* ── Insert Event Name Layers ── */}
-            <button
-              onClick={insertEventNameLayers}
-              title="Insert pre-styled Event Name Primary + Secondary layers"
-              style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#0369A1', color: '#fff', borderColor: 'transparent' }}
-            >
-              ✦ Events
-            </button>
             {!currentResultId && (
-              <button onClick={() => setShowPublish(true)} style={{ ...styles.topBtn, padding: '4px 8px', backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}>🚀 Publish</button>
+              <button 
+                onClick={() => setShowPublish(true)} 
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', backgroundColor: '#0F766E', color: '#FFFFFF', borderColor: '#0F766E' }}
+              >
+                <Send size={14} /> Publish
+              </button>
             )}
-            <button
-              onClick={async () => {
-                await useTemplateStore.getState().clearDraft();
-                // Reload from the current DB template (no demo fallback)
-                const firstTemplate = dbTemplates[0];
-                if (firstTemplate?.id) {
-                  await useTemplateStore.getState().loadDraftOnStart(firstTemplate.id);
-                } else {
-                  useLayerStore.getState().setLayers([]);
-                  useTemplateStore.getState().setActiveTemplate(null);
-                }
-                useTemplateStore.getState().markSaved();
-              }}
-              style={{ ...styles.topBtn, padding: '4px 8px', borderColor: '#F87171', color: '#F87171' }}
-            >
-              🔄 Reset
-            </button>
+            
+            {/* More Menu for less used actions */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('more-dropdown');
+                  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                }}
+                style={{ ...styles.topBtn, display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                More <ChevronDown size={12} />
+              </button>
+              <div id="more-dropdown" style={{ display: 'none', position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#171717', border: '1px solid #2a2a2a', borderRadius: 6, padding: 8, zIndex: 100, minWidth: 180 }}>
+                {/* ── Typography Mode Toggle ── */}
+                <button
+                  onClick={toggleTypographyMode}
+                  title={`Typography Mode: ${typographyMode === 'A' ? 'BIG first / small second' : 'small first / BIG second'}. Click to swap.`}
+                  style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: typographyMode === 'A' ? '#818CF8' : '#A78BFA' }}
+                >
+                  <Type size={14} /> {typographyMode === 'A' ? 'Font: BIG/small' : 'Font: small/BIG'}
+                </button>
+                {/* ── Result Number Switcher ── */}
+                <button
+                  onClick={handleResultModeSwitch}
+                  title={`Result Number Mode: ${resultNumberMode}. Click to cycle presets.`}
+                  style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: '#F472B6' }}
+                >
+                  <Maximize2 size={14} /> Size: {resultNumberMode}
+                </button>
+                {/* ── Insert Event Name Layers ── */}
+                <button
+                  onClick={insertEventNameLayers}
+                  title="Insert pre-styled Event Name Primary + Secondary layers"
+                  style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: '#38BDF8' }}
+                >
+                  <Sparkles size={14} /> Insert Events
+                </button>
+                <div style={styles.toolDividerHoriz} />
+                <button onClick={() => setShowShortcuts(true)} style={{ ...styles.toolBtn, display: 'block', width: '100%', textAlign: 'left' }}>? Shortcuts</button>
+                <button
+                  onClick={async () => {
+                    await useTemplateStore.getState().clearDraft();
+                    if (dbTemplates && dbTemplates.length > 0) {
+                      const firstTemplate = dbTemplates[0];
+                      await useTemplateStore.getState().loadDraftOnStart(firstTemplate.id);
+                    } else {
+                      useLayerStore.getState().setLayers([]);
+                      useTemplateStore.getState().setActiveTemplate(null);
+                    }
+                    useTemplateStore.getState().markSaved();
+                  }}
+                  style={{ ...styles.toolBtn, display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left', color: '#F87171' }}
+                >
+                  <RotateCcw size={14} /> Reset Canvas
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={() => {
                 const result = historyUndo(layers);
                 if (result) useLayerStore.getState().setLayers(result);
               }}
-              style={{ ...styles.topBtn, padding: '4px 8px', opacity: canUndo ? 1 : 0.4 }}
+              style={{ ...styles.topBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px', opacity: canUndo ? 1 : 0.4 }}
               title="Undo (Ctrl+Z)"
-            >↩</button>
+            >
+              <Undo size={14} />
+            </button>
             <button
               onClick={() => {
                 const result = historyRedo(layers);
                 if (result) useLayerStore.getState().setLayers(result);
               }}
-              style={{ ...styles.topBtn, padding: '4px 8px', opacity: canRedo ? 1 : 0.4 }}
+              style={{ ...styles.topBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px', opacity: canRedo ? 1 : 0.4 }}
               title="Redo (Ctrl+Y)"
-            >↪</button>
+            >
+              <Redo size={14} />
+            </button>
             <span style={styles.saveStatus}>{saveStatus}</span>
           </div>
         </div>
-        {/* Row 2: Tool controls */}
-        <div style={styles.topbarRow2}>
-          {/* Zoom group */}
-          <div style={styles.toolGroup}>
-            <button onClick={() => setZoom(Math.max(0.1, zoomLevel - 0.1))} style={styles.toolBtn} title="Zoom Out">−</button>
-            <span style={styles.zoomLabel}>{Math.round(zoomLevel * 100)}%</span>
-            <button onClick={() => setZoom(zoomLevel + 0.1)} style={styles.toolBtn} title="Zoom In">+</button>
-            <button onClick={fitToViewport} style={styles.toolBtn} title="Fit to Screen">⊡ Fit</button>
-          </div>
-          <div style={styles.toolDivider} />
-          {/* Canvas options */}
-          <div style={styles.toolGroup}>
-            <button onClick={() => setGridVisible(!gridVisible)} style={{ ...styles.toolBtn, color: gridVisible ? '#5EEAD4' : '#94A3B8' }} title="Grid">⊞ Grid</button>
-            <button onClick={() => setGridSnap(!gridSnap)} style={{ ...styles.toolBtn, color: gridSnap ? '#5EEAD4' : '#94A3B8' }} title="Snap to Grid">⊹ Snap</button>
-            <button onClick={() => setSafeZoneVisible(!safeZoneVisible)} style={{ ...styles.toolBtn, color: safeZoneVisible ? '#5EEAD4' : '#94A3B8' }} title="Safe Zones">⬚ Safe</button>
-            <button onClick={() => setRulerVisible(!rulerVisible)} style={{ ...styles.toolBtn, color: rulerVisible ? '#5EEAD4' : '#94A3B8' }} title="Ruler">↔ Ruler</button>
-          </div>
-          <div style={styles.toolDivider} />
-          {/* Add Layer options */}
-          <div style={styles.toolGroup}>
-            <button onClick={handleAddText} style={{...styles.toolBtn, color: '#38bdf8'}} title="Add new text layer">+ Add Text</button>
-          </div>
-          <div style={styles.toolDivider} />
-          {/* Global Text options */}
-          <div style={styles.toolGroup}>
-            <button onClick={() => scaleText(0.95)} style={styles.toolBtn} title="Decrease text size">A-</button>
-            <button onClick={() => scaleText(1.05)} style={styles.toolBtn} title="Increase text size">A+</button>
-          </div>
-          <div style={styles.toolDivider} />
-          {/* Layer quick actions (shown when a layer is selected) */}
-          {selectedLayer && (
-            <div style={styles.toolGroup}>
-              <button onClick={handleDuplicateLayer} style={styles.toolBtn} title="Duplicate layer">⎘ Dupe</button>
-              <button onClick={() => useLayerStore.getState().toggleVisibility(selectedLayer.id)} style={{ ...styles.toolBtn, color: selectedLayer.isVisible ? '#5EEAD4' : '#94A3B8' }} title="Toggle visibility">
-                {selectedLayer.isVisible ? '👁 Show' : '🙈 Hide'}
-              </button>
-              <button onClick={() => useLayerStore.getState().toggleLock(selectedLayer.id)} style={{ ...styles.toolBtn, color: selectedLayer.lockProfile === 'fully-locked' ? '#F59E0B' : '#94A3B8' }} title="Lock/Unlock">
-                {selectedLayer.lockProfile === 'fully-locked' ? '🔒 Locked' : '🔓 Lock'}
-              </button>
-              <button onClick={handleDeleteLayer} style={{ ...styles.toolBtn, color: '#F87171' }} title="Delete layer">🗑 Del</button>
-            </div>
-          )}
-          <div style={{ flex: 1 }} />
-          {/* Background */}
-          <div style={styles.toolGroup}>
-            <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgUpload} />
-            <button onClick={() => bgInputRef.current?.click()} style={styles.toolBtn} title="Upload background image">🖼 BG Image</button>
-            <button onClick={() => setShowShortcuts(true)} style={styles.toolBtn} title="Keyboard shortcuts">? Keys</button>
-          </div>
-        </div>
+
       </div>
 
       {/* ---- MAIN WORKSPACE ---- */}
       <div style={{ ...styles.workspace, flexDirection: isDesktop ? 'row' : 'column' }}>
-        {/* ---- LEFT RIBBON (Canva Style) ---- */}
+        {/* ---- LEFT TOOL RAIL (Canva Style) ---- */}
         {isDesktop && (
           <div style={styles.leftRibbon}>
             <button 
-              style={{ ...styles.ribbonBtn, ...(activeTab === 'templates' ? styles.ribbonBtnActive : {}) }}
-              onClick={() => setActiveTab('templates')}
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'templates' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('templates')}
             >
-              <div style={styles.ribbonIcon}>📑</div>
+              <div style={styles.ribbonIcon}><LayoutTemplate size={20} /></div>
               <span style={styles.ribbonLabel}>Templates</span>
             </button>
             <button 
-              style={{ ...styles.ribbonBtn, ...(activeTab === 'text' ? styles.ribbonBtnActive : {}) }}
-              onClick={() => setActiveTab('text')}
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'text' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('text')}
             >
-              <div style={styles.ribbonIcon}>T</div>
+              <div style={styles.ribbonIcon}><Type size={20} /></div>
               <span style={styles.ribbonLabel}>Text</span>
             </button>
             <button 
-              style={{ ...styles.ribbonBtn, ...(activeTab === 'assets' ? styles.ribbonBtnActive : {}) }}
-              onClick={() => setActiveTab('assets')}
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'assets' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('assets')}
             >
-              <div style={styles.ribbonIcon}>🖼</div>
+              <div style={styles.ribbonIcon}><Image size={20} /></div>
               <span style={styles.ribbonLabel}>Assets</span>
             </button>
             <button 
-              style={{ ...styles.ribbonBtn, ...(activeTab === 'layers' ? styles.ribbonBtnActive : {}) }}
-              onClick={() => setActiveTab('layers')}
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'layers' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('layers')}
             >
-              <div style={styles.ribbonIcon}>📚</div>
+              <div style={styles.ribbonIcon}><Layers size={20} /></div>
               <span style={styles.ribbonLabel}>Layers</span>
             </button>
-          </div>
-        )}
-
-        {/* ---- LEFT FLYOUT PANEL ---- */}
-        {isDesktop && activeTab && (
-          <div style={styles.leftFlyout}>
-            {activeTab === 'layers' && (
-              <div style={styles.panelSection}>
-                <h3 style={styles.panelTitle}>Layers</h3>
-                {layers.length === 0 && <p style={styles.emptyMsg}>No layers yet.</p>}
-                {[...layers].sort((a, b) => b.zIndex - a.zIndex).map((l) => (
-                  <div
-                    key={l.id}
-                    onClick={() => useLayerStore.getState().setSelectedIds([l.id])}
-                    style={{
-                      ...styles.layerItem,
-                      backgroundColor: selectedIds.includes(l.id) ? '#2a2a2a' : '#171717',
-                      borderColor: selectedIds.includes(l.id) ? '#38bdf8' : '#2a2a2a',
-                      opacity: l.isVisible ? 1 : 0.45,
-                    }}
-                  >
-                    <span style={styles.layerIcon}>{l.type === 'text' ? 'T' : l.type === 'image' ? '🖼' : '⬜'}</span>
-                    <span style={styles.layerName}>{l.name}</span>
-                    <div style={styles.layerActions}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleVisibility(l.id); }}
-                        style={styles.miniBtn}
-                        title={l.isVisible ? 'Hide' : 'Show'}
-                      >{l.isVisible ? '👁' : '👁‍🗨'}</button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); useLayerStore.getState().toggleLock(l.id); }}
-                        style={styles.miniBtn}
-                        title={l.isLocked ? 'Unlock' : 'Lock'}
-                      >{l.lockProfile === 'fully-locked' ? '🔒' : '🔓'}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {activeTab === 'text' && (
-              <div style={styles.panelSection}>
-                <h3 style={styles.panelTitle}>Add Text</h3>
-                <button onClick={handleAddText} style={styles.emptyStateCta}>+ Add a text box</button>
-              </div>
-            )}
-            {/* Collapse Button */}
-            <div style={{ position: 'absolute', top: '50%', right: -12, width: 24, height: 48, backgroundColor: '#171717', border: '1px solid #2a2a2a', borderLeft: 'none', borderRadius: '0 8px 8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 100 }} onClick={() => setActiveTab(null)}>
-              <span style={{ color: '#E2E8F0', fontSize: 16 }}>◀</span>
-            </div>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'background' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('background')}
+            >
+              <div style={styles.ribbonIcon}><Palette size={20} /></div>
+              <span style={styles.ribbonLabel}>Background</span>
+            </button>
+            <button 
+              style={{ ...styles.ribbonBtn, ...(activeDockPanel === 'results' && isDockOpen ? styles.ribbonBtnActive : {}) }}
+              onClick={() => handleToolClick('results')}
+            >
+              <div style={styles.ribbonIcon}><Trophy size={20} /></div>
+              <span style={styles.ribbonLabel}>Results</span>
+            </button>
           </div>
         )}
 
@@ -823,17 +820,10 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
         <div style={styles.canvasArea}>
           {/* ---- CANVA STYLE FLOATING CONTEXT TOOLBAR ---- */}
           {activeTemplate && (
-            <div style={styles.contextToolbarPill}>
-              {selectedLayer ? (
+            <div style={{...styles.contextToolbarPill, display: selectedLayer && selectedLayer.type === 'text' ? 'flex' : 'none'}}>
+              {selectedLayer && selectedLayer.type === 'text' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>Editing: {selectedLayer.name}</span>
-                  {selectedLayer.type === 'text' && <TextToolbar />}
-                  {/* We will refactor TransformBlock and EffectsBlock to fit here later */}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>Canvas Settings</span>
-                  <BackgroundBlock />
+                  <TextToolbar onOpenProperties={() => handleToolClick('properties')} />
                 </div>
               )}
             </div>
@@ -864,25 +854,74 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
               </div>
             </div>
           ) : (
-            <div style={styles.canvasWrapper}>
+            <div style={styles.canvasWrapper} onContextMenu={(e) => {
+              // If a layer is selected and we right-click on the canvas, it could be for the layer
+              // or we pass right-click down to StudioCanvas
+              // For now, if there's exactly one layer selected, we assume context menu is for that layer.
+              // A better way is to pass openContextMenu down to StudioCanvas shapes.
+              // We will pass it down in the next step.
+            }}>
               <StudioCanvas
                 canvasWidth={canvasW}
                 canvasHeight={canvasH}
                 backgroundUrl={activeTemplate?.background_url}
+                onContextMenu={openContextMenu}
               />
             </div>
           )}
         </div>
+        
+        {/* ---- RIGHT CONTROL DOCK ---- */}
+        {isDesktop && isDockOpen && (
+          <ControlDock 
+            activePanel={activeDockPanel} 
+            onClose={() => setIsDockOpen(false)}
+            festivalId={festivalId}
+            tenantId={tenantId}
+            currentTemplateId={currentTemplateId}
+            setCurrentTemplateId={(newId: string) => {
+              setCurrentTemplateId(newId);
+              localStorage.setItem('posterStudio_lastTemplateId', newId);
+              useTemplateStore.getState().setCurrentResultId(null);
+            }}
+            setShowCreateModal={setShowCreateModal}
+          />
+        )}
       </div>
 
-      {/* ---- PUBLISHED RESULTS PANEL (Phase 6) ---- */}
-      <PublishedResultsPanel festivalId={festivalId} tenantId={tenantId} />
+      {/* ---- PUBLISHED RESULTS PANEL (Phase 6 placeholder) ---- */}
+      {/* <PublishedResultsPanel festivalId={festivalId} tenantId={tenantId} /> */}
+
+      {/* ---- BOTTOM BAR (Viewport Controls) ---- */}
+      <div style={styles.bottomBar}>
+        <div style={styles.bottomZoomGroup}>
+          <button onClick={() => setZoom(Math.max(0.1, zoomLevel - 0.1))} style={styles.bottomToolBtn} title="Zoom Out">−</button>
+          <span style={styles.bottomZoomLabel}>{Math.round(zoomLevel * 100)}%</span>
+          <button onClick={() => setZoom(zoomLevel + 0.1)} style={styles.bottomToolBtn} title="Zoom In">+</button>
+          <button onClick={fitToViewport} style={styles.bottomToolBtn} title="Fit to Screen">⊡ Fit</button>
+        </div>
+      </div>
 
       {/* ---- MOBILE BOTTOM SHEET ---- */}
       {!isDesktop && (
         <MobileBottomSheet
           selectedLayer={selectedLayer}
           onClose={() => useLayerStore.getState().clearSelection()}
+        />
+      )}
+
+      {/* ---- CONTEXT MENU ---- */}
+      {contextMenu.isOpen && (
+        <StudioContextMenu 
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetId={contextMenu.targetId}
+          targetType={contextMenu.targetType}
+          onClose={closeContextMenu}
+          onOpenProperties={() => {
+            closeContextMenu();
+            handleToolClick('properties');
+          }}
         />
       )}
 
@@ -1018,7 +1057,10 @@ const styles: Record<string, React.CSSProperties> = {
   layerIcon: { fontSize: 13, flexShrink: 0, width: 22, textAlign: 'center', color: '#94A3B8' },
   layerName: { flex: 1, fontSize: 12, fontWeight: 500, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   layerActions: { display: 'flex', gap: 4 },
-  miniBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '3px 5px', borderRadius: 4, lineHeight: 1, transition: 'background 0.1s' },
+  bottomBar: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', backgroundColor: '#1f1f1f', borderTop: '1px solid #2a2a2a', padding: '6px 16px', zIndex: 40 },
+  bottomZoomGroup: { display: 'flex', alignItems: 'center', gap: 4, backgroundColor: '#171717', borderRadius: 6, padding: '4px', border: '1px solid #2a2a2a' },
+  bottomToolBtn: { padding: '4px 8px', background: 'transparent', border: 'none', color: '#94A3B8', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 4 },
+  bottomZoomLabel: { fontSize: 12, color: '#E2E8F0', fontVariantNumeric: 'tabular-nums', width: 44, textAlign: 'center' },
   modalBackdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: '#171717', borderRadius: 6, padding: 20, width: 400, maxWidth: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: '1px solid #2a2a2a' },
   modalTitle: { fontSize: 16, fontWeight: 700, color: '#E2E8F0', borderBottom: '1px solid #2a2a2a', paddingBottom: 8, margin: 0 },

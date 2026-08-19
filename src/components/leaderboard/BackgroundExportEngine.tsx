@@ -87,9 +87,7 @@ export default function BackgroundExportEngine() {
         const uploaded = await uploadService.uploadGeneratedAsset(
           blob, 
           payload.festivalId, 
-          payload.tenantId, 
-          res.name, 
-          ext
+          payload.tenantId
         );
 
         console.info('[BGExport] Uploaded', res.name, '→', uploaded.file_url);

@@ -7,20 +7,25 @@ import { Card, CardContent } from '@/components/ui/shadcn/card';
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/shadcn/tabs';
+import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 export default function ResultsScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!context) return;
+    setLoadError(null);
+    setLoading(true);
     teamLeaderPortalService.getPublishedResults().then((data) => {
       setResults(data);
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [context]);
+    }).catch((error: any) => { setLoadError(error?.message || 'Please retry the results request.'); setLoading(false); });
+  }, [context, reloadKey]);
 
   if (contextLoading || loading) {
     return (
@@ -33,6 +38,7 @@ export default function ResultsScreen() {
       </TeamLeaderAppShell>
     );
   }
+  if (loadError) return <TeamLeaderAppShell><TeamLeaderDataError message={loadError} onRetry={() => setReloadKey((key) => key + 1)} /></TeamLeaderAppShell>;
 
   const filtered = filter === 'all' ? results : results.filter((r) => {
     if (filter === 'medal') return r.rank != null && r.rank <= 3;

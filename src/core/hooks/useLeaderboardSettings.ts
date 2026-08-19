@@ -20,6 +20,7 @@ export const useGetPublicLeaderboardSettings = (
   return useQuery({
     queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboardSettings(tenantId, festivalId),
     queryFn: () => leaderboardSettingsService.getPublicLeaderboardSettings(tenantId, festivalId),
+    enabled: !!tenantId,
     staleTime: 300000, // 5 minutes
     gcTime: 1800000, // 30 minutes
   });

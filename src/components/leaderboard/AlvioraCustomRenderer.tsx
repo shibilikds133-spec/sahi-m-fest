@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, Component, ErrorInfo } from 'react';
-import { AlvioraCustomRenderer } from '../../components/leaderboard/AlvioraCustomRenderer';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -85,23 +84,23 @@ type ItemResultSection = {
 const PAGE_SIZE = 8;
 
 const palette = {
-  ink: '#120E2D',
-  deep: '#0B1F33',
-  surface: '#FFFFFF',
-  page: '#030E21', // Dark background base
-  line: 'rgba(255, 255, 255, 0.08)', // Translucent border
-  text: '#FFFFFF', // White text
-  muted: 'rgba(255, 255, 255, 0.6)', // Muted text
-  pink: '#0F766E',
-  magenta: '#375A7F',
-  yellow: '#FFDF00',
-  orange: '#D97706',
+  ink: '#0F172A',
+  deep: '#020617',
+  surface: '#1E293B',
+  page: '#020617', // Deep slate background
+  line: 'rgba(255, 255, 255, 0.05)', // Subtle border
+  text: '#F8FAFC', // Slate 50
+  muted: '#94A3B8', // Slate 400
+  pink: '#0F766E', // Teal instead of pink
+  magenta: '#0284C7', // Sky blue instead of magenta
+  yellow: '#FBBF24',
+  orange: '#F59E0B',
   cyan: '#06B6D4',
   green: '#10B981',
   blue: '#3B82F6',
   gold: '#FBBF24',
-  silver: '#9CA3AF',
-  bronze: '#D97706',
+  silver: '#94A3B8',
+  bronze: '#B45309',
 };
 
 const titleCase = (value: string | null | undefined) => {
@@ -277,7 +276,7 @@ const toItemSections = (results: PublicPublishedResultRow[]): ItemResultSection[
     );
 };
 
-export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
+export function AlvioraCustomRenderer({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
   const router = useRouter();
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { width } = useWindowDimensions();
@@ -664,7 +663,7 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
           <Text style={styles.kickerText}>Official public results board</Text>
         </View>
         {settingsQuery.data?.ranking_mode === 'LIMITED' && settingsQuery.data?.item_limit && (
-          <View style={[styles.kicker, { marginTop: 8, backgroundColor: 'rgba(217, 119, 6, 0.15)', borderColor: 'rgba(217, 119, 6, 0.3)', borderWidth: 1 }]}>
+          <View style={[styles.kicker, { marginTop: 8, backgroundColor: 'rgba(217, 119, 6, 0.15)', borderColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1 }]}>
             <Sparkles size={14} color={palette.orange} />
             <Text style={[styles.kickerText, { color: palette.orange }]}>
               Unit Ranking Based On First {settingsQuery.data.item_limit} Published Items
@@ -705,185 +704,43 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
       <View style={styles.quickNavPanel}>
         <Text style={styles.sectionTitleLabel}>Quick Navigation</Text>
         <View style={styles.quickNavRow}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/(public)/leaderboard/unit-rankings' as never)}
-            style={[styles.quickNavCardGlass, styles.cardGlowGreen, isMobile && styles.quickNavCardGlassMobile]}
-          >
-            <View style={[
-              styles.quickNavIconBox,
-              { backgroundColor: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.25)' },
-              isMobile && styles.quickNavIconBoxMobile
-            ]}>
-              <Trophy size={isMobile ? 18 : 22} color="#10B981" />
-            </View>
-            <Text style={[styles.quickNavTitleText, isMobile && styles.quickNavTitleTextMobile]}>Unit{'\n'}Rankings</Text>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/(public)/leaderboard/unit-rankings' as never)} style={styles.quickNavCardGlass}>
+            <View style={styles.quickNavIconBox}><Trophy size={18} color="#10B981" /></View>
+            <Text style={styles.quickNavTitleText}>Unit Rankings</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/(public)/leaderboard/item-results' as never)}
-            style={[styles.quickNavCardGlass, styles.cardGlowGold, isMobile && styles.quickNavCardGlassMobile]}
-          >
-            <View style={[
-              styles.quickNavIconBox,
-              { backgroundColor: 'rgba(251, 191, 36, 0.12)', borderColor: 'rgba(251, 191, 36, 0.25)' },
-              isMobile && styles.quickNavIconBoxMobile
-            ]}>
-              <ClipboardList size={isMobile ? 18 : 22} color="#FBBF24" />
-            </View>
-            <Text style={[styles.quickNavTitleText, isMobile && styles.quickNavTitleTextMobile]}>Item{'\n'}Results</Text>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/(public)/leaderboard/item-results' as never)} style={styles.quickNavCardGlass}>
+            <View style={styles.quickNavIconBox}><ClipboardList size={18} color="#FBBF24" /></View>
+            <Text style={styles.quickNavTitleText}>Item Results</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/(public)/leaderboard/schedule' as never)}
-            style={[styles.quickNavCardGlass, styles.cardGlowPurple, isMobile && styles.quickNavCardGlassMobile]}
-          >
-            <View style={[
-              styles.quickNavIconBox,
-              { backgroundColor: 'rgba(167, 139, 250, 0.12)', borderColor: 'rgba(167, 139, 250, 0.25)' },
-              isMobile && styles.quickNavIconBoxMobile
-            ]}>
-              <Calendar size={isMobile ? 18 : 22} color="#A78BFA" />
-            </View>
-            <Text style={[styles.quickNavTitleText, isMobile && styles.quickNavTitleTextMobile]}>Festival{'\n'}Schedule</Text>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/(public)/leaderboard/schedule' as never)} style={styles.quickNavCardGlass}>
+            <View style={styles.quickNavIconBox}><Calendar size={18} color="#0EA5E9" /></View>
+            <Text style={styles.quickNavTitleText}>Festival Schedule</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Visual Podium Panel */}
+      {/* Flat Glass Podium Panel */}
       <View style={styles.podiumPanel}>
-        {/* Ambient Background Glow */}
-        <View style={[styles.podiumBgGlow, isMobile && styles.podiumBgGlowMobile]} />
-
-        <View style={[styles.podium3DWrapper, isMobile && styles.podium3DWrapperMobile]}>
-          {/* Silver Podium (2nd Place) */}
-          <View style={styles.podium3DColContainer}>
-            <View style={styles.podiumTopLabelBlock}>
-              <Text style={[styles.podiumNameText, isMobile && styles.podiumNameTextMobile]} numberOfLines={1}>
-                {displayRows[1].name}
-              </Text>
-              <Text style={[styles.podiumPointsText, isMobile && styles.podiumPointsTextMobile]}>{displayRows[1].points} pts</Text>
-            </View>
-            {/* Silver Crown/Spotlight */}
-            <View style={[styles.podiumCrownWrapper, isMobile && styles.podiumCrownWrapperMobile]}>
-              <View style={[styles.spotlightGlow, styles.spotlightSilver, isMobile && styles.spotlightSilverMobile]} />
-              <Crown size={isMobile ? 16 : 22} color="#D1D5DB" style={isMobile ? { top: 0 } : { top: 2 }} />
-            </View>
-            {/* 3D Column */}
-            <View style={styles.column3DWrapper}>
-              <LinearGradient
-                colors={['#2A476C', '#10223B']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={[styles.podium3DCap, styles.podium3DCapSilver, isMobile && styles.podium3DCapMobile]}
-              />
-              <LinearGradient
-                colors={['#040D18', '#0A1C32', '#215494', '#0A1C32', '#040D18']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.podium3DBody, styles.podium3DBodySilver, isMobile && styles.podium3DBodySilverMobile]}
-              >
-                <View style={[styles.badge3D, styles.badge3DSilver, isMobile && styles.badge3DMobile, isMobile && styles.badge3DSilverMobile]}>
-                  <Text style={[styles.badge3DRankText, isMobile && styles.badge3DRankTextMobile]}>2</Text>
-                  <Text style={[styles.badge3DSuffixText, isMobile && styles.badge3DSuffixTextMobile]}>nd</Text>
-                </View>
-              </LinearGradient>
-            </View>
+        <View style={styles.flatPodiumContainer}>
+          {/* 2nd Place */}
+          <View style={[styles.flatPodiumCard, { height: 160, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderColor: 'rgba(255,255,255,0.05)' }]}>
+            <Text style={styles.flatPodiumRankText}>2</Text>
+            <Text style={[styles.podiumNameText, { color: '#94A3B8' }]} numberOfLines={1}>{displayRows[1].name}</Text>
+            <Text style={[styles.podiumPointsText, { color: '#F8FAFC' }]}>{displayRows[1].points} pts</Text>
           </View>
-
-          {/* Gold Podium (1st Place) */}
-          <View style={styles.podium3DColContainer}>
-            <View style={styles.podiumTopLabelBlock}>
-              <Text style={[styles.podiumNameText, isMobile && styles.podiumNameTextMobile]} numberOfLines={1}>
-                {displayRows[0].name}
-              </Text>
-              <Text style={[styles.podiumPointsText, isMobile && styles.podiumPointsTextMobile]}>{displayRows[0].points} pts</Text>
-            </View>
-            {/* Gold Crown/Spotlight */}
-            <View style={[styles.podiumCrownWrapper, isMobile && styles.podiumCrownWrapperMobile]}>
-              <View style={[styles.spotlightGlow, styles.spotlightGold, isMobile && styles.spotlightGoldMobile]} />
-              <Crown size={isMobile ? 20 : 28} color="#FBBF24" style={isMobile ? { top: -1 } : { top: -2 }} />
-            </View>
-            {/* 3D Column */}
-            <View style={styles.column3DWrapper}>
-              <LinearGradient
-                colors={['#1E7564', '#0A3129']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={[styles.podium3DCap, styles.podium3DCapGold, isMobile && styles.podium3DCapMobile]}
-              />
-              <LinearGradient
-                colors={['#02110E', '#062B24', '#157564', '#062B24', '#02110E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.podium3DBody, styles.podium3DBodyGold, isMobile && styles.podium3DBodyGoldMobile]}
-              >
-                <View style={[styles.badge3D, styles.badge3DGold, isMobile && styles.badge3DMobile, isMobile && styles.badge3DGoldMobile]}>
-                  <Text style={[styles.badge3DRankText, isMobile && styles.badge3DRankTextMobile]}>1</Text>
-                  <Text style={[styles.badge3DSuffixText, isMobile && styles.badge3DSuffixTextMobile]}>st</Text>
-                </View>
-              </LinearGradient>
-            </View>
+          {/* 1st Place */}
+          <View style={[styles.flatPodiumCard, { height: 200, backgroundColor: 'rgba(251, 191, 36, 0.05)', borderColor: 'rgba(251, 191, 36, 0.2)' }]}>
+            <Crown size={24} color="#FBBF24" style={{ marginBottom: 8 }} />
+            <Text style={[styles.flatPodiumRankText, { color: '#FBBF24' }]}>1</Text>
+            <Text style={[styles.podiumNameText, { color: '#FBBF24' }]} numberOfLines={1}>{displayRows[0].name}</Text>
+            <Text style={[styles.podiumPointsText, { color: '#F8FAFC' }]}>{displayRows[0].points} pts</Text>
           </View>
-
-          {/* Bronze Podium (3rd Place) */}
-          <View style={styles.podium3DColContainer}>
-            <View style={styles.podiumTopLabelBlock}>
-              <Text style={[styles.podiumNameText, isMobile && styles.podiumNameTextMobile]} numberOfLines={1}>
-                {displayRows[2].name}
-              </Text>
-              <Text style={[styles.podiumPointsText, isMobile && styles.podiumPointsTextMobile]}>{displayRows[2].points} pts</Text>
-            </View>
-            {/* Bronze Crown/Spotlight */}
-            <View style={[styles.podiumCrownWrapper, isMobile && styles.podiumCrownWrapperMobile]}>
-              <View style={[styles.spotlightGlow, styles.spotlightBronze, isMobile && styles.spotlightBronzeMobile]} />
-              <Crown size={isMobile ? 14 : 20} color="#D97706" style={isMobile ? { top: 1 } : { top: 3 }} />
-            </View>
-            {/* 3D Column */}
-            <View style={styles.column3DWrapper}>
-              <LinearGradient
-                colors={['#4C2E1F', '#1C0F0A']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={[styles.podium3DCap, styles.podium3DCapBronze, isMobile && styles.podium3DCapMobile]}
-              />
-              <LinearGradient
-                colors={['#0B0503', '#1F100A', '#5E3827', '#1F100A', '#0B0503']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.podium3DBody, styles.podium3DBodyBronze, isMobile && styles.podium3DBodyBronzeMobile]}
-              >
-                <View style={[styles.badge3D, styles.badge3DBronze, isMobile && styles.badge3DMobile, isMobile && styles.badge3DBronzeMobile]}>
-                  <Text style={[styles.badge3DRankText, isMobile && styles.badge3DRankTextMobile]}>3</Text>
-                  <Text style={[styles.badge3DSuffixText, isMobile && styles.badge3DSuffixTextMobile]}>rd</Text>
-                </View>
-              </LinearGradient>
-            </View>
+          {/* 3rd Place */}
+          <View style={[styles.flatPodiumCard, { height: 140, backgroundColor: 'rgba(255, 255, 255, 0.02)', borderColor: 'rgba(255,255,255,0.05)' }]}>
+            <Text style={styles.flatPodiumRankText}>3</Text>
+            <Text style={[styles.podiumNameText, { color: '#B45309' }]} numberOfLines={1}>{displayRows[2].name}</Text>
+            <Text style={[styles.podiumPointsText, { color: '#F8FAFC' }]}>{displayRows[2].points} pts</Text>
           </View>
-        </View>
-
-        {/* 3D Base Stage */}
-        <View style={[styles.podiumBaseStageWrapper, isMobile && styles.podiumBaseStageWrapperMobile]}>
-          <LinearGradient
-            colors={['#0F5448', '#07241E']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={[styles.podiumBaseStageCap, isMobile && styles.podiumBaseStageCapMobile]}
-          />
-          <LinearGradient
-            colors={['#10B981', '#064E3B']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.podiumBaseStageFrontGlow}
-          />
-          <LinearGradient
-            colors={['#082E25', '#02100D']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={[styles.podiumBaseStageFront, isMobile && styles.podiumBaseStageFrontMobile]}
-          />
         </View>
       </View>
     </View>
@@ -1214,9 +1071,9 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#030F26', '#021E1B', '#02241F']}
-        start={{ x: 0.1, y: 0.1 }}
-        end={{ x: 0.9, y: 0.9 }}
+        colors={['#020617', '#0F172A', '#020617']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.gradientBg}
       >
         <ScrollView
@@ -1261,48 +1118,6 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
   );
 }
 
-class CustomRendererErrorBoundary extends Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError(_: Error) {
-    return { hasError: true };
-  }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Custom Renderer Error:', error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children as React.ReactElement;
-  }
-}
-
-export function PublicLeaderboardExperience({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
-  const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
-  const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
-
-  const TARGET_TENANT_ID = 'f247b04f-a6d0-4b36-896d-efae2b7e3b30';
-  const CUSTOM_RENDERER_ENABLED = process.env.EXPO_PUBLIC_CUSTOM_RENDERER_ENABLED !== 'false';
-
-  if (tenantId === TARGET_TENANT_ID && CUSTOM_RENDERER_ENABLED) {
-    return (
-      <CustomRendererErrorBoundary fallback={<DefaultPublicLeaderboardExperience page={page} />}>
-        <AlvioraCustomRenderer page={page} />
-      </CustomRendererErrorBoundary>
-    );
-  }
-
-  return <DefaultPublicLeaderboardExperience page={page} />;
-}
-
-export default function PublicLeaderboard() {
-  return <PublicLeaderboardExperience page="landing" />;
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -1338,7 +1153,7 @@ const styles = StyleSheet.create({
   navBarGlass: {
     height: 52,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     flexDirection: 'row',
@@ -1365,17 +1180,17 @@ const styles = StyleSheet.create({
   landingCard: {
     width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 10,
-    backgroundColor: 'rgba(3, 15, 38, 0.45)',
-    padding: 32,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    padding: 40,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 40,
-    shadowOpacity: 0.5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 20,
+    shadowOpacity: 0.2,
     ...Platform.select({
       web: {
-        backdropFilter: 'blur(24px)',
+        backdropFilter: 'blur(32px)',
       },
       default: {},
     }),
@@ -1414,7 +1229,7 @@ const styles = StyleSheet.create({
   liveStatusCardGlass: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     flexDirection: 'row',
@@ -1461,22 +1276,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   pulseGreenDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowRadius: 6,
-    shadowOpacity: 0.6,
   },
   pulseGoldDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#F59E0B',
-    shadowColor: '#F59E0B',
-    shadowRadius: 6,
-    shadowOpacity: 0.6,
   },
   mainSectionRow: {
     flexDirection: 'row',
@@ -1507,7 +1316,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 120,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     paddingVertical: 14,
@@ -1541,19 +1350,19 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   cardGlowGreen: {
-    shadowColor: '#10B981',
+    shadowColor: '#000000',
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
   },
   cardGlowGold: {
-    shadowColor: '#FBBF24',
+    shadowColor: '#000000',
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
   },
   cardGlowPurple: {
-    shadowColor: '#A78BFA',
+    shadowColor: '#000000',
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -1569,14 +1378,30 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     lineHeight: 13,
   },
-  podiumPanel: {
-    flex: 0.95,
+  flatPodiumContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 16,
+    height: 220,
     width: '100%',
+  },
+  flatPodiumCard: {
+    flex: 1,
+    maxWidth: 140,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 36,
+    padding: 12,
   },
-  podiumBgGlow: {
+  flatPodiumRankText: {
+    fontFamily: 'Poppins_900Black',
+    color: '#F8FAFC',
+    fontSize: 28,
+    marginBottom: 4,
+  },
+  podiumPanel: {
     position: 'absolute',
     bottom: 20,
     width: 240,
@@ -1590,7 +1415,7 @@ const styles = StyleSheet.create({
         filter: 'blur(50px)' as any,
       },
       default: {
-        shadowColor: '#10B981',
+        shadowColor: '#000000',
         shadowRadius: 40,
         shadowOpacity: 0.4,
       },
@@ -1671,7 +1496,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     backgroundColor: '#FBBF24',
-    shadowColor: '#FBBF24',
+    shadowColor: '#000000',
     shadowRadius: 15,
     shadowOpacity: 0.6,
   },
@@ -1683,7 +1508,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     backgroundColor: '#D1D5DB',
-    shadowColor: '#9CA3AF',
+    shadowColor: '#000000',
     shadowRadius: 12,
     shadowOpacity: 0.5,
   },
@@ -1695,7 +1520,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     backgroundColor: '#D97706',
-    shadowColor: '#D97706',
+    shadowColor: '#000000',
     shadowRadius: 10,
     shadowOpacity: 0.5,
   },
@@ -1720,15 +1545,15 @@ const styles = StyleSheet.create({
     marginBottom: -5,
   },
   podium3DCapGold: {
-    borderColor: '#FBBF24',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
   },
   podium3DCapSilver: {
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
   },
   podium3DCapBronze: {
-    borderColor: '#F97316',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
   },
   podium3DBody: {
@@ -1741,7 +1566,7 @@ const styles = StyleSheet.create({
   },
   podium3DBodyGold: {
     height: 120,
-    borderColor: 'rgba(251, 191, 36, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
     borderTopWidth: 0,
   },
@@ -1752,7 +1577,7 @@ const styles = StyleSheet.create({
   },
   podium3DBodySilver: {
     height: 90,
-    borderColor: 'rgba(156, 163, 175, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
     borderTopWidth: 0,
   },
@@ -1763,7 +1588,7 @@ const styles = StyleSheet.create({
   },
   podium3DBodyBronze: {
     height: 70,
-    borderColor: 'rgba(217, 119, 6, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1.5,
     borderTopWidth: 0,
   },
@@ -1796,22 +1621,22 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   badge3DGold: {
-    borderColor: '#FBBF24',
-    shadowColor: '#FBBF24',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: '#000000',
     shadowRadius: 8,
     shadowOpacity: 0.3,
   },
   badge3DGoldMobile: {},
   badge3DSilver: {
-    borderColor: '#D1D5DB',
-    shadowColor: '#9CA3AF',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: '#000000',
     shadowRadius: 6,
     shadowOpacity: 0.2,
   },
   badge3DSilverMobile: {},
   badge3DBronze: {
-    borderColor: '#D97706',
-    shadowColor: '#D97706',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: '#000000',
     shadowRadius: 6,
     shadowOpacity: 0.2,
   },
@@ -1848,7 +1673,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     marginBottom: -7,
     zIndex: 4,
   },
@@ -1871,9 +1696,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1.5,
     borderRightWidth: 1.5,
     borderBottomWidth: 2,
-    borderColor: '#052920',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     zIndex: 3,
-    shadowColor: '#10B981',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 15,
     shadowOpacity: 0.5,
@@ -1894,7 +1719,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 8,
     paddingHorizontal: 11,
     paddingVertical: 6,
@@ -1946,7 +1771,7 @@ const styles = StyleSheet.create({
     minHeight: 46,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1970,7 +1795,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     paddingHorizontal: 13,
     alignItems: 'center',
@@ -1978,7 +1803,7 @@ const styles = StyleSheet.create({
   },
   categoryChipActive: {
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   categoryText: {
     fontFamily: 'Poppins_700Bold',
@@ -1999,7 +1824,7 @@ const styles = StyleSheet.create({
     minWidth: 104,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     flexDirection: 'row',
     alignItems: 'center',
@@ -2009,7 +1834,7 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   tabText: {
     fontFamily: 'Poppins_700Bold',
@@ -2021,7 +1846,7 @@ const styles = StyleSheet.create({
   },
   listCard: {
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
@@ -2109,7 +1934,7 @@ const styles = StyleSheet.create({
   },
   itemSectionCard: {
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
@@ -2155,7 +1980,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: 'rgba(16, 185, 129, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
@@ -2210,7 +2035,7 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: 'rgba(59, 130, 246, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -2226,7 +2051,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     flexDirection: 'row',
     alignItems: 'center',
@@ -2242,7 +2067,7 @@ const styles = StyleSheet.create({
   stateCard: {
     minHeight: 168,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     alignItems: 'center',
@@ -2267,7 +2092,7 @@ const styles = StyleSheet.create({
   },
   errorCard: {
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
     backgroundColor: 'rgba(239, 68, 68, 0.04)',
     padding: 20,
@@ -2290,7 +2115,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -2325,7 +2150,7 @@ const styles = StyleSheet.create({
   timelineCard: {
     minHeight: 110,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     overflow: 'hidden',
@@ -2335,7 +2160,7 @@ const styles = StyleSheet.create({
     }),
   },
   timelineCardLive: {
-    borderColor: '#10B981',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   timelineCardLiveIndicator: {
     height: 4,
@@ -2437,7 +2262,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     overflow: 'hidden',
     position: 'relative',
   },
@@ -2456,7 +2281,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(251, 191, 36, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },

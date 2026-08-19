@@ -60,6 +60,11 @@ interface TemplateStore {
   draftRecoveryAvailable: boolean;
   stableLayout: LayerData[] | null;
 
+  // Actions
+  loadStarterTemplate: () => void;
+  resetLayersToStarter: () => void;
+  loadDraftOnStart: (templateId?: string) => Promise<void>;
+
   setActiveTemplate: (t: TemplateData | null) => void;
   updateTemplateMeta: (patch: Partial<TemplateData>) => void;
   setVariables: (vars: TemplateVariables) => void;
@@ -72,7 +77,6 @@ interface TemplateStore {
   saveDraft: () => Promise<void>;
   restoreDraft: (templateId?: string) => Promise<void>;
   clearDraft: (templateId?: string) => Promise<void>;
-  loadDraftOnStart: (templateId?: string) => Promise<void>;
   
   currentResultId: string | null;
   setCurrentResultId: (id: string | null) => void;
@@ -89,9 +93,9 @@ interface TemplateStore {
 }
 
 
-export const DEFAULT_DEMO_TEMPLATE: TemplateData = {
-  id: 'demo-template-1',
-  name: 'Demo Template (BOOK TEST)',
+export const DEFAULT_STARTER_TEMPLATE: TemplateData = {
+  id: 'starter-template',
+  name: 'Starter Template',
   background_url: '',
   width: 1080,
   height: 1080,
@@ -102,14 +106,15 @@ export const DEFAULT_DEMO_TEMPLATE: TemplateData = {
   isLocal: true,
   isPublishable: false,
   layers: [
-    { id: 'l1', type: 'text', version: '1.0', name: 'Event Name', text: '{event_name}', x: 540, y: 150, width: 900, height: 100, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 80, fontFamily: 'Inter', fontWeight: 900, fill: '#000000', align: 'left', zIndex: 1, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'event_name' },
-    { id: 'l2', type: 'text', version: '1.0', name: 'Result No', text: '{result_no}', x: 540, y: 80, width: 400, height: 48, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 32, fontFamily: 'Inter', fontWeight: 700, fill: '#000000', align: 'left', zIndex: 2, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'result_no' },
-    { id: 'l3', type: 'text', version: '1.0', name: '1st Place Name', text: '{name_1}', x: 100, y: 400, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 56, fontFamily: 'Noto Sans Malayalam', fontWeight: 700, fill: '#000000', align: 'left', zIndex: 3, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_1' },
-    { id: 'l3_unit', type: 'text', version: '1.0', name: '1st Place Unit', text: '{unit_1}', x: 550, y: 400, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 32, fontFamily: 'Noto Sans Malayalam', fontWeight: 400, fill: '#000000', align: 'left', zIndex: 4, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_1' },
-    { id: 'l4', type: 'text', version: '1.0', name: '2nd Place Name', text: '{name_2}', x: 100, y: 520, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 56, fontFamily: 'Noto Sans Malayalam', fontWeight: 700, fill: '#000000', align: 'left', zIndex: 5, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_2' },
-    { id: 'l4_unit', type: 'text', version: '1.0', name: '2nd Place Unit', text: '{unit_2}', x: 550, y: 520, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 32, fontFamily: 'Noto Sans Malayalam', fontWeight: 400, fill: '#000000', align: 'left', zIndex: 6, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_2' },
-    { id: 'l5', type: 'text', version: '1.0', name: '3rd Place Name', text: '{name_3}', x: 100, y: 640, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 56, fontFamily: 'Noto Sans Malayalam', fontWeight: 700, fill: '#000000', align: 'left', zIndex: 7, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_3' },
-    { id: 'l5_unit', type: 'text', version: '1.0', name: '3rd Place Unit', text: '{unit_3}', x: 550, y: 640, width: 400, height: 80, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 32, fontFamily: 'Noto Sans Malayalam', fontWeight: 400, fill: '#000000', align: 'left', zIndex: 8, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_3' },
+    { id: 'l1', type: 'text', version: '1.0', name: 'Result No', text: '{result_no}', x: 340, y: 80, width: 400, height: 60, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 48, fontFamily: 'Inter', fontWeight: 700, fill: '#000000', align: 'center', zIndex: 1, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'result_no' },
+    { id: 'l2', type: 'text', version: '1.0', name: 'Category', text: '{category_name}', x: 240, y: 140, width: 600, height: 50, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 34, fontFamily: 'Inter', fontWeight: 600, fill: '#64748B', align: 'center', zIndex: 2, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'category_name' },
+    { id: 'l3', type: 'text', version: '1.0', name: 'Event Name', text: '{event_name}', x: 90, y: 220, width: 900, height: 220, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 96, fontFamily: 'Noto Sans Malayalam', fontWeight: 900, fill: '#000000', align: 'center', overflowMode: 'auto-shrink', zIndex: 3, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'event_name' },
+    { id: 'l4', type: 'text', version: '1.0', name: '1st Place Name', text: '{name_1}', x: 180, y: 480, width: 760, height: 70, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 54, fontFamily: 'Noto Sans Malayalam', fontWeight: 800, fill: '#000000', align: 'left', zIndex: 4, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_1' },
+    { id: 'l5', type: 'text', version: '1.0', name: '1st Place Unit', text: '{unit_1}', x: 180, y: 550, width: 760, height: 50, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 30, fontFamily: 'Noto Sans Malayalam', fontWeight: 500, fill: '#475569', align: 'left', zIndex: 5, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_1' },
+    { id: 'l6', type: 'text', version: '1.0', name: '2nd Place Name', text: '{name_2}', x: 180, y: 660, width: 760, height: 70, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 54, fontFamily: 'Noto Sans Malayalam', fontWeight: 800, fill: '#000000', align: 'left', zIndex: 6, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_2' },
+    { id: 'l7', type: 'text', version: '1.0', name: '2nd Place Unit', text: '{unit_2}', x: 180, y: 730, width: 760, height: 50, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 30, fontFamily: 'Noto Sans Malayalam', fontWeight: 500, fill: '#475569', align: 'left', zIndex: 7, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_2' },
+    { id: 'l8', type: 'text', version: '1.0', name: '3rd Place Name', text: '{name_3}', x: 180, y: 840, width: 760, height: 70, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 54, fontFamily: 'Noto Sans Malayalam', fontWeight: 800, fill: '#000000', align: 'left', zIndex: 8, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'name_3' },
+    { id: 'l9', type: 'text', version: '1.0', name: '3rd Place Unit', text: '{unit_3}', x: 180, y: 910, width: 760, height: 50, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1, fontSize: 30, fontFamily: 'Noto Sans Malayalam', fontWeight: 500, fill: '#475569', align: 'left', zIndex: 9, isVisible: true, isLocked: false, lockProfile: 'editable', dynamicBinding: 'unit_3' },
   ],
 };
 
@@ -185,11 +190,67 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
     return { resultNumberMode: NEXT_RESULT_MODE[s.resultNumberMode] };
   }),
 
+  loadStarterTemplate: () => {
+    set({ activeTemplate: DEFAULT_STARTER_TEMPLATE, hasUnsavedChanges: false });
+    useLayerStore.getState().setLayers(DEFAULT_STARTER_TEMPLATE.layers);
+  },
+
+  resetLayersToStarter: () => {
+    const newLayers = DEFAULT_STARTER_TEMPLATE.layers.map(l => ({ ...l, id: l.id + '_' + Date.now().toString(36) }));
+    useLayerStore.getState().setLayers(newLayers);
+    const at = get().activeTemplate;
+    if (at) {
+      set({ activeTemplate: { ...at, layers: newLayers }, hasUnsavedChanges: true });
+    } else {
+      set({ hasUnsavedChanges: true });
+    }
+    // Clear old IndexedDB draft so it doesn't reload old layers
+    const tid = at?.id;
+    if (tid) db.templates.delete(tid).catch(() => {});
+  },
+
   loadDraftOnStart: async (templateId?: string) => {
+    // Helper: detect if layers are the old default template (small fonts)
+    // and auto-upgrade them to the new starter typography
+    const upgradeOldDefaultLayers = (layers: LayerData[]): LayerData[] => {
+      if (!layers || layers.length === 0) return DEFAULT_STARTER_TEMPLATE.layers.map(l => ({ ...l }));
+      
+      // Detect old default v1: layers contain old IDs like l3_unit, l4_unit, l5_unit
+      const oldIds = ['l3_unit', 'l4_unit', 'l5_unit'];
+      const hasOldIds = layers.some(l => oldIds.includes(l.id));
+      
+      // Detect old default v1: name layers have tiny fonts (old used 56px or 48px)
+      const nameLayers = layers.filter(l => l.dynamicBinding && ['name_1', 'name_2', 'name_3'].includes(l.dynamicBinding));
+      const hasOldSmallNames = nameLayers.length > 0 && nameLayers.every(l => (l.fontSize || 0) <= 48);
+      const unitLayers = layers.filter(l => l.dynamicBinding && ['unit_1', 'unit_2', 'unit_3'].includes(l.dynamicBinding));
+      const hasOldSmallUnits = unitLayers.length > 0 && unitLayers.every(l => (l.fontSize || 0) <= 24);
+      
+      // Detect intermediate version: name layers have embedded rank numbers like "1   {name_1}"
+      const hasEmbeddedRanks = nameLayers.some(l => l.text && /^\d\s+\{/.test(l.text));
+      
+      // Detect missing separate rank layers (l4r, l6r, l8r) — if they don't exist, need upgrade
+      const hasSeparateRanks = layers.some(l => ['l4r', 'l6r', 'l8r'].includes(l.id) || l.name === '1st Rank' || l.name === '2nd Rank' || l.name === '3rd Rank');
+      const needsRankLayers = nameLayers.length > 0 && !hasSeparateRanks;
+      
+      if (hasOldIds || (hasOldSmallNames && hasOldSmallUnits) || hasEmbeddedRanks || needsRankLayers) {
+        console.log('[PosterStudio] Detected old default layers, upgrading to new starter typography');
+        return DEFAULT_STARTER_TEMPLATE.layers.map(l => ({ ...l }));
+      }
+      
+      return layers;
+    };
+
     try {
       const targetId = templateId || get().activeTemplate?.id || 'demo-template-1';
+      
+      if (targetId === 'starter-template') {
+        get().loadStarterTemplate();
+        return;
+      }
+      
       const draft = await db.templates.get(targetId);
       if (draft) {
+        const upgradedLayers = upgradeOldDefaultLayers(draft.layers);
         set({
           activeTemplate: {
             id: draft.id,
@@ -199,7 +260,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
             width: draft.width,
             height: draft.height,
             aspect_ratio: draft.aspect_ratio,
-            layers: draft.layers,
+            layers: upgradedLayers,
             schema_version: draft.schema_version,
             template_version: draft.template_version,
             status: draft.status as PublishStatus,
@@ -209,11 +270,11 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
           },
           variables: draft.variables,
           hasUnsavedChanges: false,
-          stableLayout: draft.layers
+          stableLayout: upgradedLayers
         });
         
         // Push layers to layerStore immediately
-        useLayerStore.getState().setLayers(draft.layers);
+        useLayerStore.getState().setLayers(upgradedLayers);
         console.log('[PosterStudio] Restored draft from IndexedDB');
       } else {
         // Fetch from Supabase if targetId is a valid UUID
@@ -229,6 +290,8 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
           if (error) {
             console.error('[PosterStudio] Failed to fetch template from Supabase:', error);
           } else if (data) {
+            // Upgrade old default layers to new starter typography
+            const loadedLayers = upgradeOldDefaultLayers(data.layers || []);
             set({
               activeTemplate: {
                 id: data.id,
@@ -238,7 +301,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
                 width: data.width,
                 height: data.height,
                 aspect_ratio: data.aspect_ratio,
-                layers: data.layers || [],
+                layers: loadedLayers,
                 schema_version: data.schema_version || '1.0',
                 template_version: data.version || 1,
                 status: data.status as PublishStatus,
@@ -248,9 +311,9 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
               },
               variables: {},
               hasUnsavedChanges: false,
-              stableLayout: data.layers || []
+              stableLayout: loadedLayers
             });
-            useLayerStore.getState().setLayers(data.layers || []);
+            useLayerStore.getState().setLayers(loadedLayers);
             return;
           }
         }
@@ -271,7 +334,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
       }
     } catch (e) {
       console.error('[PosterStudio] Failed to load draft', e);
-      useLayerStore.getState().setLayers(DEFAULT_DEMO_TEMPLATE.layers);
+      useLayerStore.getState().setLayers(DEFAULT_STARTER_TEMPLATE.layers);
     }
   },
 

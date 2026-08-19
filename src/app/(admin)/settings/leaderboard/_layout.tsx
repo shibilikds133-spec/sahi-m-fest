@@ -293,7 +293,10 @@ export default function LeaderboardLayout() {
                 <Text style={styles.updatedText}>Updated {formatDateTime(latestUpdate)}</Text>
               )}
               <TouchableOpacity
-                onPress={() => router.push('/(public)/leaderboard' as any)}
+                onPress={() => router.push({
+                  pathname: '/(public)/leaderboard',
+                  params: { tenant_id: tenant_id ?? '' },
+                } as any)}
                 style={styles.previewButton}
               >
                 <Eye size={17} color="#FFFFFF" />

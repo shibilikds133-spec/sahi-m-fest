@@ -18,14 +18,14 @@ function detectScript(text: string): 'ml' | 'en' {
 }
 
 export default function TypographyBlock({ layer }: TypographyBlockProps) {
-  const { updateLayer, layers } = useLayerStore();
+  const { updateLayerLinked, layers } = useLayerStore();
   const history = useHistoryStore();
 
   if (!layer || layer.type !== 'text') return null;
 
   const commit = (patch: Partial<LayerData>) => {
     history.push(layers);
-    updateLayer(layer.id, patch);
+    updateLayerLinked(layer.id, patch);
   };
 
   const { variables } = useTemplateStore();

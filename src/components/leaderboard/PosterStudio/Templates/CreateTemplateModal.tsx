@@ -15,7 +15,8 @@ import { supabase } from '../../../../core/config/supabase';
 import { uploadService } from '../../../../services/storage/uploadService';
 import { useTemplateStore } from '../Stores/templateStore';
 import { useLayerStore } from '../Stores/layerStore';
-import { DEFAULT_DEMO_TEMPLATE } from '../Stores/templateStore';
+import { DEFAULT_STARTER_TEMPLATE } from '../Stores/templateStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 const colors = {
   navy: '#0B1F3A',
@@ -58,6 +59,7 @@ export default function CreateTemplateModal({
   onClose,
   onCreated,
 }: Props) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>('form');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export default function CreateTemplateModal({
       const templateId = crypto.randomUUID();
       const dims = getDimensions();
 
-      const defaultLayers = DEFAULT_DEMO_TEMPLATE.layers.map((l) => ({ ...l }));
+      const defaultLayers = DEFAULT_STARTER_TEMPLATE.layers.map((l) => ({ ...l }));
 
       const insertPayload = {
         id: templateId,
@@ -164,6 +166,8 @@ export default function CreateTemplateModal({
         .insert(insertPayload);
 
       if (dbError) throw new Error(dbError.message);
+
+      queryClient.invalidateQueries({ queryKey: ['poster-templates', festivalId] });
 
       // ── STEP 3: Load into Poster Studio store ─────────────────────
       useTemplateStore.getState().setActiveTemplate({

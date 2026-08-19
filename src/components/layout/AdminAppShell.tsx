@@ -496,6 +496,10 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
   const { data: activeFestival } = useActiveFestival();
   const festivalName = activeFestival?.custom_name?.trim() || 'Sahithyolsav';
 
+  if (pathname.includes('/settings/leaderboard/poster-studio')) {
+    return <View style={{ flex: 1, backgroundColor: '#09090b' }}>{children}</View>;
+  }
+
   return (
     <View style={styles.shell}>
       {isDesktop && (

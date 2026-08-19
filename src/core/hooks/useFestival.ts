@@ -16,6 +16,7 @@ type FestivalCalendarRecord = {
   is_active: boolean;
   festival_template: FestivalTemplate;
   general_category_enabled?: boolean;
+  chest_number_category_range?: 100 | 1000;
 };
 
 type PointsConfigRecord = {

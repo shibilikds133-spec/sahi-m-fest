@@ -11,9 +11,16 @@ import GridOverlay from './GridOverlay';
 import RulerOverlay from './RulerOverlay';
 import MultiSelectToolbar from '../Toolbar/MultiSelectToolbar';
 import InlineTextEditor from '../Layers/InlineTextEditor';
-import { resolveTemplateVariables } from '../Utils/resolver';
 import { useViewportManager } from '../Hooks/useViewportManager';
 import { measureText } from '../Utils/fontLoader';
+import { resolveTemplateVariables } from '../Utils/resolver';
+
+interface StudioCanvasProps {
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundUrl?: string;
+  onContextMenu?: (e: React.MouseEvent, targetId: string | null, targetType: 'layer' | 'canvas') => void;
+}
 
 const SNAP_THRESHOLD = 6;
 
@@ -69,16 +76,16 @@ interface EditableTextNodeProps {
   onDblClick: () => void;
   deviceQuality: string;
   isEditing?: boolean;
+  onContextMenu?: (e: any) => void;
 }
 
-function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformEnd, onDblClick, deviceQuality, isEditing = false }: EditableTextNodeProps) {
+function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformEnd, onDblClick, deviceQuality, isEditing = false, onContextMenu }: EditableTextNodeProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<any>(null);
   const { variables } = useTemplateStore();
 
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // Wait for document.fonts.ready
   useEffect(() => {
     if (document.fonts) {
       document.fonts.ready.then(() => setFontsLoaded(true));
@@ -87,7 +94,6 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
     }
   }, [layer.fontFamily]);
 
-  // Resolve variables in text
   const resolvedText = resolveTemplateVariables(layer.text, variables);
   const draggable = layer.lockProfile !== 'fully-locked' && layer.lockProfile !== 'semi-locked';
 
@@ -99,7 +105,6 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
   }, [isSelected, layer.width, layer.height, fontsLoaded]);
 
   const handleDragStart = (e: any) => {
-    // Disable effects on drag for performance
     if (deviceQuality === 'low') {
       e.target.getShadowEnabled() && e.target.shadowEnabled(false);
     }
@@ -118,17 +123,14 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
       const scaleY = node.scaleY();
       
       if (activeAnchor === 'middle-left' || activeAnchor === 'middle-right') {
-        // Width resize only
         node.width(Math.max(50, node.width() * scaleX));
         node.scaleX(1);
         node.scaleY(1);
       } else if (activeAnchor === 'top-center' || activeAnchor === 'bottom-center') {
-        // Height resize only
         node.height(Math.max(20, (node.height() || 40) * scaleY));
         node.scaleX(1);
         node.scaleY(1);
       } else if (activeAnchor && activeAnchor.includes('-')) {
-        // Corner resize: force proportional visual scaling to prevent stretched fonts
         const avgScale = (scaleX + scaleY) / 2;
         node.scaleX(avgScale);
         node.scaleY(avgScale);
@@ -136,7 +138,6 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
     }
   };
 
-  // Implement auto-shrink if needed
   let displayFontSize = layer.fontSize || 24;
   let scaleForShrink = 1;
   
@@ -186,6 +187,12 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
         onTransformEnd={() => onTransformEnd(layer.id, shapeRef.current, trRef.current?.getActiveAnchor())}
         onDblClick={onDblClick}
         onDblTap={onDblClick}
+        onContextMenu={(e) => {
+          if (onContextMenu) {
+            e.cancelBubble = true;
+            onContextMenu(e.evt);
+          }
+        }}
         perfectDrawEnabled={false}
       />
       {isSelected && draggable && (
@@ -216,17 +223,15 @@ function EditableTextNode({ layer, isSelected, onSelect, onDragEnd, onTransformE
   );
 }
 
-interface StudioCanvasProps {
-  canvasWidth: number;
-  canvasHeight: number;
-  backgroundUrl?: string;
-}
+import { useResolvedImageUrl } from '../../../../core/hooks/useResolvedImageUrl';
 
-export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl }: StudioCanvasProps) {
+export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl, onContextMenu }: StudioCanvasProps) {
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { layers, selectedIds, setSelectedIds, clearSelection, updateLayer } = useLayerStore();
   const history = useHistoryStore();
+  
+  const resolvedBgUrl = useResolvedImageUrl(backgroundUrl);
   const { zoomLevel, panX, panY, setZoom, setStageSize, setHydrationComplete, deviceQuality, gridSnap, gridSize } = useCanvasStore();
   const { activeTemplate } = useTemplateStore();
 
@@ -236,7 +241,6 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
   const isDrawingSelection = useRef(false);
   const selectionStart = useRef({ x: 0, y: 0 });
 
-  // Use the new viewport manager!
   const { offsetX, offsetY, contentWidth, contentHeight } = useViewportManager({
     containerWidth: dimensions.width,
     containerHeight: dimensions.height,
@@ -244,7 +248,6 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
     canvasHeight,
   });
 
-  // ResizeObserver for dynamic canvas sizing (debounce to prevent render storms)
   useEffect(() => {
     if (!containerRef.current) return;
     const parent = containerRef.current.parentElement;
@@ -261,7 +264,7 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
           });
           setStageSize(entry.contentRect.width, entry.contentRect.height);
         }
-      }, 50); // 50ms debounce
+      }, 50);
     });
 
     observer.observe(parent);
@@ -274,7 +277,6 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
     };
   }, [setStageSize]);
 
-  // Mark hydration complete after mount
   useEffect(() => {
     const timer = setTimeout(() => setHydrationComplete(true), 600);
     return () => clearTimeout(timer);
@@ -354,24 +356,22 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
       const currentLayer = layers.find(l => l.id === id);
       const oldFontSize = currentLayer?.fontSize || 24;
       let newFontSize = oldFontSize;
-      let newHeight = currentLayer?.height;
-      let newWidth = node.width() * node.scaleX();
+      let newHeightVal = currentLayer?.height;
+      let newWidthVal = node.width() * node.scaleX();
       
-      // If corner was dragged, scale font size
       if (activeAnchor && !activeAnchor.includes('middle') && !activeAnchor.includes('center')) {
         newFontSize = Math.round(oldFontSize * node.scaleX());
       }
       
-      // If top/bottom dragged, save the fixed height
       if (activeAnchor === 'top-center' || activeAnchor === 'bottom-center') {
-        newHeight = Math.max(20, node.height() * node.scaleY());
+        newHeightVal = Math.max(20, node.height() * node.scaleY());
       }
 
       updateLayer(id, {
         x: Math.round(node.x()),
         y: Math.round(node.y()),
-        width: Math.max(50, Math.round(newWidth)),
-        height: newHeight,
+        width: Math.max(50, Math.round(newWidthVal)),
+        height: newHeightVal,
         rotation: Math.round(node.rotation()),
         fontSize: newFontSize,
         scaleX: 1,
@@ -390,7 +390,6 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
     }
   }, [history, layers, updateLayer]);
 
-  // Pinch zoom
   const lastDist = useRef(0);
   const handleTouchMove = useCallback((e: any) => {
     const touches = e.evt.touches;
@@ -401,7 +400,7 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (lastDist.current > 0) {
       const scale = dist / lastDist.current;
-      setZoom(zoomLevel * scale, true); // User initiated!
+      setZoom(zoomLevel * scale, true);
     }
     lastDist.current = dist;
   }, [zoomLevel, setZoom]);
@@ -421,6 +420,10 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
         userSelect: 'none',
         position: 'relative'
       }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenu?.(e as unknown as React.MouseEvent, null, 'canvas');
+      }}
     >
       <CanvasSkeleton />
       <RulerOverlay />
@@ -439,12 +442,11 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Background Layer — never redraws on text edits */}
         <Layer name="backgroundLayer" listening={activeTemplate?.background_transform?.isDraggable}>
           <Rect width={canvasWidth} height={canvasHeight} fill="#FFFFFF" shadowColor="rgba(0,0,0,0.1)" shadowBlur={20} shadowOffsetY={8} listening={false} />
-          {backgroundUrl && (
+          {resolvedBgUrl && (
             <BackgroundImage 
-              src={backgroundUrl} 
+              src={resolvedBgUrl || ''} 
               width={canvasWidth} 
               height={canvasHeight} 
               transform={activeTemplate?.background_transform}
@@ -456,7 +458,6 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
           )}
         </Layer>
 
-        {/* Content Layer — all editable layers */}
         <Layer name="contentLayer">
           {sortedLayers.map((layer) => {
             if (layer.type === 'text') {
@@ -471,6 +472,7 @@ export default function StudioCanvas({ canvasWidth, canvasHeight, backgroundUrl 
                   onDblClick={() => {
                     if (layer.lockProfile !== 'fully-locked') setInlineEditLayerId(layer.id);
                   }}
+                  onContextMenu={(e) => onContextMenu?.(e, layer.id, 'layer')}
                   deviceQuality={deviceQuality}
                   isEditing={inlineEditLayerId === layer.id}
                 />
