@@ -47,6 +47,10 @@ type ChestTemplate = {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  backgroundResizeMode?: 'cover' | 'contain' | 'stretch';
+  backgroundX?: number;
+  backgroundY?: number;
+  backgroundScale?: number;
   fields: {
     chest: OverlayField;
     qr: OverlayField;
@@ -329,8 +333,14 @@ const ChestCard = ({
       {template.backgroundUri ? (
         <Image
           source={{ uri: template.backgroundUri }}
-          style={{ position: 'absolute', width: '100%', height: '100%' }}
-          resizeMode="cover"
+          style={{
+            position: 'absolute',
+            left: (template.backgroundX || 0) * scale,
+            top: (template.backgroundY || 0) * scale,
+            width: (TEMPLATE_WIDTH * (template.backgroundScale ?? 1)) * scale,
+            height: (TEMPLATE_HEIGHT * (template.backgroundScale ?? 1)) * scale,
+          }}
+          resizeMode={template.backgroundResizeMode || 'cover'}
         />
       ) : (
         <View
@@ -896,6 +906,118 @@ export default function ChestCardsPage() {
                 <TouchableOpacity onPress={() => saveTemplates(templates)} className="mt-4 bg-blue-600 px-4 py-3 rounded-xl flex-row items-center justify-center gap-x-2">
                   <Save size={16} color="#FFF" />
                   <Text className="font-poppins-bold text-white">Save Layout Preset</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {!isMobile && activeTemplate.backgroundUri && (
+              <View className="mt-4 bg-white border border-ssf-border rounded-xl p-4">
+                <Text className="font-poppins-black text-ssf-text text-base mb-3">Background Image Settings</Text>
+                
+                {/* Resize Mode Selector */}
+                <View className="mb-3">
+                  <Text className="font-poppins-bold text-xs text-ssf-text mb-1">Resize Mode</Text>
+                  <View className="flex-row gap-2">
+                    {(['cover', 'contain', 'stretch'] as const).map(mode => (
+                      <TouchableOpacity
+                        key={mode}
+                        onPress={() => updateTemplate(t => ({ ...t, backgroundResizeMode: mode }))}
+                        className={`px-3 py-2 rounded-xl border flex-1 items-center ${activeTemplate.backgroundResizeMode === mode || (!activeTemplate.backgroundResizeMode && mode === 'cover') ? 'bg-ssf-primary border-ssf-primary' : 'bg-white border-ssf-border'}`}
+                      >
+                        <Text className={`font-poppins-bold text-xs ${activeTemplate.backgroundResizeMode === mode || (!activeTemplate.backgroundResizeMode && mode === 'cover') ? 'text-white' : 'text-ssf-text'}`}>
+                          {mode}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Background X Offset */}
+                <View className="mb-3">
+                  <Text className="font-poppins-bold text-xs text-ssf-text mb-1">Horizontal Offset (X)</Text>
+                  <View className="flex-row gap-x-2 items-center">
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundX: (t.backgroundX || 0) - 5 }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">-5</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={String(activeTemplate.backgroundX || 0)}
+                      keyboardType="numeric"
+                      onChangeText={(val) => {
+                        const num = parseInt(val, 10);
+                        updateTemplate(t => ({ ...t, backgroundX: isNaN(num) ? 0 : num }));
+                      }}
+                      className="bg-white border border-ssf-border px-3 py-2 rounded-lg font-poppins text-xs text-center text-ssf-text w-16"
+                    />
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundX: (t.backgroundX || 0) + 5 }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">+5</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Background Y Offset */}
+                <View className="mb-3">
+                  <Text className="font-poppins-bold text-xs text-ssf-text mb-1">Vertical Offset (Y)</Text>
+                  <View className="flex-row gap-x-2 items-center">
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundY: (t.backgroundY || 0) - 5 }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">-5</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={String(activeTemplate.backgroundY || 0)}
+                      keyboardType="numeric"
+                      onChangeText={(val) => {
+                        const num = parseInt(val, 10);
+                        updateTemplate(t => ({ ...t, backgroundY: isNaN(num) ? 0 : num }));
+                      }}
+                      className="bg-white border border-ssf-border px-3 py-2 rounded-lg font-poppins text-xs text-center text-ssf-text w-16"
+                    />
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundY: (t.backgroundY || 0) + 5 }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">+5</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Background Scale */}
+                <View className="mb-3">
+                  <Text className="font-poppins-bold text-xs text-ssf-text mb-1">Scale (Multiplier)</Text>
+                  <View className="flex-row gap-x-2 items-center">
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundScale: Math.max(0.1, parseFloat(((t.backgroundScale ?? 1) - 0.05).toFixed(2))) }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">-5%</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={String(Math.round((activeTemplate.backgroundScale ?? 1) * 100)) + '%'}
+                      editable={false}
+                      className="bg-white border border-ssf-border px-3 py-2 rounded-lg font-poppins text-xs text-center text-ssf-text w-20"
+                    />
+                    <TouchableOpacity
+                      onPress={() => updateTemplate(t => ({ ...t, backgroundScale: parseFloat(((t.backgroundScale ?? 1) + 0.05).toFixed(2)) }))}
+                      className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                      <Text className="font-poppins-black">+5%</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => updateTemplate(t => ({ ...t, backgroundX: 0, backgroundY: 0, backgroundScale: 1, backgroundResizeMode: 'cover' }))}
+                  className="mt-2 bg-gray-100 px-4 py-2 rounded-xl flex-row items-center justify-center gap-x-1"
+                >
+                  <RotateCcw size={14} color="#475569" />
+                  <Text className="font-poppins-bold text-ssf-text-muted text-xs">Reset Background Adjustments</Text>
                 </TouchableOpacity>
               </View>
             )}
