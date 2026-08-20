@@ -494,6 +494,7 @@ export default function ChestCardsPage() {
   const isDesktop = width >= 1100;
   const isMobile = width < 760;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const localFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [templates, setTemplates] = useState<ChestTemplate[]>(() => readTemplates());
   const [selectedTemplateId, setSelectedTemplateId] = useState(() => readTemplates().find(t => t.active)?.id ?? 'default-a6');
@@ -625,6 +626,50 @@ export default function ChestCardsPage() {
     
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const localUploadBackground = () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('Upload unavailable', 'Template upload is currently available on web.');
+      return;
+    }
+    
+    if (!localFileInputRef.current) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/png,image/jpeg,image/webp';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        
+        setIsUploadingBackground(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          updateTemplate(template => ({
+            ...template,
+            backgroundUri: dataUrl,
+            updatedAt: new Date().toISOString(),
+          }));
+          setIsUploadingBackground(false);
+          if (localFileInputRef.current) localFileInputRef.current.value = '';
+        };
+        reader.onerror = () => {
+          Alert.alert("Upload Failed", "Failed to read local image.");
+          setIsUploadingBackground(false);
+          if (localFileInputRef.current) localFileInputRef.current.value = '';
+        };
+        reader.readAsDataURL(file);
+      };
+      localFileInputRef.current = input;
+    }
+    
+    if (localFileInputRef.current) {
+      localFileInputRef.current.click();
     }
   };
 
@@ -812,6 +857,10 @@ export default function ChestCardsPage() {
                 <TouchableOpacity onPress={uploadBackground} disabled={isUploadingBackground} className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
                   {isUploadingBackground ? <ActivityIndicator size="small" color="#FFF" /> : <ImagePlus size={15} color="#FFF" />}
                   <Text className="font-poppins-bold text-white text-xs">{isUploadingBackground ? 'Uploading...' : 'Upload / Replace'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={localUploadBackground} disabled={isUploadingBackground} className="bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
+                  <ImagePlus size={15} color="#059669" />
+                  <Text className="font-poppins-bold text-emerald-700 text-xs">Local Image</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={createTemplate} className="bg-white border border-ssf-border px-3 py-2 rounded-xl flex-row items-center gap-x-2">
                   <Copy size={15} color="#07143D" />
