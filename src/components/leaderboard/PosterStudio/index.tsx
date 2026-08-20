@@ -405,6 +405,33 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
       while (n--) u8arr[n] = bstr.charCodeAt(n);
       const blob = new Blob([u8arr], { type: mime });
 
+      // --- FALLBACK ACTIONS (Auto-Download + WhatsApp Share) ---
+      try {
+        // 1. Auto-Download
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        const timestamp = Date.now();
+        a.download = `poster_${timestamp}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // 2. WhatsApp Share (Clipboard + Open Tab)
+        if (typeof window !== 'undefined' && navigator.clipboard && (window as any).ClipboardItem) {
+          const clipboardItem = new (window as any).ClipboardItem({
+            'image/png': blob.type === 'image/png' ? blob : blob.slice(0, blob.size, 'image/png')
+          });
+          await navigator.clipboard.write([clipboardItem]);
+          
+          // Open WhatsApp
+          const waUrl = `https://wa.me/?text=${encodeURIComponent('Please paste (Ctrl+V) the poster image from your clipboard.')}`;
+          window.open(waUrl, '_blank');
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback actions failed:', fallbackErr);
+      }
+      // ---------------------------------------------------------
+
       // Upload to R2
       const uploaded = await uploadService.uploadGeneratedAsset(blob, festivalId, tenantId);
 
@@ -1068,3 +1095,4 @@ const styles: Record<string, React.CSSProperties> = {
   issueRow: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 4, border: '1px solid', marginBottom: 8 },
   modalBtn: { padding: '8px 16px', backgroundColor: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 4, fontSize: 13, fontWeight: 600, color: '#E2E8F0', cursor: 'pointer' },
 };
+
