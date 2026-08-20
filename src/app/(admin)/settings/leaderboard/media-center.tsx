@@ -168,37 +168,9 @@ export default function MediaCenterPage() {
           // In modern browsers, fetching takes time, which invalidates the user gesture.
           // To fix this, we pass a Promise directly into ClipboardItem.
           const makeImagePromise = async () => {
-              let response = await fetch(imageUrl).catch(() => null);
-              if (!response || !response.ok) {
-                response = await fetch(`/api/proxy-image?url=` + encodeURIComponent(imageUrl));
-              }
-              const blob = await response.blob();
-              
-              if (blob.type === 'image/png') {
-                 return blob;
-              }
-
-              const img = new window.Image();
-              await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = URL.createObjectURL(blob);
-              });
-
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              if (!ctx) throw new Error('No canvas context');
-              ctx.drawImage(img, 0, 0);
-
-              return new Promise<Blob>((resolve, reject) => {
-                canvas.toBlob((b) => {
-                  if (b) resolve(b);
-                  else reject(new Error('Canvas toBlob failed'));
-                }, 'image/png');
-              });
-            };`);
+            let response = await fetch(imageUrl).catch(() => null);
+            if (!response || !response.ok) {
+              response = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
             }
             const blob = await response.blob();
             
@@ -621,5 +593,3 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   }
 });
-
-

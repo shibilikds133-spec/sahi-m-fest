@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { SsfSelectMenu } from '@/components/ui/SsfSelectMenu';
 import {
   ActivityIndicator,
   Alert,
@@ -497,6 +498,7 @@ export default function ChestCardsPage() {
   const [templates, setTemplates] = useState<ChestTemplate[]>(() => readTemplates());
   const [selectedTemplateId, setSelectedTemplateId] = useState(() => readTemplates().find(t => t.active)?.id ?? 'default-a6');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedTeam, setSelectedTeam] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [lockedIds, setLockedIds] = useState<Record<string, boolean>>(() => readIdMap(LOCK_STORAGE_KEY));
@@ -516,6 +518,13 @@ export default function ChestCardsPage() {
     category_code: 'HS',
   };
 
+  const teams = useMemo(() => [
+    'ALL',
+    ...Array.from(new Set((participants as ChestCardParticipant[])
+      .map(p => p.organisations?.name)
+      .filter(Boolean))) as string[],
+  ], [participants]);
+
   const categories = useMemo(() => [
     'ALL',
     ...Array.from(new Set((participants as ChestCardParticipant[])
@@ -527,13 +536,14 @@ export default function ChestCardsPage() {
     const query = searchQuery.trim().toLowerCase();
     return (participants as ChestCardParticipant[]).filter((p) => {
       const categoryMatch = selectedCategory === 'ALL' || p.category_code === selectedCategory;
+      const teamMatch = selectedTeam === 'ALL' || p.organisations?.name === selectedTeam;
       const searchMatch = !query ||
         p.chest_number?.toLowerCase().includes(query) ||
         p.name?.toLowerCase().includes(query) ||
         p.organisations?.name?.toLowerCase().includes(query);
-      return categoryMatch && searchMatch;
+      return categoryMatch && teamMatch && searchMatch;
     });
-  }, [participants, searchQuery, selectedCategory]);
+  }, [participants, searchQuery, selectedCategory, selectedTeam]);
 
   const printItems = useMemo(() => {
     const selected = filtered.filter(p => selectedIds[p.id]);
@@ -1104,22 +1114,26 @@ export default function ChestCardsPage() {
             </TouchableOpacity>
           </View>
 
-          <View className="flex-row justify-between items-center mt-3">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1 mr-3">
-              <View className="flex-row gap-x-2 pb-1">
-                {categories.map(category => (
-                  <TouchableOpacity
-                    key={category}
-                    onPress={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full border ${selectedCategory === category ? 'bg-ssf-primary border-ssf-primary' : 'bg-white border-ssf-border'}`}
-                  >
-                    <Text className={`font-poppins-bold text-sm ${selectedCategory === category ? 'text-white' : 'text-ssf-text'}`}>
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+          <View className="flex-row justify-between items-center mt-3 flex-wrap gap-y-3">
+            <View className="flex-row items-center flex-wrap gap-2 flex-1 mr-3 z-50">
+              <SsfSelectMenu
+                value={selectedCategory}
+                options={categories.map(c => ({ label: c === 'ALL' ? 'Category: All' : c, value: c }))}
+                onValueChange={setSelectedCategory}
+                compact
+                style={{ backgroundColor: '#F8FAFC', borderRadius: 8, minWidth: 140 }}
+              />
+              <SsfSelectMenu
+                value={selectedTeam}
+                options={teams.map(t => ({ label: t === 'ALL' ? 'Team: All' : t, value: t }))}
+                onValueChange={setSelectedTeam}
+                compact
+                style={{ backgroundColor: '#F8FAFC', borderRadius: 8, minWidth: 140 }}
+              />
+              <View className="bg-slate-100 px-3 py-1.5 rounded-lg justify-center items-center h-9 ml-1">
+                <Text className="text-slate-600 font-poppins-medium text-xs">{filtered.length} results</Text>
               </View>
-            </ScrollView>
+            </View>
 
             <View className="flex-row items-center gap-x-2">
               <TouchableOpacity 
