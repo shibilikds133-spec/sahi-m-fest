@@ -1,0 +1,714 @@
+[
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1020",
+        "participant_name": "ALI",
+        "school_name": "Kodasseri South",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1009",
+        "participant_name": "MUEENUDHEEN",
+        "school_name": "Kodasseri North",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1039",
+        "participant_name": "FARIS T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1014",
+        "participant_name": "SHUAIB",
+        "school_name": "Kodasseri North",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1044",
+        "participant_name": "NIHAL",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-006",
+        "item_name": "Poetry Writing",
+        "chest_number": "1018",
+        "participant_name": "HUBAIL",
+        "school_name": "Kodasseri South",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1003",
+        "participant_name": "MUHAMMED SHAMMAS A",
+        "school_name": "Odompatta",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1015",
+        "participant_name": "HIBINSHAN",
+        "school_name": "Kodasseri North",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1041",
+        "participant_name": "MUHAMMED SAHAL MK",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1042",
+        "participant_name": "MUHAMMAD THOHIR",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1031",
+        "participant_name": "SIMNOON",
+        "school_name": "Chembrasseri East",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1010",
+        "participant_name": "MUHAMMAD SINAN",
+        "school_name": "Kodasseri North",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1028",
+        "participant_name": "RASHID V",
+        "school_name": "Chembrasseri East",
+        "code_letter": "G"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1020",
+        "participant_name": "ALI",
+        "school_name": "Kodasseri South",
+        "code_letter": "H"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1022",
+        "participant_name": "SINAN M",
+        "school_name": "Kodasseri South",
+        "code_letter": "I"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1037",
+        "participant_name": "SINAN",
+        "school_name": "Vettikaattiri",
+        "code_letter": "J"
+    },
+    {
+        "item_code": "JR-009",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "1013",
+        "participant_name": "NAJEEB NC",
+        "school_name": "Odompatta",
+        "code_letter": "K"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1030",
+        "participant_name": "ANSHAD. NP",
+        "school_name": "Chembrasseri East",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1029",
+        "participant_name": "BASITH. V",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1011",
+        "participant_name": "MUHAMMED SAHAD",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1019",
+        "participant_name": "SUHAIL K",
+        "school_name": "Kodasseri South",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1043",
+        "participant_name": "MUHAMMADH NASEEF",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1004",
+        "participant_name": "SAHAL AK",
+        "school_name": "Odompatta",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1013",
+        "participant_name": "NAJEEB NC",
+        "school_name": "Odompatta",
+        "code_letter": "G"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1038",
+        "participant_name": "RUSHAID",
+        "school_name": "Vettikaattiri",
+        "code_letter": "H"
+    },
+    {
+        "item_code": "JR-010",
+        "item_name": "Essay – Arabic",
+        "chest_number": "1018",
+        "participant_name": "HUBAIL",
+        "school_name": "Kodasseri South",
+        "code_letter": "I"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1039",
+        "participant_name": "FARIS T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1043",
+        "participant_name": "MUHAMMADH NASEEF",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1011",
+        "participant_name": "MUHAMMED SAHAD",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1033",
+        "participant_name": "BASIL KP",
+        "school_name": "Chembrasseri East",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1018",
+        "participant_name": "HUBAIL",
+        "school_name": "Kodasseri South",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-012",
+        "item_name": "Madh Song Composition",
+        "chest_number": "1025",
+        "participant_name": "MUHAMMED MIDLAJ TH",
+        "school_name": "Odompatta",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1019",
+        "participant_name": "SUHAIL K",
+        "school_name": "Kodasseri South",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1029",
+        "participant_name": "BASITH. V",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1037",
+        "participant_name": "SINAN",
+        "school_name": "Vettikaattiri",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1002",
+        "participant_name": "MUHAMMED MUSTHAFA TH",
+        "school_name": "Odompatta",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1044",
+        "participant_name": "NIHAL",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-014",
+        "item_name": "Translation – Arabic",
+        "chest_number": "1010",
+        "participant_name": "MUHAMMAD SINAN",
+        "school_name": "Kodasseri North",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "JR-015",
+        "item_name": "Arabic Calligraphy",
+        "chest_number": "1006",
+        "participant_name": "ANSHID TK",
+        "school_name": "Odompatta",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-015",
+        "item_name": "Arabic Calligraphy",
+        "chest_number": "1029",
+        "participant_name": "BASITH. V",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-015",
+        "item_name": "Arabic Calligraphy",
+        "chest_number": "1021",
+        "participant_name": "ANSHIF T",
+        "school_name": "Kodasseri South",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-015",
+        "item_name": "Arabic Calligraphy",
+        "chest_number": "1009",
+        "participant_name": "MUEENUDHEEN",
+        "school_name": "Kodasseri North",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-016",
+        "item_name": "Social Text",
+        "chest_number": "1028",
+        "participant_name": "RASHID V",
+        "school_name": "Chembrasseri East",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-016",
+        "item_name": "Social Text",
+        "chest_number": "1022",
+        "participant_name": "SINAN M",
+        "school_name": "Kodasseri South",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-016",
+        "item_name": "Social Text",
+        "chest_number": "1015",
+        "participant_name": "HIBINSHAN",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-016",
+        "item_name": "Social Text",
+        "chest_number": "1004",
+        "participant_name": "SAHAL AK",
+        "school_name": "Odompatta",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-016",
+        "item_name": "Social Text",
+        "chest_number": "1038",
+        "participant_name": "RUSHAID",
+        "school_name": "Vettikaattiri",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "JR-018",
+        "item_name": "AI Poetry Writing",
+        "chest_number": "1030",
+        "participant_name": "ANSHAD. NP",
+        "school_name": "Chembrasseri East",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "JR-018",
+        "item_name": "AI Poetry Writing",
+        "chest_number": "1022",
+        "participant_name": "SINAN M",
+        "school_name": "Kodasseri South",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "JR-018",
+        "item_name": "AI Poetry Writing",
+        "chest_number": "1041",
+        "participant_name": "MUHAMMED SAHAL MK",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "JR-018",
+        "item_name": "AI Poetry Writing",
+        "chest_number": "1040",
+        "participant_name": "LABEEB T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "JR-018",
+        "item_name": "AI Poetry Writing",
+        "chest_number": "1014",
+        "participant_name": "SHUAIB",
+        "school_name": "Kodasseri North",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "SR-009",
+        "item_name": "Poetry Writing – Malayalam",
+        "chest_number": "2009",
+        "participant_name": "MUHAMMED RABEEH",
+        "school_name": "Kodasseri South",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-009",
+        "item_name": "Poetry Writing – Malayalam",
+        "chest_number": "2035",
+        "participant_name": "ASIF RAHMAN",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-009",
+        "item_name": "Poetry Writing – Malayalam",
+        "chest_number": "2006",
+        "participant_name": "MUHAMMED MUSTHAFA PK",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-009",
+        "item_name": "Poetry Writing – Malayalam",
+        "chest_number": "2029",
+        "participant_name": "SAEED EK",
+        "school_name": "Vettikaattiri",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-009",
+        "item_name": "Poetry Writing – Malayalam",
+        "chest_number": "2016",
+        "participant_name": "ABDUL RAHEEM",
+        "school_name": "Odompatta",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "SR-010",
+        "item_name": "Poetry Writing – English",
+        "chest_number": "2030",
+        "participant_name": "MUHAMMED SAJID T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-010",
+        "item_name": "Poetry Writing – English",
+        "chest_number": "2003",
+        "participant_name": "SINAN AP",
+        "school_name": "Odompatta",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-010",
+        "item_name": "Poetry Writing – English",
+        "chest_number": "2019",
+        "participant_name": "SIYAAD ",
+        "school_name": "Odompatta",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-011",
+        "item_name": "Story Writing",
+        "chest_number": "2009",
+        "participant_name": "MUHAMMED RABEEH",
+        "school_name": "Kodasseri South",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-011",
+        "item_name": "Story Writing",
+        "chest_number": "2035",
+        "participant_name": "ASIF RAHMAN",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-011",
+        "item_name": "Story Writing",
+        "chest_number": "2031",
+        "participant_name": "SHUHAIB K",
+        "school_name": "Vettikaattiri",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-011",
+        "item_name": "Story Writing",
+        "chest_number": "2006",
+        "participant_name": "MUHAMMED MUSTHAFA PK",
+        "school_name": "Kodasseri North",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2030",
+        "participant_name": "MUHAMMED SAJID T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2023",
+        "participant_name": "SAYYID SHAMEEM JAWHAR OK",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2005",
+        "participant_name": "ABDUL VAHID PK",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2015",
+        "participant_name": "JASIL ",
+        "school_name": "Odompatta",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2017",
+        "participant_name": "MUHAMMED HASEEB",
+        "school_name": "Odompatta",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2034",
+        "participant_name": "MUHAMMADH SAEED",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "F"
+    },
+    {
+        "item_code": "SR-013",
+        "item_name": "Essay – Malayalam",
+        "chest_number": "2008",
+        "participant_name": "MUHAMMAD NINSHAD VK",
+        "school_name": "Kodasseri South",
+        "code_letter": "G"
+    },
+    {
+        "item_code": "SR-014",
+        "item_name": "Essay – English",
+        "chest_number": "2015",
+        "participant_name": "JASIL ",
+        "school_name": "Odompatta",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-014",
+        "item_name": "Essay – English",
+        "chest_number": "2017",
+        "participant_name": "MUHAMMED HASEEB",
+        "school_name": "Odompatta",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-014",
+        "item_name": "Essay – English",
+        "chest_number": "2030",
+        "participant_name": "MUHAMMED SAJID T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-015",
+        "item_name": "Essay – Urdu",
+        "chest_number": "2030",
+        "participant_name": "MUHAMMED SAJID T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-016",
+        "item_name": "Translation – English",
+        "chest_number": "2015",
+        "participant_name": "JASIL ",
+        "school_name": "Odompatta",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-016",
+        "item_name": "Translation – English",
+        "chest_number": "2021",
+        "participant_name": "MUHAMMED SHIHABUDHEEN P",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-016",
+        "item_name": "Translation – English",
+        "chest_number": "2002",
+        "participant_name": "MUHAMMED SHIBILI N",
+        "school_name": "Kodasseri North",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-016",
+        "item_name": "Translation – English",
+        "chest_number": "2029",
+        "participant_name": "SAEED EK",
+        "school_name": "Vettikaattiri",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-017",
+        "item_name": "Madh Song Composition",
+        "chest_number": "2002",
+        "participant_name": "MUHAMMED SHIBILI N",
+        "school_name": "Kodasseri North",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-017",
+        "item_name": "Madh Song Composition",
+        "chest_number": "2041",
+        "participant_name": "MUHAMMED SINAN EK",
+        "school_name": "Chembrasseri East",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-017",
+        "item_name": "Madh Song Composition",
+        "chest_number": "2026",
+        "participant_name": "SIRAJ NC",
+        "school_name": "Odompatta",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-017",
+        "item_name": "Madh Song Composition",
+        "chest_number": "2031",
+        "participant_name": "SHUHAIB K",
+        "school_name": "Vettikaattiri",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-017",
+        "item_name": "Madh Song Composition",
+        "chest_number": "2008",
+        "participant_name": "MUHAMMAD NINSHAD VK",
+        "school_name": "Kodasseri South",
+        "code_letter": "E"
+    },
+    {
+        "item_code": "SR-018",
+        "item_name": "Slogan Writing",
+        "chest_number": "2005",
+        "participant_name": "ABDUL VAHID PK",
+        "school_name": "Kodasseri North",
+        "code_letter": "A"
+    },
+    {
+        "item_code": "SR-018",
+        "item_name": "Slogan Writing",
+        "chest_number": "2027",
+        "participant_name": "SHAMIL T",
+        "school_name": "Vettikaattiri",
+        "code_letter": "B"
+    },
+    {
+        "item_code": "SR-018",
+        "item_name": "Slogan Writing",
+        "chest_number": "2016",
+        "participant_name": "ABDUL RAHEEM",
+        "school_name": "Odompatta",
+        "code_letter": "C"
+    },
+    {
+        "item_code": "SR-018",
+        "item_name": "Slogan Writing",
+        "chest_number": "2011",
+        "participant_name": "UVAIS K",
+        "school_name": "Kodasseri South",
+        "code_letter": "D"
+    },
+    {
+        "item_code": "SR-018",
+        "item_name": "Slogan Writing",
+        "chest_number": "2036",
+        "participant_name": "ADILSHA K",
+        "school_name": "Chembrasseri West ",
+        "code_letter": "E"
+    }
+]

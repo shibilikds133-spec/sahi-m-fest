@@ -1,0 +1,470 @@
+[
+  {
+    "file": "001_initial_schema.sql",
+    "version": "001",
+    "status": "fully_applied",
+    "notes": "Recorded in live schema_migrations table and objects exist in catalog"
+  },
+  {
+    "file": "002_auth_profiles.sql",
+    "version": "002",
+    "status": "fully_applied",
+    "notes": "Recorded in live schema_migrations table and objects exist in catalog"
+  },
+  {
+    "file": "003_add_participant_fields.sql",
+    "version": "003",
+    "status": "fully_applied",
+    "notes": "Recorded in live schema_migrations table and objects exist in catalog"
+  },
+  {
+    "file": "004_phase5_participant_management.sql",
+    "version": "004",
+    "status": "fully_applied",
+    "notes": "Recorded in live schema_migrations table and objects exist in catalog"
+  },
+  {
+    "file": "005_category_age_logic.sql",
+    "version": "005",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "006_fix_category_trigger.sql",
+    "version": "006",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "007_flexible_hierarchy.sql",
+    "version": "007",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "008_superadmin_setup.sql",
+    "version": "008",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "009_tenant_management_funcs.sql",
+    "version": "009",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "010_tenant_revocation_func.sql",
+    "version": "010",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "011_multi_tenant_rls.sql",
+    "version": "011",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "012_cleanup_old_policies.sql",
+    "version": "012",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "013_hierarchical_orgs.sql",
+    "version": "013",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "014_fix_org_rls.sql",
+    "version": "014",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "015_add_rejection_reason.sql",
+    "version": "015",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "016_add_audit_fields.sql",
+    "version": "016",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "017_fix_items_upsert.sql",
+    "version": "017",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "018_phase5_judges_marks_results.sql",
+    "version": "018",
+    "status": "partially_applied_superseded",
+    "notes": "Judge/mark policies applied in 018/020 were modified/superseded by 027 and 056"
+  },
+  {
+    "file": "018_results_policies.sql",
+    "version": "018",
+    "status": "partially_applied_superseded",
+    "notes": "Judge/mark policies applied in 018/020 were modified/superseded by 027 and 056"
+  },
+  {
+    "file": "019_judge_tokens.sql",
+    "version": "019",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "020_complete_judge_system.sql",
+    "version": "020",
+    "status": "partially_applied_superseded",
+    "notes": "Judge/mark policies applied in 018/020 were modified/superseded by 027 and 056"
+  },
+  {
+    "file": "021_generate_judge_token_rpc.sql",
+    "version": "021",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "022_scoring_rules.sql",
+    "version": "022",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "022_validate_judge_token_rpc.sql",
+    "version": "022",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "023_expanded_points_config.sql",
+    "version": "023",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "024_public_leaderboard_rpc.sql",
+    "version": "024",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "025_r2_storage_metadata.sql",
+    "version": "025",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "026_judge_count_extension.sql",
+    "version": "026",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "027_judge_portal_rls_bypass.sql",
+    "version": "027",
+    "status": "partially_applied_superseded",
+    "notes": "Judge/mark policies applied in 018/020 were modified/superseded by 027 and 056"
+  },
+  {
+    "file": "028_hybrid_participant_management.sql",
+    "version": "028",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "029_fix_judge_portal_hybrid.sql",
+    "version": "029",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "030_leaderboard_settings.sql",
+    "version": "030",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "031_enforce_leaderboard_visibility.sql",
+    "version": "031",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "032_generated_posters.sql",
+    "version": "032",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "033_result_visibility.sql",
+    "version": "033",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "034_combined_run.sql",
+    "version": "034",
+    "status": "partially_applied",
+    "notes": "Backfills executed; RPCs later updated by 045, 052, and 056"
+  },
+  {
+    "file": "035_leaderboard_dedup.sql",
+    "version": "035",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "036_fix_published_status_backfill.sql",
+    "version": "036",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "037_get_festival_results_hierarchy.sql",
+    "version": "037",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "038_complete_leaderboard_fix.sql",
+    "version": "038",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "039_public_leaderboard_edge_cases.sql",
+    "version": "039",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "040_backfill_published_at.sql",
+    "version": "040",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "041_emergency_republish.sql",
+    "version": "041",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "042_public_published_results.sql",
+    "version": "042",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "043_public_individual_rankings_visibility.sql",
+    "version": "043",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "044_leaderboard_settings_admin_policy.sql",
+    "version": "044",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "045_result_workflow_public_visibility_split.sql",
+    "version": "045",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "046_backfill_public_visible_for_public_festivals.sql",
+    "version": "046",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "047_admin_leaderboard_internal_results.sql",
+    "version": "047",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "048_admin_festival_results_internal_published.sql",
+    "version": "048",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "049_candidate_profiles.sql",
+    "version": "049",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "050_poster_studio.sql",
+    "version": "050",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "051_sahityotsav_2026_event_names.sql",
+    "version": "051",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "052_public_result_no.sql",
+    "version": "052",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "053_media_center_assets.sql",
+    "version": "053",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "054_generated_assets_event_name.sql",
+    "version": "054",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "055_participant_unit_audit_logs.sql",
+    "version": "055",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "056_filter_rejected_registrations.sql",
+    "version": "056",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "057_junior_dataset_import.sql",
+    "version": "057",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "058_senior_dataset_import.sql",
+    "version": "058",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "059_schedule_import_unique_slot.sql",
+    "version": "059",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "060_execute_schedule_import.sql",
+    "version": "060",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "061_production_safety_patch.sql",
+    "version": "061",
+    "status": "partially_applied",
+    "notes": "CONCURRENTLY indexes created outside transaction"
+  },
+  {
+    "file": "062_production_audit_views.sql",
+    "version": "062",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "064_fix_public_leaderboard_visibility.sql",
+    "version": "064",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "065_public_items_policy.sql",
+    "version": "065",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "066_public_ai_views.sql",
+    "version": "066",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "067_public_registrations_policy.sql",
+    "version": "067",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "068_add_team_point_status.sql",
+    "version": "068",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "069_upper_primary_dataset_import.sql",
+    "version": "069",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "070_multi_category_dataset_import.sql",
+    "version": "070",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "071_general_category_import.sql",
+    "version": "071",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "072_remove_participants_name_org_constraint.sql",
+    "version": "072",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "073_public_unit_profile.sql",
+    "version": "073",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "074_communication_center.sql",
+    "version": "074",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "075_add_scoring_rules_guidelines.sql",
+    "version": "075",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "076_seed_scoring_rules.sql",
+    "version": "076",
+    "status": "fully_applied",
+    "notes": "Schema objects verified present in live catalog"
+  },
+  {
+    "file": "063_official_participant_bracket.sql (in root)",
+    "version": "063",
+    "status": "absent_from_migrations_folder",
+    "notes": "Located in workspace root directory instead of supabase/migrations/ directory. Never executed by Supabase CLI."
+  }
+]
