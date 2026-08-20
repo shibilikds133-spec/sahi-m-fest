@@ -1,0 +1,58 @@
+[
+  {
+    "category": "SENIOR",
+    "venue": "STAGE 1",
+    "item_name": "Mappila Song",
+    "item_code": "SR-002",
+    "section": "ONSTAGE",
+    "date": "2026-05-28",
+    "start_time": "09:00 AM",
+    "end_time": "10:30 AM",
+    "duration_minutes": 90,
+    "stage_order": 1,
+    "max_participants": 15,
+    "status": "scheduled"
+  },
+  {
+    "category": "SENIOR",
+    "venue": "STAGE 1",
+    "item_name": "Speech – Malayalam",
+    "item_code": "SR-005",
+    "section": "ONSTAGE",
+    "date": "2026-05-28",
+    "start_time": "10:30 AM",
+    "end_time": "12:00 PM",
+    "duration_minutes": 90,
+    "stage_order": 2,
+    "max_participants": 20,
+    "status": "scheduled"
+  },
+  {
+    "category": "SENIOR",
+    "venue": "OFFSTAGE HALL",
+    "item_name": "Story Writing",
+    "item_code": "SR-011",
+    "section": "OFFSTAGE",
+    "date": "2026-05-28",
+    "start_time": "09:00 AM",
+    "end_time": "09:40 AM",
+    "duration_minutes": 40,
+    "stage_order": 1,
+    "max_participants": 25,
+    "status": "scheduled"
+  },
+  {
+    "category": "SENIOR",
+    "venue": "OFFSTAGE HALL",
+    "item_name": "Quiz",
+    "item_code": "SR-019",
+    "section": "OFFSTAGE",
+    "date": "2026-05-28",
+    "start_time": "10:00 AM",
+    "end_time": "11:00 AM",
+    "duration_minutes": 60,
+    "stage_order": 2,
+    "max_participants": 30,
+    "status": "scheduled"
+  }
+]

@@ -47,7 +47,7 @@ export default function BackgroundBlock({ festivalId, tenantId }: BackgroundBloc
           ext,
           () => {} // progress
         );
-        updateTemplateMeta({ background_url: metadata.file_url });
+        updateTemplateMeta({ background_url: `r2://${metadata.object_key}` });
       } catch (err) {
         console.error("Upload failed", err);
       } finally {

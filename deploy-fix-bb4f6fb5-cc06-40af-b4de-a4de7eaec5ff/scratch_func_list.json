@@ -1,0 +1,476 @@
+[
+  {
+    "name": "handle_new_user",
+    "params": "",
+    "file": "002_auth_profiles.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "audit_participant_changes",
+    "params": "",
+    "file": "004_phase5_participant_management.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "ssf_calculate_age",
+    "params": "p_dob date",
+    "file": "005_category_age_logic.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "ssf_get_category",
+    "params": "p_dob date, p_class_std int DEFAULT NULL, p_education_type text DEFAULT NULL",
+    "file": "005_category_age_logic.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "validate_participant_category",
+    "params": "",
+    "file": "005_category_age_logic.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "ssf_calculate_age",
+    "params": "p_dob date, p_festival_year int DEFAULT 2026",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "ssf_get_category",
+    "params": "p_dob date, p_class_std int DEFAULT NULL, p_education_type text DEFAULT NULL, p_festival_year int DEFAULT 2026",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "validate_participant_category",
+    "params": "",
+    "file": "006_fix_category_trigger.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "setup_tenant_records",
+    "params": "p_org_id uuid, p_user_id uuid, p_org_name text, p_org_type text",
+    "file": "009_tenant_management_funcs.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "revoke_tenant_access",
+    "params": "p_org_id uuid",
+    "file": "010_tenant_revocation_func.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_my_tenant_id",
+    "params": "",
+    "file": "011_multi_tenant_rls.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "is_superadmin",
+    "params": "",
+    "file": "011_multi_tenant_rls.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_my_tenant_id",
+    "params": "",
+    "file": "012_cleanup_old_policies.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "setup_child_organisation",
+    "params": "p_parent_id uuid, p_new_user_id uuid, p_org_name text, p_org_type text, p_username text, p_password_temp text",
+    "file": "013_hierarchical_orgs.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_my_org_id",
+    "params": "",
+    "file": "014_fix_org_rls.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "update_modified_column",
+    "params": "",
+    "file": "016_add_audit_fields.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_my_tenant_id",
+    "params": "",
+    "file": "017_fix_items_upsert.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "is_superadmin",
+    "params": "",
+    "file": "017_fix_items_upsert.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "generate_judge_token",
+    "params": "p_judge_id UUID, p_schedule_id UUID, p_tenant_id UUID, p_created_by UUID",
+    "file": "021_generate_judge_token_rpc.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "validate_judge_token",
+    "params": "p_token TEXT",
+    "file": "022_validate_judge_token_rpc.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "024_public_leaderboard_rpc.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_schedule_readiness",
+    "params": "p_schedule_id uuid",
+    "file": "026_judge_count_extension.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_judge_submission_summary",
+    "params": "p_schedule_id uuid",
+    "file": "026_judge_count_extension.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_judge_registrations",
+    "params": "p_schedule_id uuid",
+    "file": "027_judge_portal_rls_bypass.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_visible_organisations",
+    "params": "p_tenant_id uuid",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "is_org_visible",
+    "params": "p_org_id uuid",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "setup_child_organisation",
+    "params": "p_parent_id uuid, p_new_user_id uuid, p_org_name text, p_org_type text, p_username text, p_password_temp text",
+    "file": "028_hybrid_participant_management.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_judge_registrations",
+    "params": "p_schedule_id uuid",
+    "file": "029_fix_judge_portal_hybrid.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "update_updated_at_column",
+    "params": "",
+    "file": "030_leaderboard_settings.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "031_enforce_leaderboard_visibility.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "033_result_visibility.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "033_result_visibility.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "034_combined_run.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "034_combined_run.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "035_leaderboard_dedup.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "037_get_festival_results_hierarchy.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "038_complete_leaderboard_fix.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "038_complete_leaderboard_fix.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "039_public_leaderboard_edge_cases.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "042_public_published_results.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard_settings",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "043_public_individual_rankings_visibility.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "file": "043_public_individual_rankings_visibility.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "045_result_workflow_public_visibility_split.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "045_result_workflow_public_visibility_split.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "file": "045_result_workflow_public_visibility_split.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_admin_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "047_admin_leaderboard_internal_results.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_admin_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "048_admin_festival_results_internal_published.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "048_admin_festival_results_internal_published.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "slugify_candidate_name",
+    "params": "value text",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "ensure_candidate_profile_slug",
+    "params": "",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_candidate_profile",
+    "params": "p_slug text",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "file": "049_candidate_profiles.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "assign_public_result_no",
+    "params": "",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "assign_public_result_no_insert",
+    "params": "",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "052_public_result_no.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "preview_bulk_unit_assignment",
+    "params": "p_participant_ids uuid[], p_target_unit_id uuid, p_tenant_id uuid",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_bulk_unit_assignment",
+    "params": "p_participant_ids uuid[], p_expected_hashes text[], p_target_unit_id uuid, p_batch_id uuid, p_tenant_id uuid",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "rollback_unit_assignment",
+    "params": "p_batch_id uuid",
+    "file": "055_participant_unit_audit_logs.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_judge_registrations",
+    "params": "p_schedule_id uuid",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_schedule_readiness",
+    "params": "p_schedule_id uuid",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_judge_submission_summary",
+    "params": "p_schedule_id uuid",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_festival_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_admin_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_published_results",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL, p_include_participant_details boolean DEFAULT true",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_candidate_profile",
+    "params": "p_slug text",
+    "file": "056_filter_rejected_registrations.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_junior_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "file": "057_junior_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_senior_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "file": "058_senior_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_schedule_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_schedules jsonb",
+    "file": "060_execute_schedule_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_public_leaderboard",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "064_fix_public_leaderboard_visibility.sql",
+    "isSecurityDefiner": false
+  },
+  {
+    "name": "get_public_leaderboard_settings",
+    "params": "p_tenant_id uuid DEFAULT NULL, p_festival_id uuid DEFAULT NULL",
+    "file": "068_add_team_point_status.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_upper_primary_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id uuid, p_participants jsonb",
+    "file": "069_upper_primary_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_lp_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_hs_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_hss_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "file": "070_multi_category_dataset_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "execute_general_import_chunk",
+    "params": "p_tenant_id uuid, p_festival_id uuid, p_session_id text, p_participants jsonb",
+    "file": "071_general_category_import.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "get_public_unit_profile",
+    "params": "p_unit_id uuid",
+    "file": "073_public_unit_profile.sql",
+    "isSecurityDefiner": true
+  },
+  {
+    "name": "reset_schedule_notification",
+    "params": "",
+    "file": "074_communication_center.sql",
+    "isSecurityDefiner": false
+  }
+]

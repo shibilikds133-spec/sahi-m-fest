@@ -1,0 +1,14 @@
+{
+  "imported_participants": 75,
+  "skipped_participants": 0,
+  "imported_registrations": 172,
+  "skipped_registrations": 0,
+  "girls_auto_assigned": 0,
+  "gender_conflicts": 0,
+  "invalid_items": [],
+  "header_mismatch": null,
+  "unmapped_events": [],
+  "errors": [],
+  "warnings": [],
+  "backup_path": ""
+}

@@ -1,0 +1,420 @@
+# SENIOR Participant Import JSON
+
+```json
+[
+    {
+        "chest_number": "2002",
+        "name": "MUHAMMED SHIBILI N",
+        "category": "SENIOR",
+        "items": [
+            "SR-017",
+            "SR-002",
+            "SR-016",
+            "SR-003"
+        ]
+    },
+    {
+        "chest_number": "2003",
+        "name": "SINAN AP",
+        "category": "SENIOR",
+        "items": [
+            "SR-010"
+        ]
+    },
+    {
+        "chest_number": "2004",
+        "name": "MUHAMMAD HISHAM P",
+        "category": "SENIOR",
+        "items": [
+            "SR-012",
+            "SR-005",
+            "SR-019"
+        ]
+    },
+    {
+        "chest_number": "2005",
+        "name": "ABDUL VAHID PK",
+        "category": "SENIOR",
+        "items": [
+            "SR-013",
+            "SR-022",
+            "SR-018",
+            "SR-021"
+        ]
+    },
+    {
+        "chest_number": "2006",
+        "name": "MUHAMMED MUSTHAFA PK",
+        "category": "SENIOR",
+        "items": [
+            "SR-023",
+            "SR-020",
+            "SR-009",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2007",
+        "name": "MUHAMMAD SIRAJ M",
+        "category": "SENIOR",
+        "items": [
+            "SR-024",
+            "SR-026",
+            "SR-010",
+            "SR-015"
+        ]
+    },
+    {
+        "chest_number": "2008",
+        "name": "MUHAMMAD NINSHAD VK",
+        "category": "SENIOR",
+        "items": [
+            "SR-006",
+            "SR-017",
+            "SR-005",
+            "SR-013"
+        ]
+    },
+    {
+        "chest_number": "2009",
+        "name": "MUHAMMED RABEEH",
+        "category": "SENIOR",
+        "items": [
+            "SR-026",
+            "SR-009",
+            "SR-021",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2010",
+        "name": "MOHAMMED MUHSIN",
+        "category": "SENIOR",
+        "items": [
+            "SR-012",
+            "SR-023",
+            "SR-019"
+        ]
+    },
+    {
+        "chest_number": "2011",
+        "name": "UVAIS K",
+        "category": "SENIOR",
+        "items": [
+            "SR-002",
+            "SR-018",
+            "SR-003"
+        ]
+    },
+    {
+        "chest_number": "2012",
+        "name": "MUHAMMED KHAIS TP",
+        "category": "SENIOR",
+        "items": [
+            "SR-014",
+            "SR-004",
+            "SR-010",
+            "SR-020"
+        ]
+    },
+    {
+        "chest_number": "2013",
+        "name": "DILSHAD K",
+        "category": "SENIOR",
+        "items": [
+            "SR-013",
+            "SR-022"
+        ]
+    },
+    {
+        "chest_number": "2014",
+        "name": "MUHAMMED NUSAIF K",
+        "category": "SENIOR",
+        "items": [
+            "SR-015"
+        ]
+    },
+    {
+        "chest_number": "2015",
+        "name": "JASIL KK",
+        "category": "SENIOR",
+        "items": [
+            "SR-014",
+            "SR-013",
+            "SR-016"
+        ]
+    },
+    {
+        "chest_number": "2016",
+        "name": "ABDUL RAHEEM",
+        "category": "SENIOR",
+        "items": [
+            "SR-005",
+            "SR-009",
+            "SR-018",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2017",
+        "name": "MUHAMMED HASEEB",
+        "category": "SENIOR",
+        "items": [
+            "SR-014",
+            "SR-020",
+            "SR-013",
+            "SR-021"
+        ]
+    },
+    {
+        "chest_number": "2018",
+        "name": "SIYAAD E",
+        "category": "SENIOR",
+        "items": [
+            "SR-006"
+        ]
+    },
+    {
+        "chest_number": "2019",
+        "name": "SIYAAD E",
+        "category": "SENIOR",
+        "items": [
+            "SR-010"
+        ]
+    },
+    {
+        "chest_number": "2020",
+        "name": "MUHSIN N",
+        "category": "SENIOR",
+        "items": [
+            "SR-024",
+            "SR-003"
+        ]
+    },
+    {
+        "chest_number": "2021",
+        "name": "MUHAMMED SHIHABUDHEEN P",
+        "category": "SENIOR",
+        "items": [
+            "SR-012",
+            "SR-006",
+            "SR-010",
+            "SR-016"
+        ]
+    },
+    {
+        "chest_number": "2022",
+        "name": "HUSNUL MUBARAK PK",
+        "category": "SENIOR",
+        "items": [
+            "SR-013",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2023",
+        "name": "SAYYID SHAMEEM JAWHAR OK",
+        "category": "SENIOR",
+        "items": [
+            "SR-004",
+            "SR-020",
+            "SR-013",
+            "SR-019"
+        ]
+    },
+    {
+        "chest_number": "2024",
+        "name": "SHAHIR KV",
+        "category": "SENIOR",
+        "items": [
+            "SR-026",
+            "SR-004",
+            "SR-002"
+        ]
+    },
+    {
+        "chest_number": "2025",
+        "name": "SHAHEER NT",
+        "category": "SENIOR",
+        "items": [
+            "SR-023",
+            "SR-022",
+            "SR-019",
+            "SR-015"
+        ]
+    },
+    {
+        "chest_number": "2026",
+        "name": "SIRAJ NC",
+        "category": "SENIOR",
+        "items": [
+            "SR-017",
+            "SR-008"
+        ]
+    },
+    {
+        "chest_number": "2027",
+        "name": "SHAMIL T",
+        "category": "SENIOR",
+        "items": [
+            "SR-004",
+            "SR-018"
+        ]
+    },
+    {
+        "chest_number": "2028",
+        "name": "SIYAN T",
+        "category": "SENIOR",
+        "items": [
+            "SR-005"
+        ]
+    },
+    {
+        "chest_number": "2029",
+        "name": "SAEED EK",
+        "category": "SENIOR",
+        "items": [
+            "SR-020",
+            "SR-009",
+            "SR-021",
+            "SR-016"
+        ]
+    },
+    {
+        "chest_number": "2030",
+        "name": "MUHAMMED SAJID T",
+        "category": "SENIOR",
+        "items": [
+            "SR-014",
+            "SR-010",
+            "SR-013",
+            "SR-015"
+        ]
+    },
+    {
+        "chest_number": "2031",
+        "name": "SHUHAIB K",
+        "category": "SENIOR",
+        "items": [
+            "SR-017",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2032",
+        "name": "THAUFEEQ P",
+        "category": "SENIOR",
+        "items": [
+            "SR-019"
+        ]
+    },
+    {
+        "chest_number": "2033",
+        "name": "MUHAMMADH MUHSIN P",
+        "category": "SENIOR",
+        "items": [
+            "SR-006",
+            "SR-014",
+            "SR-004",
+            "SR-002"
+        ]
+    },
+    {
+        "chest_number": "2034",
+        "name": "MUHAMMADH SAEED",
+        "category": "SENIOR",
+        "items": [
+            "SR-010",
+            "SR-013",
+            "SR-019"
+        ]
+    },
+    {
+        "chest_number": "2035",
+        "name": "ASIF RAHMAN",
+        "category": "SENIOR",
+        "items": [
+            "SR-020",
+            "SR-009",
+            "SR-021",
+            "SR-011"
+        ]
+    },
+    {
+        "chest_number": "2036",
+        "name": "ADILSHA K",
+        "category": "SENIOR",
+        "items": [
+            "SR-012",
+            "SR-026",
+            "SR-005",
+            "SR-018"
+        ]
+    },
+    {
+        "chest_number": "2037",
+        "name": "MUHAMMED JOUHAR EK",
+        "category": "SENIOR",
+        "items": [
+            "SR-014",
+            "SR-009",
+            "SR-018",
+            "SR-021"
+        ]
+    },
+    {
+        "chest_number": "2038",
+        "name": "SHIHABUDHEEN P",
+        "category": "SENIOR",
+        "items": [
+            "SR-001"
+        ]
+    },
+    {
+        "chest_number": "2039",
+        "name": "HUSNUL MUBARAK UP",
+        "category": "SENIOR",
+        "items": [
+            "SR-005",
+            "SR-008"
+        ]
+    },
+    {
+        "chest_number": "2040",
+        "name": "ADIL MAHAMOOD E",
+        "category": "SENIOR",
+        "items": [
+            "SR-024",
+            "SR-026",
+            "SR-023",
+            "SR-022"
+        ]
+    },
+    {
+        "chest_number": "2041",
+        "name": "MUHAMMED SINAN EK",
+        "category": "SENIOR",
+        "items": [
+            "SR-017",
+            "SR-002"
+        ]
+    },
+    {
+        "chest_number": "2042",
+        "name": "JASIL KK",
+        "category": "SENIOR",
+        "items": [
+            "SR-012"
+        ]
+    }
+]
+```
+
+## Dataset Summary
+
+* Participants: 41
+* Total Events: 24+
+* Category: SENIOR
+* Structure: Production Import Ready
+* Names: FULL CAPITAL NORMALIZED
+* Item Codes: SR-001 → SR-027

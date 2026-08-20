@@ -1,0 +1,71 @@
+{
+  "imported_participants": 60,
+  "skipped_participants": 0,
+  "imported_registrations": 116,
+  "skipped_registrations": 0,
+  "girls_auto_assigned": 14,
+  "gender_conflicts": 0,
+  "invalid_items": [],
+  "header_mismatch": null,
+  "unmapped_events": [],
+  "errors": [],
+  "warnings": [
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6009"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6010"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6017"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6018"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6031"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6032"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6033"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6039"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6052"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6054"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6056"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6061"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6062"
+    },
+    {
+      "warning": "Girls Auto Assigned during creation",
+      "chest_number": "6063"
+    }
+  ],
+  "backup_path": ""
+}

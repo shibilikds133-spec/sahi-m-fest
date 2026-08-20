@@ -144,7 +144,7 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (operation !== 'upload' && !metadata) {
+      if (operation !== 'upload' && operation !== 'verify' && !metadata) {
         return new Response(JSON.stringify({ error: 'Shared asset ownership metadata was not found' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

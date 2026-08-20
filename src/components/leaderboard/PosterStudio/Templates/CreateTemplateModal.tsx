@@ -133,7 +133,7 @@ export default function CreateTemplateModal({
         ext,
         (p) => setUploadProgress(Math.round(p)),
       );
-      const bgUrl = metadata.file_url;
+      const bgUrl = `r2://${metadata.object_key}`;
       setUploadProgress(100);
 
       // ── STEP 2: Build template record with UUID ───────────────────
