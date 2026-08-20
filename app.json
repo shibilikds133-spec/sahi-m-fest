@@ -22,7 +22,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "single"
+      "output": "single",
+      "favicon": "./src/assets/images/favicon.png",
+      "name": "Sahithyaotsav",
+      "shortName": "Sahithyaotsav",
+      "display": "standalone",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#0F766E"
     },
     "plugins": [
       "expo-router",
