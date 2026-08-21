@@ -24,8 +24,8 @@
     "web": {
       "output": "single",
       "favicon": "./src/assets/images/favicon.png",
-      "name": "Sahithyaotsav",
-      "shortName": "Sahithyaotsav",
+      "name": "Alviora",
+      "shortName": "Alviora",
       "display": "standalone",
       "backgroundColor": "#ffffff",
       "themeColor": "#0F766E"
