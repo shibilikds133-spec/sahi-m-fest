@@ -24,8 +24,8 @@
     "web": {
       "output": "single",
       "favicon": "./src/assets/images/favicon.png",
-      "name": "Alviora",
-      "shortName": "Alviora",
+      "name": "Alviora-2k26",
+      "shortName": "Alviora-2k26",
       "display": "standalone",
       "backgroundColor": "#ffffff",
       "themeColor": "#0F766E"
