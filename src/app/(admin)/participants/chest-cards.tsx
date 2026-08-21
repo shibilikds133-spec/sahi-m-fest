@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { useParticipants } from '../../../core/hooks/useParticipants';
 import { useFestival } from '../../../core/hooks/useFestival';
@@ -147,15 +148,6 @@ const saveIdMap = (key: string, value: Record<string, boolean>) => {
   }
 };
 
-const createQrUrl = (chestNumber: string, profileSlug: string, categoryCode: string, size: number, color?: string, bgColor?: string) => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sahi.in';
-  const qrData = encodeURIComponent(`${baseUrl}/candidate/${profileSlug}?chest=${chestNumber}&cat=${categoryCode}`);
-  
-  const fg = (color || '#111827').replace('#', '');
-  const bg = bgColor && bgColor.trim() !== '' && bgColor !== 'transparent' ? bgColor.replace('#', '') : '0000';
-  
-  return `https://quickchart.io/qr?text=${qrData}&dark=${fg}&light=${bg}&margin=0&size=${size}&format=png`;
-};
 
 const formatParticipantName = (name?: string | null) => {
   if (!name) return 'participant name';
@@ -317,8 +309,8 @@ const ChestCard = ({
   const categoryCode = participant.category_code || 'GN';
   const participantName = formatParticipantName(participant.name);
   const participantUnit = participant.organisations?.name || 'Unit Name';
-  const qrSize = 300; // Fixed size to prevent re-fetching on print scale change
-  const qrUrl = createQrUrl(chestNumber, participant.profile_slug || participant.id, categoryCode, qrSize, template.fields.qr.color, template.fields.qr.backgroundColor);
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sahi.in';
+  const qrData = `${baseUrl}/candidate/${participant.profile_slug || participant.id}?chest=${chestNumber}&cat=${categoryCode}`;
 
   return (
     <View
@@ -458,17 +450,15 @@ const ChestCard = ({
             padding: (template.fields.qr.padding ?? 6) * scale,
             borderRadius: (template.fields.qr.borderRadius ?? 8) * scale,
             overflow: 'hidden',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <Image 
-            source={{ uri: qrUrl }} 
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              borderRadius: Math.max(0, (template.fields.qr.borderRadius ?? 8) - (template.fields.qr.padding ?? 6) / 2) * scale,
-              overflow: 'hidden'
-            }} 
-            resizeMode="contain" 
+          <QRCode 
+            value={qrData} 
+            size={Math.max(10, (template.fields.qr.width - (template.fields.qr.padding ?? 6) * 2) * scale)} 
+            color={template.fields.qr.color || '#111827'}
+            backgroundColor="transparent"
           />
         </View>
       </FieldBox>
