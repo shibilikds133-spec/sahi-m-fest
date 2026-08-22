@@ -5,6 +5,7 @@ import { useGoBack } from '../../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
 import { SsfSelectMenu } from '../../../../components/ui/SsfSelectMenu';
+import { SsfDatePicker } from '../../../../components/ui/SsfDatePicker';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
@@ -225,38 +226,28 @@ export default function EditSchedule() {
           </View>
         </View>
 
-        <View className="flex-row flex-wrap gap-4 pt-1">
-          <View className="flex-1 min-w-[300px]">
-            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Start *</Text>
-            {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={dateTimeInputStyle}
-                />
-                <TimeSelect value={startTime} onChange={setStartTime} />
-              </View>
-            ) : (
-              <Text className="text-red-500">Use Web for Date/Time picking</Text>
-            )}
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text className="font-poppins text-ssf-text-muted mb-2">Start Time *</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <SsfDatePicker
+                value={startDate}
+                onValueChange={setStartDate}
+                style={{ flex: 1 }}
+              />
+              <TimeSelect value={startTime} onChange={setStartTime} />
+            </View>
           </View>
-          <View className="flex-1 min-w-[300px]">
-            <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">End *</Text>
-            {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={dateTimeInputStyle}
-                />
-                <TimeSelect value={endTime} onChange={setEndTime} />
-              </View>
-            ) : (
-              <Text className="text-red-500">Use Web for Date/Time picking</Text>
-            )}
+          <View style={{ flex: 1 }}>
+            <Text className="font-poppins text-ssf-text-muted mb-2">End Time *</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <SsfDatePicker
+                value={endDate}
+                onValueChange={setEndDate}
+                style={{ flex: 1 }}
+              />
+              <TimeSelect value={endTime} onChange={setEndTime} />
+            </View>
           </View>
         </View>
 

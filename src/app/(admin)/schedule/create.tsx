@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SsfSelectMenu, SsfSelectOption } from '@/components/ui/SsfSelectMenu';
+import { SsfDatePicker } from '@/components/ui/SsfDatePicker';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
@@ -207,35 +208,25 @@ export default function CreateSchedule() {
         <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 16 }}>
           <View style={{ flex: isCompactLayout ? undefined : 1 }}>
             <Text className="font-poppins text-ssf-text-muted mb-2">Start Time *</Text>
-            {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined, boxSizing: 'border-box', padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
-                />
-                <TimeSelect value={startTimeStr} onChange={setStartTimeStr} fullWidth={isCompactLayout} />
-              </View>
-            ) : (
-              <Text className="text-red-500">Use Web for Date/Time picking</Text>
-            )}
+            <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
+              <SsfDatePicker
+                value={startDate}
+                onValueChange={setStartDate}
+                style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined }}
+              />
+              <TimeSelect value={startTimeStr} onChange={setStartTimeStr} fullWidth={isCompactLayout} />
+            </View>
           </View>
           <View style={{ flex: isCompactLayout ? undefined : 1 }}>
             <Text className="font-poppins text-ssf-text-muted mb-2">End Time *</Text>
-            {Platform.OS === 'web' ? (
-              <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined, boxSizing: 'border-box', padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB' }}
-                />
-                <TimeSelect value={endTimeStr} onChange={setEndTimeStr} fullWidth={isCompactLayout} />
-              </View>
-            ) : (
-              <Text className="text-red-500">Use Web for Date/Time picking</Text>
-            )}
+            <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 8 }}>
+              <SsfDatePicker
+                value={endDate}
+                onValueChange={setEndDate}
+                style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined }}
+              />
+              <TimeSelect value={endTimeStr} onChange={setEndTimeStr} fullWidth={isCompactLayout} />
+            </View>
           </View>
         </View>
 

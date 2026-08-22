@@ -28,6 +28,7 @@ import {
 
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
+import { SsfDatePicker } from '../../../components/ui/SsfDatePicker';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useSchedule } from '../../../core/hooks/useSchedule';
 
@@ -450,7 +451,11 @@ export default function BulkCreateSchedule() {
           <View className="min-w-[170px]">
             <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted mb-1.5">Date</Text>
             {Platform.OS === 'web' ? (
-              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={inputStyle} />
+              <SsfDatePicker
+                value={date}
+                onValueChange={setDate}
+                style={inputStyle}
+              />
             ) : <TextInput value={date} onChangeText={setDate} style={nativeInputStyle} />}
           </View>
           <View className="min-w-[145px]">
