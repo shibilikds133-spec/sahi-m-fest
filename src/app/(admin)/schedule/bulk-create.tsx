@@ -454,7 +454,7 @@ export default function BulkCreateSchedule() {
               <SsfDatePicker
                 value={date}
                 onValueChange={setDate}
-                style={inputStyle}
+                style={{ width: '100%', minWidth: 170 }}
               />
             ) : <TextInput value={date} onChangeText={setDate} style={nativeInputStyle} />}
           </View>
