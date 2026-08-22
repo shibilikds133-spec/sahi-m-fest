@@ -7,6 +7,7 @@ import { participantService } from '../../../services/participantService';
 import { useAuthStore } from '../../../core/store/authStore';
 import { getCategory, validateParticipant, calculateAge, getCutoffDate, DEFAULT_FESTIVAL_YEAR, checkClassAgeConsistency, getCategoryDOBRange, type CategoryCode } from '../../../core/utils/participantValidation';
 import { Eye } from 'lucide-react-native';
+import { SsfDatePicker } from '../../../components/ui/SsfDatePicker';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories';
 
@@ -403,57 +404,11 @@ export default function AddParticipant() {
         <View>
           <Text className="font-poppins text-ssf-text-muted mb-1">Date of Birth {isCollegeFest ? '(Optional)' : '*'}</Text>
           {Platform.OS === 'web' ? (
-            // Native HTML date input → click anywhere to open calendar
-            <div
-              onClick={() => {
-                if (dobInputRef.current?.showPicker) {
-                  dobInputRef.current.showPicker();
-                } else {
-                  dobInputRef.current?.click();
-                }
-              }}
-              style={{ cursor: 'pointer', width: '100%' }}
-            >
-              <input
-                ref={dobInputRef}
-                type="date"
-                value={dob}
-                onChange={(e: any) => setDob(e.target.value)}
-                min="1990-01-01"
-                max={new Date().toISOString().split('T')[0]}
-                style={{
-                  display: 'block',
-                  boxSizing: 'border-box',
-                  border: '1.5px solid #D1D5DB',
-                  borderRadius: '14px',
-                  padding: '14px 18px',
-                  fontSize: '16px',
-                  fontFamily: 'inherit',
-                  fontWeight: '500',
-                  color: dob ? '#111827' : '#9CA3AF',
-                  width: '100%',
-                  minWidth: 0,
-                  outline: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: '#FAFAFA',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                  WebkitAppearance: 'auto',
-                  appearance: 'auto',
-                  colorScheme: 'light',
-                } as any}
-                onFocus={(e: any) => {
-                  e.target.style.borderColor = '#1B6B3A';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(27,107,58,0.12)';
-                  e.target.style.backgroundColor = '#fff';
-                }}
-                onBlur={(e: any) => {
-                  e.target.style.borderColor = '#D1D5DB';
-                  e.target.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
-                  e.target.style.backgroundColor = '#FAFAFA';
-                }}
-              />
-            </div>
+            <SsfDatePicker
+              value={dob || ''}
+              onValueChange={(val: string) => setDob(val)}
+              style={{ width: '100%', height: 48 }}
+            />
           ) : (
             <TextInput
               className="border border-ssf-border rounded-xl p-3 font-poppins text-ssf-text"

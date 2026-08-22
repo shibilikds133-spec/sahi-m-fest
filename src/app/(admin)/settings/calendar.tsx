@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/shadcn/button';
 import { Input } from '../../../components/ui/shadcn/input';
 import { Label } from '../../../components/ui/shadcn/label';
+import { SsfDatePicker } from '../../../components/ui/SsfDatePicker';
 
 export default function FestivalCalendarSettings() {
   const router = useRouter();
@@ -121,11 +122,10 @@ export default function FestivalCalendarSettings() {
             <View>
               <Label>Festival Start Date *</Label>
               {Platform.OS === 'web' ? (
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                <SsfDatePicker
+                  value={formData.start_date || ''}
+                  onValueChange={(val) => setFormData({ ...formData, start_date: val })}
+                  style={{ width: '100%', height: 40 }}
                 />
               ) : (
                 <Input
@@ -139,11 +139,10 @@ export default function FestivalCalendarSettings() {
             <View>
               <Label>Festival End Date *</Label>
               {Platform.OS === 'web' ? (
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                <SsfDatePicker
+                  value={formData.end_date || ''}
+                  onValueChange={(val) => setFormData({ ...formData, end_date: val })}
+                  style={{ width: '100%', height: 40 }}
                 />
               ) : (
                 <Input
@@ -167,11 +166,10 @@ export default function FestivalCalendarSettings() {
             <View>
               <Label>Registration Opens</Label>
               {Platform.OS === 'web' ? (
-                <input
-                  type="date"
-                  value={formData.registration_open}
-                  onChange={(e) => setFormData({ ...formData, registration_open: e.target.value })}
-                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                <SsfDatePicker
+                  value={formData.registration_open || ''}
+                  onValueChange={(val) => setFormData({ ...formData, registration_open: val })}
+                  style={{ width: '100%', height: 40 }}
                 />
               ) : (
                 <Input
@@ -186,11 +184,10 @@ export default function FestivalCalendarSettings() {
             <View>
               <Label>Registration Deadline</Label>
               {Platform.OS === 'web' ? (
-                <input
-                  type="date"
-                  value={formData.registration_close}
-                  onChange={(e) => setFormData({ ...formData, registration_close: e.target.value })}
-                  className="flex h-10 w-full rounded-lg border border-ui-border bg-white px-3 py-2 text-sm font-poppins text-ui-text"
+                <SsfDatePicker
+                  value={formData.registration_close || ''}
+                  onValueChange={(val) => setFormData({ ...formData, registration_close: val })}
+                  style={{ width: '100%', height: 40 }}
                 />
               ) : (
                 <Input
