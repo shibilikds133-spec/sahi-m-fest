@@ -5,7 +5,29 @@ import {
   TextInput, useWindowDimensions, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus, Trash2, UserCheck, Phone, Key, Copy, Share2, Activity, Search, ListFilter, Users, X, RefreshCw, ClipboardCheck } from 'lucide-react-native';
+import {
+  Users,
+  Search,
+  Plus,
+  MoreVertical,
+  CheckCircle2,
+  X,
+  MapPin,
+  Clock,
+  QrCode,
+  Copy,
+  Share2,
+  RefreshCw,
+  Activity,
+  Printer,
+  ArrowLeft,
+  Trash2,
+  UserCheck,
+  Phone,
+  Key,
+  ListFilter,
+  ClipboardCheck
+} from 'lucide-react-native';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfInput } from '../../../components/ui/SsfInput';
@@ -484,7 +506,8 @@ export default function JudgesPage() {
   };
 
   return (
-    <View className="flex-1 bg-ssf-bg">
+    <>
+    <View className="flex-1 bg-ssf-bg print:hidden">
       <View className="bg-white border-b border-ui-border px-5 py-4">
         <View className="flex-row flex-wrap items-center justify-between gap-3">
           <View className="flex-row items-center">
@@ -1170,7 +1193,20 @@ export default function JudgesPage() {
                     accessibilityLabel="Copy access code"
                   >
                     <Copy size={16} color="#374151" />
-                    <Text className="font-poppins-bold text-gray-700 text-sm">Copy Code</Text>
+                    <Text className="font-poppins-bold text-gray-700 text-sm">Copy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (Platform.OS === 'web') {
+                        setTimeout(() => window.print(), 100);
+                      }
+                    }}
+                    className="flex-1 h-10 flex-row items-center justify-center gap-x-2 bg-indigo-600 rounded-lg"
+                    accessibilityRole="button"
+                    accessibilityLabel="Print evaluation sheet"
+                  >
+                    <Printer size={16} color="#FFF" />
+                    <Text className="font-poppins-bold text-white text-sm">Print</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={shareToken}
@@ -1179,7 +1215,7 @@ export default function JudgesPage() {
                     accessibilityLabel="Share access code and judge portal link"
                   >
                     <Share2 size={16} color="#FFF" />
-                    <Text className="font-poppins-bold text-white text-sm">Share Link</Text>
+                    <Text className="font-poppins-bold text-white text-sm">Share</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -1314,5 +1350,93 @@ export default function JudgesPage() {
         </View>
       </Modal>
     </View>
+
+    {/* ── Print Evaluation Sheet ── */}
+    {Platform.OS === 'web' && generatedToken && selectedScheduleId && (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media screen {
+            #print-evaluation-sheet {
+              display: none !important;
+            }
+          }
+          @media print {
+            .no-print, [role="dialog"], [aria-modal="true"] {
+              display: none !important;
+            }
+            #print-evaluation-sheet {
+              display: block !important;
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              height: auto;
+              background-color: white !important;
+              z-index: 999999;
+            }
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+        `}} />
+        <View id="print-evaluation-sheet" style={{ display: 'none' }}>
+          <View style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', padding: '10mm', position: 'relative' }}>
+          {/* Header (Increased to ~7cm = 265px) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: '#000', paddingBottom: 24, marginBottom: 16, maxHeight: 265 }}>
+            {/* Left Side: Inviting Message & Event Details */}
+            <View style={{ flex: 1, paddingRight: 16, justifyContent: 'flex-start' }}>
+              <Text style={{ fontSize: 26, fontFamily: 'Poppins_900Black', color: '#000', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 2 }}>
+                ALVIORA 2K26
+              </Text>
+              <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#333', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                OFFICIAL EVALUATION SHEET
+              </Text>
+              
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#000', marginBottom: 16, lineHeight: 20, paddingRight: 20 }}>
+                Respected <Text style={{ fontFamily: 'Poppins_700Bold', color: '#000' }}>{selectedJudgeForToken?.name || 'Judge'}</Text>, we cordially invite you to evaluate the upcoming competition. Please scan the QR code to login digitally to the Judge Portal.
+              </Text>
+              
+              {(() => {
+                const selectedS = modalFilteredSchedules?.find((s: any) => s.id === selectedScheduleId);
+                return (
+                  <View style={{ borderLeftWidth: 4, borderLeftColor: '#000080', paddingLeft: 12, marginTop: 4 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#555', textTransform: 'uppercase', marginBottom: 2 }}>Event / Item</Text>
+                    <Text style={{ fontSize: 24, fontFamily: 'Poppins_900Black', color: '#000' }}>
+                      {selectedS?.items?.item_name_ml || selectedS?.items?.item_name_en}
+                    </Text>
+                    {selectedS?.items?.category && (
+                      <Text style={{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#333', marginTop: 2 }}>
+                        Category: {selectedS.items.category}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })()}
+            </View>
+
+            {/* Right Side: QR Code & Access Code (No border, Dark Blue QR) */}
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+              <QRCode
+                value={typeof window !== 'undefined' ? `${window.location.origin}/judge?code=${generatedToken}` : `https://sahi-app.com/judge?code=${generatedToken}`}
+                size={140}
+                color="#000080"
+                backgroundColor="#FFFFFF"
+              />
+              <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 24, color: '#000080', letterSpacing: 4, marginTop: 12 }}>
+                {generatedToken}
+              </Text>
+            </View>
+          </View>
+          {/* Rest of the page is intentionally left blank for manual marking */}
+          </View>
+        </View>
+      </>
+    )}
+    </>
   );
 }
