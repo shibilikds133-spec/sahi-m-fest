@@ -373,60 +373,51 @@ export default function JudgeMarksPage() {
   // ─── Submitted success screen ─────────────────────────────────────────────
   if (submitted) {
     return (
-      <LinearGradient colors={['#030E21', '#0B1F33', '#120E2D']} style={{ flex: 1 }}>
-        <View className="flex-1 items-center justify-center px-8">
-          <View className="w-24 h-24 rounded-full bg-white/5 border border-white/10 items-center justify-center mb-6">
-            <CheckCircle2 size={56} color="#06B6D4" />
-          </View>
-          <Text className="text-3xl font-poppins-black text-white text-center mb-3">
-            Marks Submitted!
-          </Text>
-          <Text className="text-white/60 font-poppins text-center leading-5">
-            Your marks have been successfully recorded.{'\n'}
-            This access code is now expired.{'\n\n'}
-            Thank you for your service.
-          </Text>
+      <View className="flex-1 bg-white items-center justify-center px-8">
+        <View className="w-24 h-24 rounded-full bg-emerald-50 border border-emerald-100 items-center justify-center mb-6 shadow-sm">
+          <CheckCircle2 size={56} color="#10B981" />
         </View>
-      </LinearGradient>
+        <Text className="text-3xl font-poppins-black text-slate-900 text-center mb-3 tracking-tight">
+          Marks Submitted!
+        </Text>
+        <Text className="text-slate-500 font-poppins text-center leading-relaxed">
+          Your marks have been successfully recorded.{'\n'}
+          This access code is now expired.{'\n\n'}
+          Thank you for your service.
+        </Text>
+      </View>
     );
   }
 
   if (loading) {
     return (
-      <LinearGradient colors={['#030E21', '#0B1F33', '#120E2D']} style={{ flex: 1 }}>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#06B6D4" size="large" />
-          <Text className="text-white/60 font-poppins mt-3">Loading...</Text>
-        </View>
-      </LinearGradient>
+      <View className="flex-1 bg-slate-50 items-center justify-center">
+        <ActivityIndicator color="#0F172A" size="large" />
+        <Text className="text-slate-500 font-poppins mt-4 text-sm">Loading...</Text>
+      </View>
     );
   }
 
   if (loadError) {
     return (
-      <LinearGradient colors={['#030E21', '#0B1F33', '#120E2D']} style={{ flex: 1 }}>
-        <View className="flex-1 items-center justify-center px-6">
-          <View
-            className="w-full max-w-md rounded-xl border border-red-500/30 p-5"
-            style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)' }}
+      <View className="flex-1 bg-white items-center justify-center px-6">
+        <View className="w-full max-w-md rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
+          <Text className="font-poppins-bold text-red-700 text-lg text-center mb-2">
+            Unable to load participants
+          </Text>
+          <Text className="font-poppins text-red-600/80 text-sm text-center mb-6">
+            {loadError}
+          </Text>
+          <TouchableOpacity
+            onPress={loadSession}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading participants"
+            className="rounded-xl bg-red-600 py-3.5 items-center active:bg-red-700"
           >
-            <Text className="font-poppins-bold text-red-300 text-base text-center">
-              Unable to load participants
-            </Text>
-            <Text className="font-poppins text-white/60 text-sm text-center mt-2">
-              {loadError}
-            </Text>
-            <TouchableOpacity
-              onPress={loadSession}
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading participants"
-              className="mt-5 rounded-xl bg-red-500 py-3 items-center"
-            >
-              <Text className="font-poppins-bold text-white">Retry</Text>
-            </TouchableOpacity>
-          </View>
+            <Text className="font-poppins-bold text-white">Retry</Text>
+          </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     );
   }
 
@@ -437,34 +428,33 @@ export default function JudgeMarksPage() {
 
   const GuidelinesModal = () => (
     <Modal visible={showGuidelines} transparent animationType="fade">
-      <View className="flex-1 bg-black/80 justify-center px-4 py-10">
+      <View className="flex-1 bg-slate-900/40 justify-center px-4 py-10">
         <View 
-          className="rounded-3xl overflow-hidden max-h-full flex-shrink-1 border border-white/20"
-          style={{ backgroundColor: '#0B1F33' }}
+          className="rounded-3xl overflow-hidden max-h-full flex-shrink-1 border border-slate-200 bg-white shadow-xl"
         >
-          <View className="px-5 py-4 flex-row justify-between items-center border-b border-white/10" style={{ backgroundColor: '#120E2D' }}>
-            <Text className="font-poppins-bold text-lg text-white">Rules & Guidelines</Text>
-            <TouchableOpacity onPress={() => setShowGuidelines(false)} className="p-2 bg-white/10 rounded-full">
-              <X size={20} color="#FFF" />
+          <View className="px-5 py-4 flex-row justify-between items-center border-b border-slate-100 bg-slate-50">
+            <Text className="font-poppins-bold text-lg text-slate-800">Rules & Guidelines</Text>
+            <TouchableOpacity onPress={() => setShowGuidelines(false)} className="p-2 bg-slate-200 rounded-full hover:bg-slate-300">
+              <X size={20} color="#64748B" />
             </TouchableOpacity>
           </View>
-          <ScrollView className="px-5 py-6 flex-shrink-1">
+          <ScrollView className="px-5 py-6 flex-shrink-1 bg-white">
             {eventTimeLimit && (
-              <View className="mb-6 bg-white/5 rounded-xl p-4 border border-white/10">
-                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-1">Time Limit</Text>
-                <Text className="font-poppins-bold text-white text-base">{eventTimeLimit}</Text>
+              <View className="mb-6 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <Text className="font-poppins-bold text-xs text-slate-500 uppercase tracking-wider mb-1">Time Limit</Text>
+                <Text className="font-poppins-bold text-slate-800 text-base">{eventTimeLimit}</Text>
               </View>
             )}
 
             {entryMode === 'criteria' && eventCriteria.length > 0 && (
               <View className="mb-6">
-                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-3">Scoring Criteria (Total: {eventTotalMarks})</Text>
-                <View className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                <Text className="font-poppins-bold text-xs text-slate-500 uppercase tracking-wider mb-3">Scoring Criteria (Total: {eventTotalMarks})</Text>
+                <View className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
                   {eventCriteria.map((c, i) => (
-                    <View key={c.key} className={`flex-row justify-between items-center p-3 ${i !== eventCriteria.length - 1 ? 'border-b border-white/10' : ''}`}>
-                      <Text className="font-poppins text-white text-sm">{c.label}</Text>
-                      <View className="bg-white/10 px-3 py-1 rounded-full">
-                        <Text className="font-poppins-bold text-white text-xs">{c.max} Marks</Text>
+                    <View key={c.key} className={`flex-row justify-between items-center p-3 ${i !== eventCriteria.length - 1 ? 'border-b border-slate-200' : ''}`}>
+                      <Text className="font-poppins text-slate-700 text-sm">{c.label}</Text>
+                      <View className="bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                        <Text className="font-poppins-bold text-slate-700 text-xs">{c.max} Marks</Text>
                       </View>
                     </View>
                   ))}
@@ -474,23 +464,19 @@ export default function JudgeMarksPage() {
 
             {eventGuidelines ? (
               <View className="mb-4">
-                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-2">Guidelines / കുറിപ്പുകൾ</Text>
-                <Text className="font-poppins text-white/80 text-sm leading-[26px]" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
+                <Text className="font-poppins-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Guidelines / കുറിപ്പുകൾ</Text>
+                <Text className="font-poppins text-slate-600 text-sm leading-[26px]" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
                   {eventGuidelines}
                 </Text>
               </View>
             ) : null}
             <View className="h-6" />
           </ScrollView>
-          <View className="p-4 border-t border-white/10 bg-white/5">
+          <View className="p-4 border-t border-slate-100 bg-slate-50">
             <TouchableOpacity onPress={() => setShowGuidelines(false)}>
-              <LinearGradient
-                colors={['#06B6D4', '#3B82F6']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                className="rounded-xl py-3 items-center"
-              >
-                <Text className="font-poppins-black text-white text-base">Got it</Text>
-              </LinearGradient>
+              <View className="bg-slate-900 rounded-xl py-3.5 items-center shadow-sm">
+                <Text className="font-poppins-bold text-white text-base">Got it</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -507,28 +493,32 @@ export default function JudgeMarksPage() {
       && registrations.every(reg => isRegistrationComplete(reg.id));
 
     return (
-      <View className="flex-1" style={{ backgroundColor: '#030E21' }}>
+      <View className="flex-1 bg-slate-50">
         {/* Mobile Header */}
-        <View className="pt-12 pb-3 px-4 flex-row justify-between items-center border-b border-white/10" style={{ backgroundColor: '#120E2D' }}>
-          <View className="flex-1">
-            <Text className="text-white/60 font-poppins-bold text-[10px] uppercase tracking-wider">Judging Event</Text>
-            <Text className="text-white font-poppins-black text-base" numberOfLines={1} ellipsizeMode="tail">
+        <View className="pt-12 pb-4 px-5 flex-row justify-between items-center border-b border-slate-200 bg-white">
+          <View className="flex-1 pr-2">
+            <Text className="text-slate-500 font-poppins-bold text-[10px] uppercase tracking-wider mb-0.5">Judging Event</Text>
+            <Text className="text-slate-900 font-poppins-black text-lg leading-tight" numberOfLines={1} ellipsizeMode="tail">
               {eventName}
             </Text>
           </View>
           <View className="flex-row items-center gap-x-2">
             {/* Sync Badge */}
-            <View className={`px-2.5 py-1 rounded-full flex-row items-center gap-x-1 ${
-              syncStatus === 'synced' ? 'bg-green-900/60 border border-green-600' :
-              syncStatus === 'saving' ? 'bg-blue-900/60 border border-blue-600' :
-              'bg-amber-900/60 border border-amber-600'
+            <View className={`px-2.5 py-1 rounded-full flex-row items-center gap-x-1 border ${
+              syncStatus === 'synced' ? 'bg-emerald-50 border-emerald-200' :
+              syncStatus === 'saving' ? 'bg-blue-50 border-blue-200' :
+              'bg-amber-50 border-amber-200'
             }`}>
               <View className={`w-1.5 h-1.5 rounded-full ${
-                syncStatus === 'synced' ? 'bg-green-400' :
-                syncStatus === 'saving' ? 'bg-blue-400' :
-                'bg-amber-400'
+                syncStatus === 'synced' ? 'bg-emerald-500' :
+                syncStatus === 'saving' ? 'bg-blue-500' :
+                'bg-amber-500'
               }`} />
-              <Text className="text-white font-poppins-bold text-[10px]">
+              <Text className={`font-poppins-bold text-[10px] ${
+                syncStatus === 'synced' ? 'text-emerald-700' :
+                syncStatus === 'saving' ? 'text-blue-700' :
+                'text-amber-700'
+              }`}>
                 {syncStatus === 'synced' ? 'Synced' :
                  syncStatus === 'saving' ? 'Saving' : 'Offline'}
               </Text>
@@ -537,33 +527,33 @@ export default function JudgeMarksPage() {
             {(eventGuidelines || eventTimeLimit || eventCriteria.length > 0) && (
               <TouchableOpacity
                 onPress={() => setShowGuidelines(true)}
-                className="p-2 bg-white/10 rounded-full"
+                className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full items-center justify-center"
               >
-                <Info size={14} color="#FFF" />
+                <Info size={14} color="#64748B" />
               </TouchableOpacity>
             )}
 
             <TouchableOpacity
               onPress={() => router.push('/notifications' as any)}
-              className="p-2 bg-white/10 rounded-full"
+              className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full items-center justify-center"
             >
-              <Bell size={14} color="#FFF" />
+              <Bell size={14} color="#64748B" />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.replace('/judge' as any)}
-              className="p-2 bg-white/10 rounded-full"
+              className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-full items-center justify-center"
             >
-              <LogOut size={14} color="#FFF" />
+              <LogOut size={14} color="#64748B" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Participant Navigation Chips */}
-        <View className="border-b border-white/10 py-2.5 shadow-sm" style={{ backgroundColor: '#0B1F33' }}>
-          <View className="px-4 flex-row justify-between items-center mb-1.5">
-            <Text className="font-poppins-bold text-[11px] text-white/50 uppercase tracking-wider">Participants list</Text>
-            <Text className="font-poppins-bold text-[11px] text-cyan-400">
+        <View className="border-b border-slate-200 py-3 bg-white shadow-sm z-10">
+          <View className="px-4 flex-row justify-between items-center mb-2">
+            <Text className="font-poppins-bold text-[11px] text-slate-500 uppercase tracking-wider">Participants list</Text>
+            <Text className="font-poppins-bold text-[11px] text-slate-700">
               {Object.keys(marks).length}/{registrations.length} Marked
             </Text>
           </View>
@@ -576,20 +566,20 @@ export default function JudgeMarksPage() {
                   key={reg.id}
                   onPress={() => setActiveRegIndex(idx)}
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     borderRadius: 12,
-                    backgroundColor: isCurrent ? '#06B6D4' : isRegMarked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                    backgroundColor: isCurrent ? '#0F172A' : isRegMarked ? '#F0FDF4' : '#F8FAFC',
                     justifyContent: 'center',
                     alignItems: 'center',
                     marginHorizontal: 4,
-                    borderWidth: 1,
-                    borderColor: isCurrent ? '#3B82F6' : isRegMarked ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1.5,
+                    borderColor: isCurrent ? '#0F172A' : isRegMarked ? '#BBF7D0' : '#E2E8F0',
                     position: 'relative',
                   }}
                 >
                   <Text style={{
-                    color: isCurrent ? '#FFF' : '#E5E7EB',
+                    color: isCurrent ? '#FFF' : '#334155',
                     fontFamily: isCurrent ? 'Poppins_900Black' : 'Poppins_700Bold',
                     fontSize: 16,
                   }}>
@@ -599,10 +589,10 @@ export default function JudgeMarksPage() {
                     <View style={{
                       position: 'absolute',
                       bottom: 4,
-                      width: 5,
-                      height: 5,
-                      borderRadius: 2.5,
-                      backgroundColor: isCurrent ? '#FFF' : '#10B981',
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: isCurrent ? '#10B981' : '#22C55E',
                     }} />
                   )}
                 </TouchableOpacity>
@@ -612,35 +602,32 @@ export default function JudgeMarksPage() {
         </View>
 
         {/* Main Form Content */}
-        <ScrollView className="flex-1 px-4 pt-3" keyboardShouldPersistTaps="handled">
+        <ScrollView className="flex-1 px-4 pt-4" keyboardShouldPersistTaps="handled">
           {registrations.length === 0 ? (
-            <View className="items-center py-10 rounded-xl border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-              <Text className="font-poppins text-white/50 text-center">
+            <View className="items-center py-10 rounded-xl border border-slate-200 bg-white">
+              <Text className="font-poppins text-slate-500 text-center">
                 No participants found for this event.
               </Text>
             </View>
           ) : (
             <View>
               {/* Note about code letters */}
-              <View className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 flex-row gap-x-2 items-center mb-3">
-                <AlertCircle size={14} color="#FBBF24" />
-                <Text className="font-poppins text-amber-200 text-[10px] leading-4 flex-1">
+              <View className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex-row gap-x-3 items-center mb-4">
+                <AlertCircle size={16} color="#D97706" />
+                <Text className="font-poppins text-amber-800 text-[11px] leading-4 flex-1">
                   Confidential evaluation by Code Letter. Participant names are hidden.
                 </Text>
               </View>
 
               {/* Active Participant Info Header */}
-              <View 
-                className="rounded-xl p-4 border border-white/10 shadow-sm mb-4 flex-row justify-between items-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-              >
-                <View className="flex-row items-center gap-x-3">
-                  <View className="w-14 h-14 rounded-2xl items-center justify-center shadow-sm" style={{ backgroundColor: '#06B6D4' }}>
-                    <Text className="font-poppins-black text-white text-2xl">{activeReg?.code_letter}</Text>
+              <View className="rounded-xl p-4 border border-slate-200 bg-white shadow-sm mb-5 flex-row justify-between items-center">
+                <View className="flex-row items-center gap-x-4">
+                  <View className="w-14 h-14 rounded-xl items-center justify-center bg-slate-100 border border-slate-200">
+                    <Text className="font-poppins-black text-slate-900 text-2xl">{activeReg?.code_letter}</Text>
                   </View>
                   <View>
-                    <Text className="font-poppins-bold text-white text-sm">Code: {activeReg?.code_letter}</Text>
-                    <Text className="font-poppins text-xs text-white/50">
+                    <Text className="font-poppins-bold text-slate-900 text-sm">Code: {activeReg?.code_letter}</Text>
+                    <Text className="font-poppins text-xs text-slate-500 mt-0.5">
                       {allDone ? '🎉 Marked completely' : '⚠️ Pending scores'}
                     </Text>
                   </View>
@@ -648,35 +635,37 @@ export default function JudgeMarksPage() {
 
                 {/* Score / Grade summary */}
                 <View className="items-end">
-                  <Text className="font-poppins-black text-cyan-400 text-lg">{total} / {eventTotalMarks}</Text>
+                  <Text className="font-poppins-black text-slate-900 text-xl">{total} <Text className="text-slate-400 text-sm">/ {eventTotalMarks}</Text></Text>
                   {total > 0 ? (
-                    <Text className="font-poppins-bold text-[10px] text-white/40">Grade: {grade}</Text>
+                    <View className="mt-1 bg-slate-100 px-2 py-0.5 rounded text-center">
+                      <Text className="font-poppins-bold text-[10px] text-slate-600">Grade: {grade}</Text>
+                    </View>
                   ) : null}
                 </View>
               </View>
 
               {entryMode === 'total_only' ? (
-                <View className="rounded-xl p-4 border border-cyan-500/30 shadow-sm mb-3" style={{ backgroundColor: 'rgba(6, 182, 212, 0.06)' }}>
-                  <Text className="font-poppins-bold text-white text-sm mb-1">Total Mark</Text>
-                  <Text className="font-poppins text-white/50 text-[11px] mb-4">
+                <View className="rounded-xl p-5 border border-slate-200 bg-white shadow-sm mb-4">
+                  <Text className="font-poppins-bold text-slate-900 text-sm mb-1">Total Mark</Text>
+                  <Text className="font-poppins text-slate-500 text-[11px] mb-5">
                     Enter the final total from the paper mark sheet.
                   </Text>
                   <View className="flex-row items-center justify-center">
                     <TextInput
-                      className="border-2 rounded-xl px-3 py-3 font-poppins-black text-2xl w-28 text-center"
+                      className="border-2 rounded-xl px-3 py-3 font-poppins-black text-3xl w-32 text-center"
                       style={{
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                        borderColor: marks[activeReg?.id]?.total !== undefined ? '#06B6D4' : 'rgba(255, 255, 255, 0.1)',
-                        color: '#06B6D4',
+                        backgroundColor: '#F8FAFC',
+                        borderColor: marks[activeReg?.id]?.total !== undefined ? '#0F172A' : '#E2E8F0',
+                        color: '#0F172A',
                       }}
                       keyboardType="numeric"
                       inputMode="numeric"
                       placeholder="0"
-                      placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                      placeholderTextColor="#94A3B8"
                       value={activeReg && marks[activeReg.id]?.total !== undefined ? String(marks[activeReg.id].total) : ''}
                       onChangeText={(text) => activeReg && handleScoreChange(activeReg.id, 'total', text, 100)}
                     />
-                    <Text className="font-poppins-black text-white/50 text-lg ml-3">/ 100</Text>
+                    <Text className="font-poppins-bold text-slate-400 text-xl ml-4">/ 100</Text>
                   </View>
                 </View>
               ) : eventCriteria.map(c => {
@@ -684,8 +673,8 @@ export default function JudgeMarksPage() {
                   ? String(marks[activeReg.id]?.[c.key]) 
                   : '';
                 return (
-                  <View key={c.key} className="rounded-xl p-4 border border-white/10 shadow-sm mb-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}>
-                    <Text className="font-poppins-bold text-white/90 text-xs mb-3">{c.label}</Text>
+                  <View key={c.key} className="rounded-xl p-4 border border-slate-200 bg-white shadow-sm mb-4">
+                    <Text className="font-poppins-bold text-slate-800 text-xs mb-3">{c.label}</Text>
                     
                     <View className="flex-row items-center justify-between">
                       {/* Touch adjustments (- / +) */}
@@ -696,23 +685,22 @@ export default function JudgeMarksPage() {
                             const currentVal = marks[activeReg.id]?.[c.key] ?? 0;
                             if (currentVal > 0) handleScoreChange(activeReg.id, c.key, String(currentVal - 1), c.max);
                           }}
-                          style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
-                          className="items-center justify-center border border-white/10"
+                          className="w-12 h-12 rounded-xl bg-slate-50 items-center justify-center border border-slate-200 active:bg-slate-100"
                         >
-                          <Text className="font-poppins-black text-2xl text-white/70">-</Text>
+                          <Text className="font-poppins-black text-2xl text-slate-600">-</Text>
                         </TouchableOpacity>
 
                         <TextInput
-                          className="border-2 rounded-xl px-2 py-2 font-poppins-black text-2xl w-20 text-center"
+                          className="border-2 rounded-xl px-2 py-2 font-poppins-black text-2xl w-24 text-center"
                           style={{ 
-                            backgroundColor: 'rgba(6, 182, 212, 0.1)', 
-                            borderColor: currentValStr ? '#06B6D4' : 'rgba(255, 255, 255, 0.1)',
-                            color: '#06B6D4'
+                            backgroundColor: '#F8FAFC', 
+                            borderColor: currentValStr ? '#0F172A' : '#E2E8F0',
+                            color: '#0F172A'
                           }}
                           keyboardType="numeric"
                           inputMode="numeric"
                           placeholder="0"
-                          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                          placeholderTextColor="#94A3B8"
                           value={currentValStr}
                           onChangeText={(text) => activeReg && handleScoreChange(activeReg.id, c.key, text, c.max)}
                         />
@@ -723,16 +711,17 @@ export default function JudgeMarksPage() {
                             const currentVal = marks[activeReg.id]?.[c.key] ?? 0;
                             if (currentVal < c.max) handleScoreChange(activeReg.id, c.key, String(currentVal + 1), c.max);
                           }}
-                          style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
-                          className="items-center justify-center border border-white/10"
+                          className="w-12 h-12 rounded-xl bg-slate-50 items-center justify-center border border-slate-200 active:bg-slate-100"
                         >
-                          <Text className="font-poppins-black text-2xl text-white/70">+</Text>
+                          <Text className="font-poppins-black text-2xl text-slate-600">+</Text>
                         </TouchableOpacity>
                       </View>
 
-                      <Text className="font-poppins-bold text-[11px] text-white/30 ml-2">
-                        Max: {c.max}
-                      </Text>
+                      <View className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                        <Text className="font-poppins-bold text-[11px] text-slate-500">
+                          Max: {c.max}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 );
@@ -750,51 +739,46 @@ export default function JudgeMarksPage() {
               bottom: 0, 
               left: 0, 
               right: 0,
-              paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-              backgroundColor: 'rgba(11, 31, 51, 0.95)',
+              paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
             }} 
-            className="border-t border-white/10 px-4 py-3 flex-row gap-x-2 shadow-lg"
+            className="border-t border-slate-200 px-5 py-4 flex-row gap-x-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
           >
             <TouchableOpacity
               disabled={activeRegIndex === 0}
               onPress={() => setActiveRegIndex(prev => prev - 1)}
-              style={{ height: 48 }}
+              style={{ height: 52 }}
               className={`flex-1 rounded-xl items-center justify-center border ${
-                activeRegIndex === 0 ? 'border-white/5 bg-white/5 opacity-40' : 'border-white/20 bg-white/10'
+                activeRegIndex === 0 ? 'border-slate-200 bg-slate-50 opacity-50' : 'border-slate-300 bg-white active:bg-slate-50'
               }`}
             >
-              <Text className="font-poppins-bold text-white text-sm">◀ Prev</Text>
+              <Text className="font-poppins-bold text-slate-700 text-sm">◀ Prev</Text>
             </TouchableOpacity>
 
             {activeRegIndex === registrations.length - 1 && allMarked ? (
               <TouchableOpacity
                 onPress={handleSubmitAll}
                 disabled={submitting}
-                style={{ height: 48, flex: 2 }}
+                style={{ height: 52, flex: 2 }}
+                className="bg-slate-900 rounded-xl items-center justify-center shadow-sm active:bg-slate-800"
               >
-                <LinearGradient
-                  colors={['#10B981', '#059669']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  className="w-full h-full rounded-xl items-center justify-center shadow-lg"
-                >
-                  {submitting ? (
-                    <ActivityIndicator color="#FFF" />
-                  ) : (
-                    <Text className="font-poppins-black text-white text-sm">✅ Submit All Marks</Text>
-                  )}
-                </LinearGradient>
+                {submitting ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text className="font-poppins-bold text-white text-sm">✅ Submit All Marks</Text>
+                )}
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 disabled={activeRegIndex === registrations.length - 1}
                 onPress={() => setActiveRegIndex(prev => prev + 1)}
-                style={{ height: 48 }}
+                style={{ height: 52 }}
                 className={`flex-1 rounded-xl items-center justify-center ${
-                  activeRegIndex === registrations.length - 1 ? 'bg-white/5 opacity-40' : 'bg-[#06B6D4]'
+                  activeRegIndex === registrations.length - 1 ? 'bg-slate-100 opacity-50' : 'bg-slate-900 shadow-sm active:bg-slate-800'
                 }`}
               >
-                <Text className={`font-poppins-black text-sm ${
-                  activeRegIndex === registrations.length - 1 ? 'text-white/30' : 'text-white'
+                <Text className={`font-poppins-bold text-sm ${
+                  activeRegIndex === registrations.length - 1 ? 'text-slate-400' : 'text-white'
                 }`}>Next ▶</Text>
               </TouchableOpacity>
             )}
@@ -978,19 +962,15 @@ export default function JudgeMarksPage() {
           onPress={handleSubmitAll}
           disabled={submitting}
         >
-          <LinearGradient
-            colors={['#10B981', '#059669']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            className="rounded-xl py-3 items-center shadow-xl border-t border-white/20"
-          >
+          <View className="bg-slate-900 rounded-xl py-4 items-center shadow-lg border border-slate-700 active:bg-slate-800">
             {submitting ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text className="font-poppins-black text-white text-sm">
+              <Text className="font-poppins-bold text-white text-sm">
                 ✅ Submit All Marks & Close Session
               </Text>
             )}
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </View>
       {GuidelinesModal()}
