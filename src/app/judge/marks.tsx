@@ -33,6 +33,7 @@ export default function JudgeMarksPage() {
   const [eventTotalMarks, setEventTotalMarks] = useState(100);
   const [scoringRuleId, setScoringRuleId] = useState<string | null>(null);
   const [eventGuidelines, setEventGuidelines] = useState<string | null>(null);
+  const [eventTimeLimit, setEventTimeLimit] = useState<string | null>(null);
   const [showGuidelines, setShowGuidelines] = useState(false);
 
   // Mobile states
@@ -163,8 +164,9 @@ export default function JudgeMarksPage() {
       setEntryMode(rules.entry_mode);
       setEventTotalMarks(rules.entry_mode === 'total_only' ? 100 : rules.total_marks);
       setScoringRuleId(rules.id ?? null);
-      if (rules.guidelines) {
-        setEventGuidelines(rules.guidelines);
+      setEventTimeLimit(rules.time_limit ?? null);
+      if (rules.guidelines || rules.time_limit || rules.criteria?.length > 0) {
+        setEventGuidelines(rules.guidelines || null);
         setShowGuidelines(true); // Automatically show on first load
       }
 
@@ -441,16 +443,44 @@ export default function JudgeMarksPage() {
           style={{ backgroundColor: '#0B1F33' }}
         >
           <View className="px-5 py-4 flex-row justify-between items-center border-b border-white/10" style={{ backgroundColor: '#120E2D' }}>
-            <Text className="font-poppins-bold text-lg text-white">Guidelines / കുറിപ്പുകൾ</Text>
+            <Text className="font-poppins-bold text-lg text-white">Rules & Guidelines</Text>
             <TouchableOpacity onPress={() => setShowGuidelines(false)} className="p-2 bg-white/10 rounded-full">
               <X size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
           <ScrollView className="px-5 py-6 flex-shrink-1">
-            <Text className="font-poppins text-white/80 text-sm leading-[30px]" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
-              {eventGuidelines}
-            </Text>
-            <View className="h-10" />
+            {eventTimeLimit && (
+              <View className="mb-6 bg-white/5 rounded-xl p-4 border border-white/10">
+                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-1">Time Limit</Text>
+                <Text className="font-poppins-bold text-white text-base">{eventTimeLimit}</Text>
+              </View>
+            )}
+
+            {entryMode === 'criteria' && eventCriteria.length > 0 && (
+              <View className="mb-6">
+                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-3">Scoring Criteria (Total: {eventTotalMarks})</Text>
+                <View className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                  {eventCriteria.map((c, i) => (
+                    <View key={c.key} className={`flex-row justify-between items-center p-3 ${i !== eventCriteria.length - 1 ? 'border-b border-white/10' : ''}`}>
+                      <Text className="font-poppins text-white text-sm">{c.label}</Text>
+                      <View className="bg-white/10 px-3 py-1 rounded-full">
+                        <Text className="font-poppins-bold text-white text-xs">{c.max} Marks</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {eventGuidelines ? (
+              <View className="mb-4">
+                <Text className="font-poppins-bold text-xs text-white/50 uppercase tracking-wider mb-2">Guidelines / കുറിപ്പുകൾ</Text>
+                <Text className="font-poppins text-white/80 text-sm leading-[26px]" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
+                  {eventGuidelines}
+                </Text>
+              </View>
+            ) : null}
+            <View className="h-6" />
           </ScrollView>
           <View className="p-4 border-t border-white/10 bg-white/5">
             <TouchableOpacity onPress={() => setShowGuidelines(false)}>
@@ -504,7 +534,7 @@ export default function JudgeMarksPage() {
               </Text>
             </View>
 
-            {eventGuidelines && (
+            {(eventGuidelines || eventTimeLimit || eventCriteria.length > 0) && (
               <TouchableOpacity
                 onPress={() => setShowGuidelines(true)}
                 className="p-2 bg-white/10 rounded-full"
@@ -789,13 +819,13 @@ export default function JudgeMarksPage() {
             <Text className="text-ui-text font-poppins-black text-xl">{judgeName}</Text>
           </View>
           <View className="flex-row items-center gap-x-2">
-            {eventGuidelines && (
+            {(eventGuidelines || eventTimeLimit || eventCriteria.length > 0) && (
               <TouchableOpacity
                 onPress={() => setShowGuidelines(true)}
                 className="h-9 px-3 bg-white border border-ui-border rounded-lg flex-row items-center"
               >
                 <Info size={15} color="#0F766E" />
-                <Text className="text-teal-700 font-poppins-bold text-xs ml-1">Guidelines</Text>
+                <Text className="text-teal-700 font-poppins-bold text-xs ml-1">Rules</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
