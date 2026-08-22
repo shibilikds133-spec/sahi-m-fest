@@ -55,9 +55,10 @@ const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onC
         }}
         style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1 }}
       >
-        {['00', '15', '30', '45'].map(m => (
-          <option key={m} value={m}>{m}</option>
-        ))}
+        {Array.from({length: 60}, (_, i) => {
+          const m = i.toString().padStart(2, '0');
+          return <option key={m} value={m}>{m}</option>;
+        })}
       </select>
       <select 
         value={ampm} 
