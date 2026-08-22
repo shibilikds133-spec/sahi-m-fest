@@ -325,28 +325,28 @@ export default function JudgePortalLanding() {
             ) : (
               <>
                 {/* Header */}
-                <View className="items-center mb-8">
-                  <View className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 items-center justify-center mb-5">
-                    <ShieldCheck size={32} color="#0F172A" strokeWidth={1.5} />
+                <View className="items-center mb-6">
+                  <View className="w-16 h-16 rounded-full bg-ui-muted items-center justify-center mb-4 border border-ui-border">
+                    <ShieldCheck size={32} color="#0F172A" />
                   </View>
-                  <Text className="text-3xl font-poppins-bold text-slate-900 text-center mb-2 tracking-tight">
+                  <Text className="text-3xl font-poppins-black text-ui-text tracking-tight text-center">
                     Judging System
                   </Text>
-                  <Text className="text-slate-500 font-poppins text-center text-sm leading-5">
+                  <Text className="text-sm font-poppins text-ui-text-muted mt-2 text-center px-4">
                     Enter your one-time access code to continue
                   </Text>
                 </View>
 
-                {/* Card content */}
-                <View className="items-center w-full">
-                  <Text className="font-poppins-medium text-slate-700 text-sm mb-1 self-start">Access Code</Text>
-                  <Text className="font-poppins text-slate-400 text-xs mb-4 self-start">
-                    You should have received this from the event coordinator
-                  </Text>
-
-                  <Animated.View style={{ transform: [{ translateX: shakeAnim }], width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 16 }}>
-                    <View className="flex-row justify-between w-full gap-x-2">
-                      {Array.from({ length: 6 }, (_, i) => {
+                <View className="w-full">
+                  <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+                    <View className="flex-row items-center justify-between mb-2">
+                      <Text className="text-sm font-poppins-medium text-ui-text">Access Code</Text>
+                      <Text className="text-xs font-poppins text-ui-text-muted">
+                        You should have received this from the event coordinator
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between w-full mb-6 gap-x-2">
+                      {Array.from({ length: 6 }).map((_, i) => {
                         const isActive = activeIndex === i;
                         const isFilled = code[i] !== undefined && code[i] !== ' ';
                         const val = code[i] !== ' ' ? code[i] : '';
@@ -377,8 +377,8 @@ export default function JudgePortalLanding() {
                               maxLength={6}
                               autoCapitalize="characters"
                               autoCorrect={false}
-                              className="absolute w-full h-full text-center font-poppins-bold text-slate-900"
-                              style={[{ zIndex: 10, fontSize: isMobile ? 24 : 28 }, { outlineStyle: 'none' } as any]}
+                              className="absolute w-full h-full text-center font-poppins-bold"
+                              style={[{ zIndex: 10, fontSize: isMobile ? 24 : 28, color: '#0F172A' }, { outlineStyle: 'none' } as any]}
                               cursorColor="#0F172A"
                             />
                           </View>
@@ -401,7 +401,7 @@ export default function JudgePortalLanding() {
                   >
                     <View
                       className={`rounded-xl py-3.5 flex-row items-center justify-center gap-x-2 ${
-                        code.length === 6 && !isLoading ? 'bg-slate-900' : 'bg-slate-100'
+                        code.length === 6 && !isLoading ? 'bg-black' : 'bg-ui-muted'
                       }`}
                     >
                       {isLoading ? (
@@ -409,7 +409,7 @@ export default function JudgePortalLanding() {
                       ) : (
                         <>
                           <Text className={`font-poppins-medium text-sm ${
-                            code.length === 6 ? 'text-white' : 'text-slate-400'
+                            code.length === 6 ? 'text-white' : 'text-ui-text-muted'
                           }`}>Enter Portal</Text>
                           <ArrowRight size={16} color={code.length === 6 ? '#FFF' : '#94A3B8'} />
                         </>
@@ -421,9 +421,9 @@ export default function JudgePortalLanding() {
                     onPress={startScanning}
                     style={{ width: '100%', maxWidth: 400, marginTop: 12 }}
                   >
-                    <View className="rounded-xl py-3.5 flex-row items-center justify-center gap-x-2 border border-slate-200 bg-white">
+                    <View className="rounded-xl py-3.5 flex-row items-center justify-center gap-x-2 border border-ui-border bg-white">
                       <Camera size={16} color="#0F172A" />
-                      <Text className="font-poppins-medium text-sm text-slate-700">Scan QR Code</Text>
+                      <Text className="font-poppins-medium text-sm text-ui-text">Scan QR Code</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -433,7 +433,7 @@ export default function JudgePortalLanding() {
         </View>
 
         <View className="mt-8 items-center opacity-60">
-          <Text className="text-slate-400 font-poppins text-xs tracking-wider uppercase mb-1">
+          <Text className="text-ui-text-muted font-poppins text-xs tracking-wider uppercase mb-1">
             Powered by SSF
           </Text>
         </View>
