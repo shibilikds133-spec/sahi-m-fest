@@ -142,6 +142,7 @@ function TimePicker({
         placeholder="Hour"
         options={hours.map((hour) => ({ label: String(Number(hour)), value: hour }))}
         style={{ width: 85 }}
+        align="center"
       />
       <Text className="font-poppins-bold text-xs text-ui-text-muted">:</Text>
       <SsfSelectMenu
@@ -150,6 +151,7 @@ function TimePicker({
         placeholder="Min"
         options={minutes.map((minute) => ({ label: minute, value: minute }))}
         style={{ width: 85 }}
+        align="center"
       />
       <SsfSelectMenu
         value={value.period}
@@ -157,6 +159,7 @@ function TimePicker({
         placeholder="AM/PM"
         options={[{ label: 'AM', value: 'AM' }, { label: 'PM', value: 'PM' }]}
         style={{ width: 95 }}
+        align="center"
       />
     </View>
   );
