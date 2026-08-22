@@ -28,6 +28,26 @@ import {
 } from 'lucide-react-native';
 
 export default function CheckIn() {
+  const [warningModal, setWarningModal] = useState<{ visible: boolean; title: string; message: string; action: (() => void) | null }>({
+    visible: false,
+    title: '',
+    message: '',
+    action: null
+  });
+  const [warningCountdown, setWarningCountdown] = useState(0);
+
+  React.useEffect(() => {
+    let timer;
+    if (warningModal.visible && warningCountdown > 0) {
+      timer = setTimeout(() => setWarningCountdown(c => c - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [warningModal.visible, warningCountdown]);
+
+  const executeWithWarning = (title, message, action) => {
+    setWarningModal({ visible: true, title, message, action });
+    setWarningCountdown(8);
+  };
   const { id } = useLocalSearchParams();
   const scheduleId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
@@ -164,6 +184,7 @@ export default function CheckIn() {
   };
 
   const handleUnverify = async (regId: string) => {
+    executeWithWarning('Unverify Participant', 'Are you sure you want to unverify this participant? This may affect their results.', async () => {
     setIsUpdating(true);
     try {
       await stageManagementService.updateRegistration(scheduleId!, regId, 'unverify');
@@ -172,10 +193,11 @@ export default function CheckIn() {
       Alert.alert('Error', error.message || 'Failed to unverify participant');
     } finally {
       setIsUpdating(false);
-    }
+    }});
   };
 
   const handleReject = async (regId: string) => {
+    executeWithWarning('Reject Participant', 'Are you sure you want to reject this participant?', async () => {
     setIsUpdating(true);
     try {
       await stageManagementService.updateRegistration(scheduleId!, regId, 'reject');
@@ -186,10 +208,11 @@ export default function CheckIn() {
       else Alert.alert('Error', error.message || 'Failed to reject participant');
     } finally {
       setIsUpdating(false);
-    }
+    }});
   };
 
   const handleRestore = async (regId: string) => {
+    executeWithWarning('Restore Participant', 'Are you sure you want to restore this participant?', async () => {
     setIsUpdating(true);
     try {
       await stageManagementService.updateRegistration(scheduleId!, regId, 'restore');
@@ -199,15 +222,13 @@ export default function CheckIn() {
       else Alert.alert('Error', error.message || 'Failed to restore participant');
     } finally {
       setIsUpdating(false);
-    }
+    }});
   };
 
   const handleRejectAllUnverified = async () => {
     const unverifiedRegs = activeRegistrations.filter((r: any) => !r.is_verified);
     if (unverifiedRegs.length === 0) return;
-
-    const msg = `Are you sure you want to reject all ${unverifiedRegs.length} unverified participants? This will exclude them from the draw.`;
-    const action = async () => {
+    executeWithWarning('Reject All Unverified', `Are you sure you want to reject all ${unverifiedRegs.length} unverified participants?`, async () => {
       setIsUpdating(true);
       try {
         await Promise.all(
@@ -217,20 +238,11 @@ export default function CheckIn() {
         );
         refetch();
       } catch (error: any) {
-        if (Platform.OS === 'web') window.alert('Error: ' + error.message);
-        else Alert.alert('Error', error.message || 'Failed to reject participants');
+        Alert.alert('Error', error.message || 'Failed to reject participants');
       } finally {
         setIsUpdating(false);
       }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(msg)) action();
-    } else {
-      Alert.alert('Confirm Bulk Reject', msg, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reject All', style: 'destructive', onPress: action }
-      ]);
+    });
     }
   };
 
