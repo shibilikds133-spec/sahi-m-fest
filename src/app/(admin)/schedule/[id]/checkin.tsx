@@ -37,14 +37,14 @@ export default function CheckIn() {
   const [warningCountdown, setWarningCountdown] = useState(0);
 
   React.useEffect(() => {
-    let timer;
+    let timer: NodeJS.Timeout | undefined;
     if (warningModal.visible && warningCountdown > 0) {
       timer = setTimeout(() => setWarningCountdown(c => c - 1), 1000);
     }
     return () => clearTimeout(timer);
   }, [warningModal.visible, warningCountdown]);
 
-  const executeWithWarning = (title, message, action) => {
+  const executeWithWarning = (title: string, message: string, action: () => void) => {
     setWarningModal({ visible: true, title, message, action });
     setWarningCountdown(8);
   };
@@ -243,7 +243,6 @@ export default function CheckIn() {
         setIsUpdating(false);
       }
     });
-    }
   };
 
   const filteredRegs = registrations?.filter(
