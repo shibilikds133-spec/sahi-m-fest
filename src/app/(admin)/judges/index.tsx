@@ -1437,7 +1437,7 @@ export default function JudgesPage() {
                           <View style={{ flex: 1.5 }}>
                             <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Category</Text>
                             <Text style={{ fontSize: 11, fontFamily: 'Poppins_900Black', color: '#0F172A' }} numberOfLines={1}>
-                              {selectedS?.items?.category || '-'}
+                              {selectedS?.items?.category || (selectedS?.items?.category_codes ? (selectedS.items.category_codes as string[]).join(', ') : '-')}
                             </Text>
                           </View>
                         </>
