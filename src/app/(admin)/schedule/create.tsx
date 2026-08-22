@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SsfSelectMenu, SsfSelectOption } from '@/components/ui/SsfSelectMenu';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { SsfButton } from '../../../components/ui/SsfButton';
@@ -33,44 +34,40 @@ const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onC
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', flex: fullWidth ? undefined : 1.5, width: fullWidth ? '100%' : undefined, gap: 4 }}>
-      <select 
+      <SsfSelectMenu 
         value={hour} 
-        onChange={(e) => {
-          setHour(e.target.value);
-          handleChange(e.target.value, minute, ampm);
+        onValueChange={(val) => {
+          setHour(val);
+          handleChange(val, minute, ampm);
         }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1 }}
-      >
-        {Array.from({length: 12}, (_, i) => {
+        options={Array.from({length: 12}, (_, i) => {
           const v = (i + 1).toString().padStart(2, '0');
-          return <option key={v} value={v}>{v}</option>;
+          return { label: v, value: v };
         })}
-      </select>
+        style={{ flex: 1 }}
+      />
       <Text style={{ marginHorizontal: 2, fontWeight: 'bold', color: '#333' }}>:</Text>
-      <select 
+      <SsfSelectMenu 
         value={minute} 
-        onChange={(e) => {
-          setMinute(e.target.value);
-          handleChange(hour, e.target.value, ampm);
+        onValueChange={(val) => {
+          setMinute(val);
+          handleChange(hour, val, ampm);
         }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1 }}
-      >
-        {Array.from({length: 60}, (_, i) => {
+        options={Array.from({length: 60}, (_, i) => {
           const m = i.toString().padStart(2, '0');
-          return <option key={m} value={m}>{m}</option>;
+          return { label: m, value: m };
         })}
-      </select>
-      <select 
+        style={{ flex: 1 }}
+      />
+      <SsfSelectMenu 
         value={ampm} 
-        onChange={(e) => {
-          setAmpm(e.target.value);
-          handleChange(hour, minute, e.target.value);
+        onValueChange={(val) => {
+          setAmpm(val);
+          handleChange(hour, minute, val);
         }}
-        style={{ padding: '12px', borderRadius: '12px', border: '1px solid #D1D5DB', flex: 1.2 }}
-      >
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
+        options={[{label: 'AM', value: 'AM'}, {label: 'PM', value: 'PM'}]}
+        style={{ flex: 1.2 }}
+      />
     </View>
   );
 };
@@ -178,83 +175,30 @@ export default function CreateSchedule() {
       <SsfCard className="gap-y-4">
         <View style={{ position: 'relative', zIndex: 100 }}>
           <Text className="font-poppins text-ssf-text-muted mb-2">Select Item *</Text>
-          <View className="border border-ssf-border rounded-xl bg-ssf-surface overflow-hidden">
-            <TextInput
-              placeholder="-- Choose an Item --"
-              value={isItemDropdownOpen ? itemSearchText : (itemId ? (() => {
-                const sel = items?.find((i: any) => i.id === itemId);
-                return sel ? `[${sel.item_code}] ${sel.item_name_en}` : '';
-              })() : '')}
-              onChangeText={(text) => {
-                setItemSearchText(text);
-                if (!isItemDropdownOpen) setIsItemDropdownOpen(true);
-              }}
-              onFocus={() => {
-                setIsItemDropdownOpen(true);
-                setItemSearchText('');
-              }}
-              className="p-3 font-poppins text-ssf-text"
-            />
-          </View>
-          
-          {isItemDropdownOpen && (
-            <View className="absolute top-full left-0 right-0 mt-1 border border-ssf-border rounded-xl bg-white shadow-lg overflow-hidden" style={{ maxHeight: 250, zIndex: 999 }}>
-              <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-                {items?.filter((i: any) => {
-                  if (!itemSearchText) return true;
-                  const search = itemSearchText.toLowerCase();
-                  const name = (i.item_name_en || '').toLowerCase();
-                  const code = (i.item_code || '').toLowerCase();
-                  const cats = Array.isArray(i.category_codes) ? i.category_codes.join(' ').toLowerCase() : (i.category_codes || '').toLowerCase();
-                  return name.includes(search) || code.includes(search) || cats.includes(search);
-                }).map((i: any) => (
-                  <TouchableOpacity
-                    key={i.id}
-                    className="p-3 border-b border-gray-100 last:border-0"
-                    onPress={() => {
-                      setItemId(i.id);
-                      setIsItemDropdownOpen(false);
-                      setItemSearchText('');
-                    }}
-                  >
-                    <Text className="font-poppins text-ssf-text">
-                      [{i.item_code}] {i.item_name_en} ({Array.isArray(i.category_codes) ? i.category_codes.join(',') : i.category_codes})
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                {items?.filter((i: any) => {
-                  if (!itemSearchText) return true;
-                  const search = itemSearchText.toLowerCase();
-                  const name = (i.item_name_en || '').toLowerCase();
-                  const code = (i.item_code || '').toLowerCase();
-                  const cats = Array.isArray(i.category_codes) ? i.category_codes.join(' ').toLowerCase() : (i.category_codes || '').toLowerCase();
-                  return name.includes(search) || code.includes(search) || cats.includes(search);
-                }).length === 0 && (
-                  <View className="p-3">
-                    <Text className="font-poppins text-ssf-text-muted text-sm">No items found</Text>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
-          )}
+          <SsfSelectMenu
+            value={itemId}
+            onValueChange={setItemId}
+            placeholder="-- Choose an Item --"
+            searchable={true}
+            searchPlaceholder="Search by name, code or category..."
+            options={items ? items.map((i: any) => ({
+              label: `[${i.item_code}] ${i.item_name_en} (${Array.isArray(i.category_codes) ? i.category_codes.join(',') : i.category_codes})`,
+              value: i.id
+            })) : []}
+          />
         </View>
 
-        <View>
+        <View style={{ zIndex: 90 }}>
           <Text className="font-poppins text-ssf-text-muted mb-2">Select Venue *</Text>
-          <View className="border border-ssf-border rounded-xl bg-ssf-surface overflow-hidden">
-            <select 
-              style={{ width: '100%', padding: '12px', border: 'none', backgroundColor: 'transparent', outline: 'none', fontFamily: 'inherit', color: '#333' }}
-              value={venueId}
-              onChange={(e) => setVenueId(e.target.value)}
-            >
-              <option value="">-- Choose a Venue --</option>
-              {venues.map((v: any) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} {v.capacity ? `(Cap: ${v.capacity})` : ''}
-                </option>
-              ))}
-            </select>
-          </View>
+          <SsfSelectMenu
+            value={venueId}
+            onValueChange={setVenueId}
+            placeholder="-- Choose a Venue --"
+            options={venues.map((v: any) => ({
+              label: `${v.name} ${v.capacity ? `(Cap: ${v.capacity})` : ''}`,
+              value: v.id
+            }))}
+          />
         </View>
 
         <View style={{ flexDirection: isCompactLayout ? 'column' : 'row', gap: 16 }}>
