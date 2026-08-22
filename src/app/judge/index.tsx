@@ -270,198 +270,175 @@ export default function JudgePortalLanding() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1"
+      className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <LinearGradient
-        colors={['#030F26', '#021E1B', '#02241F']}
-        start={{ x: 0.1, y: 0.1 }}
-        end={{ x: 0.9, y: 0.9 }}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }} keyboardShouldPersistTaps="handled">
-          
-          <View style={[styles.contentShell, isMobile && styles.contentShellMobile]}>
-            <View style={[styles.landingCard, isMobile && styles.landingCardMobile]}>
-              
-              {waitingForApproval ? (
-                <View className="items-center py-10">
-                  <ActivityIndicator size="large" color="#10B981" />
-                  <Text className="text-2xl font-poppins-black text-white text-center mt-6 mb-2">
-                    Waiting for Approval
-                  </Text>
-                  <Text className="text-white/60 font-poppins text-center text-sm leading-5 mb-8">
-                    Your request has been sent to the administrator.{'\n'}Please wait while they confirm your login.
-                  </Text>
-                  {error ? (
-                    <Text className="font-poppins text-red-500 text-sm text-center mb-6">{error}</Text>
-                  ) : null}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setWaitingForApproval(false);
-                      setCurrentTokenId(null);
-                      setError('');
-                    }}
-                    className="border border-white/20 rounded-xl px-6 py-3"
-                  >
-                    <Text className="font-poppins-bold text-white text-sm">Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : isScanning ? (
-                <View className="w-full h-96 rounded-3xl overflow-hidden bg-black relative">
-                  <CameraView
-                    style={{ flex: 1 }}
-                    facing="back"
-                    onBarcodeScanned={handleBarCodeScanned}
-                    barcodeScannerSettings={{
-                      barcodeTypes: ['qr'],
-                    }}
-                  />
-                  <View className="absolute top-0 left-0 right-0 bottom-0 border-2 border-green-500/50 m-12 rounded-xl" />
-                  <TouchableOpacity
-                    onPress={() => setIsScanning(false)}
-                    className="absolute top-4 right-4 bg-black/50 p-2 rounded-full"
-                  >
-                    <X color="#FFF" size={24} />
-                  </TouchableOpacity>
-                  <Text className="absolute bottom-6 left-0 right-0 text-center font-poppins-bold text-white text-sm bg-black/50 py-2">
-                    Point camera at QR Code
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  {/* Header */}
-                  <View className="items-center mb-10">
-                  <View className="w-24 h-24 rounded-3xl bg-white/10 border border-white/20 items-center justify-center mb-6">
-                    <ShieldCheck size={48} color="#FFF" strokeWidth={1.5} />
-                  </View>
-                  <Text className="text-4xl font-poppins-black text-white text-center mb-2">
-                    Judge Portal
-                  </Text>
-                  <Text className="text-white/60 font-poppins text-center text-sm leading-5">
-                    Sahithyolsav Judging System{'\n'}Enter your one-time access code to continue
-                  </Text>
-                </View>
-
-              {/* Card content */}
-              <View className="items-center">
-                <Text className="font-poppins-bold text-white text-base mb-1">Access Code</Text>
-                <Text className="font-poppins text-white/50 text-xs mb-6 text-center">
-                  You should have received this from the event coordinator
+      <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40, backgroundColor: '#F8FAFC' }} keyboardShouldPersistTaps="handled">
+        
+        <View style={[styles.contentShell, isMobile && styles.contentShellMobile, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 24, padding: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 5 }]}>
+          <View style={[styles.landingCard, isMobile && styles.landingCardMobile, { backgroundColor: 'transparent', padding: 0 }]}>
+            
+            {waitingForApproval ? (
+              <View className="items-center py-10">
+                <ActivityIndicator size="large" color="#0F172A" />
+                <Text className="text-2xl font-poppins-bold text-slate-900 text-center mt-6 mb-2">
+                  Waiting for Approval
                 </Text>
-
-                <Animated.View style={{ transform: [{ translateX: shakeAnim }], width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 16 }}>
-                  <View className="flex-row justify-between w-full">
-                    {Array.from({ length: 6 }, (_, i) => {
-                      const isActive = activeIndex === i;
-                      const isFilled = code[i] !== undefined && code[i] !== ' ';
-                      const val = code[i] !== ' ' ? code[i] : '';
-
-                      return (
-                        <View
-                          key={i}
-                          style={{
-                            width: isMobile ? 48 : 56,
-                            height: isMobile ? 56 : 64,
-                            transform: [{ scale: isActive ? 1.05 : 1 }],
-                            shadowColor: isActive ? '#60A5FA' : '#000',
-                            shadowOffset: { width: 0, height: isActive ? 0 : 4 },
-                            shadowOpacity: isActive ? 0.8 : 0.4,
-                            shadowRadius: isActive ? 12 : 6,
-                            elevation: isActive ? 8 : 4,
-                            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : isFilled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.04)',
-                            borderWidth: 1,
-                            borderColor: isActive ? '#60A5FA' : isFilled ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
-                          }}
-                          className="rounded-2xl items-center justify-center relative overflow-hidden"
-                        >
-                          {/* Inner Glass Highlights */}
-                          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
-                          
-                          <TextInput
-                            ref={(ref) => { inputRefs.current[i] = ref; }}
-                            value={val || ''}
-                            onChangeText={(text) => handleBoxChange(text, i)}
-                            onKeyPress={(e) => handleKeyPress(e, i)}
-                            onFocus={() => setActiveIndex(i)}
-                            onSubmitEditing={() => {
-                              if (i === 5) handleSubmit();
-                              else inputRefs.current[i + 1]?.focus();
-                            }}
-                            maxLength={6}
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            className="absolute w-full h-full text-center font-poppins-black text-white"
-                            style={[{ zIndex: 10, fontSize: isMobile ? 24 : 28 }, { outlineStyle: 'none' } as any]}
-                            cursorColor="#60A5FA"
-                          />
-                        </View>
-                      );
-                    })}
-                  </View>
-                </Animated.View>
-
+                <Text className="text-slate-500 font-poppins text-center text-sm leading-5 mb-8">
+                  Your request has been sent to the administrator.{'\n'}Please wait while they confirm your login.
+                </Text>
                 {error ? (
-                  <View className="flex-row items-center gap-x-2 mb-5 px-1">
-                    <AlertCircle size={14} color="#EF4444" />
-                    <Text className="font-poppins text-red-500 text-xs flex-1">{error}</Text>
-                  </View>
-                ) : <View className="mb-5" />}
-
+                  <Text className="font-poppins text-red-500 text-sm text-center mb-6">{error}</Text>
+                ) : null}
                 <TouchableOpacity
-                  onPress={handleSubmit}
-                  disabled={isLoading || code.length < 6}
-                  style={{ width: '100%', maxWidth: 400 }}
+                  onPress={() => {
+                    setWaitingForApproval(false);
+                    setCurrentTokenId(null);
+                    setError('');
+                  }}
+                  className="border border-slate-200 rounded-lg px-6 py-3 bg-white"
                 >
-                  <LinearGradient
-                    colors={code.length === 6 && !isLoading ? ['#10B981', '#059669'] : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="rounded-2xl py-4 flex-row items-center justify-center gap-x-2 border-t border-white/20"
-                style={{
-                  shadowColor: '#06B6D4',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: code.length === 6 && !isLoading ? 0.3 : 0,
-                  shadowRadius: 10,
-                  elevation: 8,
-                }}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <>
-                    <Text className={`font-poppins-black text-base ${
-                      code.length === 6 ? 'text-white' : 'text-white/40'
-                    }`}>Enter Portal</Text>
-                    <ArrowRight size={18} color={code.length === 6 ? '#FFF' : 'rgba(255,255,255,0.4)'} />
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={startScanning}
-              style={{ width: '100%', maxWidth: 400, marginTop: 12 }}
-            >
-              <View className="rounded-2xl py-4 flex-row items-center justify-center gap-x-2 border border-white/20 bg-white/5">
-                <Camera size={18} color="#FFF" />
-                <Text className="font-poppins-bold text-base text-white">Scan QR Code</Text>
+                  <Text className="font-poppins-medium text-slate-700 text-sm">Cancel</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            ) : isScanning ? (
+              <View className="w-full h-96 rounded-2xl overflow-hidden bg-slate-900 relative">
+                <CameraView
+                  style={{ flex: 1 }}
+                  facing="back"
+                  onBarcodeScanned={handleBarCodeScanned}
+                  barcodeScannerSettings={{
+                    barcodeTypes: ['qr'],
+                  }}
+                />
+                <View className="absolute top-0 left-0 right-0 bottom-0 border-2 border-slate-400/50 m-12 rounded-xl" />
+                <TouchableOpacity
+                  onPress={() => setIsScanning(false)}
+                  className="absolute top-4 right-4 bg-black/50 p-2 rounded-full"
+                >
+                  <X color="#FFF" size={24} />
+                </TouchableOpacity>
+                <Text className="absolute bottom-6 left-0 right-0 text-center font-poppins-medium text-white text-sm bg-black/50 py-2">
+                  Point camera at QR Code
+                </Text>
+              </View>
+            ) : (
+              <>
+                {/* Header */}
+                <View className="items-center mb-8">
+                  <View className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 items-center justify-center mb-5">
+                    <ShieldCheck size={32} color="#0F172A" strokeWidth={1.5} />
+                  </View>
+                  <Text className="text-3xl font-poppins-bold text-slate-900 text-center mb-2 tracking-tight">
+                    Judging System
+                  </Text>
+                  <Text className="text-slate-500 font-poppins text-center text-sm leading-5">
+                    Enter your one-time access code to continue
+                  </Text>
+                </View>
 
-            <Text className="font-poppins text-white/40 text-xs text-center mt-6 leading-4">
-              This code is for single use only.{'\n'}Contact the admin if you need a new code.
-            </Text>
+                {/* Card content */}
+                <View className="items-center w-full">
+                  <Text className="font-poppins-medium text-slate-700 text-sm mb-1 self-start">Access Code</Text>
+                  <Text className="font-poppins text-slate-400 text-xs mb-4 self-start">
+                    You should have received this from the event coordinator
+                  </Text>
+
+                  <Animated.View style={{ transform: [{ translateX: shakeAnim }], width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 16 }}>
+                    <View className="flex-row justify-between w-full gap-x-2">
+                      {Array.from({ length: 6 }, (_, i) => {
+                        const isActive = activeIndex === i;
+                        const isFilled = code[i] !== undefined && code[i] !== ' ';
+                        const val = code[i] !== ' ' ? code[i] : '';
+
+                        return (
+                          <View
+                            key={i}
+                            style={{
+                              flex: 1,
+                              aspectRatio: 1,
+                              maxWidth: isMobile ? 48 : 56,
+                              backgroundColor: isActive ? '#FFFFFF' : isFilled ? '#F8FAFC' : '#F1F5F9',
+                              borderWidth: 1.5,
+                              borderColor: isActive ? '#0F172A' : isFilled ? '#CBD5E1' : '#E2E8F0',
+                            }}
+                            className="rounded-xl items-center justify-center relative overflow-hidden"
+                          >
+                            <TextInput
+                              ref={(ref) => { inputRefs.current[i] = ref; }}
+                              value={val || ''}
+                              onChangeText={(text) => handleBoxChange(text, i)}
+                              onKeyPress={(e) => handleKeyPress(e, i)}
+                              onFocus={() => setActiveIndex(i)}
+                              onSubmitEditing={() => {
+                                if (i === 5) handleSubmit();
+                                else inputRefs.current[i + 1]?.focus();
+                              }}
+                              maxLength={6}
+                              autoCapitalize="characters"
+                              autoCorrect={false}
+                              className="absolute w-full h-full text-center font-poppins-bold text-slate-900"
+                              style={[{ zIndex: 10, fontSize: isMobile ? 24 : 28 }, { outlineStyle: 'none' } as any]}
+                              cursorColor="#0F172A"
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </Animated.View>
+
+                  {error ? (
+                    <View className="flex-row items-center gap-x-2 mb-4 px-1 w-full bg-red-50 p-3 rounded-lg border border-red-100">
+                      <AlertCircle size={14} color="#EF4444" />
+                      <Text className="font-poppins text-red-600 text-xs flex-1">{error}</Text>
+                    </View>
+                  ) : <View className="mb-4" />}
+
+                  <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={isLoading || code.length < 6}
+                    style={{ width: '100%', maxWidth: 400 }}
+                  >
+                    <View
+                      className={`rounded-xl py-3.5 flex-row items-center justify-center gap-x-2 ${
+                        code.length === 6 && !isLoading ? 'bg-slate-900' : 'bg-slate-100'
+                      }`}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color={code.length === 6 ? "#FFF" : "#94A3B8"} />
+                      ) : (
+                        <>
+                          <Text className={`font-poppins-medium text-sm ${
+                            code.length === 6 ? 'text-white' : 'text-slate-400'
+                          }`}>Enter Portal</Text>
+                          <ArrowRight size={16} color={code.length === 6 ? '#FFF' : '#94A3B8'} />
+                        </>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={startScanning}
+                    style={{ width: '100%', maxWidth: 400, marginTop: 12 }}
+                  >
+                    <View className="rounded-xl py-3.5 flex-row items-center justify-center gap-x-2 border border-slate-200 bg-white">
+                      <Camera size={16} color="#0F172A" />
+                      <Text className="font-poppins-medium text-sm text-slate-700">Scan QR Code</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
-          </>
-        )}
         </View>
 
-        <Text className="text-white/30 font-poppins text-center text-xs mt-8">
-          Sahithyolsav · Powered by SSF
-        </Text>
+        <View className="mt-8 items-center opacity-60">
+          <Text className="text-slate-400 font-poppins text-xs tracking-wider uppercase mb-1">
+            Powered by SSF
+          </Text>
         </View>
-        </ScrollView>
-      </LinearGradient>
+
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
