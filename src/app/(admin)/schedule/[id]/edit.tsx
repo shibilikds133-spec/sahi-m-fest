@@ -14,23 +14,31 @@ const TimeSelect = ({ value, onChange }: { value: ScheduleTimeParts; onChange: (
   const update = (patch: Partial<ScheduleTimeParts>) => onChange({ ...value, ...patch });
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
-      <select value={value.hour} onChange={(event) => update({ hour: event.target.value })} style={dateTimeInputStyle}>
-        {Array.from({ length: 12 }, (_, index) => {
+      <SsfSelectMenu
+        value={value.hour}
+        onValueChange={(val) => update({ hour: val })}
+        options={Array.from({ length: 12 }, (_, index) => {
           const hour = String(index + 1).padStart(2, '0');
-          return <option key={hour} value={hour}>{hour}</option>;
+          return { label: hour, value: hour };
         })}
-      </select>
-      <Text>:</Text>
-      <select value={value.minute} onChange={(event) => update({ minute: event.target.value })} style={dateTimeInputStyle}>
-        {Array.from({ length: 60 }, (_, index) => {
+        style={{ flex: 1 }}
+      />
+      <Text className="font-poppins-bold text-ui-text-muted">:</Text>
+      <SsfSelectMenu
+        value={value.minute}
+        onValueChange={(val) => update({ minute: val })}
+        options={Array.from({ length: 60 }, (_, index) => {
           const minute = String(index).padStart(2, '0');
-          return <option key={minute} value={minute}>{minute}</option>;
+          return { label: minute, value: minute };
         })}
-      </select>
-      <select value={value.period} onChange={(event) => update({ period: event.target.value as 'AM' | 'PM' })} style={dateTimeInputStyle}>
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
+        style={{ flex: 1 }}
+      />
+      <SsfSelectMenu
+        value={value.period}
+        onValueChange={(val) => update({ period: val as 'AM' | 'PM' })}
+        options={[{ label: 'AM', value: 'AM' }, { label: 'PM', value: 'PM' }]}
+        style={{ flex: 1.2 }}
+      />
     </View>
   );
 };

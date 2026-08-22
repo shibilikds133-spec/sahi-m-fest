@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -134,36 +135,29 @@ function TimePicker({
   }
 
   return (
-    <View className="flex-row items-center gap-x-1">
-      <select
-        aria-label={`${ariaLabel} hour`}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <SsfSelectMenu
         value={value.hour}
-        onChange={(event) => update({ hour: event.target.value })}
-        style={{ ...timeSelectStyle, width: 72 }}
-      >
-        <option value="">Hour</option>
-        {hours.map((hour) => <option key={hour} value={hour}>{Number(hour)}</option>)}
-      </select>
+        onValueChange={(val) => update({ hour: val })}
+        placeholder="Hour"
+        options={hours.map((hour) => ({ label: String(Number(hour)), value: hour }))}
+        style={{ width: 85 }}
+      />
       <Text className="font-poppins-bold text-xs text-ui-text-muted">:</Text>
-      <select
-        aria-label={`${ariaLabel} minute`}
+      <SsfSelectMenu
         value={value.minute}
-        onChange={(event) => update({ minute: event.target.value })}
-        style={{ ...timeSelectStyle, width: 72 }}
-      >
-        <option value="">Min</option>
-        {minutes.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
-      </select>
-      <select
-        aria-label={`${ariaLabel} AM or PM`}
+        onValueChange={(val) => update({ minute: val })}
+        placeholder="Min"
+        options={minutes.map((minute) => ({ label: minute, value: minute }))}
+        style={{ width: 85 }}
+      />
+      <SsfSelectMenu
         value={value.period}
-        onChange={(event) => update({ period: event.target.value as TimeParts['period'] })}
-        style={{ ...timeSelectStyle, width: 78 }}
-      >
-        <option value="">AM/PM</option>
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
+        onValueChange={(val) => update({ period: val as TimeParts['period'] })}
+        placeholder="AM/PM"
+        options={[{ label: 'AM', value: 'AM' }, { label: 'PM', value: 'PM' }]}
+        style={{ width: 95 }}
+      />
     </View>
   );
 }
