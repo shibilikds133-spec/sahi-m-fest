@@ -22,6 +22,7 @@ const TimeSelect = ({ value, onChange }: { value: ScheduleTimeParts; onChange: (
           return { label: hour, value: hour };
         })}
         style={{ flex: 1 }}
+        align="center"
       />
       <Text className="font-poppins-bold text-ui-text-muted">:</Text>
       <SsfSelectMenu
@@ -32,12 +33,14 @@ const TimeSelect = ({ value, onChange }: { value: ScheduleTimeParts; onChange: (
           return { label: minute, value: minute };
         })}
         style={{ flex: 1 }}
+        align="center"
       />
       <SsfSelectMenu
         value={value.period}
         onValueChange={(val) => update({ period: val as 'AM' | 'PM' })}
         options={[{ label: 'AM', value: 'AM' }, { label: 'PM', value: 'PM' }]}
         style={{ flex: 1.2 }}
+        align="center"
       />
     </View>
   );

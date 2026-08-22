@@ -43,6 +43,7 @@ export interface SsfSelectMenuProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   style?: ViewStyle;
+  align?: 'left' | 'center' | 'right';
 }
 
 export function SsfSelectMenu({
@@ -59,6 +60,7 @@ export function SsfSelectMenu({
   searchable,
   searchPlaceholder = 'Search options...',
   style,
+  align = 'left',
 }: SsfSelectMenuProps) {
   const anchorRef = useRef<View>(null);
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
@@ -122,7 +124,7 @@ export function SsfSelectMenu({
       >
         <Text
           numberOfLines={1}
-          style={[styles.triggerText, active && styles.triggerTextActive]}
+          style={[styles.triggerText, active && styles.triggerTextActive, align !== 'left' && { textAlign: align }]}
         >
           {selectedOption?.label || placeholder}
         </Text>
@@ -191,6 +193,7 @@ export function SsfSelectMenu({
                             styles.itemText,
                             selected && styles.itemTextSelected,
                             option.disabled && styles.itemTextDisabled,
+                            align !== 'left' && { textAlign: align },
                           ]}
                         >
                           {option.label}

@@ -45,6 +45,7 @@ const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onC
           return { label: v, value: v };
         })}
         style={{ flex: 1 }}
+        align="center"
       />
       <Text style={{ marginHorizontal: 2, fontWeight: 'bold', color: '#333' }}>:</Text>
       <SsfSelectMenu 
@@ -58,6 +59,7 @@ const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onC
           return { label: m, value: m };
         })}
         style={{ flex: 1 }}
+        align="center"
       />
       <SsfSelectMenu 
         value={ampm} 
@@ -67,6 +69,7 @@ const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onC
         }}
         options={[{label: 'AM', value: 'AM'}, {label: 'PM', value: 'PM'}]}
         style={{ flex: 1.2 }}
+        align="center"
       />
     </View>
   );
