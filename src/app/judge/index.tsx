@@ -459,7 +459,7 @@ export default function JudgePortalLanding() {
               </View>
               
               <View className="mt-16 items-center">
-                <Text className="text-[#94A3B8] font-poppins-medium text-[10px] tracking-widest uppercase">Powered by SSF</Text>
+                <Text className="text-[#94A3B8] font-poppins-medium text-[10px] tracking-widest uppercase">Powered by ALVIORA</Text>
               </View>
             </View>
 
@@ -494,7 +494,7 @@ export default function JudgePortalLanding() {
               </View>
 
               <View className="mt-12 mb-6 items-center">
-                <Text className="text-[#94A3B8] font-poppins-medium text-[10px] tracking-widest uppercase">Powered by SSF</Text>
+                <Text className="text-[#94A3B8] font-poppins-medium text-[10px] tracking-widest uppercase">Powered by ALVIORA</Text>
               </View>
             </View>
 
