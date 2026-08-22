@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Image,
+  View, Text, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, Modal, Clipboard, Share,
   TextInput, useWindowDimensions, Platform
 } from 'react-native';
@@ -1385,88 +1385,52 @@ export default function JudgesPage() {
           }
         `}} />
         <View id="print-evaluation-sheet" style={{ display: 'none' }}>
-          <View style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', position: 'relative', overflow: 'hidden' }}>
-            
-            {/* Watermark Logo */}
-            <Image 
-              source={{ uri: '/logo/ChatGPT Image Aug 22, 2026, 12_45_32 PM.png' }}
-              style={{ position: 'absolute', top: '50%', left: '50%', width: 500, height: 500, transform: [{ translateX: -250 }, { translateY: -250 }], opacity: 0.05, zIndex: 0 }}
-              resizeMode="contain"
-            />
-
-            {/* Header Content Wrapper */}
-            <View style={{ padding: '10mm', paddingTop: '15mm', paddingBottom: 0, zIndex: 10 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                
-                {/* Left Side */}
-                <View style={{ flex: 1, paddingRight: 24, borderRightWidth: 1, borderRightColor: '#E2E8F0' }}>
-                  <Text style={{ fontSize: 22, fontFamily: 'Poppins_900Black', color: '#0F172A', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>
-                    ALVIORA 2K26
-                  </Text>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
-                    OFFICIAL EVALUATION SHEET
-                  </Text>
-                  
-                  <Text style={{ fontSize: 10, fontFamily: 'Poppins_400Regular', color: '#0F172A', marginBottom: 20, lineHeight: 16, paddingRight: 40 }}>
-                    Respected <Text style={{ fontFamily: 'Poppins_700Bold', color: '#0F172A' }}>{selectedJudgeForToken?.name || 'Judge'}</Text>, you are cordially invited to evaluate the upcoming competition. Please scan the QR code to login digitally to the Judge Portal.
-                  </Text>
-
-                  {/* Horizontal Divider */}
-                  <View style={{ height: 1, backgroundColor: '#E2E8F0', width: '100%', marginBottom: 16 }} />
-
-                  {/* Info Row */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingRight: 10 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Received</Text>
-                      <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: '#0F172A', letterSpacing: 2 }}>_ _ _ _ _</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Judge</Text>
-                      <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: '#0F172A', letterSpacing: 2 }}>_ _ _ _ _</Text>
-                    </View>
-                    {(() => {
-                      const selectedS = modalFilteredSchedules?.find((s: any) => s.id === selectedScheduleId);
-                      return (
-                        <>
-                          <View style={{ flex: 1.5, paddingRight: 10 }}>
-                            <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Event</Text>
-                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_900Black', color: '#0F172A' }} numberOfLines={1}>
-                              {selectedS?.items?.item_name_ml || selectedS?.items?.item_name_en}
-                            </Text>
-                          </View>
-                          <View style={{ flex: 1.5 }}>
-                            <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Category</Text>
-                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_900Black', color: '#0F172A' }} numberOfLines={1}>
-                              {selectedS?.items?.category || (selectedS?.items?.category_codes ? (selectedS.items.category_codes as string[]).join(', ') : '-')}
-                            </Text>
-                          </View>
-                        </>
-                      );
-                    })()}
-                  </View>
-                </View>
-
-                {/* Right Side */}
-                <View style={{ width: 140, paddingLeft: 24, alignItems: 'center', justifyContent: 'flex-start' }}>
-                  <View style={{ marginBottom: 16 }}>
-                    <QRCode
-                      value={typeof window !== 'undefined' ? `${window.location.origin}/judge?code=${generatedToken}` : `https://sahi-app.com/judge?code=${generatedToken}`}
-                      size={90}
-                      color="#0F172A"
-                      backgroundColor="#FFFFFF"
-                    />
-                  </View>
-                  <View style={{ width: '100%', alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>CODE</Text>
-                    <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 20, color: '#0F172A', letterSpacing: 2 }}>
-                      {generatedToken}
+          <View style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', padding: '10mm', position: 'relative' }}>
+          {/* Header (Increased to ~7cm = 265px) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: '#000', paddingBottom: 24, marginBottom: 16, maxHeight: 265 }}>
+            {/* Left Side: Inviting Message & Event Details */}
+            <View style={{ flex: 1, paddingRight: 16, justifyContent: 'flex-start' }}>
+              <Text style={{ fontSize: 26, fontFamily: 'Poppins_900Black', color: '#000', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 2 }}>
+                ALVIORA 2K26
+              </Text>
+              <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#333', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                OFFICIAL EVALUATION SHEET
+              </Text>
+              
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#000', marginBottom: 16, lineHeight: 20, paddingRight: 20 }}>
+                Respected <Text style={{ fontFamily: 'Poppins_700Bold', color: '#000' }}>{selectedJudgeForToken?.name || 'Judge'}</Text>, we cordially invite you to evaluate the upcoming competition. Please scan the QR code to login digitally to the Judge Portal.
+              </Text>
+              
+              {(() => {
+                const selectedS = modalFilteredSchedules?.find((s: any) => s.id === selectedScheduleId);
+                return (
+                  <View style={{ borderLeftWidth: 4, borderLeftColor: '#000080', paddingLeft: 12, marginTop: 4 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#555', textTransform: 'uppercase', marginBottom: 2 }}>Event / Item</Text>
+                    <Text style={{ fontSize: 24, fontFamily: 'Poppins_900Black', color: '#000' }}>
+                      {selectedS?.items?.item_name_ml || selectedS?.items?.item_name_en}
+                    </Text>
+                    <Text style={{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#333', marginTop: 2 }}>
+                      Category: {selectedS?.items?.category || (selectedS?.items?.category_codes ? (selectedS.items.category_codes as string[]).join(', ') : '-')}
                     </Text>
                   </View>
-                </View>
-                
-              </View>
+                );
+              })()}
             </View>
-            
+
+            {/* Right Side: QR Code & Access Code (No border, Dark Blue QR) */}
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+              <QRCode
+                value={typeof window !== 'undefined' ? `${window.location.origin}/judge?code=${generatedToken}` : `https://sahi-app.com/judge?code=${generatedToken}`}
+                size={140}
+                color="#000080"
+                backgroundColor="#FFFFFF"
+              />
+              <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 24, color: '#000080', letterSpacing: 4, marginTop: 12 }}>
+                {generatedToken}
+              </Text>
+            </View>
+          </View>
+          {/* Rest of the page is intentionally left blank for manual marking */}
           </View>
         </View>
       </>
