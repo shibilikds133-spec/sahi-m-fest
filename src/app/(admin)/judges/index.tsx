@@ -58,6 +58,7 @@ export default function JudgesPage() {
   const [activeTab, setActiveTab] = useState<'judges' | 'assignments'>('judges');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [printRowCount, setPrintRowCount] = useState(18);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [isPanelEditModalOpen, setIsPanelEditModalOpen] = useState(false);
   const [selectedScheduleForPanel, setSelectedScheduleForPanel] = useState<any>(null);
@@ -73,6 +74,24 @@ export default function JudgesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [eventSearchQuery, setEventSearchQuery] = useState('');
   const [panelErrorMessage, setPanelErrorMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (selectedScheduleId) {
+      const schedule = (schedules as any[])?.find((s) => s.id === selectedScheduleId);
+      if (schedule && schedule.item_id) {
+        supabase
+          .from('registrations')
+          .select('id', { count: 'exact', head: true })
+          .eq('item_id', schedule.item_id)
+          .neq('status', 'rejected')
+          .then(({ count }) => {
+            setPrintRowCount(count && count > 0 ? count : 18);
+          });
+      } else {
+        setPrintRowCount(18);
+      }
+    }
+  }, [selectedScheduleId, schedules]);
 
   React.useEffect(() => {
     if (!isGenerating) return;
@@ -1430,7 +1449,37 @@ export default function JudgesPage() {
               </Text>
             </View>
           </View>
-          {/* Rest of the page is intentionally left blank for manual marking */}
+
+          {/* Grid for manual marking */}
+          <View style={{ width: '100%', borderWidth: 1, borderColor: '#000', marginTop: 10 }}>
+            {/* Table Header */}
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000', backgroundColor: '#f0f0f0' }}>
+              <View style={{ width: 60, borderRightWidth: 1, borderColor: '#000', padding: 8, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000' }}>Sl No</Text>
+              </View>
+              <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000', padding: 8, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000' }}>Code Letter</Text>
+              </View>
+              <View style={{ flex: 2, padding: 8, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000' }}>Marks</Text>
+              </View>
+            </View>
+            
+            {/* Table Rows */}
+            {Array.from({ length: printRowCount }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === printRowCount - 1 ? 0 : 1, borderColor: '#000', height: 35 }}>
+                <View style={{ width: 60, borderRightWidth: 1, borderColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#000' }}>{i + 1}</Text>
+                </View>
+                <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000' }}>
+                    {String.fromCharCode(65 + i)}
+                  </Text>
+                </View>
+                <View style={{ flex: 2 }} />
+              </View>
+            ))}
+          </View>
           </View>
         </View>
       </>
