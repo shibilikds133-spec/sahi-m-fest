@@ -38,6 +38,7 @@ import {
 import { useAuthStore } from '@/core/store/authStore';
 import { useFestival } from '@/core/hooks/useFestival';
 import { ui } from '@/constants/designSystem';
+import { JudgeApprovalToast } from '../ui/JudgeApprovalToast';
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -502,6 +503,7 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <View style={styles.shell}>
+      <JudgeApprovalToast />
       {isDesktop && (
         <DesktopSidebar
           pathname={pathname}
