@@ -108,8 +108,8 @@ export function SahithyolsavLandingPage() {
       {/* TopNavBar */}
       <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
-          <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href="#">
-            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
+          <a className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href="#">
+            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
           <div className="hidden md:flex gap-8">
             <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href="#">About</a>
@@ -159,8 +159,8 @@ export function SahithyolsavLandingPage() {
                 SAHITHYOLSAV EDITION
               </div>
               
-              <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-black">
-                <span style={{fontFamily: "Barabara, sans-serif"}} className="uppercase tracking-wide">ALVIORA</span>: Between <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People
+              <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-bold">
+                <span style={{fontFamily: "Barabara, sans-serif"}} className="uppercase tracking-wide">ALVIORA</span>: Between <span className="whitespace-nowrap"><span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People</span>
               </h1>
               
               <p className="font-body-lg text-body-lg text-white/80 mb-10 max-w-2xl leading-relaxed">
@@ -257,7 +257,7 @@ export function SahithyolsavLandingPage() {
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
                 <div key={idx} className={`grid grid-cols-12 gap-4 p-4 md:p-6 border-b border-alviora-border items-center transition-colors ${idx === 0 ? 'bg-white/5 hover:bg-white/10' : 'hover:bg-white/5'}`}>
-                  <div className={`col-span-2 md:col-span-1 text-center font-display-xl-mobile text-display-xl-mobile font-black ${idx === 0 ? 'text-alviora-primary' : 'text-alviora-accent-dim'}`}>
+                  <div className={`col-span-2 md:col-span-1 text-center font-display-xl-mobile text-display-xl-mobile font-bold ${idx === 0 ? 'text-alviora-primary' : 'text-alviora-accent-dim'}`}>
                     {unit.rank}
                   </div>
                   <div className="col-span-6 md:col-span-7">
@@ -324,7 +324,7 @@ export function SahithyolsavLandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-section-gap max-w-container-max mx-auto">
           <div>
             <a className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-alviora-primary mb-4 inline-block" href="#">
-              <span className="text-3xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
+              <span className="text-3xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
             </a>
             <p className="font-body-md text-body-md text-alviora-body mt-4">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
           </div>
