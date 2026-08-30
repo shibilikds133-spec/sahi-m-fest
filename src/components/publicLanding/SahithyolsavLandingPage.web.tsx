@@ -183,6 +183,60 @@ export function SahithyolsavLandingPage() {
           </div>
         </section>
 
+        
+        {/* Stats Section */}
+        <section className="bg-transparent border-t border-alviora-border/20 py-12 md:py-16 relative z-20">
+          <div className="max-w-container-max mx-auto px-gutter">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-4 fade-in-up visible">
+              
+              {/* Stat 1 */}
+              <div className="flex flex-col items-center justify-center gap-5 group">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
+                  <span className="material-symbols-outlined text-[#f5d0a9] text-3xl">calendar_today</span>
+                </div>
+                <div className="text-center">
+                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">40</div>
+                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">DAYS</div>
+                </div>
+              </div>
+
+              {/* Stat 2 */}
+              <div className="flex flex-col items-center justify-center gap-5 group">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
+                  <span className="material-symbols-outlined text-[#f5a9a9] text-3xl">account_balance</span>
+                </div>
+                <div className="text-center">
+                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">09</div>
+                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">CAMPUSES</div>
+                </div>
+              </div>
+
+              {/* Stat 3 */}
+              <div className="flex flex-col items-center justify-center gap-5 group">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
+                  <span className="material-symbols-outlined text-[#a9f5d0] text-3xl">local_activity</span>
+                </div>
+                <div className="text-center">
+                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">300</div>
+                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">EVENTS</div>
+                </div>
+              </div>
+
+              {/* Stat 4 */}
+              <div className="flex flex-col items-center justify-center gap-5 group">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
+                  <span className="material-symbols-outlined text-[#a9c5f5] text-3xl">emoji_events</span>
+                </div>
+                <div className="text-center">
+                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">600</div>
+                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">COMPETITIVES</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
         {/* Live Schedule */}
         <section id="live-schedule" className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible">
           <div className="flex justify-between items-end mb-12">
