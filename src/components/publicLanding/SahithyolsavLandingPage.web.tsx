@@ -62,6 +62,46 @@ export function SahithyolsavLandingPage() {
       }));
   }, [organisationQuery.data]);
 
+  
+  const stats = React.useMemo(() => {
+    let days = 0;
+    let campuses = 0;
+    let events = 0;
+    let competitors = 0;
+
+    if (scheduleQuery.data && scheduleQuery.data.length > 0) {
+      events = scheduleQuery.data.length;
+      const times = scheduleQuery.data.map(s => new Date(s.start_time).getTime()).filter(t => !isNaN(t));
+      if (times.length > 0) {
+        const minTime = Math.min(...times);
+        const maxTime = Math.max(...times);
+        days = Math.max(1, Math.ceil((maxTime - minTime) / (1000 * 60 * 60 * 24)));
+      }
+    }
+
+    if (leaderboardQuery.data) {
+      campuses = leaderboardQuery.data.length;
+    }
+
+    if (publishedResultsQuery.data) {
+      const uniqueParticipants = new Set();
+      publishedResultsQuery.data.forEach(result => {
+        if (result.participants) {
+          result.participants.forEach(p => uniqueParticipants.add(p.chest_no || p.name));
+        }
+      });
+      competitors = uniqueParticipants.size;
+    }
+
+    // Default fallback values if backend data is sparse
+    return { 
+      days: days > 0 ? days : 40, 
+      campuses: campuses > 0 ? campuses : 9, 
+      events: events > 0 ? events : 300, 
+      competitors: competitors > 0 ? competitors : 600 
+    };
+  }, [scheduleQuery.data, leaderboardQuery.data, publishedResultsQuery.data]);
+
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
       <Head>
@@ -185,58 +225,58 @@ export function SahithyolsavLandingPage() {
 
         
         {/* Stats Section */}
-        <section className="bg-transparent border-t border-alviora-border/20 py-12 md:py-16 relative z-20">
-          <div className="max-w-container-max mx-auto px-gutter">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-4 fade-in-up visible">
+        <section className="bg-transparent border-t border-alviora-border/20 py-12 md:py-24 relative z-20 overflow-hidden">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+            {/* Using flex row to keep it strictly horizontal, and larger sizing */}
+            <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-12 fade-in-up visible">
               
               {/* Stat 1 */}
-              <div className="flex flex-col items-center justify-center gap-5 group">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
-                  <span className="material-symbols-outlined text-[#f5d0a9] text-3xl">calendar_today</span>
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
+                  <span className="material-symbols-outlined text-[#f5d0a9] text-3xl md:text-5xl">calendar_today</span>
                 </div>
                 <div className="text-center">
-                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">40</div>
-                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">DAYS</div>
+                  <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.days < 10 ? '0'+stats.days : stats.days}</div>
+                  <div className="text-[10px] md:text-sm tracking-[0.2em] md:tracking-[0.25em] uppercase font-bold text-white/70">DAYS</div>
                 </div>
               </div>
 
               {/* Stat 2 */}
-              <div className="flex flex-col items-center justify-center gap-5 group">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
-                  <span className="material-symbols-outlined text-[#f5a9a9] text-3xl">account_balance</span>
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
+                  <span className="material-symbols-outlined text-[#f5a9a9] text-3xl md:text-5xl">account_balance</span>
                 </div>
                 <div className="text-center">
-                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">09</div>
-                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">CAMPUSES</div>
+                  <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.campuses < 10 ? '0'+stats.campuses : stats.campuses}</div>
+                  <div className="text-[10px] md:text-sm tracking-[0.2em] md:tracking-[0.25em] uppercase font-bold text-white/70">CAMPUSES</div>
                 </div>
               </div>
 
               {/* Stat 3 */}
-              <div className="flex flex-col items-center justify-center gap-5 group">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
-                  <span className="material-symbols-outlined text-[#a9f5d0] text-3xl">local_activity</span>
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
+                  <span className="material-symbols-outlined text-[#a9f5d0] text-3xl md:text-5xl">local_activity</span>
                 </div>
                 <div className="text-center">
-                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">300</div>
-                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">EVENTS</div>
+                  <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.events < 10 ? '0'+stats.events : stats.events}</div>
+                  <div className="text-[10px] md:text-sm tracking-[0.2em] md:tracking-[0.25em] uppercase font-bold text-white/70">EVENTS</div>
                 </div>
               </div>
 
               {/* Stat 4 */}
-              <div className="flex flex-col items-center justify-center gap-5 group">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform shadow-sm">
-                  <span className="material-symbols-outlined text-[#a9c5f5] text-3xl">emoji_events</span>
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
+                  <span className="material-symbols-outlined text-[#a9c5f5] text-3xl md:text-5xl">emoji_events</span>
                 </div>
                 <div className="text-center">
-                  <div className="font-['VT323',_monospace] text-5xl md:text-6xl text-white mb-2 leading-none">600</div>
-                  <div className="text-[11px] tracking-[0.25em] uppercase font-bold text-white/60">COMPETITIVES</div>
+                  <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.competitors < 10 ? '0'+stats.competitors : stats.competitors}</div>
+                  <div className="text-[10px] md:text-sm tracking-[0.2em] md:tracking-[0.25em] uppercase font-bold text-white/70">COMPETITIVES</div>
                 </div>
               </div>
 
             </div>
           </div>
         </section>
-
         {/* Live Schedule */}
         <section id="live-schedule" className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible">
           <div className="flex justify-between items-end mb-12">
