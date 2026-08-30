@@ -84,7 +84,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
   // Ticker Logic
   const tickerItems = useMemo(() => {
-    if (!publishedResultsQuery.data || publishedResultsQuery.data.length === 0) return ["Welcome to Alviora - Sahithyolsav"];
+    if (!publishedResultsQuery.data || publishedResultsQuery.data.length === 0) return ["Welcome to Alviora - ADSA Art Fiesta 2.0"];
     return publishedResultsQuery.data.slice(0, 10).map((r: any) => {
       const topWinner = r.participants?.find((p: any) => p.position === 1);
       return `RESULT PUBLISHED: ${r.item_name} ${r.participant_category_code ? `(${r.participant_category_code})` : ''} - 1st Place: ${topWinner?.name || 'Announced'}`;
@@ -158,7 +158,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
       <Head>
-        <title>{settingsQuery.data?.public_festival_name || 'Sahithyolsav Festival'}</title>
+        <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com" rel="preconnect"/>
         <link crossOrigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -249,7 +249,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <div className="relative z-20 w-full p-8 md:p-16 lg:p-24 flex flex-col items-start text-left max-w-4xl">
               <div className="inline-flex items-center gap-2 bg-[#ffeedb]/10 text-[#f5d0a9] px-4 py-2 rounded-full mb-8 font-label-sm text-label-sm uppercase tracking-widest border border-[#f5d0a9]/20 shadow-sm backdrop-blur-sm">
                 <span className="w-2 h-2 rounded-full bg-[#f5d0a9]"></span>
-                SAHITHYOLSAV EDITION
+                ADSA ART FIESTA 2.0
               </div>
               
               <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-bold">
