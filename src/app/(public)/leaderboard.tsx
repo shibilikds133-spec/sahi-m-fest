@@ -1284,7 +1284,7 @@ class CustomRendererErrorBoundary extends Component<{ children: React.ReactNode,
 export function PublicLeaderboardExperience({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
+  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
 
   const TARGET_TENANT_ID = 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
   const CUSTOM_RENDERER_ENABLED = process.env.EXPO_PUBLIC_CUSTOM_RENDERER_ENABLED !== 'false';

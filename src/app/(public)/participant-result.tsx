@@ -11,7 +11,7 @@ export default function ParticipantResultPage() {
   const router = useRouter();
   const { tenant_id: queryTenantId, query: searchQueryParam } = useLocalSearchParams<{ tenant_id?: string, query?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
+  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
   const query = Array.isArray(searchQueryParam) ? searchQueryParam[0] : (searchQueryParam || '');
 
   const settingsQuery = useGetPublicLeaderboardSettings(tenantId);

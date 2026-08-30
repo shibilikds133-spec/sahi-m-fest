@@ -11,7 +11,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   const router = useRouter();
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
-  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
+  const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
 
   const settingsQuery = useGetPublicLeaderboardSettings(tenantId);
   const festivalId = settingsQuery.data?.festival_id;
