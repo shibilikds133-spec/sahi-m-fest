@@ -183,24 +183,6 @@ export function SahithyolsavLandingPage() {
           </div>
         </section>
 
-        {/* Quick Search */}
-        <section className="px-gutter py-12 -mt-16 relative z-20 max-w-3xl mx-auto fade-in-up visible">
-          <form onSubmit={handleSearch} className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-lg border border-alviora-border">
-            <h2 className="font-title-md text-title-md text-alviora-heading mb-4 text-center">Smart Participant Finder</h2>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-alviora-body">search</span>
-              <input 
-                value={searchQuery}
-                onChange={(e: any) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-lg bg-black/20 border border-alviora-border focus:ring-2 focus:ring-alviora-primary focus:border-alviora-primary text-alviora-heading font-body-md text-body-md placeholder-alviora-body/60 outline-none" 
-                placeholder="Enter Chest Number or Name..." 
-                type="text"
-              />
-            </div>
-            <p className="text-center font-label-sm text-label-sm text-alviora-body mt-3 uppercase tracking-wider">Find Live Status, Stage details, and Results instantly</p>
-          </form>
-        </section>
-
         {/* Live Schedule */}
         <section id="live-schedule" className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible">
           <div className="flex justify-between items-end mb-12">
