@@ -39,13 +39,15 @@ export default function ParticipantResultPage() {
   }, [publishedResultsQuery.data, query]);
 
   return (
-    <div style={{ flex: 1, width: "100%", minHeight: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-surface text-alviora-body font-body-md antialiased">
-      <Head>
+    <div style={{ flex: 1, width: "100%", minHeight: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
+      <Head><style>{`
+.bg-pattern { background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px; }
+`}</style>
         <title>Search Results - Sahithyolsav</title>
       </Head>
       
       {/* TopNavBar */}
-      <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-alviora-border sticky top-0 z-50 shadow-sm w-full">
+      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border sticky top-0 z-50 shadow-sm w-full">
         <div className="flex items-center px-gutter py-4 max-w-container-max mx-auto">
           <TouchableOpacity onPress={() => router.back()} className="mr-4 text-alviora-primary flex flex-row items-center gap-1 hover:opacity-80">
             <ArrowLeft size={20} color="#1C5FA8" />
@@ -70,7 +72,7 @@ export default function ParticipantResultPage() {
             <ActivityIndicator size="large" color="#1C5FA8" />
           </div>
         ) : matchingResults.length === 0 ? (
-          <div className="bg-alviora-surface/80 rounded-xl border border-alviora-border p-12 text-center shadow-sm flex flex-col items-center">
+          <div className="bg-white/10 rounded-xl border border-alviora-border p-12 text-center shadow-sm flex flex-col items-center">
             <span className="material-symbols-outlined text-alviora-body mb-4" style={{fontFamily:"'Material Symbols Outlined'", fontSize: 48}}>search_off</span>
             <h3 className="font-title-md text-title-md text-alviora-heading font-bold mb-2">No results found</h3>
             <p className="text-alviora-body">We couldn't find any published results matching that chest number or name.</p>
@@ -78,8 +80,8 @@ export default function ParticipantResultPage() {
         ) : (
           <div className="space-y-6">
             {matchingResults.map((result, idx) => (
-              <div key={idx} className="bg-alviora-surface/50 rounded-xl border border-alviora-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="bg-alviora-surface/50 px-6 py-4 border-b border-alviora-border flex justify-between items-center">
+              <div key={idx} className="bg-white/5 rounded-xl border border-alviora-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-black/20 px-6 py-4 border-b border-alviora-border flex justify-between items-center">
                   <div>
                     <h3 className="font-title-md text-title-md text-alviora-heading font-bold">{result.item_name}</h3>
                     <p className="font-label-sm text-label-sm text-alviora-primary uppercase tracking-wider mt-1">

@@ -63,7 +63,7 @@ export function SahithyolsavLandingPage() {
   }, [organisationQuery.data]);
 
   return (
-    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
+    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'Sahithyolsav Festival'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -76,7 +76,7 @@ export function SahithyolsavLandingPage() {
           .marquee-container { overflow: hidden; white-space: nowrap; }
           .marquee-content { display: inline-block; animation: marquee 30s linear infinite; }
           @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-          .bg-pattern { background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 20px 20px; }
+          .bg-pattern { background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px; }
           @media (prefers-reduced-motion: no-preference) {
               .fade-in-up { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
               .fade-in-up.visible { opacity: 1; transform: translateY(0); }
@@ -98,7 +98,7 @@ export function SahithyolsavLandingPage() {
       </Head>
 
       {/* TopAppBar (Ticker) */}
-      <div className="bg-alviora-surface/90 backdrop-blur-sm text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-alviora-border">
+      <div className="bg-black/20 backdrop-blur-sm text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-alviora-border">
         <div className="flex items-center gap-4 w-full max-w-container-max mx-auto marquee-container">
           <span className="material-symbols-outlined text-alviora-accent" style={{fontVariationSettings:"'FILL' 1"}}>sensors</span>
           <span className="marquee-content">{tickerString}</span>
@@ -106,7 +106,7 @@ export function SahithyolsavLandingPage() {
       </div>
 
       {/* TopNavBar */}
-      <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
+      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href="#">
             <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
@@ -126,7 +126,7 @@ export function SahithyolsavLandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[80vh] flex items-center justify-center px-gutter py-section-gap bg-pattern">
+        <section className="relative min-h-[80vh] flex items-center justify-center px-gutter py-section-gap">
           <div className="max-w-container-max mx-auto text-center z-10 relative fade-in-up visible">
             <div className="inline-flex items-center gap-2 bg-error-container text-on-error-container px-4 py-1.5 rounded-full mb-8 font-label-sm text-label-sm uppercase tracking-widest border border-on-error-container/20">
               <span className="w-2 h-2 rounded-full bg-on-error-container"></span>
@@ -143,7 +143,7 @@ export function SahithyolsavLandingPage() {
                 <span className="material-symbols-outlined">emoji_events</span>
                 View Leaderboard
               </a>
-              <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-alviora-border text-alviora-body px-8 py-4 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-heading transition-all flex items-center justify-center gap-2 bg-alviora-surface/90 backdrop-blur-sm shadow-sm">
+              <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-alviora-border text-alviora-body px-8 py-4 rounded-full font-title-md text-title-md hover:bg-white/10 hover:text-alviora-heading transition-all flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm shadow-sm text-white">
                 <span className="material-symbols-outlined">calendar_today</span>
                 Today's Schedule
               </a>
@@ -156,14 +156,14 @@ export function SahithyolsavLandingPage() {
 
         {/* Quick Search */}
         <section className="px-gutter py-12 -mt-16 relative z-20 max-w-3xl mx-auto fade-in-up visible">
-          <form onSubmit={handleSearch} className="bg-alviora-surface/90 backdrop-blur-md p-8 rounded-xl shadow-lg border border-alviora-border">
+          <form onSubmit={handleSearch} className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-lg border border-alviora-border">
             <h2 className="font-title-md text-title-md text-alviora-heading mb-4 text-center">Smart Participant Finder</h2>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-alviora-body">search</span>
               <input 
                 value={searchQuery}
                 onChange={(e: any) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-lg bg-alviora-surface/50 border border-alviora-border focus:ring-2 focus:ring-alviora-primary focus:border-alviora-primary text-alviora-heading font-body-md text-body-md placeholder-alviora-body/60 outline-none" 
+                className="w-full pl-12 pr-4 py-4 rounded-lg bg-black/20 border border-alviora-border focus:ring-2 focus:ring-alviora-primary focus:border-alviora-primary text-alviora-heading font-body-md text-body-md placeholder-alviora-body/60 outline-none" 
                 placeholder="Enter Chest Number or Name..." 
                 type="text"
               />
@@ -186,7 +186,7 @@ export function SahithyolsavLandingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {liveSchedules.length > 0 ? liveSchedules.map((schedule: any, idx: number) => (
-              <div key={idx} className="bg-surface-container-lowest border rounded-xl p-6 hover:shadow-md transition-shadow shadow-md border-outline-variant/50">
+              <div key={idx} className="bg-white/5 border rounded-xl p-6 hover:shadow-md transition-shadow shadow-md border-outline-variant/50">
                 <div className="flex justify-between items-center border-b border-alviora-border pb-4 mb-4">
                   <h3 className="font-title-md text-title-md text-alviora-heading font-bold">{schedule.venues?.name || `Stage ${idx + 1}`}</h3>
                   {schedule.status === 'Ongoing' && (
@@ -204,7 +204,7 @@ export function SahithyolsavLandingPage() {
                 </div>
               </div>
             )) : (
-              <div className="col-span-1 md:col-span-2 text-center py-12 bg-alviora-surface/50 rounded-xl border border-alviora-border">
+              <div className="col-span-1 md:col-span-2 text-center py-12 bg-white/5 rounded-xl border border-alviora-border">
                 <p className="text-alviora-body font-title-md">No live or upcoming events at the moment.</p>
               </div>
             )}
@@ -212,16 +212,16 @@ export function SahithyolsavLandingPage() {
         </section>
 
         {/* Top Leaderboard */}
-        <section id="leaderboard" className="bg-alviora-surface/60 backdrop-blur-sm py-section-gap px-gutter border-y border-alviora-border fade-in-up visible">
+        <section id="leaderboard" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-y border-alviora-border fade-in-up visible">
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Unit Rankings</h2>
               <p className="font-body-lg text-body-lg text-alviora-body">Current point standings for the top institutions.</p>
             </div>
             
-            <div className="bg-alviora-surface/90 backdrop-blur-md rounded-xl border border-alviora-border overflow-hidden shadow-md">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl border border-alviora-border overflow-hidden shadow-md">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-4 p-4 border-b border-alviora-border bg-alviora-surface/80 font-label-sm text-label-sm text-alviora-body uppercase tracking-wider font-bold">
+              <div className="grid grid-cols-12 gap-4 p-4 border-b border-alviora-border bg-black/20 font-label-sm text-label-sm text-alviora-body uppercase tracking-wider font-bold">
                 <div className="col-span-2 md:col-span-1 text-center">Rank</div>
                 <div className="col-span-6 md:col-span-7">Institution</div>
                 <div className="col-span-2 hidden md:block text-center">Firsts</div>
@@ -229,7 +229,7 @@ export function SahithyolsavLandingPage() {
               </div>
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
-                <div key={idx} className={`grid grid-cols-12 gap-4 p-4 md:p-6 border-b border-alviora-border items-center transition-colors ${idx === 0 ? 'bg-alviora-primary/20 hover:bg-alviora-primary/30' : 'hover:bg-alviora-surface/50'}`}>
+                <div key={idx} className={`grid grid-cols-12 gap-4 p-4 md:p-6 border-b border-alviora-border items-center transition-colors ${idx === 0 ? 'bg-white/5 hover:bg-white/10' : 'hover:bg-white/5'}`}>
                   <div className={`col-span-2 md:col-span-1 text-center font-display-xl-mobile text-display-xl-mobile font-black ${idx === 0 ? 'text-alviora-primary' : 'text-alviora-accent-dim'}`}>
                     {unit.rank}
                   </div>
@@ -253,7 +253,7 @@ export function SahithyolsavLandingPage() {
             
             {topUnits.length > 0 && (
               <div className="mt-8 text-center">
-                <button className="hover-lift bg-alviora-surface/90 backdrop-blur-sm border border-alviora-border text-alviora-heading px-8 py-3 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-primary transition-all inline-flex items-center gap-2 shadow-sm">
+                <button className="hover-lift bg-white/10 backdrop-blur-sm border border-alviora-border text-alviora-heading px-8 py-3 rounded-full font-title-md text-title-md hover:bg-white/10 hover:text-alviora-primary transition-all inline-flex items-center gap-2 shadow-sm">
                   View Full Standings
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
@@ -293,7 +293,7 @@ export function SahithyolsavLandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-alviora-surface/80 backdrop-blur-md border-t border-alviora-border full-width mt-section-gap">
+      <footer className="bg-black/20 backdrop-blur-md border-t border-alviora-border full-width mt-section-gap">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-section-gap max-w-container-max mx-auto">
           <div>
             <a className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-alviora-primary mb-4 inline-block" href="#">
@@ -316,7 +316,7 @@ export function SahithyolsavLandingPage() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-alviora-border py-6 px-margin-desktop bg-alviora-surface/60">
+        <div className="border-t border-alviora-border py-6 px-margin-desktop bg-transparent">
           <div className="max-w-container-max mx-auto text-center font-body-md text-body-md text-alviora-body">© 2024 Alviora - Quranic Art Festival. All rights reserved.</div>
         </div>
       </footer>
