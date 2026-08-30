@@ -19,6 +19,7 @@ export function SahithyolsavLandingPage() {
   const publishedResultsQuery = usePublicPublishedResults(tenantId, festivalId, !!tenantId && !!festivalId, true);
   const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
   const scheduleQuery = usePublicSchedule(festivalId, tenantId);
+  const [selectedSchedule, setSelectedSchedule] = React.useState<any>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -278,43 +279,125 @@ export function SahithyolsavLandingPage() {
           </div>
         </section>
         {/* Live Schedule */}
-        <section id="live-schedule" className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible">
+        <section id="live-schedule" className="px-gutter py-section-gap max-w-[1400px] mx-auto fade-in-up visible">
           <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2">Live Updates</h2>
-              <p className="font-body-lg text-body-lg text-alviora-body">Current and upcoming programs across all stages.</p>
-            </div>
-            <div className="hidden md:flex gap-2">
-              <button className="px-4 py-2 rounded-full border border-alviora-primary text-alviora-primary font-label-sm text-label-sm uppercase bg-alviora-primary/40 backdrop-blur-sm transition-colors">All Stages</button>
+              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">Event Schedule</h2>
+              <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {liveSchedules.length > 0 ? liveSchedules.map((schedule: any, idx: number) => (
-              <div key={idx} className="bg-white/5 border rounded-xl p-6 hover:shadow-md transition-shadow shadow-md border-outline-variant/50">
-                <div className="flex justify-between items-center border-b border-alviora-border pb-4 mb-4">
-                  <h3 className="font-title-md text-title-md text-alviora-heading font-bold">{schedule.venues?.name || `Stage ${idx + 1}`}</h3>
-                  {schedule.status === 'Ongoing' && (
-                    <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider text-xs flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-on-error-container"></span>LIVE
+              <div 
+                key={idx} 
+                onClick={() => setSelectedSchedule(schedule)}
+                className="bg-white/5 border border-white/10 hover:border-alviora-primary/50 hover:bg-white/10 rounded-xl p-6 cursor-pointer transition-all shadow-md group flex flex-col justify-between min-h-[160px]"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${schedule.status === 'Ongoing' ? 'bg-error-container text-on-error-container' : schedule.status === 'Completed' ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' : 'bg-alviora-primary/20 text-alviora-primary'}`}>
+                      {schedule.status || 'Scheduled'}
                     </span>
-                  )}
+                    <span className="text-white/50 text-xs flex items-center gap-1 font-mono">
+                      <span className="material-symbols-outlined text-[14px]">schedule</span>
+                      {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'}
+                    </span>
+                  </div>
+                  <h3 className="font-title-lg text-title-lg text-white font-bold mb-3 group-hover:text-alviora-primary transition-colors line-clamp-2 leading-tight">
+                    {schedule.items?.item_name_en || schedule.items?.name || 'Event Item'}
+                  </h3>
                 </div>
-                <div className="mb-6">
-                  <p className="font-label-sm text-label-sm text-alviora-primary uppercase tracking-wider mb-2 font-bold">{schedule.status === 'Ongoing' ? 'Currently Playing' : 'Upcoming'}</p>
-                  <h4 className="font-body-lg text-body-lg text-alviora-heading font-bold mb-1">{schedule.items?.name || 'Item'}</h4>
-                  <p className="font-body-md text-body-md text-alviora-body">
-                    Category: {schedule.items?.category_codes?.join(', ')} • {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
-                  </p>
+                <div className="flex items-center gap-2 text-alviora-body text-xs mt-2 border-t border-white/10 pt-3">
+                  <span className="material-symbols-outlined text-[16px] text-alviora-primary">location_on</span>
+                  <span className="truncate">{schedule.venues?.name || `Stage ${idx + 1}`}</span>
                 </div>
               </div>
             )) : (
-              <div className="col-span-1 md:col-span-2 text-center py-12 bg-white/5 rounded-xl border border-alviora-border">
-                <p className="text-alviora-body font-title-md">No live or upcoming events at the moment.</p>
+              <div className="col-span-full text-center py-16 bg-white/5 rounded-xl border border-white/10">
+                <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
               </div>
             )}
           </div>
         </section>
+
+        {/* Schedule Modal */}
+        {selectedSchedule && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSchedule(null)}></div>
+            <div className="relative bg-[#1C3338] border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setSelectedSchedule(null)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+              
+              <div className="mb-6 pr-8">
+                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 ${selectedSchedule.status === 'Ongoing' ? 'bg-error-container text-on-error-container' : selectedSchedule.status === 'Completed' ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' : 'bg-alviora-primary/20 text-alviora-primary'}`}>
+                  {selectedSchedule.status || 'Scheduled'}
+                </span>
+                <h2 className="text-3xl font-bold text-white mb-2 leading-tight">{selectedSchedule.items?.item_name_en || selectedSchedule.items?.name || 'Event Item'}</h2>
+                {selectedSchedule.items?.category_name && (
+                  <p className="text-alviora-primary text-sm font-bold uppercase tracking-wider">Category: {selectedSchedule.items?.category_name}</p>
+                )}
+              </div>
+              
+              <div className="space-y-5 mb-8 bg-black/20 p-5 rounded-2xl border border-white/5">
+                <div className="flex items-start gap-4 text-alviora-body">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white">location_on</span>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Venue</div>
+                    <div className="text-white font-medium text-lg">{selectedSchedule.venues?.name || 'TBA'}</div>
+                    {selectedSchedule.venues?.location && <div className="text-sm mt-1">{selectedSchedule.venues.location}</div>}
+                  </div>
+                </div>
+                
+                <div className="h-[1px] w-full bg-white/5"></div>
+                
+                <div className="flex items-start gap-4 text-alviora-body">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white">event</span>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Time & Date</div>
+                    <div className="text-white font-medium text-lg">
+                      {selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'} 
+                      {selectedSchedule.end_time ? ` - ${new Date(selectedSchedule.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ''}
+                    </div>
+                    <div className="text-sm mt-1">{selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : ''}</div>
+                  </div>
+                </div>
+                
+                {selectedSchedule.judges && (
+                  <>
+                    <div className="h-[1px] w-full bg-white/5"></div>
+                    <div className="flex items-start gap-4 text-alviora-body">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-white">gavel</span>
+                      </div>
+                      <div>
+                        <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Assigned Judges</div>
+                        <div className="text-white font-medium">
+                          {Array.isArray(selectedSchedule.judges) ? selectedSchedule.judges.map((j:any) => j.name || j).join(', ') : selectedSchedule.judges}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setSelectedSchedule(null)}
+                className="w-full bg-white hover:bg-gray-200 text-black py-4 rounded-xl font-bold transition-colors shadow-lg"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Top Leaderboard */}
         <section id="leaderboard" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-y border-alviora-border fade-in-up visible">
