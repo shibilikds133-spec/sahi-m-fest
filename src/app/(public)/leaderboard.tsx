@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, Component, ErrorInfo } from 'react';
 import { AlvioraCustomRenderer } from '../../components/leaderboard/AlvioraCustomRenderer';
+import { SahithyolsavLandingPage } from '../../components/publicLanding/SahithyolsavLandingPage';
 import {
   ActivityIndicator,
   Platform,
@@ -1285,13 +1286,13 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
   const { tenant_id: authTenantId } = useAuthStore();
   const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || null;
 
-  const TARGET_TENANT_ID = 'f247b04f-a6d0-4b36-896d-efae2b7e3b30';
+  const TARGET_TENANT_ID = 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
   const CUSTOM_RENDERER_ENABLED = process.env.EXPO_PUBLIC_CUSTOM_RENDERER_ENABLED !== 'false';
 
   if (tenantId === TARGET_TENANT_ID && CUSTOM_RENDERER_ENABLED) {
     return (
       <CustomRendererErrorBoundary fallback={<DefaultPublicLeaderboardExperience page={page} />}>
-        <AlvioraCustomRenderer page={page} />
+        <SahithyolsavLandingPage />
       </CustomRendererErrorBoundary>
     );
   }
