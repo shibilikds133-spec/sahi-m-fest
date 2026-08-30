@@ -126,31 +126,58 @@ export function SahithyolsavLandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[80vh] flex items-center justify-center px-gutter py-section-gap">
-          <div className="max-w-container-max mx-auto text-center z-10 relative fade-in-up visible">
-            <div className="inline-flex items-center gap-2 bg-error-container text-on-error-container px-4 py-1.5 rounded-full mb-8 font-label-sm text-label-sm uppercase tracking-widest border border-on-error-container/20">
-              <span className="w-2 h-2 rounded-full bg-on-error-container"></span>
-              LIVE NOW
+        <section className="px-gutter py-8 md:py-12 max-w-[1400px] mx-auto fade-in-up visible">
+          <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[75vh] flex items-center shadow-2xl border border-white/5 bg-black">
+            
+            {/* Background Video (Placeholder) */}
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="absolute inset-0 w-full h-full object-cover z-0 opacity-50 mix-blend-screen"
+            >
+              {/* Note: Using a lightweight placeholder abstract video. User can replace the src below. */}
+              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+            </video>
+            
+            {/* Dark Overlays for readability and matching theme */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1a1c]/95 via-[#1C3338]/80 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-[#1C3338]/40 z-10"></div>
+            
+            {/* Top Right Logo Placeholder */}
+            <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-xl hover:scale-105 transition-transform duration-300">
+                 <span className="material-symbols-outlined text-alviora-primary text-3xl md:text-5xl">dashboard_customize</span>
+              </div>
             </div>
-            <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-alviora-heading mb-8 max-w-4xl mx-auto leading-tight">
-              Alviora: Between <span className="text-alviora-primary animate-subtle-motion" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People
-            </h1>
-            <p className="font-body-lg text-body-lg text-alviora-body mb-12 max-w-2xl mx-auto">
-              Where the eternal word meets the universal language of art. A celebration of sacred expression and creative excellence.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a href="#leaderboard" className="hover-lift w-full sm:w-auto bg-alviora-primary text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-[#154a85] transition-all flex items-center justify-center gap-2 shadow-md">
-                <span className="material-symbols-outlined">emoji_events</span>
-                View Leaderboard
-              </a>
-              <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-alviora-border text-alviora-body px-8 py-4 rounded-full font-title-md text-title-md hover:bg-white/10 hover:text-alviora-heading transition-all flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm shadow-sm text-white">
-                <span className="material-symbols-outlined">calendar_today</span>
-                Today's Schedule
-              </a>
+
+            {/* Left Aligned Content */}
+            <div className="relative z-20 w-full p-8 md:p-16 lg:p-24 flex flex-col items-start text-left max-w-4xl">
+              <div className="inline-flex items-center gap-2 bg-[#ffeedb]/10 text-[#f5d0a9] px-4 py-2 rounded-full mb-8 font-label-sm text-label-sm uppercase tracking-widest border border-[#f5d0a9]/20 shadow-sm backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-[#f5d0a9]"></span>
+                SAHITHYOLSAV EDITION
+              </div>
+              
+              <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-black">
+                Alviora: Between <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People
+              </h1>
+              
+              <p className="font-body-lg text-body-lg text-white/80 mb-10 max-w-2xl leading-relaxed">
+                Where the eternal word meets the universal language of art. A celebration of sacred expression and creative excellence.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-start items-center w-full sm:w-auto">
+                <a href="#leaderboard" className="hover-lift w-full sm:w-auto bg-alviora-primary text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-[#154a85] transition-all flex items-center justify-center gap-2 shadow-md">
+                  <span className="material-symbols-outlined">emoji_events</span>
+                  View Leaderboard
+                </a>
+                <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-white/10 transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
+                  <span className="material-symbols-outlined">calendar_today</span>
+                  Today's Schedule
+                </a>
+              </div>
             </div>
-          </div>
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden select-none z-0">
-            <img alt="Alviora Brand Watermark" className="absolute w-full h-full object-contain opacity-5 select-none pointer-events-none scale-150 transform-gpu" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZqEKHYfZstez4tT0Xt8USRt-bU3DH9DJivIMo2yb6CMGXC9oPTuJgBkDhXYsGqfqNK19f3WIUhO67QnkAtOa_N0out17FZjvmEZG5XCzfJ93cRiVdCi566str0WK_J-q3NR0cpDfZt7kWyuaD2sLOXNaQF4QZtrkfXyw23Dn7x3d0fZba3qBsy5B2-XzFqOQgPOFAxHFar4HQe4JIt7x5qKubiZRtDOY-bDHCfo59iCIH9-8EGMLJ3V00rs8Yl0IN"/>
           </div>
         </section>
 
