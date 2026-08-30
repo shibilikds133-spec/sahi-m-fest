@@ -126,8 +126,8 @@ export function SahithyolsavLandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="px-gutter py-8 md:py-12 max-w-[1400px] mx-auto fade-in-up visible">
-          <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[75vh] flex items-center shadow-2xl border border-white/5 bg-black">
+        <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible">
+          <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
             {/* Background Video (Placeholder) */}
             <video 
