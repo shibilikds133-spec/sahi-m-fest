@@ -13,6 +13,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        "barabara": ["Barabara", "sans-serif"],
         "headline-lg": ["Plus Jakarta Sans"],
         "display-xl": ["Plus Jakarta Sans"],
         "headline-lg-mobile": ["Plus Jakarta Sans"],

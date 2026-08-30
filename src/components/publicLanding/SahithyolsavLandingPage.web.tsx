@@ -109,7 +109,7 @@ export function SahithyolsavLandingPage() {
       <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href="#">
-            <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
+            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
           <div className="hidden md:flex gap-8">
             <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href="#">About</a>
@@ -160,7 +160,7 @@ export function SahithyolsavLandingPage() {
               </div>
               
               <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-black">
-                Alviora: Between <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People
+                <span style={{fontFamily: "Barabara, sans-serif"}}>Alviora:</span> Between <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span> and People
               </h1>
               
               <p className="font-body-lg text-body-lg text-white/80 mb-10 max-w-2xl leading-relaxed">
@@ -324,7 +324,7 @@ export function SahithyolsavLandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-section-gap max-w-container-max mx-auto">
           <div>
             <a className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-alviora-primary mb-4 inline-block" href="#">
-              <span className="text-3xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
+              <span className="text-3xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
             </a>
             <p className="font-body-md text-body-md text-alviora-body mt-4">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
           </div>

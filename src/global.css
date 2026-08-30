@@ -82,3 +82,9 @@ html, body, #root, #__next {
     background: rgba(255, 255, 255, 0.97) !important;
   }
 }
+@font-face {
+  font-family: 'Barabara';
+  src: url('/fonts/BARABARA-final.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
