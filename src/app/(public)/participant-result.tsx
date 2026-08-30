@@ -52,7 +52,7 @@ export default function ParticipantResultPage() {
             <Text className="text-alviora-primary font-title-md font-semibold">Back</Text>
           </TouchableOpacity>
           <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
-            <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#000000"}}>ALVIORA</span>
+            <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
         </div>
       </nav>
@@ -70,7 +70,7 @@ export default function ParticipantResultPage() {
             <ActivityIndicator size="large" color="#1C5FA8" />
           </div>
         ) : matchingResults.length === 0 ? (
-          <div className="bg-white/80 rounded-xl border border-alviora-border p-12 text-center shadow-sm flex flex-col items-center">
+          <div className="bg-alviora-surface/80 rounded-xl border border-alviora-border p-12 text-center shadow-sm flex flex-col items-center">
             <span className="material-symbols-outlined text-alviora-body mb-4" style={{fontFamily:"'Material Symbols Outlined'", fontSize: 48}}>search_off</span>
             <h3 className="font-title-md text-title-md text-alviora-heading font-bold mb-2">No results found</h3>
             <p className="text-alviora-body">We couldn't find any published results matching that chest number or name.</p>
@@ -78,7 +78,7 @@ export default function ParticipantResultPage() {
         ) : (
           <div className="space-y-6">
             {matchingResults.map((result, idx) => (
-              <div key={idx} className="bg-white rounded-xl border border-alviora-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div key={idx} className="bg-alviora-surface/50 rounded-xl border border-alviora-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className="bg-alviora-surface/50 px-6 py-4 border-b border-alviora-border flex justify-between items-center">
                   <div>
                     <h3 className="font-title-md text-title-md text-alviora-heading font-bold">{result.item_name}</h3>
@@ -92,7 +92,7 @@ export default function ParticipantResultPage() {
                 </div>
                 <div className="p-6">
                   {(result as any).matchedParticipants.map((p: any, pIdx: number) => (
-                    <div key={pIdx} className="flex items-center justify-between border-b border-gray-100 last:border-0 py-3 last:pb-0 first:pt-0">
+                    <div key={pIdx} className="flex items-center justify-between border-b border-alviora-border last:border-0 py-3 last:pb-0 first:pt-0">
                       <div>
                         <Text className="font-body-lg text-body-lg text-alviora-heading font-bold">{p.name || 'Unknown'}</Text>
                         <Text className="font-body-md text-body-md text-alviora-body">Chest No: {p.chest_no}</Text>

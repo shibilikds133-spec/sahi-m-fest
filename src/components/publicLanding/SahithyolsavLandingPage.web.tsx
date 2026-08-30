@@ -63,7 +63,7 @@ export function SahithyolsavLandingPage() {
   }, [organisationQuery.data]);
 
   return (
-    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-transparent text-alviora-body font-body-md antialiased">
+    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'Sahithyolsav Festival'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -109,7 +109,7 @@ export function SahithyolsavLandingPage() {
       <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href="#">
-            <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#000000"}}>ALVIORA</span>
+            <span className="text-2xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
           <div className="hidden md:flex gap-8">
             <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href="#">About</a>
@@ -143,7 +143,7 @@ export function SahithyolsavLandingPage() {
                 <span className="material-symbols-outlined">emoji_events</span>
                 View Leaderboard
               </a>
-              <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-alviora-border text-alviora-body px-8 py-4 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-heading transition-all flex items-center justify-center gap-2 bg-white/90 backdrop-blur-sm shadow-sm">
+              <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-alviora-border text-alviora-body px-8 py-4 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-heading transition-all flex items-center justify-center gap-2 bg-alviora-surface/90 backdrop-blur-sm shadow-sm">
                 <span className="material-symbols-outlined">calendar_today</span>
                 Today's Schedule
               </a>
@@ -156,7 +156,7 @@ export function SahithyolsavLandingPage() {
 
         {/* Quick Search */}
         <section className="px-gutter py-12 -mt-16 relative z-20 max-w-3xl mx-auto fade-in-up visible">
-          <form onSubmit={handleSearch} className="bg-white/90 backdrop-blur-md p-8 rounded-xl shadow-lg border border-alviora-border">
+          <form onSubmit={handleSearch} className="bg-alviora-surface/90 backdrop-blur-md p-8 rounded-xl shadow-lg border border-alviora-border">
             <h2 className="font-title-md text-title-md text-alviora-heading mb-4 text-center">Smart Participant Finder</h2>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-alviora-body">search</span>
@@ -180,7 +180,7 @@ export function SahithyolsavLandingPage() {
               <p className="font-body-lg text-body-lg text-alviora-body">Current and upcoming programs across all stages.</p>
             </div>
             <div className="hidden md:flex gap-2">
-              <button className="px-4 py-2 rounded-full border border-alviora-primary text-alviora-primary font-label-sm text-label-sm uppercase bg-blue-50/80 backdrop-blur-sm transition-colors">All Stages</button>
+              <button className="px-4 py-2 rounded-full border border-alviora-primary text-alviora-primary font-label-sm text-label-sm uppercase bg-alviora-primary/40 backdrop-blur-sm transition-colors">All Stages</button>
             </div>
           </div>
           
@@ -204,7 +204,7 @@ export function SahithyolsavLandingPage() {
                 </div>
               </div>
             )) : (
-              <div className="col-span-1 md:col-span-2 text-center py-12 bg-white/50 rounded-xl border border-alviora-border">
+              <div className="col-span-1 md:col-span-2 text-center py-12 bg-alviora-surface/50 rounded-xl border border-alviora-border">
                 <p className="text-alviora-body font-title-md">No live or upcoming events at the moment.</p>
               </div>
             )}
@@ -219,9 +219,9 @@ export function SahithyolsavLandingPage() {
               <p className="font-body-lg text-body-lg text-alviora-body">Current point standings for the top institutions.</p>
             </div>
             
-            <div className="bg-white/90 backdrop-blur-md rounded-xl border border-alviora-border overflow-hidden shadow-md">
+            <div className="bg-alviora-surface/90 backdrop-blur-md rounded-xl border border-alviora-border overflow-hidden shadow-md">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-4 p-4 border-b border-alviora-border bg-gray-50/80 font-label-sm text-label-sm text-alviora-body uppercase tracking-wider font-bold">
+              <div className="grid grid-cols-12 gap-4 p-4 border-b border-alviora-border bg-alviora-surface/80 font-label-sm text-label-sm text-alviora-body uppercase tracking-wider font-bold">
                 <div className="col-span-2 md:col-span-1 text-center">Rank</div>
                 <div className="col-span-6 md:col-span-7">Institution</div>
                 <div className="col-span-2 hidden md:block text-center">Firsts</div>
@@ -229,13 +229,13 @@ export function SahithyolsavLandingPage() {
               </div>
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
-                <div key={idx} className={`grid grid-cols-12 gap-4 p-4 md:p-6 border-b border-alviora-border items-center transition-colors ${idx === 0 ? 'bg-blue-50/40 hover:bg-blue-50/60' : 'hover:bg-gray-50/50'}`}>
+                <div key={idx} className={`grid grid-cols-12 gap-4 p-4 md:p-6 border-b border-alviora-border items-center transition-colors ${idx === 0 ? 'bg-alviora-primary/20 hover:bg-alviora-primary/30' : 'hover:bg-alviora-surface/50'}`}>
                   <div className={`col-span-2 md:col-span-1 text-center font-display-xl-mobile text-display-xl-mobile font-black ${idx === 0 ? 'text-alviora-primary' : 'text-alviora-accent-dim'}`}>
                     {unit.rank}
                   </div>
                   <div className="col-span-6 md:col-span-7">
                     <h4 className="font-title-md text-title-md text-alviora-heading font-bold mb-2">{unit.name || unit.team_name || unit.organisation_name || 'Unit ' + (idx+1)}</h4>
-                    <div className="w-full bg-gray-200/50 h-1.5 rounded-full">
+                    <div className="w-full bg-alviora-border/50 h-1.5 rounded-full">
                       <div className={`${idx === 0 ? 'bg-alviora-primary' : 'bg-alviora-accent-dim'} h-1.5 rounded-full shadow-sm`} style={{width: `${unit.percentage}%`}}></div>
                     </div>
                   </div>
@@ -253,7 +253,7 @@ export function SahithyolsavLandingPage() {
             
             {topUnits.length > 0 && (
               <div className="mt-8 text-center">
-                <button className="hover-lift bg-white/90 backdrop-blur-sm border border-alviora-border text-alviora-heading px-8 py-3 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-primary transition-all inline-flex items-center gap-2 shadow-sm">
+                <button className="hover-lift bg-alviora-surface/90 backdrop-blur-sm border border-alviora-border text-alviora-heading px-8 py-3 rounded-full font-title-md text-title-md hover:bg-alviora-surface hover:text-alviora-primary transition-all inline-flex items-center gap-2 shadow-sm">
                   View Full Standings
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
@@ -297,7 +297,7 @@ export function SahithyolsavLandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-section-gap max-w-container-max mx-auto">
           <div>
             <a className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-alviora-primary mb-4 inline-block" href="#">
-              <span className="text-3xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#000000"}}>ALVIORA</span>
+              <span className="text-3xl uppercase" style={{fontFamily:"'Syne', sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
             </a>
             <p className="font-body-md text-body-md text-alviora-body mt-4">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
           </div>
@@ -316,7 +316,7 @@ export function SahithyolsavLandingPage() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-alviora-border py-6 px-margin-desktop bg-white/60">
+        <div className="border-t border-alviora-border py-6 px-margin-desktop bg-alviora-surface/60">
           <div className="max-w-container-max mx-auto text-center font-body-md text-body-md text-alviora-body">© 2024 Alviora - Quranic Art Festival. All rights reserved.</div>
         </div>
       </footer>
