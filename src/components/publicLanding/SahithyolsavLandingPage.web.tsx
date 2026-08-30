@@ -7,7 +7,7 @@ import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboard
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
 
-export function SahithyolsavLandingPage() {
+export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing' | 'schedule' }) {
   const router = useRouter();
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
@@ -19,7 +19,59 @@ export function SahithyolsavLandingPage() {
   const publishedResultsQuery = usePublicPublishedResults(tenantId, festivalId, !!tenantId && !!festivalId, true);
   const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
   const scheduleQuery = usePublicSchedule(festivalId, tenantId);
+
   const [selectedSchedule, setSelectedSchedule] = React.useState<any>(null);
+  const [activeFilter, setActiveFilter] = React.useState<string>('all');
+
+  const uniqueDates = React.useMemo(() => {
+    const dates = new Set<string>();
+    const schedules = scheduleQuery.data || [];
+    schedules.forEach((s: any) => {
+      if (s.start_time) {
+        dates.add(new Date(s.start_time).toDateString());
+      }
+    });
+    return Array.from(dates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  }, [scheduleQuery.data]);
+
+  const filterTabs = React.useMemo(() => {
+    const tabs = [
+      { id: 'all', label: 'All' },
+      { id: 'today', label: 'Today' },
+      { id: 'tomorrow', label: 'Tomorrow' }
+    ];
+    uniqueDates.forEach(dateStr => {
+      const formatted = new Date(dateStr).toLocaleDateString([], { month: 'short', day: 'numeric' });
+      const isToday = dateStr === new Date().toDateString();
+      const isTomorrow = dateStr === new Date(Date.now() + 86400000).toDateString();
+      if (!isToday && !isTomorrow) {
+        tabs.push({ id: dateStr, label: formatted });
+      }
+    });
+    return tabs;
+  }, [uniqueDates]);
+
+  const filteredSchedules = React.useMemo(() => {
+    const schedules = scheduleQuery.data || [];
+    if (page === 'landing') {
+      // For landing page: show ongoing or upcoming events sorted by time, limit to 4
+      return schedules
+        .filter((s: any) => s.status === 'Ongoing' || s.status === 'Upcoming' || new Date(s.start_time).getTime() > Date.now())
+        .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        .slice(0, 4);
+    }
+
+    // For schedule page: filter by active tab
+    if (activeFilter === 'all') return schedules;
+    if (activeFilter === 'today') {
+      return schedules.filter((s: any) => s.start_time && new Date(s.start_time).toDateString() === new Date().toDateString());
+    }
+    if (activeFilter === 'tomorrow') {
+      return schedules.filter((s: any) => s.start_time && new Date(s.start_time).toDateString() === new Date(Date.now() + 86400000).toDateString());
+    }
+    return schedules.filter((s: any) => s.start_time && new Date(s.start_time).toDateString() === activeFilter);
+  }, [scheduleQuery.data, activeFilter, page]);
+
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -154,8 +206,8 @@ export function SahithyolsavLandingPage() {
           </a>
           <div className="hidden md:flex gap-8">
             <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href="#">About</a>
-            <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href="#live-schedule">Programs</a>
-            <a className="text-alviora-primary font-bold border-b-2 border-alviora-primary font-title-md text-title-md" href="#leaderboard">Leaderboard</a>
+            <a className={`transition-colors duration-200 font-title-md text-title-md ${page === 'schedule' ? 'text-alviora-primary font-bold border-b-2 border-alviora-primary' : 'text-alviora-body hover:text-alviora-primary'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Programs</a>
+            <a className={`transition-colors duration-200 font-title-md text-title-md ${page === 'landing' ? 'text-alviora-primary font-bold border-b-2 border-alviora-primary' : 'text-alviora-body hover:text-alviora-primary'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Leaderboard</a>
             <a className="text-alviora-body hover:text-alviora-primary transition-colors duration-200 font-title-md text-title-md" href={`/public-result?tenant_id=${tenantId}`}>Results</a>
           </div>
           <div className="flex gap-4">
@@ -166,7 +218,7 @@ export function SahithyolsavLandingPage() {
       </nav>
 
       <main>
-        {/* Hero Section */}
+        {page === 'landing' && (<>{/* Hero Section */}
         <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible">
           <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
@@ -226,7 +278,7 @@ export function SahithyolsavLandingPage() {
 
         
         {/* Stats Section */}
-        <section className="bg-transparent border-t border-alviora-border/20 py-12 md:py-24 relative z-20 overflow-hidden">
+        <section className="bg-transparent py-12 md:py-24 relative z-20 overflow-hidden">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             {/* Using flex row to keep it strictly horizontal, and larger sizing */}
             <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-12 fade-in-up visible">
@@ -277,18 +329,37 @@ export function SahithyolsavLandingPage() {
 
             </div>
           </div>
-        </section>
+        </section></>)}
         {/* Live Schedule */}
         <section id="live-schedule" className="px-gutter py-section-gap max-w-[1400px] mx-auto fade-in-up visible">
-          <div className="flex justify-between items-end mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">Event Schedule</h2>
-              <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
+              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">
+                {page === 'landing' ? 'Upcoming Events' : 'Event Schedule'}
+              </h2>
+              <p className="font-body-lg text-body-lg text-alviora-body">
+                {page === 'landing' ? 'Upcoming and live programs across all stages.' : 'Complete schedule of all festival events.'}
+              </p>
             </div>
+            
+            {/* Filter tabs (only show on schedule page) */}
+            {page === 'schedule' && (
+              <div className="flex flex-row gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+                {filterTabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveFilter(tab.id)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === tab.id ? 'bg-alviora-primary text-white' : 'bg-white/5 text-alviora-body hover:bg-white/10'}`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {liveSchedules.length > 0 ? liveSchedules.map((schedule: any, idx: number) => (
+            {filteredSchedules.length > 0 ? filteredSchedules.map((schedule: any, idx: number) => (
               <div 
                 key={idx} 
                 onClick={() => setSelectedSchedule(schedule)}
@@ -319,6 +390,18 @@ export function SahithyolsavLandingPage() {
               </div>
             )}
           </div>
+          
+          {page === 'landing' && scheduleQuery.data && scheduleQuery.data.length > 0 && (
+            <div className="flex justify-center mt-12">
+              <a 
+                href={`/leaderboard/schedule?tenant_id=${tenantId}`}
+                className="hover-lift bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3 rounded-full font-bold transition-all shadow-md flex items-center gap-2"
+              >
+                View Full Schedule
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </a>
+            </div>
+          )}
         </section>
 
         {/* Schedule Modal */}
