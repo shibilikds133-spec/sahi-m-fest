@@ -80,15 +80,15 @@ export function SahithyolsavLandingPage() {
       }
     }
 
-    if (leaderboardQuery.data) {
-      campuses = leaderboardQuery.data.length;
+    if (organisationQuery.data) {
+      campuses = organisationQuery.data.length;
     }
 
     if (publishedResultsQuery.data) {
       const uniqueParticipants = new Set();
       publishedResultsQuery.data.forEach(result => {
-        if (result.participants) {
-          result.participants.forEach(p => uniqueParticipants.add(p.chest_no || p.name));
+        if ((result as any).participants) {
+          (result as any).participants.forEach((p: any) => uniqueParticipants.add(p.chest_no || p.name));
         }
       });
       competitors = uniqueParticipants.size;
@@ -101,7 +101,7 @@ export function SahithyolsavLandingPage() {
       events: events > 0 ? events : 300, 
       competitors: competitors > 0 ? competitors : 600 
     };
-  }, [scheduleQuery.data, leaderboardQuery.data, publishedResultsQuery.data]);
+  }, [scheduleQuery.data, organisationQuery.data, publishedResultsQuery.data]);
 
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
