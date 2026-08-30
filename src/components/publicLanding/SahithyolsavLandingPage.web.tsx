@@ -162,7 +162,7 @@ export function SahithyolsavLandingPage() {
               <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-bold">
                 <span style={{fontFamily: "Barabara, sans-serif"}} className="uppercase tracking-wide">ALVIORA</span><br />
                 Between <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span><br />
-                and People
+                and <span className="text-alviora-primary animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>People</span>
               </h1>
               
               <p className="font-body-lg text-body-lg text-white/80 mb-10 max-w-2xl leading-relaxed">
