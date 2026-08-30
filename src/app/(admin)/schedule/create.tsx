@@ -10,71 +10,7 @@ import { useSchedule } from '../../../core/hooks/useSchedule';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
 
-const TimeSelect = ({ value, onChange, fullWidth = false }: { value: string, onChange: (val: string) => void, fullWidth?: boolean }) => {
-  const [hour, setHour] = useState('12');
-  const [minute, setMinute] = useState('00');
-  const [ampm, setAmpm] = useState('AM');
-
-  useEffect(() => {
-    if (value) {
-      const [h, m] = value.split(':');
-      const hNum = parseInt(h, 10);
-      setAmpm(hNum >= 12 ? 'PM' : 'AM');
-      setHour((hNum % 12 || 12).toString().padStart(2, '0'));
-      setMinute(m);
-    }
-  }, [value]);
-
-  const handleChange = (newHour: string, newMinute: string, newAmpm: string) => {
-    let h = parseInt(newHour, 10);
-    if (newAmpm === 'PM' && h < 12) h += 12;
-    if (newAmpm === 'AM' && h === 12) h = 0;
-    const timeStr = `${h.toString().padStart(2, '0')}:${newMinute}`;
-    onChange(timeStr);
-  };
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flex: fullWidth ? undefined : 1.5, width: fullWidth ? '100%' : undefined, gap: 4 }}>
-      <SsfSelectMenu 
-        value={hour} 
-        onValueChange={(val) => {
-          setHour(val);
-          handleChange(val, minute, ampm);
-        }}
-        options={Array.from({length: 12}, (_, i) => {
-          const v = (i + 1).toString().padStart(2, '0');
-          return { label: v, value: v };
-        })}
-        style={{ flex: 1 }}
-        align="center"
-      />
-      <Text style={{ marginHorizontal: 2, fontWeight: 'bold', color: '#333' }}>:</Text>
-      <SsfSelectMenu 
-        value={minute} 
-        onValueChange={(val) => {
-          setMinute(val);
-          handleChange(hour, val, ampm);
-        }}
-        options={Array.from({length: 60}, (_, i) => {
-          const m = i.toString().padStart(2, '0');
-          return { label: m, value: m };
-        })}
-        style={{ flex: 1 }}
-        align="center"
-      />
-      <SsfSelectMenu 
-        value={ampm} 
-        onValueChange={(val) => {
-          setAmpm(val);
-          handleChange(hour, minute, val);
-        }}
-        options={[{label: 'AM', value: 'AM'}, {label: 'PM', value: 'PM'}]}
-        style={{ flex: 1.2 }}
-        align="center"
-      />
-    </View>
-  );
-};
+import { SmartTimeInput } from '@/components/ui/SmartTimeInput';
 
 export default function CreateSchedule() {
   const router = useRouter();
@@ -89,10 +25,22 @@ export default function CreateSchedule() {
 
   const [itemId, setItemId] = useState('');
   const [venueId, setVenueId] = useState('');
-  const [startDate, setStartDate] = useState('');
+  
+  const [startDate, setStartDate] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.localStorage.getItem('ssf_last_schedule_date') || '';
+    }
+    return '';
+  });
   const [startTimeStr, setStartTimeStr] = useState('09:00');
-  const [endDate, setEndDate] = useState('');
+  const [endDate, setEndDate] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.localStorage.getItem('ssf_last_schedule_date') || '';
+    }
+    return '';
+  });
   const [endTimeStr, setEndTimeStr] = useState('10:00');
+
   const [judgeCount, setJudgeCount] = useState(3);
   
   // Custom dropdown state
@@ -149,6 +97,9 @@ export default function CreateSchedule() {
     }
 
     try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.localStorage.setItem('ssf_last_schedule_date', startDate);
+      }
       await createSchedule({
         item_id: itemId,
         venue_id: venueId,
@@ -214,7 +165,7 @@ export default function CreateSchedule() {
                 onValueChange={setStartDate}
                 style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined }}
               />
-              <TimeSelect value={startTimeStr} onChange={setStartTimeStr} fullWidth={isCompactLayout} />
+              <SmartTimeInput value={startTimeStr} onChange={setStartTimeStr} fullWidth={isCompactLayout} />
             </View>
           </View>
           <View style={{ flex: isCompactLayout ? undefined : 1 }}>
@@ -225,7 +176,7 @@ export default function CreateSchedule() {
                 onValueChange={setEndDate}
                 style={{ flex: isCompactLayout ? undefined : 1, width: isCompactLayout ? '100%' : undefined }}
               />
-              <TimeSelect value={endTimeStr} onChange={setEndTimeStr} fullWidth={isCompactLayout} />
+              <SmartTimeInput value={endTimeStr} onChange={setEndTimeStr} fullWidth={isCompactLayout} />
             </View>
           </View>
         </View>

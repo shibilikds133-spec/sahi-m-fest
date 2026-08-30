@@ -11,41 +11,7 @@ import { useFestival } from '../../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
 import { isoToScheduleTimeParts, localDateTimeToIso, ScheduleTimeParts, timePartsTo24Hour } from '../../../../services/scheduleTime';
 
-const TimeSelect = ({ value, onChange }: { value: ScheduleTimeParts; onChange: (value: ScheduleTimeParts) => void }) => {
-  const update = (patch: Partial<ScheduleTimeParts>) => onChange({ ...value, ...patch });
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
-      <SsfSelectMenu
-        value={value.hour}
-        onValueChange={(val) => update({ hour: val })}
-        options={Array.from({ length: 12 }, (_, index) => {
-          const hour = String(index + 1).padStart(2, '0');
-          return { label: hour, value: hour };
-        })}
-        style={{ flex: 1 }}
-        align="center"
-      />
-      <Text className="font-poppins-bold text-ui-text-muted">:</Text>
-      <SsfSelectMenu
-        value={value.minute}
-        onValueChange={(val) => update({ minute: val })}
-        options={Array.from({ length: 60 }, (_, index) => {
-          const minute = String(index).padStart(2, '0');
-          return { label: minute, value: minute };
-        })}
-        style={{ flex: 1 }}
-        align="center"
-      />
-      <SsfSelectMenu
-        value={value.period}
-        onValueChange={(val) => update({ period: val as 'AM' | 'PM' })}
-        options={[{ label: 'AM', value: 'AM' }, { label: 'PM', value: 'PM' }]}
-        style={{ flex: 1.2 }}
-        align="center"
-      />
-    </View>
-  );
-};
+import { SmartTimeInput } from '@/components/ui/SmartTimeInput';
 
 export default function EditSchedule() {
   const { id } = useLocalSearchParams();
@@ -235,7 +201,7 @@ export default function EditSchedule() {
                 onValueChange={setStartDate}
                 style={{ flex: 1 }}
               />
-              <TimeSelect value={startTime} onChange={setStartTime} />
+              <SmartTimeInput value={startTime} onChange={setStartTime} />
             </View>
           </View>
           <View style={{ flex: 1 }}>
@@ -246,7 +212,7 @@ export default function EditSchedule() {
                 onValueChange={setEndDate}
                 style={{ flex: 1 }}
               />
-              <TimeSelect value={endTime} onChange={setEndTime} />
+              <SmartTimeInput value={endTime} onChange={setEndTime} />
             </View>
           </View>
         </View>
