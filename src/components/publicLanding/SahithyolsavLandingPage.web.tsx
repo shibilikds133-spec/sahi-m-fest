@@ -358,38 +358,40 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             )}
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredSchedules.length > 0 ? filteredSchedules.map((schedule: any, idx: number) => (
-              <div 
-                key={idx} 
-                onClick={() => setSelectedSchedule(schedule)}
-                className="bg-white/5 border border-white/10 hover:border-alviora-primary/50 hover:bg-white/10 rounded-xl p-6 cursor-pointer transition-all shadow-md group flex flex-col justify-between min-h-[160px]"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${schedule.status === 'Ongoing' ? 'bg-error-container text-on-error-container' : schedule.status === 'Completed' ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' : 'bg-alviora-primary/20 text-alviora-primary'}`}>
-                      {schedule.status || 'Scheduled'}
-                    </span>
-                    <span className="text-white/50 text-xs flex items-center gap-1 font-mono">
-                      <span className="material-symbols-outlined text-[14px]">schedule</span>
-                      {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'}
-                    </span>
+          {filteredSchedules.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredSchedules.map((schedule: any, idx: number) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setSelectedSchedule(schedule)}
+                  className="bg-white/5 border border-white/10 hover:border-alviora-primary/50 hover:bg-white/10 rounded-xl p-6 cursor-pointer transition-all shadow-md group flex flex-col justify-between min-h-[160px]"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${schedule.status === 'Ongoing' ? 'bg-error-container text-on-error-container' : schedule.status === 'Completed' ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' : 'bg-alviora-primary/20 text-alviora-primary'}`}>
+                        {schedule.status || 'Scheduled'}
+                      </span>
+                      <span className="text-white/50 text-xs flex items-center gap-1 font-mono">
+                        <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'}
+                      </span>
+                    </div>
+                    <h3 className="font-title-lg text-title-lg text-white font-bold mb-3 group-hover:text-alviora-primary transition-colors line-clamp-2 leading-tight">
+                      {schedule.items?.item_name_en || schedule.items?.name || 'Event Item'}
+                    </h3>
                   </div>
-                  <h3 className="font-title-lg text-title-lg text-white font-bold mb-3 group-hover:text-alviora-primary transition-colors line-clamp-2 leading-tight">
-                    {schedule.items?.item_name_en || schedule.items?.name || 'Event Item'}
-                  </h3>
+                  <div className="flex items-center gap-2 text-alviora-body text-xs mt-2 border-t border-white/10 pt-3">
+                    <span className="material-symbols-outlined text-[16px] text-alviora-primary">location_on</span>
+                    <span className="truncate">{schedule.venues?.name || `Stage ${idx + 1}`}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-alviora-body text-xs mt-2 border-t border-white/10 pt-3">
-                  <span className="material-symbols-outlined text-[16px] text-alviora-primary">location_on</span>
-                  <span className="truncate">{schedule.venues?.name || `Stage ${idx + 1}`}</span>
-                </div>
-              </div>
-            )) : (
-              <div className="col-span-full text-center py-16 bg-white/5 rounded-xl border border-white/10">
-                <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full flex justify-center py-16 bg-white/5 rounded-2xl border border-white/10 text-center px-6">
+              <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
+            </div>
+          )}
           
           {page === 'landing' && scheduleQuery.data && scheduleQuery.data.length > 0 && (
             <div className="flex justify-center mt-12">
