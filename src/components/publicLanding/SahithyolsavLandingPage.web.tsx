@@ -106,7 +106,7 @@ export function SahithyolsavLandingPage() {
       </div>
 
       {/* TopNavBar */}
-      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-10 sticky z-50 shadow-sm">
+      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <a className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href="#">
             <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
