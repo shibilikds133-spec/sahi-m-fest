@@ -54,7 +54,7 @@ export default function ParticipantResultPage() {
             <Text className="text-alviora-primary font-title-md font-semibold">Back</Text>
           </TouchableOpacity>
           <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
-            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"-0.05em",color:"#ffffff"}}>ALVIORA</span>
+            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
         </div>
       </nav>
