@@ -217,7 +217,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com" rel="preconnect"/>
         <link crossOrigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/>
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Handjet:wght@100..900&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/css2?family=VT323&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap" rel="stylesheet"/>
         <style>{`
@@ -228,6 +228,10 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           .schedule-marquee-track { display: flex; gap: 1.5rem; animation: schedule-marquee 90s linear infinite; width: max-content; }
           .schedule-marquee-container:hover .schedule-marquee-track { animation-play-state: paused; }
           @keyframes schedule-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-50% - 0.75rem)); } }
+          .handjet-wrapper, .handjet-wrapper *:not(.material-symbols-outlined):not(.keep-font) {
+            font-family: "Handjet", sans-serif !important;
+            font-variation-settings: "ELSH" 2 !important;
+          }
           @media (prefers-reduced-motion: no-preference) {
               .fade-in-up { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
               .fade-in-up.visible { opacity: 1; transform: translateY(0); }
@@ -331,6 +335,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         
         {/* Stats Section */}
+        <div className="handjet-wrapper">
         <section className="bg-transparent py-8 md:py-12 relative z-20 overflow-hidden">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-8 fade-in-up visible">
@@ -819,7 +824,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         <div className="flex flex-col md:flex-row justify-between items-center px-gutter py-8 max-w-container-max mx-auto gap-6">
           <div className="flex flex-col items-center md:items-start">
             <a className="font-bold tracking-tighter inline-block" href="#">
-              <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#c69a53"}}>ALVIORA</span>
+              <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#c69a53"}}>ALVIORA</span>
             </a>
             <p className="font-['Plus_Jakarta_Sans'] text-sm text-white/50 mt-2">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
           </div>
@@ -847,6 +852,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
