@@ -68,12 +68,12 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
   const scheduleQuery = usePublicSchedule(festivalId, tenantId);
 
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const [isTransitioning, setIsTransitioning] = React.useState(page !== 'landing');
   React.useEffect(() => {
     setIsTransitioning(true);
     const timer = setTimeout(() => {
       setIsTransitioning(false);
-    }, 400);
+    }, 500);
     return () => clearTimeout(timer);
   }, [page]);
 
