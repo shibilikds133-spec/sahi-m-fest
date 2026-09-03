@@ -68,6 +68,15 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
   const scheduleQuery = usePublicSchedule(festivalId, tenantId);
 
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
+  React.useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsTransitioning(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [page]);
+
   const [selectedSchedule, setSelectedSchedule] = React.useState<any>(null);
   const [activeFilter, setActiveFilter] = React.useState<string>('all');
 
@@ -281,7 +290,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       </nav>
 
       <main>
-        {(settingsQuery.isLoading || organisationQuery.isLoading || publishedResultsQuery.isLoading || scheduleQuery.isLoading) && page !== 'landing' ? (
+        {(settingsQuery.isLoading || organisationQuery.isLoading || publishedResultsQuery.isLoading || scheduleQuery.isLoading || isTransitioning) && page !== 'landing' ? (
           <div className="flex-1 min-h-[70vh] flex flex-col items-center justify-center gap-6 fade-in-up visible">
             <CometSpinner className="w-16 h-16" />
             <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-[#c69a53] uppercase animate-pulse">Loading Content...</p>
