@@ -211,7 +211,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   }, [filteredSchedules]);
 
   return (
-    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg bg-pattern text-alviora-body font-body-md antialiased">
+    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -228,7 +228,6 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           .schedule-marquee-track { display: flex; gap: 1.5rem; animation: schedule-marquee 90s linear infinite; width: max-content; }
           .schedule-marquee-container:hover .schedule-marquee-track { animation-play-state: paused; }
           @keyframes schedule-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-50% - 0.75rem)); } }
-          .bg-pattern { background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px; }
           @media (prefers-reduced-motion: no-preference) {
               .fade-in-up { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
               .fade-in-up.visible { opacity: 1; transform: translateY(0); }
