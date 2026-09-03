@@ -6,6 +6,7 @@ import { useAuthStore } from '../../core/store/authStore';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
+import { CometSpinner } from "@/components/loading-ui/comet-spinner";
 
 const VideoBackground = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -280,7 +281,14 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       </nav>
 
       <main>
-        {page === 'landing' && (<>{/* Hero Section */}
+        {(settingsQuery.isLoading || organisationQuery.isLoading || publishedResultsQuery.isLoading || scheduleQuery.isLoading) && page !== 'landing' ? (
+          <div className="flex-1 min-h-[70vh] flex flex-col items-center justify-center gap-6 fade-in-up visible">
+            <CometSpinner className="w-16 h-16" />
+            <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-[#c69a53] uppercase animate-pulse">Loading Content...</p>
+          </div>
+        ) : (
+          <>
+          {page === 'landing' && (<>{/* Hero Section */}
         <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible hero-section">
           <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
@@ -815,6 +823,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             </div>
           </div>
         </section>
+        )}
+        </>
         )}
       </main>
 
