@@ -40,7 +40,7 @@ module.exports = {
         'margin-mobile': '16px',
         'margin-desktop': '64px',
         'container-max': '1280px',
-        'section-gap': '120px'
+        'section-gap': '64px'
       },
 
       aspectRatio: {

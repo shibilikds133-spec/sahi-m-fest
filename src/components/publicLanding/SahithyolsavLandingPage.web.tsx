@@ -332,9 +332,9 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         
         {/* Stats Section */}
-        <section className="bg-transparent py-12 md:py-24 relative z-20 overflow-hidden">
+        <section className="bg-transparent py-8 md:py-12 relative z-20 overflow-hidden">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-            <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-12 fade-in-up visible">
+            <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-8 fade-in-up visible">
               
               {/* Stat 1 */}
               <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
@@ -385,7 +385,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         {/* Live Schedule */}
         {(page === 'landing' || page === 'schedule') && (
         <section id="live-schedule" className="px-gutter pt-4 md:pt-8 pb-section-gap max-w-[1400px] mx-auto fade-in-up visible">
-          <div className="flex justify-between items-end mb-12">
+          <div className="flex justify-between items-end mb-6">
             <div>
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
               <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
