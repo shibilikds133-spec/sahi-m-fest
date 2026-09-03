@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Head from 'expo-router/head';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { useAuthStore } from '../../core/store/authStore';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
@@ -263,14 +263,14 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       {/* TopNavBar */}
       <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-white/5 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
-          <a className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
-            <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
-          </a>
+          <Link className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
+            <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
+          </Link>
           <div className="hidden md:flex gap-8 handjet-wrapper">
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Home</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</a>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Home</Link>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</Link>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</Link>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</Link>
           </div>
           <div className="flex gap-4 handjet-wrapper">
             <button onClick={() => router.push('/(auth)/login')} className="hidden md:block px-4 py-2 font-bold text-lg uppercase tracking-widest text-white hover:text-gray-200 transition-colors">Admin</button>
