@@ -267,21 +267,21 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
           <div className="hidden md:flex gap-8">
-            <a className={`transition-colors duration-200 font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Home</a>
-            <a className={`transition-colors duration-200 font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</a>
-            <a className={`transition-colors duration-200 font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</a>
-            <a className={`transition-colors duration-200 font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard?tenant_id=${tenantId}`}>Home</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</a>
           </div>
           <div className="flex gap-4">
-            <button onClick={() => router.push('/(auth)/login')} className="hidden md:block px-4 py-2 font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest text-white/70 hover:text-white transition-colors">Admin</button>
-            <button className="hover-lift bg-[#c69a53] text-black px-6 py-2 rounded-full font-['Plus_Jakarta_Sans'] font-bold text-sm uppercase tracking-widest hover:bg-white duration-150 ease-in-out shadow-sm">Register</button>
+            <button onClick={() => router.push('/(auth)/login')} className="hidden md:block px-4 py-2 font-bold text-lg uppercase tracking-widest text-white/70 hover:text-white transition-colors" style={{fontFamily:"Barabara, sans-serif"}}>Admin</button>
+            <button className="hover-lift bg-[#c69a53] text-black px-6 py-2 rounded-full font-bold text-lg uppercase tracking-widest hover:bg-white duration-150 ease-in-out shadow-sm" style={{fontFamily:"Barabara, sans-serif"}}>Register</button>
           </div>
         </div>
       </nav>
 
       <main>
         {page === 'landing' && (<>{/* Hero Section */}
-        <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible">
+        <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible hero-section">
           <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
             {/* Background Video using Load Manager */}
@@ -335,8 +335,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         
         {/* Stats Section */}
-        <div className="handjet-wrapper">
-        <section className="bg-transparent py-8 md:py-12 relative z-20 overflow-hidden">
+        <section className="bg-transparent py-8 md:py-12 relative z-20 overflow-hidden handjet-wrapper">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="flex flex-row flex-wrap md:flex-nowrap justify-between items-center gap-4 md:gap-8 fade-in-up visible">
               
@@ -388,7 +387,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         </section></>)}
         {/* Live Schedule */}
         {(page === 'landing' || page === 'schedule') && (
-        <section id="live-schedule" className="px-gutter pt-4 md:pt-8 pb-section-gap max-w-[1400px] mx-auto fade-in-up visible">
+        <section id="live-schedule" className="px-gutter pt-4 md:pt-8 pb-section-gap max-w-[1400px] mx-auto fade-in-up visible handjet-wrapper">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
@@ -661,7 +660,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
-        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible ${page === 'units' ? '' : 'border-y'}`}>
+        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible handjet-wrapper ${page === 'units' ? '' : 'border-y'}`}>
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Team Rankings</h2>
@@ -712,7 +711,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Item Results Section */}
         {page === 'items' && (
-        <section id="item-results" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible">
+        <section id="item-results" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible handjet-wrapper">
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Published Results</h2>
@@ -754,7 +753,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Festival Gallery (Bento Grid) */}
         {page === 'landing' && (
-        <section className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible">
+        <section className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible handjet-wrapper">
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-12 text-center">Festival Highlights</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[250px]">
             {/* Item 1 - 2x2 Large */}
@@ -852,7 +851,6 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </div>
         </div>
       </footer>
-      </div>
     </div>
   );
 }
