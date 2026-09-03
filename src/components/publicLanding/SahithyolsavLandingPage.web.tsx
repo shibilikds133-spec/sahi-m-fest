@@ -660,7 +660,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
-        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible handjet-wrapper ${page === 'units' ? '' : 'border-y'}`}>
+        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible ${page === 'units' ? '' : 'border-y'}`}>
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Team Rankings</h2>
@@ -711,7 +711,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Item Results Section */}
         {page === 'items' && (
-        <section id="item-results" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible handjet-wrapper">
+        <section id="item-results" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible">
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Published Results</h2>
