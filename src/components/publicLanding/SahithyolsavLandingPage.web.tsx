@@ -266,15 +266,15 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           <a className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
             <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
-          <div className="hidden md:flex gap-8">
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard?tenant_id=${tenantId}`}>Home</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</a>
-            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white/70 hover:text-white'}`} style={{fontFamily:"Barabara, sans-serif"}} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</a>
+          <div className="hidden md:flex gap-8 handjet-wrapper">
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Home</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</a>
+            <a className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</a>
           </div>
-          <div className="flex gap-4">
-            <button onClick={() => router.push('/(auth)/login')} className="hidden md:block px-4 py-2 font-bold text-lg uppercase tracking-widest text-white/70 hover:text-white transition-colors" style={{fontFamily:"Barabara, sans-serif"}}>Admin</button>
-            <button className="hover-lift bg-[#c69a53] text-black px-6 py-2 rounded-full font-bold text-lg uppercase tracking-widest hover:bg-white duration-150 ease-in-out shadow-sm" style={{fontFamily:"Barabara, sans-serif"}}>Register</button>
+          <div className="flex gap-4 handjet-wrapper">
+            <button onClick={() => router.push('/(auth)/login')} className="hidden md:block px-4 py-2 font-bold text-lg uppercase tracking-widest text-white hover:text-gray-200 transition-colors">Admin</button>
+            <button className="hover-lift bg-[#c69a53] text-black px-6 py-2 rounded-full font-bold text-lg uppercase tracking-widest hover:bg-white duration-150 ease-in-out shadow-sm">Register</button>
           </div>
         </div>
       </nav>
