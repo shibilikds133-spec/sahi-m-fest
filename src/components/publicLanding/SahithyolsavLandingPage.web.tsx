@@ -8,6 +8,31 @@ import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hook
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
 import { CometSpinner } from "@/components/loading-ui/comet-spinner";
 
+const InitialLoader = ({ isReady }: { isReady: boolean }) => {
+  const [shouldRender, setShouldRender] = React.useState(true);
+
+  React.useEffect(() => {
+    if (isReady) {
+      const timer = setTimeout(() => setShouldRender(false), 500); // Wait for fade out animation
+      return () => clearTimeout(timer);
+    }
+  }, [isReady]);
+
+  if (!shouldRender) return null;
+
+  return (
+    <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1C3338] transition-opacity duration-500 ease-in-out ${isReady ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="flex flex-col items-center gap-8 fade-in-up">
+        <span className="text-5xl uppercase tracking-widest text-alviora-primary keep-font drop-shadow-lg" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>
+          ALVIORA
+        </span>
+        <CometSpinner className="w-16 h-16" />
+        <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-white/70 uppercase animate-pulse">Initializing Experience...</p>
+      </div>
+    </div>
+  );
+};
+
 const VideoBackground = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   // Store a list of which videos have been loaded at least once
@@ -67,6 +92,17 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   const publishedResultsQuery = usePublicPublishedResults(tenantId, festivalId, !!tenantId && !!festivalId, true);
   const organisationQuery = usePublicLeaderboard(tenantId, festivalId, !!tenantId && !!festivalId);
   const scheduleQuery = usePublicSchedule(festivalId, tenantId);
+  
+  // Initial Splash Screen Logic
+  const [isAppReady, setIsAppReady] = React.useState(false);
+  React.useEffect(() => {
+    const isDataLoaded = !settingsQuery.isLoading && !organisationQuery.isLoading && !publishedResultsQuery.isLoading && !scheduleQuery.isLoading;
+    if (isDataLoaded) {
+      // Ensure minimum display time of 1500ms
+      const timer = setTimeout(() => setIsAppReady(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [settingsQuery.isLoading, organisationQuery.isLoading, publishedResultsQuery.isLoading, scheduleQuery.isLoading]);
 
   const [isTransitioning, setIsTransitioning] = React.useState(page !== 'landing');
   React.useEffect(() => {
@@ -222,6 +258,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
+      <InitialLoader isReady={isAppReady} />
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
