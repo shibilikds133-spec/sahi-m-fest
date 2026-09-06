@@ -6,7 +6,7 @@ import { useAuthStore } from '../../core/store/authStore';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
-import { Swirling } from "@/components/loading-ui/swirling";
+import { Swirling } from '../../components/loading-ui/swirling';
 
 const InitialLoader = ({ isReady }: { isReady: boolean }) => {
   const [shouldRender, setShouldRender] = React.useState(true);
