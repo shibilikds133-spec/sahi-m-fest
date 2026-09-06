@@ -164,10 +164,11 @@ const accentByRank = (rank: number) => {
 const toOrganisationRows = (rows: LeaderboardRow[], label: string): RankingViewRow[] =>
   rows.map((row, rowIndex) => {
     const rank = rowIndex + 1;
+    const graceText = row.grace_marks_awarded ? ` (+${row.grace_marks_awarded} Grace)` : '';
     return {
       id: row.organisation_id ?? `organisation:${row.organisation_name}`,
       name: row.organisation_name,
-      subtitle: `${row.result_count} results - ${row.first_place_count} first places`,
+      subtitle: `${row.result_count} results - ${row.first_place_count} first places${graceText}`,
       points: row.total_points,
       rank,
       badgeLabel: label,

@@ -52,6 +52,12 @@ export const judgeRepository = {
   async finalizeMarkEntry(markEntryId: string) {
     return databaseProvider.finalizeMarkEntry(markEntryId);
   },
+  async unlockJudgeMarks(scheduleId: string, judgeId: string) {
+    return databaseProvider.unlockJudgeMarks(scheduleId, judgeId);
+  },
+  async unlockScheduleMarks(scheduleId: string) {
+    return databaseProvider.unlockScheduleMarks(scheduleId);
+  },
   async listResults<T>(scheduleId: string) {
     return databaseProvider.listResults<T>(scheduleId);
   },

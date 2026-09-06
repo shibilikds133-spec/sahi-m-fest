@@ -217,6 +217,7 @@ export default function PointsSettings() {
         less_than_3_teams_rule: form.rule12Enabled,
         rule12_min_teams: form.rule12MinTeams,
         rule12_behavior: form.rule12Behavior,
+        enable_grace_marks: form.enableGraceMarks,
         config_version: nextVersion,
         change_reason: changeReason.trim() || 'Points configuration updated',
       });
@@ -640,6 +641,23 @@ export default function PointsSettings() {
               </View>
             </View>
           )}
+        </SsfCard>
+
+        <SsfCard className="mb-5">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1 pr-4">
+              <Text className="font-poppins-black text-lg text-ssf-text">Grace Marks</Text>
+              <Text className="font-poppins text-xs text-gray-500 mt-1">
+                Enable the ability to award grace marks to groups. The marks will be added to their final leaderboard points.
+              </Text>
+            </View>
+            <Switch
+              value={form.enableGraceMarks}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, enableGraceMarks: value }))}
+              trackColor={{ false: '#9CA3AF', true: '#065F46' }}
+            />
+          </View>
         </SsfCard>
 
         {errors.length > 0 && (

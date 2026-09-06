@@ -1,4 +1,4 @@
-@import "@fontsource-variable/inter";
+/* @import "@fontsource-variable/inter"; */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,6 +16,7 @@ html, body, #root, #__next {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  background-color: #1C3338;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

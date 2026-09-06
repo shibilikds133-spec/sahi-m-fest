@@ -120,6 +120,16 @@ export const judgeService = {
     if (error) throw new Error(error.message);
   },
 
+  async unlockJudgeMarks(scheduleId: string, judgeId: string) {
+    const { error } = await judgeRepository.unlockJudgeMarks(scheduleId, judgeId);
+    if (error) throw new Error(error.message);
+  },
+
+  async unlockScheduleMarks(scheduleId: string) {
+    const { error } = await judgeRepository.unlockScheduleMarks(scheduleId);
+    if (error) throw new Error(error.message);
+  },
+
   async listResults<T>(scheduleId: string) {
     const { data, error } = await judgeRepository.listResults<T>(scheduleId);
     if (error) throw new Error(error.message);

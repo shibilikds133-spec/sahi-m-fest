@@ -157,6 +157,12 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: 'Grace Marks',
+    path: '/(admin)/grace-marks',
+    icon: Trophy,
+    match: (path) => path.includes('/grace-marks'),
+  },
+  {
     label: 'Festival Settings',
     path: '/(admin)/settings/calendar',
     icon: Settings,

@@ -29,6 +29,7 @@ export type FlexiblePointsConfig = {
   rule12Enabled: boolean;
   rule12MinTeams: number;
   rule12Behavior: Rule12Behavior;
+  enableGraceMarks: boolean;
   version: number;
 };
 
@@ -130,6 +131,7 @@ export const normalizePointsConfig = (config?: any): FlexiblePointsConfig => {
       : config?.rule12_behavior === 'rank_and_grade' || config?.rule12_behavior === 'no_points'
         ? config.rule12_behavior
         : 'grade_only',
+    enableGraceMarks: config?.enable_grace_marks === true,
     version: Math.max(1, Math.trunc(toFiniteNumber(config?.config_version, 1))),
   };
 };

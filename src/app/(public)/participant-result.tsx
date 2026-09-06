@@ -53,7 +53,7 @@ export default function ParticipantResultPage() {
             <ArrowLeft size={20} color="#1C5FA8" />
             <Text className="text-alviora-primary font-title-md font-semibold">Back</Text>
           </TouchableOpacity>
-          <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
+          <a className="font-headline-lg text-headline-lg font-black text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>
             <span className="text-2xl uppercase" style={{fontFamily:"Barabara, sans-serif",fontWeight:"800",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
           </a>
         </div>

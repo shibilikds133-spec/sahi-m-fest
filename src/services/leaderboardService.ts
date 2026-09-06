@@ -15,6 +15,7 @@ export type LeaderboardRow = {
   grade_c_count: number;
   result_count: number;
   latest_published_at: string | null;
+  grace_marks_awarded?: number;
 };
 
 export type PublicPublishedResultRow = {

@@ -2,7 +2,9 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Slot, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import '@fontsource-variable/inter';
 import '../global.css';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,17 +17,29 @@ import { useAuthStore } from '../core/store/authStore';
 import { NotificationProvider } from '../core/contexts/NotificationContext';
 import { NotificationToast } from '../components/ui/NotificationToast';
 
+// Removed top-level preventAutoHideAsync, moving it inside component
+
+const LOADING_BG = '#1C3338';
+
+function AppLoadingScreen() {
+  return (
+    <View style={{ flex: 1, backgroundColor: LOADING_BG, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#c69a53" />
+    </View>
+  );
+}
+
+function LayoutContent() {
+ const blockProtectedCoreRoute = useProtectedRoute();
+ if (blockProtectedCoreRoute) return <AppLoadingScreen />;
+ return <Slot />;
+}
+
 export const unstable_settings = {
  anchor: '(public)',
 };
 
 const queryClient = new QueryClient();
-
-function LayoutContent() {
- const blockProtectedCoreRoute = useProtectedRoute();
- if (blockProtectedCoreRoute) return null;
- return <Slot />;
-}
 
 export default function RootLayout() {
  const colorScheme = useColorScheme();
@@ -42,6 +56,7 @@ export default function RootLayout() {
  });
 
  useEffect(() => {
+   SplashScreen.preventAutoHideAsync().catch(() => {});
    checkSession();
  }, [checkSession]);
 
@@ -52,7 +67,7 @@ export default function RootLayout() {
  }, [fontsLoaded, fontError, initialized]);
 
  if ((!fontsLoaded && !fontError) || !initialized) {
-   return null;
+   return <AppLoadingScreen />;
  }
 
  const CustomLightTheme = {

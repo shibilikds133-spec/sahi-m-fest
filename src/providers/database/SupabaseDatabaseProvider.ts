@@ -1186,6 +1186,21 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: undefined, error: normalizeError(error) };
   }
 
+  async unlockJudgeMarks(scheduleId: string, judgeId: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('unlock_judge_marks', {
+      p_schedule_id: scheduleId,
+      p_judge_id: judgeId,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async unlockScheduleMarks(scheduleId: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('unlock_schedule_marks', {
+      p_schedule_id: scheduleId,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
   async getJudgeRegistrationsByToken<T>(token: string): Promise<ListResult<T>> {
     // Token-bound RPC. The judge, schedule, tenant and festival are derived
     // server-side from the approved token; the caller cannot choose a schedule.

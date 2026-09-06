@@ -97,6 +97,8 @@ export interface DatabaseProvider {
   listMarkEntries<T>(scheduleId: string): Promise<ListResult<T>>;
   upsertMarkEntry<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   finalizeMarkEntry(markEntryId: string): Promise<QueryResult<void>>;
+  unlockJudgeMarks(scheduleId: string, judgeId: string): Promise<QueryResult<void>>;
+  unlockScheduleMarks(scheduleId: string): Promise<QueryResult<void>>;
   getRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>>;
   getJudgeRegistrationsByToken<T>(token: string): Promise<ListResult<T>>;
   submitJudgeMark<T>(payload: {

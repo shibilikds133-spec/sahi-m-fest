@@ -52,6 +52,7 @@ export default function ResultsPage() {
     useMarkEntries,
     useResults,
     publishResults: publishResultsMutation,
+    unlockScheduleMarks,
     useJudgeSubmissionSummary,
   } = useJudges();
 
@@ -804,7 +805,7 @@ export default function ResultsPage() {
         <View className="h-3" />
       </ScrollView>
 
-      {/* Publish button */}
+      {/* Action buttons */}
       <View className="border-t border-ui-border bg-white px-3 py-3">
         {published && forceRepublishConfirmed && (
           <View className="bg-red-50 border border-red-200 p-2 rounded-t-xl -mb-2 z-0 flex-row items-center justify-center">
@@ -813,13 +814,44 @@ export default function ResultsPage() {
             </Text>
           </View>
         )}
-        <SsfButton
-          label={(published && !forceRepublishConfirmed) ? '✅ Results Published' : '🚀 Publish Results'}
-          onPress={handlePublish}
-          isLoading={saving}
-          disabled={!hasAtLeastOneResult}
-          className={`${published && !forceRepublishConfirmed ? 'opacity-80' : ''} ${!hasAtLeastOneResult ? 'opacity-50' : ''}`}
-        />
+        <View className="flex-row gap-x-2">
+          {mode === 'marks' && (
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  const ans = window.prompt("To unlock all marks for this event, type 'UNLOCK' in uppercase:");
+                  if (ans === 'UNLOCK') {
+                    unlockScheduleMarks.mutate(scheduleId);
+                  } else if (ans !== null) {
+                    window.alert("Invalid input. Marks were not unlocked.");
+                  }
+                } else {
+                  Alert.alert(
+                    "Unlock All Marks",
+                    "Are you sure you want to unlock ALL marks for this event? Results will be unpublished and judges can edit marks again.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Yes, Unlock All", style: "destructive", onPress: () => unlockScheduleMarks.mutate(scheduleId) }
+                    ]
+                  );
+                }
+              }}
+              disabled={unlockScheduleMarks.isPending}
+              className={`h-12 px-4 rounded-xl items-center justify-center border border-red-200 bg-red-50 ${unlockScheduleMarks.isPending ? 'opacity-50' : ''}`}
+            >
+              <Text className="font-poppins-bold text-red-700">🔓 Unlock Marks</Text>
+            </TouchableOpacity>
+          )}
+          <View className="flex-1">
+            <SsfButton
+              label={(published && !forceRepublishConfirmed) ? '✅ Results Published' : '🚀 Publish Results'}
+              onPress={handlePublish}
+              isLoading={saving}
+              disabled={!hasAtLeastOneResult}
+              className={`${published && !forceRepublishConfirmed ? 'opacity-80' : ''} ${!hasAtLeastOneResult ? 'opacity-50' : ''}`}
+            />
+          </View>
+        </View>
       </View>
     </View>
   );

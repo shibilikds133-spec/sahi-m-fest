@@ -111,6 +111,26 @@ export const useJudges = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['markEntries'] }),
   });
 
+  // ── Unlock judge marks ────────────────────────────────────────────────────────
+  const unlockJudgeMarks = useMutation({
+    mutationFn: ({ scheduleId, judgeId }: { scheduleId: string; judgeId: string }) => 
+      judgeService.unlockJudgeMarks(scheduleId, judgeId),
+    onSuccess: (_, { scheduleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['markEntries', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['judgeSubmissionSummary', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['results', scheduleId] });
+    },
+  });
+
+  const unlockScheduleMarks = useMutation({
+    mutationFn: (scheduleId: string) => judgeService.unlockScheduleMarks(scheduleId),
+    onSuccess: (_, scheduleId) => {
+      queryClient.invalidateQueries({ queryKey: ['markEntries', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['judgeSubmissionSummary', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['results', scheduleId] });
+    },
+  });
+
   // ── Results ───────────────────────────────────────────────────────────────────
   const useResults = (scheduleId: string | undefined) => useQuery({
     queryKey: ['results', scheduleId],
@@ -160,6 +180,8 @@ export const useJudges = () => {
     useMarkEntries,
     saveMarkEntry,
     finalizeMarkEntry,
+    unlockJudgeMarks,
+    unlockScheduleMarks,
     useResults,
     publishResults,
     useJudgeSubmissionSummary,
