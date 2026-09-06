@@ -6,7 +6,7 @@ import { useAuthStore } from '../../core/store/authStore';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
-import { CometSpinner } from "@/components/loading-ui/comet-spinner";
+import { Swirling } from "@/components/loading-ui/swirling";
 
 const InitialLoader = ({ isReady }: { isReady: boolean }) => {
   const [shouldRender, setShouldRender] = React.useState(true);
@@ -22,11 +22,11 @@ const InitialLoader = ({ isReady }: { isReady: boolean }) => {
 
   return (
     <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1C3338] transition-opacity duration-500 ease-in-out ${isReady ? 'opacity-0' : 'opacity-100'}`}>
-      <div className="flex flex-col items-center gap-8 fade-in-up">
+      <div className="flex flex-col items-center gap-8 fade-in-up visible">
         <span className="text-5xl uppercase tracking-widest text-alviora-primary keep-font drop-shadow-lg" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>
           ALVIORA
         </span>
-        <CometSpinner className="w-16 h-16" />
+        <Swirling className="w-16 h-16 text-white" />
         <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-white/70 uppercase animate-pulse">Initializing Experience...</p>
       </div>
     </div>
@@ -96,22 +96,16 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   // Initial Splash Screen Logic
   const [isAppReady, setIsAppReady] = React.useState(false);
   React.useEffect(() => {
-    const isDataLoaded = !settingsQuery.isLoading && !organisationQuery.isLoading && !publishedResultsQuery.isLoading && !scheduleQuery.isLoading;
+    // ONLY block on settings to show the Hero Section ASAP.
+    // The other queries (organisation, results, schedule) can load in the background.
+    const isDataLoaded = !settingsQuery.isLoading;
     if (isDataLoaded) {
-      // Ensure minimum display time of 1500ms
-      const timer = setTimeout(() => setIsAppReady(true), 1500);
-      return () => clearTimeout(timer);
+      setIsAppReady(true);
     }
-  }, [settingsQuery.isLoading, organisationQuery.isLoading, publishedResultsQuery.isLoading, scheduleQuery.isLoading]);
+  }, [settingsQuery.isLoading]);
 
-  const [isTransitioning, setIsTransitioning] = React.useState(page !== 'landing');
-  React.useEffect(() => {
-    setIsTransitioning(true);
-    const timer = setTimeout(() => {
-      setIsTransitioning(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [page]);
+  // Removed artificial transition delay. We now rely only on actual data loading states.
+  const isTransitioning = false;
 
   const [selectedSchedule, setSelectedSchedule] = React.useState<any>(null);
   const [activeFilter, setActiveFilter] = React.useState<string>('all');
@@ -256,6 +250,15 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
     return [...items, ...items];
   }, [filteredSchedules]);
 
+  // Determine if the current page's critical data is still loading
+  const isPageDataLoading = React.useMemo(() => {
+    if (settingsQuery.isLoading) return true;
+    if (page === 'schedule' && scheduleQuery.isLoading) return true;
+    if (page === 'units' && organisationQuery.isLoading) return true;
+    if (page === 'items' && publishedResultsQuery.isLoading) return true;
+    return false;
+  }, [page, settingsQuery.isLoading, scheduleQuery.isLoading, organisationQuery.isLoading, publishedResultsQuery.isLoading]);
+
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
       <InitialLoader isReady={isAppReady} />
@@ -310,11 +313,11 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       {/* TopNavBar */}
       <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-white/5 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
-          <Link className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}`}>
+          <Link className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>
             <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
           </Link>
           <div className="hidden md:flex gap-8 handjet-wrapper">
-            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}`}>Home</Link>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>Home</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</Link>
@@ -327,9 +330,9 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       </nav>
 
       <main>
-        {(settingsQuery.isLoading || organisationQuery.isLoading || publishedResultsQuery.isLoading || scheduleQuery.isLoading || isTransitioning) && page !== 'landing' ? (
+        {isPageDataLoading && page !== 'landing' ? (
           <div className="flex-1 min-h-[70vh] flex flex-col items-center justify-center gap-6 fade-in-up visible">
-            <CometSpinner className="w-16 h-16" />
+            <Swirling className="w-16 h-16 text-white" />
             <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-[#c69a53] uppercase animate-pulse">Loading Content...</p>
           </div>
         ) : (
@@ -806,7 +809,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         )}
 
         {/* Festival Gallery (Bento Grid) */}
-        {page === 'landing' && (
+        {false && page === 'landing' && (
         <section className="px-gutter py-section-gap max-w-container-max mx-auto fade-in-up visible handjet-wrapper">
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-12 text-center">Festival Highlights</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[250px]">
