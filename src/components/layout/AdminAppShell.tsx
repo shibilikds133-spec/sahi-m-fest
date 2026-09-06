@@ -39,6 +39,7 @@ import { useAuthStore } from '@/core/store/authStore';
 import { useFestival } from '@/core/hooks/useFestival';
 import { ui } from '@/constants/designSystem';
 import { JudgeApprovalToast } from '../ui/JudgeApprovalToast';
+import { useJudgeApprovalStore } from '@/core/store/judgeApprovalStore';
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -221,6 +222,7 @@ function DesktopSidebar({
   const router = useRouter();
   const { user, role, logout } = useAuthStore();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const { pendingCount } = useJudgeApprovalStore();
 
   return (
     <View className="no-print" style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
@@ -283,9 +285,16 @@ function DesktopSidebar({
                     strokeWidth={active ? 2.35 : 2}
                   />
                   {!collapsed && (
-                    <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>
-                      {item.label}
-                    </Text>
+                    <View className="flex-row items-center flex-1">
+                      <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>
+                        {item.label}
+                      </Text>
+                      {item.label === 'Judge Management' && pendingCount > 0 && (
+                        <View className="bg-red-500 rounded-full w-5 h-5 items-center justify-center ml-auto mr-1">
+                          <Text className="text-white text-[10px] font-bold">{pendingCount}</Text>
+                        </View>
+                      )}
+                    </View>
                   )}
                   {!collapsed && item.children ? (
                     expanded
@@ -348,19 +357,20 @@ function DesktopSidebar({
 
 function MobileMenuSheet({
   visible,
-  pathname,
   onClose,
+  pathname,
 }: {
   visible: boolean;
-  pathname: string;
   onClose: () => void;
+  pathname: string;
 }) {
   const router = useRouter();
   const { user, role } = useAuthStore();
+  const { pendingCount } = useJudgeApprovalStore();
 
   const navigate = (path: string) => {
     onClose();
-    router.push(path as any);
+    setTimeout(() => router.push(path as any), 150);
   };
 
   return (
@@ -407,6 +417,11 @@ function MobileMenuSheet({
                       color={active ? ui.colors.info : '#52647C'}
                       strokeWidth={2}
                     />
+                    {item.label === 'Judge Management' && pendingCount > 0 && (
+                      <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
+                        <Text className="text-white text-[9px] font-bold">{pendingCount}</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={[styles.menuTileLabel, active && styles.menuTileLabelActive]}>
                     {item.label}

@@ -3,18 +3,46 @@ import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native
 import { X, ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 import { supabase } from '../../core/config/supabase';
 import { useAuthStore } from '../../core/store/authStore';
+import { useJudgeApprovalStore } from '../../core/store/judgeApprovalStore';
 import { useRouter } from 'expo-router';
 
 export const JudgeApprovalToast = () => {
   const { tenant_id } = useAuthStore();
+  const { setPendingCount, incrementCount, decrementCount, pendingCount } = useJudgeApprovalStore();
   const [visible, setVisible] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [translateY] = useState(new Animated.Value(-100));
   const [currentNotif, setCurrentNotif] = useState<any>(null);
+  const [hasShownInitialToast, setHasShownInitialToast] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     if (!tenant_id) return;
+
+    // Fetch initial count
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from('judge_tokens')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenant_id)
+        .eq('status', 'pending_approval');
+      
+      if (count !== null) {
+        setPendingCount(count);
+        // If there are existing approvals when the app loads, show a toast!
+        if (count > 0 && !hasShownInitialToast) {
+          setCurrentNotif({
+            type: 'waiting',
+            title: 'Pending Approvals',
+            body: `You have ${count} pending judge login request(s).`,
+          });
+          showToast();
+          setTimeout(() => hideToast(), 8000);
+          setHasShownInitialToast(true);
+        }
+      }
+    };
+    fetchCount();
 
     const channel = supabase
       .channel(`judge_approvals_global_${tenant_id}`)
@@ -38,6 +66,7 @@ export const JudgeApprovalToast = () => {
 
           // Manual Approval Required
           if (payload.new.status === 'pending_approval' && payload.old.status !== 'pending_approval') {
+            incrementCount();
             setCurrentNotif({
               type: 'waiting',
               title: 'Login Request',
@@ -55,6 +84,10 @@ export const JudgeApprovalToast = () => {
             });
             showToast();
             setTimeout(() => hideToast(), 6000);
+          }
+          // Request was approved or rejected (decrement the count)
+          else if (payload.old.status === 'pending_approval' && payload.new.status !== 'pending_approval') {
+            decrementCount();
           }
         }
       )
