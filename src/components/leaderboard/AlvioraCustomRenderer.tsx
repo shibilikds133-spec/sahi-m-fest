@@ -950,11 +950,21 @@ export function AlvioraCustomRenderer({ page = 'landing' }: { page?: PublicLeade
               </View>
               <View style={styles.timelineItemsList}>
                 {group.items.map((item) => {
-                  const normalizedStatus = String(item.status || '').toLowerCase();
-                  const isLive = ['live', 'ongoing', 'in_progress'].includes(normalizedStatus);
-                  const isCompleted = ['completed', 'complete', 'finished'].includes(normalizedStatus);
+                  let normalizedStatus = String(item.status || '').toLowerCase();
+                  let isLive = ['live', 'ongoing', 'in_progress'].includes(normalizedStatus);
+                  let isCompleted = ['completed', 'complete', 'finished'].includes(normalizedStatus);
 
-                  let statusText = item.status ? titleCase(item.status) : 'Scheduled';
+                  // Dynamically upgrade status if it was just 'scheduled'
+                  if (!isCompleted && (item.is_published || item.has_results)) {
+                    isCompleted = true;
+                    isLive = false;
+                    normalizedStatus = 'completed';
+                  } else if (!isCompleted && !isLive && (item.has_marks || item.has_codes)) {
+                    isLive = true;
+                    normalizedStatus = 'ongoing';
+                  }
+
+                  let statusText = titleCase(normalizedStatus || 'scheduled');
                   let badgeStyle: any = [];
                   let textStyle: any = [];
                   let showGreenDot = isLive;
@@ -964,10 +974,11 @@ export function AlvioraCustomRenderer({ page = 'landing' }: { page?: PublicLeade
                     badgeStyle = [styles.statusBadgeCompleted];
                     textStyle = [styles.statusBadgeTextCompleted];
                   } else if (isLive) {
-                    statusText = 'Live';
+                    statusText = 'Ongoing';
                     badgeStyle = [styles.statusBadgeLive];
                     textStyle = [styles.statusBadgeTextLive];
                   } else {
+                    statusText = 'Scheduled';
                     badgeStyle = [];
                     textStyle = [];
                   }

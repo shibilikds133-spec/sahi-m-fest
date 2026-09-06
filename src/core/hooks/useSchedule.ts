@@ -89,34 +89,53 @@ export const useSchedule = () => {
   };
 };
 
-export const fetchPublicSchedules = async (festivalId: string) => {
-  const { data, error } = await supabase
-    .from('vw_public_schedule')
-    .select('*')
-    .eq('festival_id', festivalId)
-    .order('start_time');
-  if (error) throw new Error(error.message);
-  return (data || []).map((row: any) => ({
-    ...row,
-    id: row.schedule_id,
-    venues: row.venue_id ? { id: row.venue_id, name: row.venue_name, location: row.venue_location } : null,
-    items: {
-      id: row.item_id,
-      item_code: row.item_code,
-      item_name_en: row.item_name,
-      item_name_ml: row.item_name_ml,
-      item_type: row.item_type,
-      category_codes: row.item_category_codes || [],
-    },
-  }));
+export const fetchPublicSchedules = async (festivalId: string, tenantId?: string) => {
+  const [schedulesRes, verificationRes] = await Promise.all([
+    supabase
+      .from('vw_public_schedule')
+      .select('*')
+      .eq('festival_id', festivalId)
+      .order('start_time'),
+    tenantId ? supabase.rpc('get_public_verification_status', { p_tenant_id: tenantId }) : Promise.resolve({ data: [] })
+  ]);
+
+  if (schedulesRes.error) throw new Error(schedulesRes.error.message);
+  
+  const verificationMap = (verificationRes.data || []).reduce((acc: any, row: any) => {
+    acc[row.schedule_id] = row;
+    return acc;
+  }, {});
+
+  return (schedulesRes.data || []).map((row: any) => {
+    const vStatus = verificationMap[row.schedule_id] || {};
+    return {
+      ...row,
+      id: row.schedule_id,
+      is_published: row.is_published,
+      has_results: row.has_results || vStatus.has_results || false,
+      has_marks: vStatus.has_marks || false,
+      has_codes: vStatus.has_codes || false,
+      venues: row.venue_id ? { id: row.venue_id, name: row.venue_name, location: row.venue_location } : null,
+      items: {
+        id: row.item_id,
+        item_code: row.item_code,
+        item_name_en: row.item_name,
+        item_name_ml: row.item_name_ml,
+        item_type: row.item_type,
+        category_codes: row.item_category_codes || [],
+      },
+    };
+  });
 };
 
 export const usePublicSchedule = (festivalId?: string | null, tenantId?: string | null) => {
   return useQuery({
-    queryKey: ['public-schedules', tenantId ?? 'none', festivalId ?? 'none'],
-    queryFn: () => fetchPublicSchedules(festivalId!),
-    enabled: !!tenantId && !!festivalId,
-    staleTime: 300000, // 5 minutes
-    gcTime: 1800000, // 30 minutes
+    queryKey: ['publicSchedule', festivalId, tenantId],
+    queryFn: () => {
+      if (!festivalId) throw new Error('Festival ID is required');
+      return fetchPublicSchedules(festivalId, tenantId || undefined);
+    },
+    enabled: !!festivalId,
+    staleTime: 1000, 
   });
 };

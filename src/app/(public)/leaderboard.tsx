@@ -1094,11 +1094,21 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
               </View>
               <View style={styles.timelineItemsList}>
                 {group.items.map((item) => {
-                  const normalizedStatus = String(item.status || '').toLowerCase();
-                  const isLive = ['live', 'ongoing', 'in_progress'].includes(normalizedStatus);
-                  const isCompleted = ['completed', 'complete', 'finished'].includes(normalizedStatus);
+                  let normalizedStatus = String(item.status || '').toLowerCase();
+                  let isLive = ['live', 'ongoing', 'in_progress'].includes(normalizedStatus);
+                  let isCompleted = ['completed', 'complete', 'finished'].includes(normalizedStatus);
 
-                  let statusText = item.status ? titleCase(item.status) : 'Scheduled';
+                  // Dynamically upgrade status if it was just 'scheduled'
+                  if (!isCompleted && (item.is_published || item.has_results)) {
+                    isCompleted = true;
+                    isLive = false;
+                    normalizedStatus = 'completed';
+                  } else if (!isCompleted && !isLive && (item.has_marks || item.has_codes)) {
+                    isLive = true;
+                    normalizedStatus = 'ongoing';
+                  }
+
+                  let statusText = titleCase(normalizedStatus || 'scheduled');
                   let badgeStyle: any = [];
                   let textStyle: any = [];
                   let showGreenDot = isLive;
@@ -1108,10 +1118,11 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
                     badgeStyle = [styles.statusBadgeCompleted];
                     textStyle = [styles.statusBadgeTextCompleted];
                   } else if (isLive) {
-                    statusText = 'Live';
+                    statusText = 'Ongoing';
                     badgeStyle = [styles.statusBadgeLive];
                     textStyle = [styles.statusBadgeTextLive];
                   } else {
+                    statusText = 'Scheduled';
                     badgeStyle = [];
                     textStyle = [];
                   }
@@ -1282,7 +1293,7 @@ class CustomRendererErrorBoundary extends Component<{ children: React.ReactNode,
 }
 
 export function PublicLeaderboardExperience({ page = 'landing' }: { page?: PublicLeaderboardPage }) {
-  const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
+  const { tenant_id: queryTenantId, bypass_html } = useLocalSearchParams<{ tenant_id?: string, bypass_html?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
   const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
 
@@ -1290,9 +1301,16 @@ export function PublicLeaderboardExperience({ page = 'landing' }: { page?: Publi
   const CUSTOM_RENDERER_ENABLED = process.env.EXPO_PUBLIC_CUSTOM_RENDERER_ENABLED !== 'false';
 
   if (tenantId === TARGET_TENANT_ID && CUSTOM_RENDERER_ENABLED) {
+    if (page === 'landing' && Platform.OS === 'web' && bypass_html !== 'true') {
+      if (typeof window !== 'undefined') {
+        window.location.replace('/consoulium.html?tenant_id=' + tenantId);
+      }
+      return <View style={{flex: 1, backgroundColor: '#262626'}} />;
+    }
+
     return (
-      <CustomRendererErrorBoundary fallback={<DefaultPublicLeaderboardExperience page={page} />}>
-        <SahithyolsavLandingPage />
+      <CustomRendererErrorBoundary fallback={<View style={{ flex: 1, backgroundColor: '#030E21', justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: 'white' }}>Something went wrong. Please reload.</Text></View>}>
+        <SahithyolsavLandingPage page={page as any} />
       </CustomRendererErrorBoundary>
     );
   }
