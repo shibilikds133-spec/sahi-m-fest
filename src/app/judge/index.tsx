@@ -10,6 +10,7 @@ import { ShieldCheck, AlertCircle, ArrowRight, Camera, X } from 'lucide-react-na
 import { judgeTokenService } from '../../services/judgeTokenService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Device from 'expo-device';
 import { supabase } from '../../core/config/supabase';
 
 export default function JudgePortalLanding() {
@@ -177,9 +178,18 @@ export default function JudgePortalLanding() {
     setIsLoading(true);
     setError('');
     try {
+      let deviceId = await AsyncStorage.getItem('judge_device_id');
+      if (!deviceId) {
+        deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        await AsyncStorage.setItem('judge_device_id', deviceId);
+      }
+      const osName = Device.osName || Platform.OS;
+      const modelName = Device.modelName || 'Browser';
+      const deviceInfo = `${modelName} (${osName})`;
+
       const tokenData = await judgeTokenService.validateToken(finalCode);
       // Instead of replacing router, we request login and wait for approval
-      const request = await judgeTokenService.requestLogin(finalCode);
+      const request = await judgeTokenService.requestLogin(finalCode, deviceId, deviceInfo);
       if (request?.status === 'approved') {
         await AsyncStorage.setItem('judge_session_token', finalCode);
         await AsyncStorage.setItem('judge_session_data', JSON.stringify(tokenData));

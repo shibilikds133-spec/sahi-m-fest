@@ -43,9 +43,11 @@ export const judgeTokenService = {
     return data;
   },
 
-  async requestLogin(token: string) {
+  async requestLogin(token: string, device_id?: string, device_info?: string) {
     const { data, error } = await supabase.rpc('request_judge_login', {
       p_token: token.toUpperCase().trim(),
+      p_device_id: device_id || null,
+      p_device_info: device_info || null,
     });
     if (error) throw new Error(error.message);
     return data;

@@ -12,13 +12,35 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        "barabara": ["Barabara", "sans-serif"],
+        "headline-lg": ["Plus Jakarta Sans"],
+        "display-xl": ["Plus Jakarta Sans"],
+        "headline-lg-mobile": ["Plus Jakarta Sans"],
+        "body-lg": ["Manrope"],
+        "body-md": ["Manrope"],
+        "display-xl-mobile": ["Plus Jakarta Sans"],
+        "title-md": ["Plus Jakarta Sans"],
+        "label-sm": ["Space Grotesk"]
+      },
+      fontSize: {
+        "headline-lg": ["40px", { "lineHeight": "1.2", "fontWeight": "700" }],
+        "display-xl": ["80px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800" }],
+        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+        "display-xl-mobile": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+        "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+        "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600" }]
+      },
+
       spacing: {
         'unit': '4px',
         'gutter': '24px',
         'margin-mobile': '16px',
         'margin-desktop': '64px',
         'container-max': '1280px',
-        'section-gap': '120px'
+        'section-gap': '64px'
       },
 
       aspectRatio: {
@@ -27,14 +49,14 @@ module.exports = {
         video: '16 / 9',
       },
       colors: {
-        'alviora-bg': '#ffffff',
-        'alviora-surface': '#f8fafc',
-        'alviora-primary': '#1C5FA8',
-        'alviora-heading': '#0f172a',
-        'alviora-body': '#334155',
-        'alviora-border': '#e2e8f0',
-        'alviora-accent': '#1C5FA8',
-        'alviora-accent-dim': '#7EA3CC',
+        'alviora-bg': 'rgb(28, 51, 56)',
+        'alviora-surface': 'rgba(255, 255, 255, 0.05)',
+        'alviora-primary': '#3b82f6',
+        'alviora-heading': '#ffffff',
+        'alviora-body': '#cbd5e1',
+        'alviora-border': 'rgba(255, 255, 255, 0.1)',
+        'alviora-accent': '#60a5fa',
+        'alviora-accent-dim': '#93c5fd',
         'error-container': '#fee2e2',
         'on-error-container': '#991b1b',
 

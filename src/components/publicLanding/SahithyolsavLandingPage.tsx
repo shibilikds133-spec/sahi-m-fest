@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export function SahithyolsavLandingPage() {
+export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing' | 'schedule' }) {
   return (
     <View style={styles.container}>
       <Text>Sahithyolsav Landing Page (Web Version Available)</Text>
