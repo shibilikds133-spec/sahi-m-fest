@@ -1,4 +1,4 @@
--- Migration 124: Judge Device Auto Approval
+-- Migration 168: Judge Device Auto Approval
 
 -- Add device columns to judge_tokens
 ALTER TABLE public.judge_tokens
@@ -7,6 +7,7 @@ ADD COLUMN IF NOT EXISTS device_info text;
 
 -- Drop the old function to recreate it with new signature
 DROP FUNCTION IF EXISTS public.request_judge_login(text);
+DROP FUNCTION IF EXISTS public.request_judge_login(text, text, text);
 
 CREATE OR REPLACE FUNCTION public.request_judge_login(
   p_token text,
@@ -92,7 +93,7 @@ BEGIN
       token_id,
       action_type,
       action_details,
-      performed_by
+      actor_user_id
     ) VALUES (
       v_token.tenant_id,
       v_token.judge_id,

@@ -92,7 +92,7 @@ BEGIN
       token_id,
       action_type,
       action_details,
-      performed_by
+      actor_user_id
     ) VALUES (
       v_token.tenant_id,
       v_token.judge_id,

@@ -2,7 +2,7 @@
 -- Registration tenant_id belongs to the participant's sub-organisation, so it
 -- must not be compared directly with the schedule owner's tenant_id.
 
-CREATE OR REPLACE FUNCTION public.get_judge_registrations(p_schedule_id uuid)
+DROP FUNCTION IF EXISTS public.get_judge_registrations(uuid); CREATE OR REPLACE FUNCTION public.get_judge_registrations(p_schedule_id uuid)
 RETURNS TABLE (
   id uuid,
   item_id uuid,
@@ -55,7 +55,7 @@ AS $$
     participant.chest_number,
     participant.photo_url,
     participant.category_code,
-    registration.is_verified
+    false AS is_verified
   FROM public.registrations registration
   INNER JOIN schedule_context context
     ON registration.item_id = context.item_id

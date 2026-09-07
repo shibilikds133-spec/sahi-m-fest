@@ -182,24 +182,30 @@ const gradeIndex = (grade: string | null) =>
 export const calculateFlexiblePoints = ({
   grade,
   rank,
-  participantCount,
+  groupSize,
+  competingTeamsCount,
   isGroup,
   config,
   bracketOverride,
 }: {
   grade: string | null;
   rank: number | null;
-  participantCount: number;
+  /** How many members per team entry (determines the point bracket) */
+  groupSize: number;
+  /** How many teams competed in this event (used for Rule 12 check) */
+  competingTeamsCount: number;
   isGroup: boolean;
   config: FlexiblePointsConfig;
   bracketOverride?: string | null;
 }) => {
-  const bracket = resolvePointBracket(config, participantCount, isGroup, bracketOverride);
+  // Bracket is resolved from groupSize (team composition), not from number of competitors
+  const bracket = resolvePointBracket(config, groupSize, isGroup, bracketOverride);
   const index = gradeIndex(grade);
   const gradePoints = index >= 0 && bracket
     ? bracket.points[index as 0 | 1 | 2 | 3] ?? 0
     : 0;
-  const rule12Applies = config.rule12Enabled && participantCount < config.rule12MinTeams;
+  // Rule 12 uses competingTeamsCount (how many teams actually competed)
+  const rule12Applies = config.rule12Enabled && competingTeamsCount < config.rule12MinTeams;
 
   let rankPoints = rank === 1
     ? config.rankPoints[0]
@@ -228,6 +234,7 @@ export const calculateFlexiblePoints = ({
     gradeOnly: rule12Applies && config.rule12Behavior === 'grade_only',
     configVersion: config.version,
   };
+
 };
 
 export const validateFlexiblePointsConfig = (config: FlexiblePointsConfig): string[] => {

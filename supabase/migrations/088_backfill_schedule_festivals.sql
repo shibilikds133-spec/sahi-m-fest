@@ -63,7 +63,7 @@ AS $$
     participant.chest_number,
     participant.photo_url,
     participant.category_code,
-    registration.is_verified
+    false AS is_verified
   FROM public.registrations registration
   INNER JOIN schedule_context context
     ON registration.item_id = context.item_id

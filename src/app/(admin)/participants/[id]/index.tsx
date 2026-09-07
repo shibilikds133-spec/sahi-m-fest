@@ -146,6 +146,8 @@ export default function ParticipantDetails() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('');
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [organisations, setOrganisations] = useState<any[]>([]);
   const [categoryCode, setCategoryCode] = useState('');
   const [gender, setGender] = useState('');
   const [classStd, setClassStd] = useState('');
@@ -197,8 +199,19 @@ export default function ParticipantDetails() {
       setProfileSlug(participant.profile_slug || '');
       setPublicProfileEnabled(participant.public_profile_enabled !== false);
       setShowOrganisationPublic(participant.show_organisation_public !== false);
+      setSelectedOrgId(participant.organisation_id || '');
     }
   }, [participant]);
+
+  useEffect(() => {
+    if (validTenantId) {
+      import('../../../../services/participantService').then(({ participantService }) => {
+        participantService.listOrganisations(validTenantId).then((data: any[]) => {
+          setOrganisations(data);
+        });
+      });
+    }
+  }, [validTenantId]);
 
   const toggleLock = async () => {
     if (!participant || !participantId) return;
@@ -222,6 +235,37 @@ export default function ParticipantDetails() {
     }
 
     try {
+      if (selectedOrgId && selectedOrgId !== participant.organisation_id) {
+        // Team has changed! We need to confirm and call RPC.
+        const confirm = await new Promise((resolve) => {
+          Alert.alert(
+            "Change Team?",
+            "You are changing the team. All Solo items and their future points will be transferred to the new team. Group items will remain with the old team. Proceed?",
+            [
+              { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+              { text: "Yes, Change Team", style: "destructive", onPress: () => resolve(true) }
+            ]
+          );
+        });
+
+        if (!confirm) return;
+
+        // Note: Admin Auth usually sets `auth.uid()`, we can pass user.id for audit
+        const { supabase } = await import('@/core/config/supabase');
+        const { useAuthStore } = await import('@/core/store/authStore');
+        const adminId = useAuthStore.getState().user?.id;
+
+        const { error: rpcError } = await supabase.rpc('transfer_participant_team', {
+          p_participant_id: participantId,
+          p_new_org_id: selectedOrgId,
+          p_admin_id: adminId || '00000000-0000-0000-0000-000000000000'
+        });
+
+        if (rpcError) {
+          throw new Error(rpcError.message || 'Failed to transfer team.');
+        }
+      }
+
       await updateParticipant({ 
         id: participantId, 
         updates: {
@@ -579,7 +623,28 @@ export default function ParticipantDetails() {
               )}
             </View>
 
-            {participant.organisations && (
+            {isEditing ? (
+              <View className="mt-3 border-t border-slate-100 pt-2.5">
+                <Text className="font-poppins text-ssf-text-muted mb-2 text-xs">Organisation (Team) *</Text>
+                {organisations.length > 0 ? (
+                  <View className="flex-row flex-wrap gap-2">
+                    {organisations.map((org: any) => (
+                      <TouchableOpacity
+                        key={org.id}
+                        className={`px-3 py-1.5 rounded-lg border ${selectedOrgId === org.id ? 'bg-ssf-primary border-ssf-primary' : 'bg-ssf-surface border-ssf-border'}`}
+                        onPress={() => setSelectedOrgId(org.id)}
+                      >
+                        <Text className={`font-poppins-bold text-xs ${selectedOrgId === org.id ? 'text-white' : 'text-ssf-text'}`}>
+                          {org.name} <Text className="font-poppins font-normal text-[10px] opacity-80">({org.org_type})</Text>
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <Text className="font-poppins text-xs italic text-red-500">Loading organisations...</Text>
+                )}
+              </View>
+            ) : participant.organisations && (
               <View className="mt-3 flex-row items-center border-t border-slate-100 pt-2.5">
                 <ShieldCheck size={14} color="#047857" />
                 <Text numberOfLines={1} className="ml-2 flex-1 font-poppins-bold text-[10px] uppercase text-ssf-text">
