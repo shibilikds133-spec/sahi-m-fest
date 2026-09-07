@@ -33,6 +33,7 @@ import {
   UserCircle,
   Users,
   X,
+  Radio,
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/core/store/authStore';
@@ -117,6 +118,13 @@ const navItems: NavItem[] = [
     path: '/(admin)/team-leaders',
     icon: Users,
     match: (path) => path.includes('/team-leaders'),
+  },
+  {
+    label: 'Smart Announcer',
+    shortLabel: 'Announcer',
+    path: '/(admin)/smart-announcer',
+    icon: Radio,
+    match: (path) => path.includes('/smart-announcer'),
   },
   {
     label: 'Leaderboard Management',

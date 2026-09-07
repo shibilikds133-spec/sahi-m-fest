@@ -39,14 +39,14 @@ CREATE OR REPLACE VIEW public.vw_audit_schedule_overlaps AS
 SELECT 
   s1.id AS schedule_1_id,
   s2.id AS schedule_2_id,
-  s1.stage_id,
+  s1.venue_id,
   s1.start_time AS s1_start,
   s1.end_time AS s1_end,
   s2.start_time AS s2_start,
   s2.end_time AS s2_end
 FROM public.schedules s1
 JOIN public.schedules s2 
-  ON s1.stage_id = s2.stage_id 
+  ON s1.venue_id = s2.venue_id 
  AND s1.id < s2.id
 WHERE s1.start_time IS NOT NULL AND s1.end_time IS NOT NULL
   AND s2.start_time IS NOT NULL AND s2.end_time IS NOT NULL

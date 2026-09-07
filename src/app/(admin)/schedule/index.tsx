@@ -426,8 +426,9 @@ export default function ScheduleDashboard() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
-      <View className="mb-4">
+    <>
+      <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
+        <View className="mb-4">
         <Text className="text-3xl font-poppins-black text-ssf-text">Schedules</Text>
         <Text className="text-sm font-poppins text-ssf-text-muted mt-1">{filteredSchedules.length} showing</Text>
       </View>
@@ -1092,7 +1093,10 @@ export default function ScheduleDashboard() {
         </View>
         )
       )}
-      <AdminScheduleChatBot tenantId={tenant_id} festivalId={festival?.id} schedules={schedules} venues={venues} registrations={allRegistrations} results={allResults} judges={judges} />
-    </ScrollView>
+      </ScrollView>
+      {/* AI Assistant temporarily disabled for architectural redesign
+      <AdminScheduleChatBot tenantId={tenant_id} festivalId={festival?.id} schedules={schedules} venues={venues} registrations={allRegistrations} results={allResults} judges={judges} workflowStatuses={allJudgeWorkflowStatuses} /> 
+      */}
+    </>
   );
 }

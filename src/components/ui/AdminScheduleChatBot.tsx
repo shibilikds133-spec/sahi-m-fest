@@ -36,6 +36,7 @@ interface AdminChatBotProps {
   registrations?: any[];
   results?: any[];
   judges?: any[];
+  workflowStatuses?: any[];
 }
 
 interface Message {
@@ -45,7 +46,7 @@ interface Message {
   timestamp: Date;
 }
 
-export function AdminScheduleChatBot({ tenantId, festivalId, schedules = [], venues = [], registrations = [], results = [], judges = [] }: AdminChatBotProps) {
+export function AdminScheduleChatBot({ tenantId, festivalId, schedules = [], venues = [], registrations = [], results = [], judges = [], workflowStatuses = [] }: AdminChatBotProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
   
@@ -175,9 +176,58 @@ export function AdminScheduleChatBot({ tenantId, festivalId, schedules = [], ven
     setMessages(prev => [...prev, userMsg]);
 
     const lowerInput = trimmed.toLowerCase();
-    let response = tenantId
-      ? await getAdminReadOnlyAgentResponse(trimmed, { tenantId, festivalId })
-      : null;
+    let response = null;
+
+    if (tenantId) {
+      try {
+        // Build Local Analytics Context from Props
+        const marksSubmittedCount = workflowStatuses.filter(s => s.marks_completed).length;
+        const publishedCount = results.filter(r => r.published === true || r.result_status === 'published').length;
+        
+        const contextData = {
+          total_schedules: schedules.length,
+          total_venues: venues.length,
+          total_judges: judges.length,
+          total_registrations: registrations.length,
+          marks_submitted_events: marksSubmittedCount,
+          results_published: publishedCount,
+          results_unpublished_but_marked: marksSubmittedCount - publishedCount
+        };
+
+        const systemInstruction = `You are a highly secure, read-only Admin Assistant for a Festival Management System.
+CRITICAL SAFETY RULES:
+1. You act as a plugin. You do not modify existing options or break any frontend UI.
+2. ALWAYS reply in the language the user asks (Malayalam, English, or Manglish).
+3. Distinguish between "marks submitted" (marks_submitted_events) and "results published" (results_published). Do not confuse them. 
+
+Context Data:
+${JSON.stringify(contextData, null, 2)}`;
+
+        // Connect to Gemini Cloud AI directly from Frontend
+        const geminiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+        if (geminiKey) {
+          try {
+            // Lazy load the generative AI package to keep initial bundle size small
+            const { GoogleGenerativeAI } = await import('@google/generative-ai');
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction });
+            
+            const result = await model.generateContent(`User Question:\n${trimmed}`);
+            response = result.response.text();
+          } catch (err) {
+            console.warn('Gemini Cloud API Error:', err);
+          }
+        } else {
+          console.warn('EXPO_PUBLIC_GEMINI_API_KEY is missing. Add it to .env.local to use Gemini Cloud AI.');
+        }
+      } catch (err) {
+        console.warn('AI context preparation error:', err);
+      }
+    }
+
+    if (!response && tenantId) {
+      response = await getAdminReadOnlyAgentResponse(trimmed, { tenantId, festivalId });
+    }
 
     if (!response) {
       response = "I am a secure Admin Assistant. I can tell you about total schedules, venues, participants, judges, or results. This chat is read-only and tenant-scoped.";
@@ -404,7 +454,7 @@ export function AdminScheduleChatBot({ tenantId, festivalId, schedules = [], ven
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, justifyContent: 'flex-end', alignItems: 'flex-end' },
+  container: { position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, justifyContent: 'flex-end', alignItems: 'flex-end' },
   floatingButton: { position: 'absolute', bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, elevation: 12, shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 8 }, shadowRadius: 20, shadowOpacity: 0.6, borderWidth: 2, borderColor: 'rgba(255, 255, 255, 0.3)', overflow: 'hidden' },
   floatingButtonGradient: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   floatingIconWrapper: { position: 'relative', alignItems: 'center', justifyContent: 'center' },

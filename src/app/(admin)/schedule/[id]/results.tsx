@@ -209,7 +209,8 @@ export default function ResultsPage() {
     const calculation = calculateFlexiblePoints({
       grade,
       rank: Number.isFinite(rankNum) ? rankNum : null,
-      participantCount: 1, // Reverted: server will use bracketOverride anyway
+      groupSize: defaultGroupSize,
+      competingTeamsCount: (registrations as any[]).length,
       isGroup: isGroupEvent,
       config: flexiblePointsConfig,
       bracketOverride: resolvedBracketKey,
@@ -396,7 +397,8 @@ export default function ResultsPage() {
           festivalId: resolvedFestivalId,
           grade: normalizedGrade,
           rank: rankNum,
-          participantCount: defaultGroupSize,
+          groupSize: defaultGroupSize,                        // members per team entry → picks bracket
+          competingTeamsCount: (registrations as any[]).length, // total teams competing → Rule 12 check
           isGroup: isGroupEvent,
           bracketOverride: resolvedBracketKey,
         });
