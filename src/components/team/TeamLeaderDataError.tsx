@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
@@ -10,7 +11,7 @@ export function TeamLeaderDataError({ message, onRetry }: { message: string; onR
         <Text style={{ color: '#102A43', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>
           Unable to load team data
         </Text>
-        <Text style={{ color: '#64748B', fontSize: 12, textAlign: 'center' }}>{message}</Text>
+        <Text style={{ color: ui.colors.textMuted, fontSize: 12, textAlign: 'center' }}>{message}</Text>
         <View>
           <Button variant="outline" size="sm" onPress={onRetry}>Retry</Button>
         </View>

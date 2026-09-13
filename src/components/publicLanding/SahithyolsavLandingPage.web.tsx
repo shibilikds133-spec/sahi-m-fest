@@ -27,7 +27,7 @@ const InitialLoader = ({ isReady }: { isReady: boolean }) => {
           ALVIORA
         </span>
         <Swirling className="w-16 h-16 text-white" />
-        <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-white/70 uppercase animate-pulse">Initializing Experience...</p>
+        <p className="font-['Handjet'] text-sm tracking-widest text-white/70 uppercase animate-pulse">Initializing Experience...</p>
       </div>
     </div>
   );
@@ -333,7 +333,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         {isPageDataLoading && page !== 'landing' ? (
           <div className="flex-1 min-h-[70vh] flex flex-col items-center justify-center gap-6 fade-in-up visible">
             <Swirling className="w-16 h-16 text-white" />
-            <p className="font-['Plus_Jakarta_Sans'] text-sm tracking-widest text-[#c69a53] uppercase animate-pulse">Loading Content...</p>
+            <p className="font-['Handjet'] text-sm tracking-widest text-[#c69a53] uppercase animate-pulse">Loading Content...</p>
           </div>
         ) : (
           <>
@@ -727,23 +727,23 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <div className="bg-[#1f383e] rounded-xl border border-white/5 overflow-hidden shadow-2xl">
               {/* Header */}
               <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-[#182d31] font-label-sm text-label-sm text-white/50 uppercase tracking-widest font-bold">
-                <div className="col-span-2 text-center font-['Plus_Jakarta_Sans']">Rank</div>
-                <div className="col-span-6 font-['Plus_Jakarta_Sans']">Teams</div>
-                <div className="col-span-4 text-right font-['Plus_Jakarta_Sans']">Points</div>
+                <div className="col-span-2 text-center font-['Handjet']">Rank</div>
+                <div className="col-span-6 font-['Handjet']">Teams</div>
+                <div className="col-span-4 text-right font-['Handjet']">Points</div>
               </div>
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
                 <div key={idx} className="grid grid-cols-12 gap-4 p-4 md:px-6 md:py-8 border-b border-white/5 items-center bg-[#1c3338]/50 hover:bg-[#1f383e] transition-colors">
-                  <div className={`col-span-2 text-center font-['Syne'] text-2xl md:text-3xl font-extrabold ${idx < 3 ? 'text-[#c69a53]' : 'text-white/40'}`}>
+                  <div className={`col-span-2 text-center font-['Handjet'] text-2xl md:text-3xl font-extrabold ${idx < 3 ? 'text-[#c69a53]' : 'text-white/40'}`}>
                     {unit.rank}
                   </div>
                   <div className="col-span-6 pr-4">
-                    <h4 className="font-['Plus_Jakarta_Sans'] text-base md:text-lg text-white font-bold mb-3">{unit.name || unit.team_name || unit.organisation_name || 'Team ' + (idx+1)}</h4>
+                    <h4 className="font-['Handjet'] text-base md:text-lg text-white font-bold mb-3">{unit.name || unit.team_name || unit.organisation_name || 'Team ' + (idx+1)}</h4>
                     <div className="w-full bg-white/5 h-1.5 rounded-full">
                       <div className={`h-1.5 rounded-full shadow-sm ${idx < 3 ? 'bg-[#c69a53]' : 'bg-white/20'}`} style={{width: `${unit.percentage}%`}}></div>
                     </div>
                   </div>
-                  <div className="col-span-4 text-right font-['Syne'] text-3xl md:text-4xl font-extrabold text-white">
+                  <div className="col-span-4 text-right font-['Handjet'] text-3xl md:text-4xl font-extrabold text-white">
                     {unit.total_points || 0}
                   </div>
                 </div>
@@ -884,7 +884,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <a className="font-bold tracking-tighter inline-block" href="#">
               <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#c69a53"}}>ALVIORA</span>
             </a>
-            <p className="font-['Plus_Jakarta_Sans'] text-sm text-white/50 mt-2">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
+            <p className="font-['Handjet'] text-sm text-white/50 mt-2">Art Rooted in Revelation. A celebration of the sacred and the beautiful.</p>
           </div>
           
           <div className="flex gap-4">
@@ -902,8 +902,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         
         <div className="border-t border-white/5 py-4 px-gutter bg-transparent">
           <div className="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
-            <div className="font-['Plus_Jakarta_Sans'] text-xs text-white/40">© 2024 Alviora - Quranic Art Festival. All rights reserved.</div>
-            <div className="flex gap-4 font-['Plus_Jakarta_Sans'] text-xs text-white/40">
+            <div className="font-['Handjet'] text-xs text-white/40">© 2024 Alviora - Quranic Art Festival. All rights reserved.</div>
+            <div className="flex gap-4 font-['Handjet'] text-xs text-white/40">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
             </div>
@@ -913,3 +913,4 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
     </div>
   );
 }
+

@@ -65,7 +65,7 @@ export const SsfButton: React.FC<SsfButtonProps> = ({
  {...props}
  >
  {isLoading ? (
- <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : ui.colors.primary} className="mr-2" />
+ <ActivityIndicator color={variant === 'primary' ? ui.colors.surface : ui.colors.primary} className="mr-2" />
  ) : icon ? (
  <View className="mr-2">{icon}</View>
  ) : null}

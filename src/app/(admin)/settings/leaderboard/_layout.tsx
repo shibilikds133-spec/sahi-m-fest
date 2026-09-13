@@ -1,3 +1,4 @@
+import { ui } from "@/constants/designSystem";
 import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -36,17 +37,17 @@ import { useAuthStore } from '../../../../core/store/authStore';
 import { LeaderboardRow } from '../../../../services/leaderboardService';
 
 const colors = {
-  navy: '#0B1F3A',
-  blue: '#123B73',
-  cyan: '#16B8D9',
-  teal: '#0F766E',
-  green: '#22C55E',
-  bg: '#F3F8FB',
-  card: '#FFFFFF',
-  border: '#DDEAF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  soft: '#EAF7FA',
+  navy: ui.colors.primaryHover,
+  blue: ui.colors.primary,
+  cyan: ui.colors.info,
+  teal: ui.colors.primary,
+  green: ui.colors.success,
+  bg: ui.colors.background,
+  card: ui.colors.surface,
+  border: ui.colors.border,
+  text: ui.colors.text,
+  muted: ui.colors.textMuted,
+  soft: ui.colors.infoSoft,
 };
 
 const formatNumber = (value: number) => new Intl.NumberFormat('en-IN').format(value);
@@ -82,7 +83,7 @@ const Sidebar = ({
       <View>
         <View style={styles.brandRow}>
           <View style={styles.logoMark}>
-            <Trophy size={22} color="#FFFFFF" />
+            <Trophy size={22} color={ui.colors.surface} />
           </View>
           {!compact && (
             <View style={{ flex: 1 }}>
@@ -105,7 +106,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'unit' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <BarChart3 size={20} color="#FFFFFF" />
+            <BarChart3 size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'unit' ? styles.navTextActive : styles.navTextInactive}>Unit Rankings</Text>}
           </TouchableOpacity>
 
@@ -116,7 +117,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'controls' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <ShieldCheck size={20} color="#FFFFFF" />
+            <ShieldCheck size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'controls' ? styles.navTextActive : styles.navTextInactive}>Leaderboard Controls</Text>}
           </TouchableOpacity>
 
@@ -127,7 +128,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'item' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <ListFilter size={20} color="#FFFFFF" />
+            <ListFilter size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'item' ? styles.navTextActive : styles.navTextInactive}>Item Results</Text>}
           </TouchableOpacity>
 
@@ -138,7 +139,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'individual' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <Users size={20} color="#FFFFFF" />
+            <Users size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'individual' ? styles.navTextActive : styles.navTextInactive}>Individual Rankings</Text>}
           </TouchableOpacity>
 
@@ -149,7 +150,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'poster' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <Image size={20} color="#FFFFFF" />
+            <Image size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'poster' ? styles.navTextActive : styles.navTextInactive}>Poster Studio</Text>}
           </TouchableOpacity>
 
@@ -160,7 +161,7 @@ const Sidebar = ({
             }}
             style={[styles.navItem, activeItem === 'media-center' && styles.navItemActive, compact && styles.navItemCompact]}
           >
-            <Download size={20} color="#FFFFFF" />
+            <Download size={20} color={ui.colors.surface} />
             {!compact && <Text style={activeItem === 'media-center' ? styles.navTextActive : styles.navTextInactive}>Media Center</Text>}
           </TouchableOpacity>
         </View>
@@ -299,7 +300,7 @@ export default function LeaderboardLayout() {
                 } as any)}
                 style={styles.previewButton}
               >
-                <Eye size={17} color="#FFFFFF" />
+                <Eye size={17} color={ui.colors.surface} />
                 {!isMobile && <Text style={styles.previewButtonText}>Preview</Text>}
               </TouchableOpacity>
             </View>
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.18)',
   },
   brandTitle: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_900Black',
     fontSize: 18,
     lineHeight: 21,
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(157,235,255,0.24)',
   },
   navTextActive: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 14,
   },
@@ -454,12 +455,12 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileName: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
   },
@@ -507,7 +508,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
   livePill: {
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: ui.colors.successSoft,
     borderWidth: 1,
     borderColor: '#BBF7D0',
     paddingHorizontal: 12,
@@ -572,7 +573,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
   },
   previewButtonText: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 12,
   },
@@ -592,7 +593,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 16,
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.06,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },

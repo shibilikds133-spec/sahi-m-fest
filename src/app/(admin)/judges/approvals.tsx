@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -80,7 +81,7 @@ const statusStyle = (status: ApprovalFilter) => {
       border: 'border-red-200',
       text: 'text-red-700',
       icon: XCircle,
-      iconColor: '#B91C1C',
+      iconColor: ui.colors.destructive,
     };
   }
   return {
@@ -479,9 +480,9 @@ export default function JudgeApprovalsPage() {
                             accessibilityLabel={`Approve ${judgeName}'s login request`}
                           >
                             {isActionRunning
-                              ? <ActivityIndicator size="small" color="#FFFFFF" />
+                              ? <ActivityIndicator size="small" color={ui.colors.surface} />
                               : <>
-                                  <Check size={13} color="#FFFFFF" />
+                                  <Check size={13} color={ui.colors.surface} />
                                   <Text className="ml-1 font-poppins-bold text-[10px] text-white">Approve</Text>
                                 </>}
                           </TouchableOpacity>

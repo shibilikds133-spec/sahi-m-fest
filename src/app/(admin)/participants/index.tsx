@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -377,24 +378,24 @@ export default function ParticipantsList() {
             disabled={isExportingItemsPdf}
             className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-1"
           >
-            <FileDown size={18} color="#123B63" />
-            <Text className="font-poppins-bold text-xs text-[#123B63]">Item PDF</Text>
+            <FileDown size={18} color={ui.colors.primary} />
+            <Text className="font-poppins-bold text-xs text-ui-primary">Item PDF</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => exportParticipantPdf(false)}
             disabled={isExportingItemsPdf}
             className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-1"
           >
-            <FileDown size={18} color="#123B63" />
-            <Text className="font-poppins-bold text-xs text-[#123B63]">Participant PDF</Text>
+            <FileDown size={18} color={ui.colors.primary} />
+            <Text className="font-poppins-bold text-xs text-ui-primary">Participant PDF</Text>
           </TouchableOpacity>
           {isSuperadmin && (
             <TouchableOpacity
               onPress={() => exportItemsPdf(true)}
               disabled={isExportingItemsPdf}
-              className="p-2 bg-[#123B63] border border-[#123B63] rounded-lg flex-row items-center gap-x-1"
+              className="p-2 bg-ui-primary border border-ui-primary rounded-lg flex-row items-center gap-x-1"
             >
-              <FileDown size={18} color="#FFFFFF" />
+              <FileDown size={18} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-xs text-white">All-Tenant PDF</Text>
             </TouchableOpacity>
           )}
@@ -402,9 +403,9 @@ export default function ParticipantsList() {
             <TouchableOpacity
               onPress={() => exportParticipantPdf(true)}
               disabled={isExportingItemsPdf}
-              className="p-2 bg-[#123B63] border border-[#123B63] rounded-lg flex-row items-center gap-x-1"
+              className="p-2 bg-ui-primary border border-ui-primary rounded-lg flex-row items-center gap-x-1"
             >
-              <FileDown size={18} color="#FFFFFF" />
+              <FileDown size={18} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-xs text-white">All-Tenant Participant PDF</Text>
             </TouchableOpacity>
           )}
@@ -473,7 +474,7 @@ export default function ParticipantsList() {
               onPress={clearFilters}
               className="h-9 px-3 rounded-lg border border-ui-border bg-white flex-row items-center justify-center"
             >
-              <RotateCcw size={13} color="#64748B" />
+              <RotateCcw size={13} color={ui.colors.textMuted} />
               <Text className="ml-1.5 font-poppins-bold text-[10px] text-ui-text-muted">Reset</Text>
             </TouchableOpacity>
           )}
@@ -497,7 +498,7 @@ export default function ParticipantsList() {
           <View className="flex-1 flex-row items-center justify-between bg-white px-3 py-2 border border-ssf-border rounded-lg">
             <View className="flex-row items-center gap-x-3">
               <TouchableOpacity onPress={toggleSelectMode} className="p-1">
-                <X size={18} color="#666" />
+                <X size={18} color={ui.colors.textMuted} />
               </TouchableOpacity>
               <Text className="font-poppins-bold text-ssf-text">{selected.size} selected</Text>
               <TouchableOpacity onPress={selectAll}>
@@ -573,7 +574,7 @@ export default function ParticipantsList() {
                     <View style={{ width: 42 }}>
                       {isSelected
                         ? <CheckSquare size={18} color="#0F766E" />
-                        : <Square size={18} color="#94A3B8" />}
+                        : <Square size={18} color={ui.colors.textSubtle} />}
                     </View>
                   )}
                   <View style={{ flex: 2.4, paddingRight: 12 }}>
@@ -628,7 +629,7 @@ export default function ParticipantsList() {
                         <Text className="font-poppins-bold text-[9px] text-emerald-700">Public Profile</Text>
                       </TouchableOpacity>
                     )}
-                    {!selectMode && <ChevronRight size={17} color="#94A3B8" />}
+                    {!selectMode && <ChevronRight size={17} color={ui.colors.textSubtle} />}
                   </View>
                 </TouchableOpacity>
               );

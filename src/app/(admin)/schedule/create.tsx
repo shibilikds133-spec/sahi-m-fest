@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -122,7 +123,7 @@ export default function CreateSchedule() {
     <ScrollView className="flex-1 bg-ssf-bg py-3 px-3">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
-          <ArrowLeft size={24} color="#333" />
+          <ArrowLeft size={24} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-2xl font-poppins-black text-ssf-text">Create Schedule</Text>
       </View>

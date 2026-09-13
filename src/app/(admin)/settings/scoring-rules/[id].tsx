@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -197,7 +198,7 @@ export default function EditScoringRule() {
         {/* Page Title */}
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1.5 bg-ui-muted rounded-full">
-            <ArrowLeft size={18} color="#0F172A" />
+            <ArrowLeft size={18} color={ui.colors.text} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text className="text-3xl font-poppins-black text-ui-text">
@@ -263,7 +264,7 @@ export default function EditScoringRule() {
                 textAlignVertical="top"
                 className="bg-white border border-ui-border rounded-lg px-3 py-2 font-poppins text-sm text-ui-text min-h-[80px] mt-1"
                 placeholder="Enter guidelines for judges here..."
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={ui.colors.textSubtle}
               />
             </View>
           </CardContent>
@@ -345,7 +346,7 @@ export default function EditScoringRule() {
               onPress={addCriteria}
               className="flex-row items-center justify-center py-4 bg-ui-muted border border-dashed border-ui-border rounded-lg mb-6"
             >
-              <Plus size={18} color="#64748B" />
+              <Plus size={18} color={ui.colors.textMuted} />
               <Text className="font-poppins-bold text-ui-text-muted ml-2">Add Criterion</Text>
             </TouchableOpacity>
           </>

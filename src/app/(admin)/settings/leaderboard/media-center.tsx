@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, TextInput } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -9,17 +10,17 @@ import { storageService } from '@/services/storage/storageService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const colors = {
-  navy: '#0B1F3A',
-  blue: '#123B73',
-  cyan: '#16B8D9',
+  navy: ui.colors.primaryHover,
+  blue: ui.colors.primary,
+  cyan: ui.colors.info,
   teal: '#0F766E',
   green: '#22C55E',
-  bg: '#F3F8FB',
-  card: '#FFFFFF',
-  border: '#DDEAF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  soft: '#EAF7FA',
+  bg: ui.colors.background,
+  card: ui.colors.surface,
+  border: ui.colors.border,
+  text: ui.colors.text,
+  muted: ui.colors.textMuted,
+  soft: ui.colors.infoSoft,
   whatsapp: '#25D366'
 };
 
@@ -271,7 +272,7 @@ export default function MediaCenterPage() {
             <Text style={styles.btnSecondaryText}>Refresh</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnPrimary}>
-            <Archive size={16} color="#FFFFFF" />
+            <Archive size={16} color={ui.colors.surface} />
             <Text style={styles.btnPrimaryText}>Batch Export (ZIP)</Text>
           </TouchableOpacity>
         </View>
@@ -392,7 +393,7 @@ export default function MediaCenterPage() {
                       style={[styles.actionBtn, styles.actionBtnWhatsApp]}
                       onPress={() => handleWhatsAppShare(asset)}
                     >
-                      <Share2 size={14} color="#FFFFFF" />
+                      <Share2 size={14} color={ui.colors.surface} />
                       <Text style={styles.actionTextWhatsApp}>Share</Text>
                     </TouchableOpacity>
                   </View>
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
   btnPrimaryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: ui.colors.surface,
   },
   scrollContent: {
     padding: 24,
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     backdropFilter: 'blur(4px)',
   },
   qualityText: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -590,6 +591,6 @@ const styles = StyleSheet.create({
   actionTextWhatsApp: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: ui.colors.surface,
   }
 });

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 10,
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
   },
   table: {
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 10,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   profileCard: {
     gap: 24,
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 10,
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
   },
   mobileHeroSkeleton: {
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#DDE7E4',
     borderRadius: 10,
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
     gap: 11,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#DDE7E4',
     borderRadius: 10,
@@ -411,7 +412,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 13,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#DDE7E4',
     borderRadius: 10,
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     minWidth: 170,
     gap: 12,
     padding: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 10,

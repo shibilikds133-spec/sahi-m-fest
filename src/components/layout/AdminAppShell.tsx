@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Modal,
   Platform,
@@ -10,8 +10,8 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
-} from 'react-native';
-import { usePathname, useRouter } from 'expo-router';
+} from "react-native";
+import { usePathname, useRouter } from "expo-router";
 import {
   Bell,
   Building2,
@@ -34,13 +34,13 @@ import {
   Users,
   X,
   Radio,
-} from 'lucide-react-native';
+} from "lucide-react-native";
 
-import { useAuthStore } from '@/core/store/authStore';
-import { useFestival } from '@/core/hooks/useFestival';
-import { ui } from '@/constants/designSystem';
-import { JudgeApprovalToast } from '../ui/JudgeApprovalToast';
-import { useJudgeApprovalStore } from '@/core/store/judgeApprovalStore';
+import { useAuthStore } from "@/core/store/authStore";
+import { useFestival } from "@/core/hooks/useFestival";
+import { ui } from "@/constants/designSystem";
+import { JudgeApprovalToast } from "../ui/JudgeApprovalToast";
+import { useJudgeApprovalStore } from "@/core/store/judgeApprovalStore";
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -63,163 +63,170 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    label: 'Dashboard',
-    shortLabel: 'Home',
-    path: '/(admin)',
+    label: "Dashboard",
+    shortLabel: "Home",
+    path: "/(admin)",
     icon: Home,
-    match: (path) => path === '/' || path === '/(admin)' || path === '/admin',
+    match: (path) => path === "/" || path === "/(admin)" || path === "/admin",
   },
   {
-    label: 'Participants',
-    path: '/(admin)/participants',
+    label: "Participants",
+    path: "/(admin)/participants",
     icon: Users,
-    match: (path) => path.includes('/participants'),
+    match: (path) => path.includes("/participants"),
   },
   {
-    label: 'Schedules',
-    shortLabel: 'Schedule',
-    path: '/(admin)/schedule',
+    label: "Schedules",
+    shortLabel: "Schedule",
+    path: "/(admin)/schedule",
     icon: CalendarDays,
-    match: (path) => path.includes('/schedule'),
+    match: (path) => path.includes("/schedule"),
   },
   {
-    label: 'Stage Management',
-    shortLabel: 'Stage',
-    path: '/stage-management',
+    label: "Stage Management",
+    shortLabel: "Stage",
+    path: "/stage-management",
     icon: PanelsTopLeft,
-    match: (path) => path.includes('/stage-management'),
+    match: (path) => path.includes("/stage-management"),
   },
   {
-    label: 'Sub Organisations',
-    path: '/(admin)/organisations',
+    label: "Sub Organisations",
+    path: "/(admin)/organisations",
     icon: Building2,
-    match: (path) => path.includes('/organisations'),
+    match: (path) => path.includes("/organisations"),
   },
   {
-    label: 'Communication Center',
-    path: '/(admin)/communication',
+    label: "Communication Center",
+    path: "/(admin)/communication",
     icon: Megaphone,
-    match: (path) => path.includes('/communication'),
+    match: (path) => path.includes("/communication"),
   },
   {
-    label: 'Judge Management',
-    path: '/(admin)/judges',
+    label: "Judge Management",
+    path: "/(admin)/judges",
     icon: UserCheck,
-    match: (path) => path.includes('/judges'),
+    match: (path) => path.includes("/judges"),
   },
   {
-    label: 'Open Judge Portal',
-    path: '/judge',
+    label: "Open Judge Portal",
+    path: "/judge",
     icon: Scale,
     match: () => false,
   },
   {
-    label: 'Team Leader Management',
-    path: '/(admin)/team-leaders',
+    label: "Team Leader Management",
+    path: "/(admin)/team-leaders",
     icon: Users,
-    match: (path) => path.includes('/team-leaders'),
+    match: (path) => path.includes("/team-leaders"),
   },
   {
-    label: 'Smart Announcer',
-    shortLabel: 'Announcer',
-    path: '/(admin)/smart-announcer',
+    label: "Smart Announcer",
+    shortLabel: "Announcer",
+    path: "/(admin)/smart-announcer",
     icon: Radio,
-    match: (path) => path.includes('/smart-announcer'),
+    match: (path) => path.includes("/smart-announcer"),
   },
   {
-    label: 'Leaderboard Management',
-    path: '/(admin)/settings/leaderboard',
+    label: "Leaderboard Management",
+    path: "/(admin)/settings/leaderboard",
     icon: Trophy,
-    match: (path) => path.includes('/settings/leaderboard'),
+    match: (path) => path.includes("/settings/leaderboard"),
     children: [
       {
-        label: 'Unit Rankings',
-        path: '/(admin)/settings/leaderboard/unit-rankings',
-        match: (path) => path.includes('/settings/leaderboard/unit-rankings') || path.endsWith('/settings/leaderboard'),
+        label: "Unit Rankings",
+        path: "/(admin)/settings/leaderboard/unit-rankings",
+        match: (path) =>
+          path.includes("/settings/leaderboard/unit-rankings") ||
+          path.endsWith("/settings/leaderboard"),
       },
       {
-        label: 'Leaderboard Controls',
-        path: '/(admin)/settings/leaderboard/controls',
-        match: (path) => path.includes('/settings/leaderboard/controls'),
+        label: "Leaderboard Controls",
+        path: "/(admin)/settings/leaderboard/controls",
+        match: (path) => path.includes("/settings/leaderboard/controls"),
       },
       {
-        label: 'Item Results',
-        path: '/(admin)/settings/leaderboard/item-results',
-        match: (path) => path.includes('/settings/leaderboard/item-results'),
+        label: "Item Results",
+        path: "/(admin)/settings/leaderboard/item-results",
+        match: (path) => path.includes("/settings/leaderboard/item-results"),
       },
       {
-        label: 'Individual Rankings',
-        path: '/(admin)/settings/leaderboard/individual-rankings',
-        match: (path) => path.includes('/settings/leaderboard/individual-rankings'),
+        label: "Individual Rankings",
+        path: "/(admin)/settings/leaderboard/individual-rankings",
+        match: (path) =>
+          path.includes("/settings/leaderboard/individual-rankings"),
       },
       {
-        label: 'Poster Studio',
-        path: '/(admin)/settings/leaderboard/poster-studio',
-        match: (path) => path.includes('/settings/leaderboard/poster-studio'),
+        label: "Poster Studio",
+        path: "/(admin)/settings/leaderboard/poster-studio",
+        match: (path) => path.includes("/settings/leaderboard/poster-studio"),
       },
       {
-        label: 'Media Center',
-        path: '/(admin)/settings/leaderboard/media-center',
-        match: (path) => path.includes('/settings/leaderboard/media-center'),
+        label: "Media Center",
+        path: "/(admin)/settings/leaderboard/media-center",
+        match: (path) => path.includes("/settings/leaderboard/media-center"),
       },
     ],
   },
   {
-    label: 'Grace Marks',
-    path: '/(admin)/grace-marks',
+    label: "Grace Marks",
+    path: "/(admin)/grace-marks",
     icon: Trophy,
-    match: (path) => path.includes('/grace-marks'),
+    match: (path) => path.includes("/grace-marks"),
   },
   {
-    label: 'Festival Settings',
-    path: '/(admin)/settings/calendar',
+    label: "Festival Settings",
+    path: "/(admin)/settings/calendar",
     icon: Settings,
-    match: (path) => path.includes('/settings') && !path.includes('/settings/leaderboard'),
+    match: (path) =>
+      path.includes("/settings") && !path.includes("/settings/leaderboard"),
     children: [
       {
-        label: 'Festival Calendar',
-        path: '/(admin)/settings/calendar',
-        match: (path) => path.includes('/settings/calendar') || path.endsWith('/settings'),
+        label: "Festival Calendar",
+        path: "/(admin)/settings/calendar",
+        match: (path) =>
+          path.includes("/settings/calendar") || path.endsWith("/settings"),
       },
       {
-        label: 'Item Activation',
-        path: '/(admin)/settings/items',
-        match: (path) => path.includes('/settings/items'),
+        label: "Item Activation",
+        path: "/(admin)/settings/items",
+        match: (path) => path.includes("/settings/items"),
       },
       {
-        label: 'Points & Grading',
-        path: '/(admin)/settings/points',
-        match: (path) => path.includes('/settings/points'),
+        label: "Points & Grading",
+        path: "/(admin)/settings/points",
+        match: (path) => path.includes("/settings/points"),
       },
       {
-        label: 'Scoring Rules',
-        path: '/(admin)/settings/scoring-rules',
-        match: (path) => path.includes('/settings/scoring-rules'),
+        label: "Scoring Rules",
+        path: "/(admin)/settings/scoring-rules",
+        match: (path) => path.includes("/settings/scoring-rules"),
       },
       {
-        label: 'AI Settings & API Keys',
-        path: '/(admin)/settings/api-keys',
-        match: (path) => path.includes('/settings/api-keys'),
+        label: "AI Settings & API Keys",
+        path: "/(admin)/settings/api-keys",
+        match: (path) => path.includes("/settings/api-keys"),
       },
     ],
   },
 ];
 
 function getPageTitle(pathname: string) {
-  if (pathname.includes('/participants/')) {
-    if (pathname.endsWith('/add')) return 'Add Participant';
-    if (pathname.includes('chest-card')) return 'Chest Cards';
-    if (pathname.includes('import')) return 'Import Participants';
+  if (pathname.includes("/participants/")) {
+    if (pathname.endsWith("/add")) return "Add Participant";
+    if (pathname.includes("chest-card")) return "Chest Cards";
+    if (pathname.includes("import")) return "Import Participants";
   }
-  if (pathname.includes('/schedule/')) {
-    if (pathname.endsWith('/bulk-create')) return 'Bulk Schedule Builder';
-    if (pathname.endsWith('/create')) return 'Create Schedule';
-    if (pathname.includes('/results')) return 'Schedule Results';
-    if (pathname.includes('/marks')) return 'Enter Marks';
-    if (pathname.includes('/checkin')) return 'Participant Check-in';
-    if (pathname.includes('/code-letter')) return 'Code Letters';
+  if (pathname.includes("/schedule/")) {
+    if (pathname.endsWith("/bulk-create")) return "Bulk Schedule Builder";
+    if (pathname.endsWith("/create")) return "Create Schedule";
+    if (pathname.includes("/results")) return "Schedule Results";
+    if (pathname.includes("/marks")) return "Enter Marks";
+    if (pathname.includes("/checkin")) return "Participant Check-in";
+    if (pathname.includes("/code-letter")) return "Code Letters";
   }
-  return navItems.find((item) => item.match(pathname))?.label ?? 'Festival Admin';
+  return (
+    navItems.find((item) => item.match(pathname))?.label ?? "Festival Admin"
+  );
 }
 
 function DesktopSidebar({
@@ -239,27 +246,43 @@ function DesktopSidebar({
   const { pendingCount } = useJudgeApprovalStore();
 
   return (
-    <View className="no-print" style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+    <View
+      className="no-print"
+      style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}
+    >
       <View>
         <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
           <View style={styles.brandMark}>
-            <ShieldCheck size={23} color="#FFFFFF" strokeWidth={2.4} />
+            <ShieldCheck
+              size={23}
+              color={ui.colors.surface}
+              strokeWidth={2.4}
+            />
           </View>
           {!collapsed && (
             <View style={{ flex: 1 }}>
-              <Text style={styles.brandName} numberOfLines={1}>{festivalName}</Text>
+              <Text style={styles.brandName} numberOfLines={1}>
+                {festivalName}
+              </Text>
               <Text style={styles.brandCaption}>Festival workspace</Text>
             </View>
           )}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            accessibilityLabel={
+              collapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
             onPress={onToggle}
-            style={[styles.sidebarToggle, collapsed && styles.sidebarToggleCollapsed]}
+            style={[
+              styles.sidebarToggle,
+              collapsed && styles.sidebarToggleCollapsed,
+            ]}
           >
-            {collapsed
-              ? <PanelLeftOpen size={18} color="#475569" />
-              : <PanelLeftClose size={18} color="#64748B" />}
+            {collapsed ? (
+              <PanelLeftOpen size={18} color={ui.colors.textMuted} />
+            ) : (
+              <PanelLeftClose size={18} color={ui.colors.textMuted} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -272,17 +295,25 @@ function DesktopSidebar({
           {navItems.map((item) => {
             const active = item.match(pathname);
             const Icon = item.icon;
-            const expanded = item.children ? (openGroups[item.label] ?? active) : false;
+            const expanded = item.children
+              ? (openGroups[item.label] ?? active)
+              : false;
             return (
               <View key={item.label}>
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityState={{ selected: active, expanded: item.children ? expanded : undefined }}
+                  accessibilityState={{
+                    selected: active,
+                    expanded: item.children ? expanded : undefined,
+                  }}
                   activeOpacity={0.76}
                   onPress={() => {
                     if (item.children) {
                       if (collapsed) onToggle();
-                      setOpenGroups((current) => ({ ...current, [item.label]: !expanded }));
+                      setOpenGroups((current) => ({
+                        ...current,
+                        [item.label]: !expanded,
+                      }));
                     } else {
                       router.push(item.path as any);
                     }
@@ -290,30 +321,42 @@ function DesktopSidebar({
                   style={[
                     styles.desktopNavItem,
                     collapsed && styles.desktopNavItemCollapsed,
-                    active && (!item.children || collapsed) && styles.desktopNavItemActive,
+                    active &&
+                      (!item.children || collapsed) &&
+                      styles.desktopNavItemActive,
                   ]}
                 >
                   <Icon
                     size={18}
-                    color={active ? ui.colors.primary : '#475569'}
+                    color={active ? ui.colors.primary : ui.colors.textMuted}
                     strokeWidth={active ? 2.35 : 2}
                   />
                   {!collapsed && (
                     <View className="flex-row items-center flex-1">
-                      <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>
+                      <Text
+                        style={[
+                          styles.desktopNavLabel,
+                          active && styles.desktopNavLabelActive,
+                        ]}
+                      >
                         {item.label}
                       </Text>
-                      {item.label === 'Judge Management' && pendingCount > 0 && (
-                        <View className="bg-red-500 rounded-full w-5 h-5 items-center justify-center ml-auto mr-1">
-                          <Text className="text-white text-[10px] font-bold">{pendingCount}</Text>
-                        </View>
-                      )}
+                      {item.label === "Judge Management" &&
+                        pendingCount > 0 && (
+                          <View className="bg-red-500 rounded-full w-5 h-5 items-center justify-center ml-auto mr-1">
+                            <Text className="text-white text-[10px] font-bold">
+                              {pendingCount}
+                            </Text>
+                          </View>
+                        )}
                     </View>
                   )}
                   {!collapsed && item.children ? (
-                    expanded
-                      ? <ChevronDown size={15} color="#64748B" />
-                      : <ChevronRight size={15} color="#64748B" />
+                    expanded ? (
+                      <ChevronDown size={15} color={ui.colors.textMuted} />
+                    ) : (
+                      <ChevronRight size={15} color={ui.colors.textMuted} />
+                    )
                   ) : null}
                 </TouchableOpacity>
                 {!collapsed && item.children && expanded && (
@@ -326,9 +369,17 @@ function DesktopSidebar({
                           accessibilityRole="button"
                           accessibilityState={{ selected: childActive }}
                           onPress={() => router.push(child.path as any)}
-                          style={[styles.desktopSubmenuItem, childActive && styles.desktopSubmenuItemActive]}
+                          style={[
+                            styles.desktopSubmenuItem,
+                            childActive && styles.desktopSubmenuItemActive,
+                          ]}
                         >
-                          <Text style={[styles.desktopSubmenuLabel, childActive && styles.desktopSubmenuLabelActive]}>
+                          <Text
+                            style={[
+                              styles.desktopSubmenuLabel,
+                              childActive && styles.desktopSubmenuLabelActive,
+                            ]}
+                          >
                             {child.label}
                           </Text>
                         </TouchableOpacity>
@@ -342,7 +393,12 @@ function DesktopSidebar({
         </ScrollView>
       </View>
 
-      <View style={[styles.sidebarFooter, collapsed && styles.sidebarFooterCollapsed]}>
+      <View
+        style={[
+          styles.sidebarFooter,
+          collapsed && styles.sidebarFooterCollapsed,
+        ]}
+      >
         <View style={styles.avatar}>
           <UserCircle size={26} color={ui.colors.primary} />
         </View>
@@ -350,9 +406,11 @@ function DesktopSidebar({
           <>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={styles.profileName}>
-                {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Festival Admin'}
+                {user?.user_metadata?.full_name ||
+                  user?.email?.split("@")[0] ||
+                  "Festival Admin"}
               </Text>
-              <Text style={styles.profileRole}>{role || 'admin'}</Text>
+              <Text style={styles.profileRole}>{role || "admin"}</Text>
             </View>
             <TouchableOpacity
               accessibilityLabel="Sign out"
@@ -360,7 +418,7 @@ function DesktopSidebar({
               onPress={logout}
               style={styles.logoutButton}
             >
-              <LogOut size={17} color="#64748B" />
+              <LogOut size={17} color={ui.colors.textMuted} />
             </TouchableOpacity>
           </>
         )}
@@ -388,7 +446,12 @@ function MobileMenuSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.modalRoot}>
         <Pressable style={styles.scrim} onPress={onClose} />
         <SafeAreaView style={styles.sheet}>
@@ -425,19 +488,28 @@ function MobileMenuSheet({
                   onPress={() => navigate(item.path)}
                   style={[styles.menuTile, active && styles.menuTileActive]}
                 >
-                  <View style={[styles.menuIcon, active && styles.menuIconActive]}>
+                  <View
+                    style={[styles.menuIcon, active && styles.menuIconActive]}
+                  >
                     <Icon
                       size={22}
-                      color={active ? ui.colors.info : '#52647C'}
+                      color={active ? ui.colors.info : "#52647C"}
                       strokeWidth={2}
                     />
-                    {item.label === 'Judge Management' && pendingCount > 0 && (
+                    {item.label === "Judge Management" && pendingCount > 0 && (
                       <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
-                        <Text className="text-white text-[9px] font-bold">{pendingCount}</Text>
+                        <Text className="text-white text-[9px] font-bold">
+                          {pendingCount}
+                        </Text>
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.menuTileLabel, active && styles.menuTileLabelActive]}>
+                  <Text
+                    style={[
+                      styles.menuTileLabel,
+                      active && styles.menuTileLabelActive,
+                    ]}
+                  >
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -448,14 +520,16 @@ function MobileMenuSheet({
           <View style={styles.sheetProfile}>
             <View style={styles.sheetAvatar}>
               <Text style={styles.sheetAvatarText}>
-                {(user?.email?.[0] || 'A').toUpperCase()}
+                {(user?.email?.[0] || "A").toUpperCase()}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text numberOfLines={1} style={styles.sheetProfileName}>
-                {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Festival Admin'}
+                {user?.user_metadata?.full_name ||
+                  user?.email?.split("@")[0] ||
+                  "Festival Admin"}
               </Text>
-              <Text style={styles.sheetProfileRole}>{role || 'admin'}</Text>
+              <Text style={styles.sheetProfileRole}>{role || "admin"}</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -489,10 +563,24 @@ function MobileBottomBar({
               onPress={() => router.push(item.path as any)}
               style={styles.mobileTab}
             >
-              <View style={[styles.mobileTabIcon, active && styles.mobileTabIconActive]}>
-                <Icon size={21} color={active ? ui.colors.info : '#64748B'} strokeWidth={2.2} />
+              <View
+                style={[
+                  styles.mobileTabIcon,
+                  active && styles.mobileTabIconActive,
+                ]}
+              >
+                <Icon
+                  size={21}
+                  color={active ? ui.colors.info : ui.colors.textMuted}
+                  strokeWidth={2.2}
+                />
               </View>
-              <Text style={[styles.mobileTabLabel, active && styles.mobileTabLabelActive]}>
+              <Text
+                style={[
+                  styles.mobileTabLabel,
+                  active && styles.mobileTabLabelActive,
+                ]}
+              >
                 {item.shortLabel || item.label}
               </Text>
             </TouchableOpacity>
@@ -505,7 +593,7 @@ function MobileBottomBar({
           style={styles.mobileTab}
         >
           <View style={styles.mobileTabIcon}>
-            <Menu size={22} color="#64748B" strokeWidth={2.2} />
+            <Menu size={22} color={ui.colors.textMuted} strokeWidth={2.2} />
           </View>
           <Text style={styles.mobileTabLabel}>Menu</Text>
         </TouchableOpacity>
@@ -520,14 +608,16 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isDesktop = width >= 900;
-  const hasIntegratedSectionHeader = pathname.includes('/settings/leaderboard');
+  const hasIntegratedSectionHeader = pathname.includes("/settings/leaderboard");
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname]);
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
-  const festivalName = activeFestival?.custom_name?.trim() || 'Sahithyolsav';
+  const festivalName = activeFestival?.custom_name?.trim() || "Sahithyolsav";
 
-  if (pathname.includes('/settings/leaderboard/poster-studio')) {
-    return <View style={{ flex: 1, backgroundColor: '#09090b' }}>{children}</View>;
+  if (pathname.includes("/settings/leaderboard/poster-studio")) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#09090b" }}>{children}</View>
+    );
   }
 
   return (
@@ -559,12 +649,17 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
             </View>
           </View>
         )}
-        <View style={[styles.content, !isDesktop && styles.mobileContent]}>{children}</View>
+        <View style={[styles.content, !isDesktop && styles.mobileContent]}>
+          {children}
+        </View>
       </View>
 
       {!isDesktop && (
         <>
-          <MobileBottomBar pathname={pathname} onMenu={() => setMenuOpen(true)} />
+          <MobileBottomBar
+            pathname={pathname}
+            onMenu={() => setMenuOpen(true)}
+          />
           <MobileMenuSheet
             visible={menuOpen}
             pathname={pathname}
@@ -579,7 +674,7 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   shell: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: ui.colors.background,
   },
   shellMain: {
@@ -592,33 +687,33 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   mobileContent: {
-    paddingBottom: Platform.OS === 'ios' ? 82 : 72,
+    paddingBottom: Platform.OS === "ios" ? 82 : 72,
   },
   sidebar: {
     width: 264,
-    minHeight: '100%',
-    backgroundColor: '#FBFBFC',
+    minHeight: "100%",
+    backgroundColor: "#FBFBFC",
     borderRightWidth: 1,
     borderRightColor: ui.colors.border,
     paddingHorizontal: 12,
     paddingTop: 18,
     paddingBottom: 14,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   sidebarCollapsed: {
     width: 68,
     paddingHorizontal: 8,
   },
   brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 11,
     paddingHorizontal: 8,
     marginBottom: 24,
   },
   brandCollapsed: {
-    flexDirection: 'column',
-    justifyContent: 'center',
+    flexDirection: "column",
+    justifyContent: "center",
     gap: 8,
     paddingHorizontal: 0,
   },
@@ -627,18 +722,18 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 13,
     backgroundColor: ui.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   brandName: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 16,
     lineHeight: 20,
   },
   brandCaption: {
     color: ui.colors.textMuted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 10,
   },
   sidebarToggle: {
@@ -648,8 +743,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.colors.border,
     backgroundColor: ui.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sidebarToggleCollapsed: {
     width: 40,
@@ -657,7 +752,7 @@ const styles = StyleSheet.create({
   },
   navCaption: {
     color: ui.colors.textMuted,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 9,
     letterSpacing: 0.2,
     paddingHorizontal: 12,
@@ -671,29 +766,29 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     paddingHorizontal: 12,
     marginBottom: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 11,
   },
   desktopNavItemCollapsed: {
     width: 44,
     minHeight: 42,
-    alignSelf: 'center',
-    justifyContent: 'center',
+    alignSelf: "center",
+    justifyContent: "center",
     paddingHorizontal: 0,
   },
   desktopNavItemActive: {
     backgroundColor: ui.colors.primarySoft,
   },
   desktopNavLabel: {
-    color: '#334155',
-    fontFamily: 'Poppins_400Regular',
+    color: "#334155",
+    fontFamily: "Poppins_400Regular",
     fontSize: 12,
     flex: 1,
   },
   desktopNavLabelActive: {
     color: ui.colors.primary,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
   },
   desktopSubmenu: {
     marginLeft: 22,
@@ -706,7 +801,7 @@ const styles = StyleSheet.create({
   desktopSubmenuItem: {
     minHeight: 34,
     borderRadius: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 10,
     marginVertical: 1,
   },
@@ -714,13 +809,13 @@ const styles = StyleSheet.create({
     backgroundColor: ui.colors.surfaceMuted,
   },
   desktopSubmenuLabel: {
-    color: '#475569',
-    fontFamily: 'Poppins_400Regular',
+    color: ui.colors.textMuted,
+    fontFamily: "Poppins_400Regular",
     fontSize: 11,
   },
   desktopSubmenuLabelActive: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
   },
   sidebarFooter: {
     minHeight: 62,
@@ -729,40 +824,40 @@ const styles = StyleSheet.create({
     backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: ui.colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 9,
   },
   sidebarFooterCollapsed: {
     minHeight: 52,
     padding: 6,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   avatar: {
     width: 38,
     height: 38,
     borderRadius: 12,
     backgroundColor: ui.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileName: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 11,
   },
   profileRole: {
     color: ui.colors.textMuted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 9,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
   logoutButton: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   topbar: {
     minHeight: 76,
@@ -770,30 +865,30 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: ui.colors.border,
     paddingHorizontal: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     ...Platform.select({
-      web: { position: 'sticky' as any, top: 0, zIndex: 10 },
+      web: { position: "sticky" as any, top: 0, zIndex: 10 },
       default: {},
     }),
   },
   topbarEyebrow: {
     color: ui.colors.primary,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 9,
     letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   topbarTitle: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 20,
     lineHeight: 26,
   },
   topbarActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   topbarIconButton: {
@@ -803,16 +898,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.colors.border,
     backgroundColor: ui.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   onlinePill: {
     height: 34,
     borderRadius: 17,
     paddingHorizontal: 11,
     backgroundColor: ui.colors.successSoft,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   onlineDot: {
@@ -823,11 +918,11 @@ const styles = StyleSheet.create({
   },
   onlineText: {
     color: ui.colors.success,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 10,
   },
   mobileBarSafe: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
@@ -839,29 +934,29 @@ const styles = StyleSheet.create({
   },
   mobileBar: {
     height: 66,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 6,
   },
   mobileTab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 58,
   },
   mobileTabIcon: {
     minWidth: 42,
     height: 30,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   mobileTabIconActive: {
-    backgroundColor: '#EAF2FF',
+    backgroundColor: "#EAF2FF",
   },
   mobileTabLabel: {
-    color: '#64748B',
-    fontFamily: 'Poppins_700Bold',
+    color: ui.colors.textMuted,
+    fontFamily: "Poppins_700Bold",
     fontSize: 9,
     marginTop: 1,
   },
@@ -870,45 +965,45 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.48)',
+    backgroundColor: ui.colors.surfaceStrong,
   },
   sheet: {
-    width: '100%',
-    maxHeight: '88%',
+    width: "100%",
+    maxHeight: "88%",
     backgroundColor: ui.colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   sheetHandle: {
     width: 58,
     height: 6,
     borderRadius: 3,
     backgroundColor: ui.colors.borderStrong,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 14,
   },
   sheetHeader: {
     minHeight: 68,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: ui.colors.border,
   },
   sheetTitle: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 20,
   },
   sheetSubtitle: {
     color: ui.colors.textMuted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 10,
   },
   sheetClose: {
@@ -918,47 +1013,47 @@ const styles = StyleSheet.create({
     backgroundColor: ui.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: ui.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuGrid: {
     padding: 16,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   menuTile: {
-    width: '48.5%',
+    width: "48.5%",
     minHeight: 112,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: ui.colors.border,
     backgroundColor: ui.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 12,
   },
   menuTileActive: {
-    backgroundColor: '#F4F8FF',
-    borderColor: '#CFE0FF',
+    backgroundColor: "#F4F8FF",
+    borderColor: "#CFE0FF",
   },
   menuIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: ui.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 9,
   },
   menuIconActive: {
-    backgroundColor: '#E5EFFF',
+    backgroundColor: "#E5EFFF",
   },
   menuTileLabel: {
-    color: '#40516A',
-    fontFamily: 'Poppins_700Bold',
+    color: "#40516A",
+    fontFamily: "Poppins_700Bold",
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   menuTileLabelActive: {
     color: ui.colors.info,
@@ -968,10 +1063,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: ui.colors.border,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 11,
-    backgroundColor: '#FBFCFD',
+    backgroundColor: "#FBFCFD",
   },
   sheetAvatar: {
     width: 44,
@@ -979,24 +1074,24 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: ui.colors.infoSoft,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#BFDBFE",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sheetAvatarText: {
     color: ui.colors.info,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 17,
   },
   sheetProfileName: {
     color: ui.colors.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     fontSize: 13,
   },
   sheetProfileRole: {
     color: ui.colors.textMuted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 10,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
 });

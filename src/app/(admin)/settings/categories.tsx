@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -229,7 +230,7 @@ export default function CollegeFestCategoriesScreen() {
             {generalCategory.is_active ? <Archive size={18} color="#B45309" /> : <RotateCcw size={18} color="#047857" />}
           </TouchableOpacity>
           <TouchableOpacity disabled={remove.isPending} onPress={() => deleteCategory(generalCategory)} className="p-2">
-            <Trash2 size={18} color="#B91C1C" />
+            <Trash2 size={18} color={ui.colors.destructive} />
           </TouchableOpacity>
         </View>
       </SsfCard>}
@@ -238,7 +239,7 @@ export default function CollegeFestCategoriesScreen() {
         <Text className="text-red-700">Unable to load categories. Please refresh.</Text>
       ) : customCategories.length === 0 ? (
         <View className="items-center rounded-xl border border-dashed border-ssf-border p-8">
-          <Plus size={28} color="#64748B" /><Text className="mt-2 font-poppins">No custom College Fest categories have been created yet.</Text>
+          <Plus size={28} color={ui.colors.textMuted} /><Text className="mt-2 font-poppins">No custom College Fest categories have been created yet.</Text>
         </View>
       ) : customCategories.map((category) => (
         <SsfCard key={category.id} className="mb-3 p-4">
@@ -259,7 +260,7 @@ export default function CollegeFestCategoriesScreen() {
               {category.is_active ? <Archive size={18} color="#B45309" /> : <RotateCcw size={18} color="#047857" />}
             </TouchableOpacity>
             <TouchableOpacity disabled={remove.isPending} onPress={() => deleteCategory(category)} className="p-2">
-              <Trash2 size={18} color="#B91C1C" />
+              <Trash2 size={18} color={ui.colors.destructive} />
             </TouchableOpacity>
           </View>
         </SsfCard>

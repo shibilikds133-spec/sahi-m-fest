@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, ScrollView, Alert, TextInput, TouchableOpacity, Modal, useWindowDimensions, Platform } from 'react-native';
@@ -195,11 +196,11 @@ export default function ItemActivationSettings() {
         {/* Search + Actions Bar */}
         <View className="flex-row items-center gap-3 mb-4">
           <View className="flex-1 flex-row items-center bg-white border border-ui-border rounded-lg px-3 h-10">
-            <Search size={16} color="#94A3B8" />
+            <Search size={16} color={ui.colors.textSubtle} />
             <TextInput
               className="flex-1 ml-2 font-poppins text-sm text-ui-text"
               placeholder="Search items or codes..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={ui.colors.textSubtle}
               value={search}
               onChangeText={setSearch}
             />
@@ -218,7 +219,7 @@ export default function ItemActivationSettings() {
           accessibilityRole="checkbox"
           accessibilityState={{ checked: showTenantItemsOnly }}
         >
-          {showTenantItemsOnly ? <CheckCircle size={17} color="#0F766E" /> : <Circle size={17} color="#94A3B8" />}
+          {showTenantItemsOnly ? <CheckCircle size={17} color="#0F766E" /> : <Circle size={17} color={ui.colors.textSubtle} />}
           <Text className="font-poppins text-xs text-ui-text">
             Show this tenant&apos;s competitions only
           </Text>

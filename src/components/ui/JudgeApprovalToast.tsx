@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { X, ShieldCheck, CheckCircle2 } from 'lucide-react-native';
@@ -126,7 +127,7 @@ export const JudgeApprovalToast = () => {
       className={`absolute top-4 left-4 right-4 sm:top-6 sm:right-6 sm:left-auto sm:w-96 z-[9999] flex-row items-center p-4 rounded-xl border shadow-lg ${isAuto ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}
     >
       <View className={`mr-3 p-2 rounded-full ${isAuto ? 'bg-green-100' : 'bg-blue-100'}`}>
-        {isAuto ? <CheckCircle2 size={24} color="#16A34A" /> : <ShieldCheck size={24} color="#1D4ED8" />}
+        {isAuto ? <CheckCircle2 size={24} color="#16A34A" /> : <ShieldCheck size={24} color={ui.colors.info} />}
       </View>
       <View className="flex-1">
         <Text className={`font-poppins-bold text-sm ${isAuto ? 'text-green-900' : 'text-blue-900'}`}>{currentNotif.title}</Text>
@@ -146,7 +147,7 @@ export const JudgeApprovalToast = () => {
       )}
 
       <TouchableOpacity onPress={hideToast} className="p-2 ml-1">
-        <X size={18} color={isAuto ? "#166534" : "#1E3A8A"} />
+        <X size={18} color={isAuto ? "#166534" : ui.colors.info} />
       </TouchableOpacity>
     </Animated.View>
   );

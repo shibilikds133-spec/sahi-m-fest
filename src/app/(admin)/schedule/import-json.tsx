@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -325,7 +326,7 @@ export default function ImportScheduleJson() {
     <ScrollView className="flex-1 bg-ssf-bg py-3 px-3">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="p-2 mr-2 bg-ssf-surface rounded-full border border-ssf-border">
-          <ArrowLeft size={24} color="#333" />
+          <ArrowLeft size={24} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-3xl font-poppins-black text-ssf-text">Import Schedules</Text>
       </View>
@@ -342,7 +343,7 @@ export default function ImportScheduleJson() {
 
       {scheduleData.length === 0 ? (
         <SsfCard className="p-8 items-center border-dashed border-2 border-ssf-border mb-6">
-          <Upload size={48} color="#64748B" className="mb-4" />
+          <Upload size={48} color={ui.colors.textMuted} className="mb-4" />
           <Text className="font-poppins-bold text-lg text-ssf-text mb-2">Upload Schedule JSON</Text>
           <Text className="font-poppins text-xs text-ssf-text-muted text-center mb-6 max-w-xs">
             Select the JSON file containing the off-stage/on-stage schedule slots.
@@ -356,7 +357,7 @@ export default function ImportScheduleJson() {
               style={{
                 fontFamily: 'Poppins_600SemiBold',
                 backgroundColor: '#065F46',
-                color: '#fff',
+                color: ui.colors.surface,
                 padding: '10px 20px',
                 borderRadius: '8px',
                 border: 'none',
@@ -408,7 +409,7 @@ export default function ImportScheduleJson() {
                 ) : (
                   <View className="bg-red-50 p-4 rounded-xl border border-red-200 mb-4">
                     <View className="flex-row items-center mb-2">
-                      <AlertCircle size={24} color="#b91c1c" className="mr-3" />
+                      <AlertCircle size={24} color={ui.colors.destructive} className="mr-3" />
                       <Text className="font-poppins-bold text-red-800">Errors & Conflicts Detected</Text>
                     </View>
                     {dryRunReport.errors.map((err: string, i: number) => (

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -308,7 +309,7 @@ export default function PointsSettings() {
                 accessibilityRole="button"
                 accessibilityLabel="Enable editing with official values"
               >
-                <Pencil size={13} color="#FFFFFF" />
+                <Pencil size={13} color={ui.colors.surface} />
                 <Text className="font-poppins-bold text-[10px] text-white ml-1">
                   Enable Editing
                 </Text>
@@ -376,7 +377,7 @@ export default function PointsSettings() {
                 accessibilityRole="button"
                 accessibilityLabel="Edit official grade point brackets"
               >
-                <Pencil size={14} color="#FFFFFF" />
+                <Pencil size={14} color={ui.colors.surface} />
                 <Text className="font-poppins-bold text-[10px] text-white ml-1">
                   Edit Brackets
                 </Text>

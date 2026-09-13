@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useGoBack } from '../../../core/hooks/useGoBack';
@@ -31,13 +32,13 @@ export default function ChestNumberGeneration() {
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-white rounded-full border border-ssf-border">
-          <ArrowLeft size={20} color="#333" />
+          <ArrowLeft size={20} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-2xl font-poppins-black text-ssf-text">Chest Numbers</Text>
       </View>
 
       <View className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4 flex-row gap-x-3">
-        <AlertTriangle size={22} color="#1D4ED8" />
+        <AlertTriangle size={22} color={ui.colors.info} />
         <View className="flex-1">
           <Text className="font-poppins-bold text-blue-800">Numeric category ranges</Text>
           <Text className="font-poppins text-xs text-blue-700 mt-1">
@@ -57,7 +58,7 @@ export default function ChestNumberGeneration() {
               <Text className="font-poppins-bold text-ssf-text">Category {stat.category}</Text>
               <Text className="font-poppins text-xs text-ssf-text-muted">{stat.total} participants · {stat.numeric}/{stat.total} numeric chest numbers</Text>
             </View>
-            {stat.numeric === stat.total ? <CheckCircle size={20} color="#15803D" /> : <AlertTriangle size={20} color="#D97706" />}
+            {stat.numeric === stat.total ? <CheckCircle size={20} color="#15803D" /> : <AlertTriangle size={20} color={ui.colors.warning} />}
           </View>
         </SsfCard>
       ))}

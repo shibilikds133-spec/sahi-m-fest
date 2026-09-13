@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -164,7 +165,7 @@ export default function CodeLetterGeneration() {
     >
       <View className="flex-row items-center mb-3">
         <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-          <ArrowLeft size={18} color="#0F172A" />
+          <ArrowLeft size={18} color={ui.colors.text} />
         </TouchableOpacity>
         <View>
           <Text className="text-lg font-poppins-black text-ssf-text">Code Letters</Text>
@@ -189,7 +190,7 @@ export default function CodeLetterGeneration() {
               label={isGeneratingCodeLetters ? 'Drawing...' : 'Draw Letters'}
               onPress={handleGenerate}
               disabled={isGeneratingCodeLetters || activeRegistrations.length === 0}
-              icon={<RefreshCw size={14} color="#FFF" />}
+              icon={<RefreshCw size={14} color={ui.colors.surface} />}
             />
           )}
         </View>

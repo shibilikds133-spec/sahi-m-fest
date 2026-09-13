@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Modal, Clipboard } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -172,19 +173,19 @@ export default function SubOrganisationsManager() {
           <View style={{ padding: 20, paddingTop: Platform.OS === 'web' ? 40 : 60 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                  <ArrowLeft size={20} color="#0F172A" />
+                <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, backgroundColor: ui.colors.surface, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <ArrowLeft size={20} color={ui.colors.text} />
                 </TouchableOpacity>
                 <View>
-                  <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Hierarchy Management</Text>
-                  <Text style={{ color: '#0F172A', fontFamily: 'Poppins_900Black', fontSize: 22, lineHeight: 26 }}>Sub-Organisations</Text>
+                  <Text style={{ color: ui.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Hierarchy Management</Text>
+                  <Text style={{ color: ui.colors.text, fontFamily: 'Poppins_900Black', fontSize: 22, lineHeight: 26 }}>Sub-Organisations</Text>
                 </View>
               </View>
               {FEATURE_FLAGS.ENABLE_ONBOARDING ? (
                 <SsfButton
                   label="Add New"
                   size="sm"
-                  icon={<Plus size={16} color="#fff" />}
+                  icon={<Plus size={16} color={ui.colors.surface} />}
                   onPress={openCreateModal}
                 />
               ) : (
@@ -201,42 +202,42 @@ export default function SubOrganisationsManager() {
             ) : childOrganisationsError ? (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.8 }}>
                 <Building2 size={48} color="#DC2626" />
-                <Text style={{ fontFamily: 'Poppins_400Regular', color: '#B91C1C', marginTop: 16, textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_400Regular', color: ui.colors.destructive, marginTop: 16, textAlign: 'center' }}>
                   Unable to load sub-organisations. Check your connection and try again.
                 </Text>
                 <TouchableOpacity
                   onPress={() => refetchChildOrganisations()}
                   style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: '#0F766E' }}
                 >
-                  <Text style={{ fontFamily: 'Poppins_700Bold', color: '#FFFFFF' }}>Retry</Text>
+                  <Text style={{ fontFamily: 'Poppins_700Bold', color: ui.colors.surface }}>Retry</Text>
                 </TouchableOpacity>
               </View>
             ) : orgs.length === 0 ? (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.5 }}>
-                <Building2 size={48} color="#64748B" />
-                <Text style={{ fontFamily: 'Poppins_400Regular', color: '#64748B', marginTop: 16 }}>No sub-organisations found.</Text>
+                <Building2 size={48} color={ui.colors.textMuted} />
+                <Text style={{ fontFamily: 'Poppins_400Regular', color: ui.colors.textMuted, marginTop: 16 }}>No sub-organisations found.</Text>
               </View>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ flexGrow: 1 }}>
-                <View style={{ minWidth: 800, flex: 1, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E0EA', borderRadius: 14, overflow: 'hidden' }}>
-                  <View style={{ height: 44, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#D8E0EA' }}>
-                    <Text style={{ flex: 1.6, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Organisation</Text>
-                    <Text style={{ flex: 1.5, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Login Username</Text>
-                    <Text style={{ width: 100, fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Type</Text>
-                    <Text style={{ width: 160, textAlign: 'right', fontFamily: 'Poppins_700Bold', fontSize: 10, color: '#64748B', letterSpacing: 1, textTransform: 'uppercase' }}>Actions</Text>
+                <View style={{ minWidth: 800, flex: 1, backgroundColor: ui.colors.surface, borderWidth: 1, borderColor: ui.colors.border, borderRadius: 14, overflow: 'hidden' }}>
+                  <View style={{ height: 44, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: ui.colors.border }}>
+                    <Text style={{ flex: 1.6, fontFamily: 'Poppins_700Bold', fontSize: 10, color: ui.colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' }}>Organisation</Text>
+                    <Text style={{ flex: 1.5, fontFamily: 'Poppins_700Bold', fontSize: 10, color: ui.colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' }}>Login Username</Text>
+                    <Text style={{ width: 100, fontFamily: 'Poppins_700Bold', fontSize: 10, color: ui.colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' }}>Type</Text>
+                    <Text style={{ width: 160, textAlign: 'right', fontFamily: 'Poppins_700Bold', fontSize: 10, color: ui.colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' }}>Actions</Text>
                   </View>
 
                   {orgs.map((org: any) => (
-                    <View key={org.id} style={{ minHeight: 64, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+                    <View key={org.id} style={{ minHeight: 64, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: ui.colors.surface }}>
                       <View style={{ flex: 1.6, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
-                        <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                        <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: ui.colors.successSoft, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                           <Building2 size={15} color="#0F766E" />
                         </View>
-                        <Text numberOfLines={1} style={{ flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 13, color: '#0F172A' }}>{org.name}</Text>
+                        <Text numberOfLines={1} style={{ flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 13, color: ui.colors.text }}>{org.name}</Text>
                       </View>
                       <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}>
                         <User size={13} color="#0F766E" />
-                        <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#475569' }}>{org.admin_email || '—'}</Text>
+                        <Text numberOfLines={1} style={{ marginLeft: 7, fontFamily: 'Poppins_400Regular', fontSize: 12, color: ui.colors.textMuted }}>{org.admin_email || '—'}</Text>
                       </View>
                       <View style={{ width: 100, alignItems: 'flex-start' }}>
                         <View style={{ backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 }}>
@@ -281,10 +282,10 @@ export default function SubOrganisationsManager() {
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 }}>
-            <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 20, color: '#0F172A', marginBottom: 20 }}>Create Sub-Organisation</Text>
+          <View style={{ backgroundColor: ui.colors.surface, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 }}>
+            <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 20, color: ui.colors.text, marginBottom: 20 }}>Create Sub-Organisation</Text>
             
-            <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 13, marginBottom: 16 }}>
+            <Text style={{ color: ui.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 13, marginBottom: 16 }}>
               Enter the name of the new organisation and an admin username. A secure admin account and credentials are generated by the server and shown once after linking completes.
             </Text>
 
@@ -305,7 +306,7 @@ export default function SubOrganisationsManager() {
               autoCapitalize="none"
               style={{ marginBottom: 4 }}
             />
-            <Text style={{ color: '#64748B', fontFamily: 'Poppins_400Regular', fontSize: 11, marginBottom: 16 }}>Use 3–40 lowercase letters, numbers or underscores.</Text>
+            <Text style={{ color: ui.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 11, marginBottom: 16 }}>Use 3–40 lowercase letters, numbers or underscores.</Text>
 
             {errorMsg ? (
               <Text style={{ color: '#DC2626', fontFamily: 'Poppins_400Regular', marginBottom: 16, fontSize: 13 }}>⚠️ {errorMsg}</Text>

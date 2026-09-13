@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -91,7 +92,7 @@ export default function VenuesManagement() {
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={goBack} className="mr-3 p-2 bg-ssf-surface rounded-full">
-            <ArrowLeft size={24} color="#333" />
+            <ArrowLeft size={24} color={ui.colors.text} />
           </TouchableOpacity>
           <Text className="text-2xl font-poppins-black text-ssf-text">Venues</Text>
         </View>
@@ -99,14 +100,14 @@ export default function VenuesManagement() {
           onPress={() => { resetForm(); setIsModalOpen(true); }}
           className="bg-ssf-primary px-4 py-2 rounded-xl flex-row items-center gap-x-2"
         >
-          <Plus size={16} color="#FFF" />
+          <Plus size={16} color={ui.colors.surface} />
           <Text className="font-poppins-bold text-white">Add Venue</Text>
         </TouchableOpacity>
       </View>
 
       {venues.length === 0 ? (
         <SsfCard className="items-center py-10">
-          <MapPin size={48} color="#D1D5DB" className="mb-4" />
+          <MapPin size={48} color={ui.colors.border} className="mb-4" />
           <Text className="font-poppins text-ssf-text-muted">No venues created yet.</Text>
         </SsfCard>
       ) : (
@@ -134,7 +135,7 @@ export default function VenuesManagement() {
 
       {isModalOpen && (
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 20 }}>
-          <View style={{ backgroundColor: '#FFF', borderRadius: 16, width: '100%', maxWidth: 400, padding: 24 }}>
+          <View style={{ backgroundColor: ui.colors.surface, borderRadius: 16, width: '100%', maxWidth: 400, padding: 24 }}>
             <Text className="font-poppins-bold text-lg mb-4 text-ssf-text">
               {editingId ? 'Edit Venue' : 'Add Venue'}
             </Text>

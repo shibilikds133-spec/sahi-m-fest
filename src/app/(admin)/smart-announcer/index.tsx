@@ -136,7 +136,7 @@ export default function SmartAnnouncerPage() {
                         <Text style={styles.statValue}>{res.new_1st_points} pts</Text>
                       </View>
                       <View style={styles.statBox}>
-                        <Trophy size={16} color="#94a3b8" />
+                        <Trophy size={16} color={ui.colors.textSubtle} />
                         <Text style={styles.statLabel}>2nd Place</Text>
                         <Text style={styles.statValue}>{res.new_2nd_points} pts</Text>
                       </View>
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: ui.colors.border,
-    shadowColor: '#000',
+    shadowColor: ui.shadow.shadowColor,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -265,7 +266,7 @@ export default function ImportSeniorDataset() {
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="p-2 mr-2 bg-ssf-surface rounded-full border border-ssf-border">
-          <ArrowLeft size={24} color="#333" />
+          <ArrowLeft size={24} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-3xl font-poppins-black text-ssf-text">Senior Dataset Import</Text>
       </View>
@@ -282,7 +283,7 @@ export default function ImportSeniorDataset() {
 
       {dataset.length === 0 ? (
         <SsfCard className="p-8 items-center border-dashed border-2 border-ssf-border mb-6">
-          <Upload size={48} color="#64748B" className="mb-4" />
+          <Upload size={48} color={ui.colors.textMuted} className="mb-4" />
           <Text className="font-poppins-bold text-lg text-ssf-text mb-2">Upload import_sn.json</Text>
           <Text className="font-poppins text-xs text-ssf-text-muted text-center mb-6 max-w-xs">
             Select the production file at:{'\n'}
@@ -297,7 +298,7 @@ export default function ImportSeniorDataset() {
               style={{
                 fontFamily: 'Poppins_600SemiBold',
                 backgroundColor: '#065F46',
-                color: '#fff',
+                color: ui.colors.surface,
                 padding: '10px 20px',
                 borderRadius: '8px',
                 border: 'none',
@@ -340,7 +341,7 @@ export default function ImportSeniorDataset() {
             ) : (
               <View className="bg-red-50 p-4 rounded-xl border border-red-200 mb-4">
                 <View className="flex-row items-center mb-2">
-                  <AlertCircle size={24} color="#b91c1c" className="mr-3" />
+                  <AlertCircle size={24} color={ui.colors.destructive} className="mr-3" />
                   <Text className="font-poppins-bold text-red-800">Conflicts Detected</Text>
                 </View>
                 {internalValidation?.duplicateChests.length ? (

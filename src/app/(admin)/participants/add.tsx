@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TextInput, Alert, TouchableOpacity, Platform, Switch, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -384,7 +385,7 @@ export default function AddParticipant() {
             placeholder="E.g. Mohammed Ali"
             value={name}
             onChangeText={setName}
-            placeholderTextColor="#999"
+            placeholderTextColor={ui.colors.textSubtle}
           />
         </View>
 
@@ -396,7 +397,7 @@ export default function AddParticipant() {
             placeholder="Leave empty to auto-generate"
             value={manualChestNumber}
             onChangeText={setManualChestNumber}
-            placeholderTextColor="#999"
+            placeholderTextColor={ui.colors.textSubtle}
           />
         </View>
 
@@ -416,7 +417,7 @@ export default function AddParticipant() {
               value={dob}
               onChangeText={(text) => setDob(formatDOBInput(text))}
               keyboardType="number-pad"
-              placeholderTextColor="#999"
+              placeholderTextColor={ui.colors.textSubtle}
               maxLength={10}
             />
           )}
@@ -530,7 +531,7 @@ export default function AddParticipant() {
                   paddingHorizontal: 12,
                   borderRadius: 16,
                   borderWidth: 2,
-                  borderColor: manualCategory === opt.value ? '#1B6B3A' : '#D1D5DB',
+                  borderColor: manualCategory === opt.value ? '#1B6B3A' : ui.colors.border,
                   backgroundColor: manualCategory === opt.value ? '#1B6B3A' : '#FAFAFA',
                   alignItems: 'center',
                 }}
@@ -544,7 +545,7 @@ export default function AddParticipant() {
                 <Text style={{
                   fontWeight: '800',
                   fontSize: 16,
-                  color: manualCategory === opt.value ? '#fff' : '#1B6B3A',
+                  color: manualCategory === opt.value ? ui.colors.surface : '#1B6B3A',
                   letterSpacing: 1,
                 }}>
                   {opt.label}
@@ -598,7 +599,7 @@ export default function AddParticipant() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
-            placeholderTextColor="#999"
+            placeholderTextColor={ui.colors.textSubtle}
           />
         </View>
 
@@ -629,7 +630,7 @@ export default function AddParticipant() {
         {/* Candidate Profile Section */}
         <View className="border-t border-gray-100 pt-4 gap-y-4">
           <View className="flex-row items-center gap-x-2">
-            <Eye size={18} color="#0B6BDB" />
+            <Eye size={18} color={ui.colors.info} />
             <Text className="font-poppins-bold text-base text-ssf-text">Public Candidate Profile</Text>
           </View>
           
@@ -675,7 +676,7 @@ export default function AddParticipant() {
               multiline
               textAlignVertical="top"
               placeholder="Short public-safe candidate bio..."
-              placeholderTextColor="#999"
+              placeholderTextColor={ui.colors.textSubtle}
             />
           </View>
 
@@ -689,7 +690,7 @@ export default function AddParticipant() {
               value={publicProfileEnabled}
               onValueChange={setPublicProfileEnabled}
               trackColor={{ false: '#CBD5E1', true: '#B9EBD1' }}
-              thumbColor={publicProfileEnabled ? '#078B5A' : '#F8FAFC'}
+              thumbColor={publicProfileEnabled ? ui.colors.success : '#F8FAFC'}
             />
           </View>
 
@@ -703,7 +704,7 @@ export default function AddParticipant() {
               value={showOrganisationPublic}
               onValueChange={setShowOrganisationPublic}
               trackColor={{ false: '#CBD5E1', true: '#B9EBD1' }}
-              thumbColor={showOrganisationPublic ? '#078B5A' : '#F8FAFC'}
+              thumbColor={showOrganisationPublic ? ui.colors.success : '#F8FAFC'}
             />
           </View>
         </View>

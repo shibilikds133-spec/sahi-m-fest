@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -68,7 +69,7 @@ export function SsfSheet({
               onPress={onClose}
               style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
             >
-              <X size={20} color="#0F172A" />
+              <X size={20} color={ui.colors.text} />
             </Pressable>
           </View>
 
@@ -96,14 +97,14 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.34)',
+    backgroundColor: ui.colors.surfaceMuted,
   },
   panel: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: '#D8E0EA',
-    shadowColor: '#0F172A',
+    borderLeftColor: ui.colors.border,
+    shadowColor: ui.colors.text,
     shadowOffset: { width: -8, height: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 24,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   closeButtonPressed: {
-    backgroundColor: '#EEF2F7',
+    backgroundColor: ui.colors.surfaceMuted,
   },
   content: {
     flex: 1,
@@ -149,6 +150,6 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 30 : 20,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
   },
 });

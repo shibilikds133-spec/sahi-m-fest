@@ -43,5 +43,5 @@ export const ui = {
       shadowOffset: { width: 0, height: 8 },
       elevation: 4,
     },
-  }) as object,
+  }) as any,
 };

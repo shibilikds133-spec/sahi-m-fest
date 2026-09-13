@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -371,7 +372,7 @@ export default function ManageUnits() {
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.replace('/(admin)/participants')} className="p-2 mr-2 bg-white rounded-full border border-ssf-border">
-            <ArrowLeft size={24} color="#333" />
+            <ArrowLeft size={24} color={ui.colors.text} />
           </TouchableOpacity>
           <View>
             <Text className="text-3xl font-poppins-black text-ssf-text">Reassign Units</Text>
@@ -591,14 +592,14 @@ export default function ManageUnits() {
                         disabled={currentPage === 1}
                         className={`p-2 bg-slate-50 border border-slate-200 rounded-lg ${currentPage === 1 ? 'opacity-40' : ''}`}
                       >
-                        <ChevronLeft size={16} color="#475569" />
+                        <ChevronLeft size={16} color={ui.colors.textMuted} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
                         className={`p-2 bg-slate-50 border border-slate-200 rounded-lg ${currentPage === totalPages ? 'opacity-40' : ''}`}
                       >
-                        <ChevronRight size={16} color="#475569" />
+                        <ChevronRight size={16} color={ui.colors.textMuted} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -739,7 +740,7 @@ export default function ManageUnits() {
                 <Text className="text-xl font-poppins-bold text-ssf-text">Verify Reassignment</Text>
               </View>
               <TouchableOpacity onPress={() => setIsPreviewOpen(false)} className="p-1">
-                <X size={20} color="#94a3b8" />
+                <X size={20} color={ui.colors.textSubtle} />
               </TouchableOpacity>
             </View>
 
@@ -776,7 +777,7 @@ export default function ManageUnits() {
             {previewReport.skipped.length > 0 && (
               <View className="mb-4">
                 <View className="flex-row items-center gap-x-1 mb-2">
-                  <AlertTriangle size={14} color="#d97706" />
+                  <AlertTriangle size={14} color={ui.colors.warning} />
                   <Text className="font-poppins-bold text-xs text-amber-700">
                     Skipped / Conflict Records ({previewReport.skipped.length}):
                   </Text>

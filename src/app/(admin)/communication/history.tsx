@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { ArrowLeft, CheckCircle2, XCircle, Clock } from 'lucide-react-native';
@@ -113,7 +114,7 @@ export default function CommunicationHistory() {
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
             <View className="py-10 items-center">
-              <Clock size={48} color="#D1D5DB" className="mb-4" />
+              <Clock size={48} color={ui.colors.border} className="mb-4" />
               <Text className="text-gray-500 text-base">No notifications sent yet.</Text>
             </View>
           }

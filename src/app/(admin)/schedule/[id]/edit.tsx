@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -278,8 +279,8 @@ const dateTimeInputStyle: React.CSSProperties = {
   padding: '0 12px',
   borderRadius: 9,
   border: '1px solid #D8E0EA',
-  background: '#FFFFFF',
-  color: '#0F172A',
+  background: ui.colors.surface,
+  color: ui.colors.text,
   fontFamily: 'Poppins_400Regular',
   outline: 'none',
 };

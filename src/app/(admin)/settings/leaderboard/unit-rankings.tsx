@@ -1,3 +1,4 @@
+import { ui } from "@/constants/designSystem";
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,20 +28,20 @@ import { LeaderboardRow } from '../../../../services/leaderboardService';
 import { LeaderboardSettings } from '../../../../services/leaderboardSettingsService';
 
 const colors = {
-  navy: '#0B1F3A',
-  blue: '#123B73',
-  cyan: '#16B8D9',
-  teal: '#0F766E',
-  green: '#22C55E',
-  bg: '#F3F8FB',
-  card: '#FFFFFF',
-  border: '#DDEAF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  soft: '#EAF7FA',
+  navy: ui.colors.primaryHover,
+  blue: ui.colors.primary,
+  cyan: ui.colors.info,
+  teal: ui.colors.primary,
+  green: ui.colors.success,
+  bg: ui.colors.background,
+  card: ui.colors.surface,
+  border: ui.colors.border,
+  text: ui.colors.text,
+  muted: ui.colors.textMuted,
+  soft: ui.colors.infoSoft,
 };
 
-const rankPalette = ['#F59E0B', '#94A3B8', '#B45309'];
+const rankPalette = ['#F59E0B', ui.colors.textSubtle, '#B45309'];
 
 type UiLeaderboardRow = LeaderboardRow & {
   district: string;
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: '#F8FCFD',
+    backgroundColor: ui.colors.background,
   },
   secondaryActionText: {
     color: colors.teal,
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     minHeight: 44,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     paddingHorizontal: 20,
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF5F8',
+    borderBottomColor: ui.colors.border,
   },
   rankBadge: {
     alignSelf: 'flex-start',
@@ -290,8 +291,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#D7E5EC',
-    backgroundColor: '#F8FCFD',
+    borderColor: ui.colors.border,
+    backgroundColor: ui.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     padding: 14,
   },
   mobileRowHeader: {
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EEF5F8',
+    borderTopColor: ui.colors.border,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 20,
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.06,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF5F8',
+    borderBottomColor: ui.colors.border,
   },
   controlLabel: {
     color: colors.text,
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     borderRadius: 12,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     marginTop: 6,
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   textInput: {
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   primaryActionText: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
   },
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 12,
     borderRadius: 14,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -173,7 +174,7 @@ export default function ImportParticipants() {
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={goBack} className="p-2 mr-2 bg-ssf-surface rounded-full border border-ssf-border">
-            <ArrowLeft size={24} color="#333" />
+            <ArrowLeft size={24} color={ui.colors.text} />
           </TouchableOpacity>
           <Text className="text-3xl font-poppins-black text-ssf-text">Bulk Import</Text>
         </View>
@@ -217,7 +218,7 @@ export default function ImportParticipants() {
         </SsfCard>
       ) : (
         <View>
-          <SsfCard className="mb-6 border border-ssf-primary bg-[#E8F5E9]">
+          <SsfCard className="mb-6 border border-ssf-primary bg-ui-success-soft">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
                 <FileSpreadsheet size={24} color="#1B6B3A" className="mr-3" />

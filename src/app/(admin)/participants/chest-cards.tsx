@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SsfSelectMenu } from '@/components/ui/SsfSelectMenu';
 import {
@@ -90,8 +91,8 @@ const defaultTemplate = (): ChestTemplate => ({
   updatedAt: new Date().toISOString(),
   fields: {
     chest: { x: 38, y: 96, width: 172, height: 56, fontSize: 38, color: '#EAB308' },
-    name: { x: 38, y: 160, width: 172, height: 24, fontSize: 16, color: '#FFFFFF' },
-    unit: { x: 38, y: 190, width: 172, height: 18, fontSize: 12, color: '#FFFFFF' },
+    name: { x: 38, y: 160, width: 172, height: 24, fontSize: 16, color: ui.colors.surface },
+    unit: { x: 38, y: 190, width: 172, height: 18, fontSize: 12, color: ui.colors.surface },
     qr: { x: 74, y: 220, width: 100, height: 100, borderRadius: 8, padding: 6 },
   },
 });
@@ -118,8 +119,8 @@ const readTemplates = () => {
     fields: {
       ...t.fields,
       chest: { ...t.fields.chest, color: t.fields.chest.color || '#EAB308' },
-      name: t.fields.name || { x: 38, y: 160, width: 172, height: 24, fontSize: 16, color: '#FFFFFF' },
-      unit: t.fields.unit || { x: 38, y: 190, width: 172, height: 18, fontSize: 12, color: '#FFFFFF' },
+      name: t.fields.name || { x: 38, y: 160, width: 172, height: 24, fontSize: 16, color: ui.colors.surface },
+      unit: t.fields.unit || { x: 38, y: 190, width: 172, height: 18, fontSize: 12, color: ui.colors.surface },
       qr: { ...t.fields.qr, borderRadius: t.fields.qr.borderRadius ?? 8, padding: t.fields.qr.padding ?? 6 },
     }
   }));
@@ -262,7 +263,7 @@ const FieldBox = ({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: selected ? 1 : 0,
-        borderColor: selected ? '#0B6BDB' : 'transparent',
+        borderColor: selected ? ui.colors.info : 'transparent',
         borderStyle: 'dashed',
         borderRadius: (field.borderRadius ?? 0) * printScale,
         cursor: editable ? 'move' : 'default',
@@ -284,7 +285,7 @@ const FieldBox = ({
             bottom: -6,
             width: 12,
             height: 12,
-            backgroundColor: '#0B6BDB',
+            backgroundColor: ui.colors.info,
             borderRadius: 6,
             cursor: 'nwse-resize',
           } as any}
@@ -328,9 +329,9 @@ const ChestCard = ({
         height: TEMPLATE_HEIGHT * scale,
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: ui.colors.surface,
         borderWidth: 1,
-        borderColor: '#DDE7F3',
+        borderColor: ui.colors.border,
         position: 'relative',
       }}
     >
@@ -358,7 +359,7 @@ const ChestCard = ({
             padding: 18,
           }}
         >
-          <Text style={{ fontFamily: 'Poppins_700Bold', color: '#64748B', fontSize: 12, textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'Poppins_700Bold', color: ui.colors.textMuted, fontSize: 12, textAlign: 'center' }}>
             Upload an A6 PNG/JPG background template
           </Text>
         </View>
@@ -399,7 +400,7 @@ const ChestCard = ({
         <Text
           style={{
             fontFamily: 'Montserrat_300Light',
-            color: template.fields.name.color || '#FFFFFF',
+            color: template.fields.name.color || ui.colors.surface,
             fontSize: (template.fields.name.fontSize ?? 16) * scale,
             lineHeight: (template.fields.name.height - 2) * scale,
             textAlign: 'center',
@@ -422,7 +423,7 @@ const ChestCard = ({
         <Text
           style={{
             fontFamily: 'Montserrat_300Light',
-            color: template.fields.unit.color || '#FFFFFF',
+            color: template.fields.unit.color || ui.colors.surface,
             fontSize: (template.fields.unit.fontSize ?? 12) * scale,
             lineHeight: (template.fields.unit.height - 2) * scale,
             textAlign: 'center',
@@ -454,7 +455,7 @@ const ChestCard = ({
           style={{
             width: template.fields.qr.width * scale,
             height: template.fields.qr.height * scale,
-            backgroundColor: template.fields.qr.backgroundColor || '#FFFFFF',
+            backgroundColor: template.fields.qr.backgroundColor || ui.colors.surface,
             padding: (template.fields.qr.padding ?? 6) * scale,
             borderRadius: (template.fields.qr.borderRadius ?? 8) * scale,
             overflow: 'hidden',
@@ -723,7 +724,7 @@ export default function ChestCardsPage() {
     Alert.alert('Ready', 'Selected cards are clear for regeneration using the existing chest-number workflow.');
   };
 
-  if (isLoadingList) return <ActivityIndicator color="#078B5A" style={{ marginTop: 40 }} />;
+  if (isLoadingList) return <ActivityIndicator color={ui.colors.success} style={{ marginTop: 40 }} />;
 
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
@@ -855,11 +856,11 @@ export default function ChestCardsPage() {
               </View>
               <View className="flex-row flex-wrap gap-2">
                 <TouchableOpacity onPress={uploadBackground} disabled={isUploadingBackground} className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
-                  {isUploadingBackground ? <ActivityIndicator size="small" color="#FFF" /> : <ImagePlus size={15} color="#FFF" />}
+                  {isUploadingBackground ? <ActivityIndicator size="small" color={ui.colors.surface} /> : <ImagePlus size={15} color={ui.colors.surface} />}
                   <Text className="font-poppins-bold text-white text-xs">{isUploadingBackground ? 'Uploading...' : 'Upload / Replace'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={localUploadBackground} disabled={isUploadingBackground} className="bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl flex-row items-center gap-x-2">
-                  <ImagePlus size={15} color="#059669" />
+                  <ImagePlus size={15} color={ui.colors.success} />
                   <Text className="font-poppins-bold text-emerald-700 text-xs">Local Image</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={createTemplate} className="bg-white border border-ssf-border px-3 py-2 rounded-xl flex-row items-center gap-x-2">
@@ -867,7 +868,7 @@ export default function ChestCardsPage() {
                   <Text className="font-poppins-bold text-ssf-text text-xs">New Template</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => activateTemplate(activeTemplate.id)} className="bg-white border border-ssf-border px-3 py-2 rounded-xl flex-row items-center gap-x-2">
-                  <Check size={15} color="#078B5A" />
+                  <Check size={15} color={ui.colors.success} />
                   <Text className="font-poppins-bold text-ssf-text text-xs">Set Active</Text>
                 </TouchableOpacity>
               </View>
@@ -894,7 +895,7 @@ export default function ChestCardsPage() {
                   {(['x', 'y', 'width', 'height', 'fontSize', 'color', 'backgroundColor', 'borderRadius', 'padding'] as const).map(key => {
                     if (key === 'fontSize' && selectedField === 'qr') return null;
                     if ((key === 'borderRadius' || key === 'padding') && selectedField !== 'qr') return null;
-                    const value = activeTemplate.fields[selectedField][key as keyof OverlayField] ?? (key === 'color' ? '#000000' : (key === 'backgroundColor' ? '#FFFFFF' : (key === 'borderRadius' ? 8 : (key === 'padding' ? 6 : 12))));
+                    const value = activeTemplate.fields[selectedField][key as keyof OverlayField] ?? (key === 'color' ? '#000000' : (key === 'backgroundColor' ? ui.colors.surface : (key === 'borderRadius' ? 8 : (key === 'padding' ? 6 : 12))));
                     
                     if (key === 'color' || key === 'backgroundColor') {
                       const label = key === 'color' ? (selectedField === 'qr' ? 'QR Code Color (Hex)' : 'Text Color (Hex)') : 'Background Color (Hex)';
@@ -970,7 +971,7 @@ export default function ChestCardsPage() {
                   })}
                 </View>
                 <TouchableOpacity onPress={() => saveTemplates(templates)} className="mt-4 bg-blue-600 px-4 py-3 rounded-xl flex-row items-center justify-center gap-x-2">
-                  <Save size={16} color="#FFF" />
+                  <Save size={16} color={ui.colors.surface} />
                   <Text className="font-poppins-bold text-white">Save Layout Preset</Text>
                 </TouchableOpacity>
               </View>
@@ -1082,7 +1083,7 @@ export default function ChestCardsPage() {
                   onPress={() => updateTemplate(t => ({ ...t, backgroundX: 0, backgroundY: 0, backgroundScale: 1, backgroundResizeMode: 'cover' }))}
                   className="mt-2 bg-gray-100 px-4 py-2 rounded-xl flex-row items-center justify-center gap-x-1"
                 >
-                  <RotateCcw size={14} color="#475569" />
+                  <RotateCcw size={14} color={ui.colors.textMuted} />
                   <Text className="font-poppins-bold text-ssf-text-muted text-xs">Reset Background Adjustments</Text>
                 </TouchableOpacity>
               </View>
@@ -1110,19 +1111,19 @@ export default function ChestCardsPage() {
 
         <View className="bg-white border border-ssf-border rounded-xl p-4 my-5">
           <View className="flex-row items-center bg-slate-50 border border-ssf-border rounded-xl px-3 mb-4">
-            <Search size={17} color="#64748B" />
+            <Search size={17} color={ui.colors.textMuted} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search chest number, participant or organisation"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={ui.colors.textMuted}
               style={{ flex: 1, height: 44, paddingHorizontal: 10, fontFamily: 'Poppins_400Regular', outlineStyle: 'none' as any }}
             />
           </View>
 
           <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 10, alignItems: isMobile ? 'stretch' : 'center' }}>
             <TouchableOpacity onPress={() => { setPrintSize('auto'); setTimeout(handlePrint, 100); }} className="bg-ssf-primary px-4 py-3 rounded-xl flex-row items-center justify-center gap-x-2 flex-1">
-              <Printer size={16} color="#FFF" />
+              <Printer size={16} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-white">Print Cards</Text>
             </TouchableOpacity>
 
@@ -1136,7 +1137,7 @@ export default function ChestCardsPage() {
               }} 
               className="bg-emerald-600 px-4 py-3 rounded-xl flex-row items-center justify-center gap-x-2 flex-1"
             >
-              <Download size={16} color="#FFF" />
+              <Download size={16} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-white">A4 PDF (4)</Text>
             </TouchableOpacity>
 
@@ -1153,7 +1154,7 @@ export default function ChestCardsPage() {
               }} 
               className="bg-purple-600 px-4 py-3 rounded-xl flex-row items-center justify-center gap-x-2 flex-1"
             >
-              <Download size={16} color="#FFF" />
+              <Download size={16} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-white">A3 PDF (20)</Text>
             </TouchableOpacity>
             
@@ -1237,7 +1238,7 @@ export default function ChestCardsPage() {
                 <View className="mt-2 flex-row items-center justify-between">
                   <Text className="font-poppins-black text-ssf-text text-xs">{p.chest_number || '---'}</Text>
                   <TouchableOpacity onPress={() => toggleLock(p.id)}>
-                    {locked ? <Lock size={16} color="#B91C1C" /> : <Unlock size={16} color="#64748B" />}
+                    {locked ? <Lock size={16} color={ui.colors.destructive} /> : <Unlock size={16} color={ui.colors.textMuted} />}
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row gap-x-1 mt-1">

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { createContext, useContext } from 'react';
 import { View, ViewProps } from 'react-native';
 
@@ -29,7 +30,7 @@ export const SsfCard: React.FC<SsfCardProps> = ({
           isFlat
             ? { shadowOpacity: 0, elevation: 0 }
             : {
-                shadowColor: '#0F172A',
+                shadowColor: ui.colors.text,
                 shadowOpacity: 0.025,
                 shadowRadius: 10,
                 shadowOffset: { width: 0, height: 4 },

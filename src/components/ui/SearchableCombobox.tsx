@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, LayoutChangeEvent } from 'react-native';
 import { Label } from '@/components/ui/shadcn/label';
@@ -98,7 +99,7 @@ export function SearchableCombobox<T extends { id: string; name: string }>({
             className="flex-1 text-sm text-foreground h-full"
             style={Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : undefined}
             placeholder={placeholder}
-            placeholderTextColor="#888"
+            placeholderTextColor={ui.colors.textSubtle}
             value={query}
             onChangeText={(text) => {
               setQuery(text);

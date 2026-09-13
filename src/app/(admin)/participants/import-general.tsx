@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -378,7 +379,7 @@ export default function ImportUpperPrimaryDataset() {
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="p-2 mr-2 bg-ssf-surface rounded-full border border-ssf-border">
-          <ArrowLeft size={24} color="#333" />
+          <ArrowLeft size={24} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-3xl font-poppins-black text-ssf-text">General Import</Text>
       </View>
@@ -395,7 +396,7 @@ export default function ImportUpperPrimaryDataset() {
 
       {dataset.length === 0 ? (
         <SsfCard className="p-8 items-center border-dashed border-2 border-ssf-border mb-6">
-          <Upload size={48} color="#64748B" className="mb-4" />
+          <Upload size={48} color={ui.colors.textMuted} className="mb-4" />
           <Text className="font-poppins-bold text-lg text-ssf-text mb-2">Upload generalbulk.json</Text>
           <Text className="font-poppins text-xs text-ssf-text-muted text-center mb-6 max-w-xs">
             Select the production file at:{'\n'}
@@ -409,8 +410,8 @@ export default function ImportUpperPrimaryDataset() {
               onChange={handleFileUpload} 
               style={{
                 fontFamily: 'Poppins_600SemiBold',
-                backgroundColor: '#1E3A8A',
-                color: '#fff',
+                backgroundColor: ui.colors.info,
+                color: ui.colors.surface,
                 padding: '10px 20px',
                 borderRadius: '8px',
                 border: 'none',
@@ -425,12 +426,12 @@ export default function ImportUpperPrimaryDataset() {
         <>
           <View className="flex-row gap-4 mb-6">
             <SsfCard className="flex-1 items-center py-4">
-              <FileText size={24} color="#1E3A8A" className="mb-2" />
+              <FileText size={24} color={ui.colors.info} className="mb-2" />
               <Text className="font-poppins-bold text-2xl">{dataset.length}</Text>
               <Text className="font-poppins text-xs text-ssf-text-muted">Total Participants</Text>
             </SsfCard>
             <SsfCard className="flex-1 items-center py-4">
-              <Database size={24} color="#1E3A8A" className="mb-2" />
+              <Database size={24} color={ui.colors.info} className="mb-2" />
               <Text className="font-poppins-bold text-2xl">
                 {dataset.reduce((acc, curr) => acc + (curr.items?.length || 0), 0)}
               </Text>
@@ -445,7 +446,7 @@ export default function ImportUpperPrimaryDataset() {
             {headerMismatch && (
                <View className="bg-orange-50 p-4 rounded-xl border border-orange-200 mb-4">
                  <View className="flex-row items-center mb-2">
-                   <AlertCircle size={20} color="#c2410c" className="mr-3" />
+                   <AlertCircle size={20} color={ui.colors.warning} className="mr-3" />
                    <Text className="font-poppins-bold text-orange-800">Header Count Mismatch</Text>
                  </View>
                  <Text className="font-poppins text-xs text-orange-700">{headerMismatch}</Text>
@@ -455,7 +456,7 @@ export default function ImportUpperPrimaryDataset() {
             {unmappedEvents.size > 0 && (
                <View className="bg-orange-50 p-4 rounded-xl border border-orange-200 mb-4">
                  <View className="flex-row items-center mb-2">
-                   <AlertCircle size={20} color="#c2410c" className="mr-3" />
+                   <AlertCircle size={20} color={ui.colors.warning} className="mr-3" />
                    <Text className="font-poppins-bold text-orange-800">Unmapped Events (Skipped)</Text>
                  </View>
                  {Array.from(unmappedEvents).map(ev => (
@@ -475,7 +476,7 @@ export default function ImportUpperPrimaryDataset() {
             ) : (
               <View className="bg-red-50 p-4 rounded-xl border border-red-200 mb-4">
                 <View className="flex-row items-center mb-2">
-                  <AlertCircle size={24} color="#b91c1c" className="mr-3" />
+                  <AlertCircle size={24} color={ui.colors.destructive} className="mr-3" />
                   <Text className="font-poppins-bold text-red-800">Conflicts Detected</Text>
                 </View>
                 {internalValidation?.duplicateChests.length ? (

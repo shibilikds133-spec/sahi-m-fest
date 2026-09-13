@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.colors.border,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: ui.shadow.shadowColor,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     color: ui.colors.text,
   },
   dayTextSelected: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
   },
   dayTextToday: {

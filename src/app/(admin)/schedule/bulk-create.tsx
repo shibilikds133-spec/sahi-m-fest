@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -552,14 +553,14 @@ export default function BulkCreateSchedule() {
         <View className="p-3 border-b border-ui-border">
           <View className="flex-row items-center gap-x-2">
             <View className="flex-1 h-10 px-3 rounded-xl border border-ui-border flex-row items-center">
-              <Search size={16} color="#94A3B8" />
+              <Search size={16} color={ui.colors.textSubtle} />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Search items..."
                 className="flex-1 ml-2 font-poppins text-sm outline-none"
               />
-              {!!search && <TouchableOpacity onPress={() => setSearch('')}><X size={15} color="#94A3B8" /></TouchableOpacity>}
+              {!!search && <TouchableOpacity onPress={() => setSearch('')}><X size={15} color={ui.colors.textSubtle} /></TouchableOpacity>}
             </View>
             <SsfSelectMenu
               value={category}
@@ -598,7 +599,7 @@ export default function BulkCreateSchedule() {
           <View style={{ minWidth: 900, width: '100%' }}>
             <View className="h-11 px-4 flex-row items-center bg-ui-muted border-b border-ui-border">
               <TouchableOpacity onPress={toggleVisible} style={{ width: 42 }}>
-                {allVisibleSelected ? <CheckSquare size={18} color="#0F766E" /> : <Square size={18} color="#94A3B8" />}
+                {allVisibleSelected ? <CheckSquare size={18} color="#0F766E" /> : <Square size={18} color={ui.colors.textSubtle} />}
               </TouchableOpacity>
               <Text style={{ flex: 0.8 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Code</Text>
               <Text style={{ flex: 2.4 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Item</Text>
@@ -623,7 +624,7 @@ export default function BulkCreateSchedule() {
                   className={`min-h-14 px-4 flex-row items-center border-b border-ui-border ${selected ? 'bg-teal-50' : 'bg-white'} ${isAlreadyScheduled ? 'opacity-70' : ''}`}
                 >
                   <View style={{ width: 42 }}>
-                    {selected ? <CheckSquare size={18} color="#0F766E" /> : <Square size={18} color="#94A3B8" />}
+                    {selected ? <CheckSquare size={18} color="#0F766E" /> : <Square size={18} color={ui.colors.textSubtle} />}
                   </View>
                   <Text style={{ flex: 0.8 }} className="font-poppins-bold text-xs text-ui-text">{item.item_code || '—'}</Text>
                   <Text style={{ flex: 2.4 }} numberOfLines={1} className="font-poppins text-xs text-ui-text pr-3">
@@ -755,7 +756,7 @@ export default function BulkCreateSchedule() {
         <View>
           <Text className="font-poppins-black text-ui-text">{selectedItems.length} items selected</Text>
           <View className="flex-row items-center gap-x-1 mt-1">
-            <Clock3 size={13} color="#64748B" />
+            <Clock3 size={13} color={ui.colors.textMuted} />
             <Text className="font-poppins text-xs text-ui-text-muted">
               {preview.length ? `${preview[0].start.toLocaleString()} → ${preview[preview.length - 1].end.toLocaleString()}` : 'Configure stage and time to preview.'}
             </Text>
@@ -763,7 +764,7 @@ export default function BulkCreateSchedule() {
         </View>
         <SsfButton
           label={isSaving ? 'Creating...' : `Create ${selectedItems.length} Schedules`}
-          icon={isSaving ? undefined : <WandSparkles size={15} color="#FFFFFF" />}
+          icon={isSaving ? undefined : <WandSparkles size={15} color={ui.colors.surface} />}
           onPress={handleCreateAll}
           disabled={isSaving || selectedItems.length === 0 || !venueId || !to24Hour(startTime) || hasDuplicates || hasInvalidBreaks || hasOverlappingBreaks}
         />
@@ -794,8 +795,8 @@ const inputStyle: React.CSSProperties = {
   padding: '0 12px',
   borderRadius: 12,
   border: '1px solid #D8E0EA',
-  background: '#FFFFFF',
-  color: '#0F172A',
+  background: ui.colors.surface,
+  color: ui.colors.text,
   fontFamily: 'Poppins_400Regular',
   outline: 'none',
 };
@@ -805,8 +806,8 @@ const timeSelectStyle: React.CSSProperties = {
   padding: '0 8px',
   borderRadius: 12,
   border: '1px solid #D8E0EA',
-  background: '#FFFFFF',
-  color: '#0F172A',
+  background: ui.colors.surface,
+  color: ui.colors.text,
   fontFamily: 'Poppins_400Regular',
   outline: 'none',
 };
@@ -816,8 +817,8 @@ const nativeInputStyle = {
   paddingHorizontal: 12,
   borderRadius: 12,
   borderWidth: 1,
-  borderColor: '#D8E0EA',
-  backgroundColor: '#FFFFFF',
-  color: '#0F172A',
+  borderColor: ui.colors.border,
+  backgroundColor: ui.colors.surface,
+  color: ui.colors.text,
   fontFamily: 'Poppins_400Regular',
 } as const;

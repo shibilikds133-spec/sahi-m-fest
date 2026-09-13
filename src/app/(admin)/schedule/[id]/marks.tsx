@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -178,7 +179,7 @@ export default function MarkEntryPage() {
       <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-2">
           <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-            <ArrowLeft size={18} color="#0F172A" />
+            <ArrowLeft size={18} color={ui.colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
             Mark Entry
@@ -345,7 +346,7 @@ export default function MarkEntryPage() {
                     <View className={`flex-row items-center gap-x-2 mb-3 px-3 py-2 rounded-lg ${
                       entry.is_final ? 'bg-green-50' : 'bg-yellow-50'
                     }`}>
-                      <CheckCircle2 size={14} color={entry.is_final ? '#16A34A' : '#D97706'} />
+                      <CheckCircle2 size={14} color={entry.is_final ? '#16A34A' : ui.colors.warning} />
                       <Text className={`font-poppins text-xs ${entry.is_final ? 'text-green-700' : 'text-yellow-700'}`}>
                         {entry.is_final ? 'Finalized' : 'Draft saved'}
                       </Text>

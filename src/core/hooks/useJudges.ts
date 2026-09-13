@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { judgeService } from '../../services/judgeService';
 import { useFestival } from './useFestival';
+import { supabase } from '@/core/config/supabase';
 
 export const useJudges = () => {
   const queryClient = useQueryClient();
@@ -166,7 +167,28 @@ export const useJudges = () => {
     refetchInterval: 30000,
   });
 
+  
+  // Admin manual mark override
+  const adminUpsertMark = useMutation({
+    mutationFn: async ({ scheduleId, judgeId, registrationId, criteriaMarks, isAbsent }: { scheduleId: string, judgeId: string, registrationId: string, criteriaMarks: any, isAbsent: boolean }) => {
+      const { data, error } = await supabase.rpc('admin_upsert_mark', {
+        p_schedule_id: scheduleId,
+        p_judge_id: judgeId,
+        p_registration_id: registrationId,
+        p_criteria_marks: criteriaMarks,
+        p_is_absent: isAbsent
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['results', variables.scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['registrations', variables.scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['judges', variables.scheduleId] });
+    }
+  });
   return {
+    adminUpsertMark: adminUpsertMark.mutateAsync,
     judges: judges.data ?? [],
     isLoadingJudges: judges.isLoading,
     createJudge,

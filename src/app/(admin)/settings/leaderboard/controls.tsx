@@ -1,3 +1,4 @@
+import { ui } from "@/constants/designSystem";
 import React, { useState } from 'react';
 import {
   StyleSheet,
@@ -25,17 +26,17 @@ import { useAuthStore } from '../../../../core/store/authStore';
 import { LeaderboardSettings } from '../../../../services/leaderboardSettingsService';
 
 const colors = {
-  navy: '#0B1F3A',
-  blue: '#123B73',
-  cyan: '#16B8D9',
-  teal: '#0F766E',
-  green: '#22C55E',
-  bg: '#F3F8FB',
-  card: '#FFFFFF',
-  border: '#DDEAF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  soft: '#EAF7FA',
+  navy: ui.colors.primaryHover,
+  blue: ui.colors.primary,
+  cyan: ui.colors.info,
+  teal: ui.colors.primary,
+  green: ui.colors.success,
+  bg: ui.colors.background,
+  card: ui.colors.surface,
+  border: ui.colors.border,
+  text: ui.colors.text,
+  muted: ui.colors.textMuted,
+  soft: ui.colors.infoSoft,
 };
 
 const formatDateTime = (value: string | null) => {
@@ -201,7 +202,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#99F6E4' }}
-                thumbColor={isPublicVisible ? colors.teal : '#FFFFFF'}
+                thumbColor={isPublicVisible ? colors.teal : ui.colors.surface}
               />
             </View>
 
@@ -220,7 +221,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#BAE6FD' }}
-                thumbColor={showIndividualRankings ? colors.cyan : '#FFFFFF'}
+                thumbColor={showIndividualRankings ? colors.cyan : ui.colors.surface}
               />
             </View>
 
@@ -276,7 +277,7 @@ export default function LeaderboardControlsPage() {
                   setRankingMode('ALL');
                   setItemLimit('');
                 }}
-                style={[styles.dropdown, rankingMode === 'ALL' && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}
+                style={[styles.dropdown, rankingMode === 'ALL' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
                 <Text style={styles.dropdownValue}>All Completed Items</Text>
               </TouchableOpacity>
@@ -286,7 +287,7 @@ export default function LeaderboardControlsPage() {
                   setRankingMode('LIMITED');
                   setItemLimit('5');
                 }}
-                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '5' && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}
+                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '5' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
                 <Text style={styles.dropdownValue}>First 5 Completed Items</Text>
               </TouchableOpacity>
@@ -296,7 +297,7 @@ export default function LeaderboardControlsPage() {
                   setRankingMode('LIMITED');
                   setItemLimit('10');
                 }}
-                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '10' && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}
+                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '10' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
                 <Text style={styles.dropdownValue}>First 10 Completed Items</Text>
               </TouchableOpacity>
@@ -306,7 +307,7 @@ export default function LeaderboardControlsPage() {
                   setRankingMode('LIMITED');
                   setItemLimit('15');
                 }}
-                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '15' && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}
+                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '15' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
                 <Text style={styles.dropdownValue}>First 15 Completed Items</Text>
               </TouchableOpacity>
@@ -316,12 +317,12 @@ export default function LeaderboardControlsPage() {
                   setRankingMode('LIMITED');
                   setItemLimit('20');
                 }}
-                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '20' && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}
+                style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '20' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
                 <Text style={styles.dropdownValue}>First 20 Completed Items</Text>
               </TouchableOpacity>
 
-              <View style={[styles.dropdown, rankingMode === 'LIMITED' && !['5','10','15','20'].includes(itemLimit) && { borderColor: colors.teal, backgroundColor: '#EAF7FA' }]}>
+              <View style={[styles.dropdown, rankingMode === 'LIMITED' && !['5','10','15','20'].includes(itemLimit) && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}>
                 <Text style={[styles.dropdownValue, { flex: 1 }]}>Custom Number</Text>
                 <TextInput
                   style={[styles.textInput, { height: 32, paddingVertical: 0, width: 80, textAlign: 'center' }]}
@@ -372,7 +373,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#BAE6FD' }}
-                thumbColor={autoRefreshEnabled ? colors.cyan : '#FFFFFF'}
+                thumbColor={autoRefreshEnabled ? colors.cyan : ui.colors.surface}
               />
             </View>
 
@@ -409,7 +410,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#FCA5A5' }}
-                thumbColor={isFrozen ? '#EF4444' : '#FFFFFF'}
+                thumbColor={isFrozen ? '#EF4444' : ui.colors.surface}
               />
             </View>
 
@@ -441,7 +442,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#99F6E4' }}
-                thumbColor={showTimestamps ? colors.teal : '#FFFFFF'}
+                thumbColor={showTimestamps ? colors.teal : ui.colors.surface}
               />
             </View>
 
@@ -460,7 +461,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#99F6E4' }}
-                thumbColor={showGradeSummary ? colors.teal : '#FFFFFF'}
+                thumbColor={showGradeSummary ? colors.teal : ui.colors.surface}
               />
             </View>
 
@@ -479,7 +480,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#99F6E4' }}
-                thumbColor={posterEnabled ? colors.teal : '#FFFFFF'}
+                thumbColor={posterEnabled ? colors.teal : ui.colors.surface}
               />
             </View>
 
@@ -514,7 +515,7 @@ export default function LeaderboardControlsPage() {
                 }}
                 disabled={updateSettingsMutation.isPending}
                 trackColor={{ false: '#CBD5E1', true: '#99F6E4' }}
-                thumbColor={certificateEnabled ? colors.teal : '#FFFFFF'}
+                thumbColor={certificateEnabled ? colors.teal : ui.colors.surface}
               />
             </View>
           </View>
@@ -526,7 +527,7 @@ export default function LeaderboardControlsPage() {
               style={[styles.primaryAction, updateSettingsMutation.isPending && { opacity: 0.7 }]}
               disabled={updateSettingsMutation.isPending}
             >
-              <Rocket size={17} color="#FFFFFF" />
+              <Rocket size={17} color={ui.colors.surface} />
               <Text style={styles.primaryActionText}>
                 {updateSettingsMutation.isPending ? 'Applying...' : 'Apply Settings'}
               </Text>
@@ -587,7 +588,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 20,
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.06,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF5F8',
+    borderBottomColor: ui.colors.border,
   },
   controlLabel: {
     color: colors.text,
@@ -632,7 +633,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     borderRadius: 12,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     marginTop: 6,
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   textInput: {
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
@@ -665,7 +666,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     color: colors.muted,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 10,
@@ -718,14 +719,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
   },
   primaryActionText: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
   },
   outlineAction: {
     height: 44,
     borderRadius: 13,
-    backgroundColor: '#F8FCFD',
+    backgroundColor: ui.colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     flexDirection: 'row',
@@ -775,7 +776,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

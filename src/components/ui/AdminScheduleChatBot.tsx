@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -312,7 +313,7 @@ ${JSON.stringify(contextData, null, 2)}`;
             style={styles.floatingButtonGradient}
           >
             <View style={styles.floatingIconWrapper}>
-              <ShieldAlert size={24} color="#FFFFFF" />
+              <ShieldAlert size={24} color={ui.colors.surface} />
               <View style={styles.sparkleIcon}>
                 <Lock size={10} color="#FBBF24" />
               </View>
@@ -443,7 +444,7 @@ ${JSON.stringify(contextData, null, 2)}`;
                     disabled={!inputValue.trim()}
                     style={[styles.sendButton, !inputValue.trim() && styles.sendButtonDisabled]}
                   >
-                    <Send size={16} color="#FFFFFF" />
+                    <Send size={16} color={ui.colors.surface} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -459,23 +460,23 @@ const styles = StyleSheet.create({
   floatingButtonGradient: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   floatingIconWrapper: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   sparkleIcon: { position: 'absolute', top: -6, right: -6, backgroundColor: '#031E19', borderRadius: 8, padding: 1.5, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.4)' },
-  chatPanel: { position: 'absolute', bottom: 24, right: 24, borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(79, 70, 229, 0.3)', backgroundColor: 'rgba(3, 10, 24, 0.95)', overflow: 'hidden', elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowRadius: 30, shadowOpacity: 0.8 },
+  chatPanel: { position: 'absolute', bottom: 24, right: 24, borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(79, 70, 229, 0.3)', backgroundColor: 'rgba(3, 10, 24, 0.95)', overflow: 'hidden', elevation: 12, shadowColor: ui.shadow.shadowColor, shadowOffset: { width: 0, height: 10 }, shadowRadius: 30, shadowOpacity: 0.8 },
   panelInner: { flex: 1, flexDirection: 'column' },
   panelHeader: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   aiBadgeGlow: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(79, 70, 229, 0.2)', borderWidth: 1, borderColor: 'rgba(79, 70, 229, 0.4)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 14.5 },
+  headerTitle: { fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 14.5 },
   headerSubtitle: { fontFamily: 'Poppins_400Regular', color: 'rgba(255, 255, 255, 0.45)', fontSize: 10, marginTop: 0.5 },
   closeButton: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255, 255, 255, 0.05)', alignItems: 'center', justifyContent: 'center' },
   passwordScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   lockIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(79, 70, 229, 0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(79, 70, 229, 0.3)' },
-  passwordTitle: { fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 20, marginBottom: 8 },
+  passwordTitle: { fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 20, marginBottom: 8 },
   passwordSubtitle: { fontFamily: 'Poppins_400Regular', color: 'rgba(255, 255, 255, 0.5)', fontSize: 12, textAlign: 'center', marginBottom: 32 },
   passwordInputWrapper: { width: '100%', marginBottom: 20 },
-  passwordInput: { width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', fontSize: 14 },
+  passwordInput: { width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontFamily: 'Poppins_400Regular', color: ui.colors.surface, fontSize: 14 },
   errorTextSmall: { fontFamily: 'Poppins_400Regular', color: '#F87171', fontSize: 11, marginTop: 6, marginLeft: 4 },
   unlockBtn: { width: '100%', backgroundColor: '#4F46E5', paddingVertical: 14, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, elevation: 4 },
-  unlockBtnText: { fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 14 },
+  unlockBtnText: { fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 14 },
   messageScroll: { flex: 1 },
   messageScrollContent: { padding: 16, gap: 16 },
   messageRow: { flexDirection: 'row', gap: 8, maxWidth: '85%' },
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
   messageBubbleUser: { borderColor: 'rgba(255, 255, 255, 0.15)', borderTopRightRadius: 2 },
   messageBubbleAi: { borderColor: 'rgba(255, 255, 255, 0.1)', borderTopLeftRadius: 2 },
   messageText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, lineHeight: 18 },
-  messageTextUser: { color: '#FFFFFF' },
+  messageTextUser: { color: ui.colors.surface },
   messageTextAi: { color: 'rgba(255, 255, 255, 0.95)' },
   messageTime: { fontFamily: 'Poppins_400Regular', color: 'rgba(255, 255, 255, 0.4)', fontSize: 8.5, alignSelf: 'flex-end', marginTop: 6 },
   chipsOuterContainer: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)', backgroundColor: 'rgba(3, 10, 24, 0.6)' },
@@ -499,7 +500,7 @@ const styles = StyleSheet.create({
   inputContainer: { flexDirection: 'row', padding: 12, backgroundColor: 'rgba(3, 10, 24, 0.95)', borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.08)', alignItems: 'center', gap: 10 },
   voiceButton: { padding: 10, marginRight: 2, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   voiceButtonActive: { backgroundColor: 'rgba(239, 68, 68, 0.15)' },
-  textInput: { flex: 1, height: 42, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', fontSize: 13 },
+  textInput: { flex: 1, height: 42, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontFamily: 'Poppins_400Regular', color: ui.colors.surface, fontSize: 13 },
   sendButton: { width: 42, height: 42, borderRadius: 12, backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center', elevation: 2 },
   sendButtonDisabled: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
 });

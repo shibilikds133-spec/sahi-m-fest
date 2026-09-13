@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
@@ -294,7 +295,7 @@ export default function CheckIn() {
         {/* Header */}
         <View className="flex-row items-center mb-3">
           <TouchableOpacity onPress={goBackSafely} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-            <ArrowLeft size={18} color="#0F172A" />
+            <ArrowLeft size={18} color={ui.colors.text} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text className="text-lg font-poppins-black text-ssf-text">Green Room Check-In</Text>
@@ -371,7 +372,7 @@ export default function CheckIn() {
         <View className="h-10 border border-ssf-border rounded-lg bg-white px-3 flex-row items-center mb-3">
           <Search size={16} color="#9CA3AF" className="mr-2" />
           <input
-            style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: 14, color: '#333', background: 'transparent' }}
+            style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: 14, color: ui.colors.text, background: 'transparent' }}
             placeholder="Search by name or chest number..."
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
@@ -402,9 +403,9 @@ export default function CheckIn() {
                           width: 36,
                           height: 36,
                           borderRadius: 18,
-                          backgroundColor: isRejected ? '#FEE2E2' : reg.is_verified ? '#DCFCE7' : '#F3F4F6',
+                          backgroundColor: isRejected ? ui.colors.destructiveSoft : reg.is_verified ? ui.colors.successSoft : ui.colors.surfaceMuted,
                           borderWidth: 2,
-                          borderColor: isRejected ? '#EF4444' : reg.is_verified ? '#16A34A' : '#D1D5DB',
+                          borderColor: isRejected ? '#EF4444' : reg.is_verified ? '#16A34A' : ui.colors.border,
                           alignItems: 'center',
                           justifyContent: 'center',
                           marginRight: 10,
@@ -495,14 +496,14 @@ export default function CheckIn() {
           <View style={{ width: '90%', maxWidth: 380, backgroundColor: '#111', borderRadius: 20, overflow: 'hidden' }}>
             {/* Title bar */}
             <View style={{ backgroundColor: '#1B6B3A', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 16 }}>📷 Scan Chest Card</Text>
+              <Text style={{ color: ui.colors.surface, fontWeight: '900', fontSize: 16 }}>📷 Scan Chest Card</Text>
               <TouchableOpacity onPress={stopWebScanner}>
-                <XCircle size={24} color="#FFF" />
+                <XCircle size={24} color={ui.colors.surface} />
               </TouchableOpacity>
             </View>
 
             {/* Camera preview */}
-            <View style={{ position: 'relative', height: 320, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ position: 'relative', height: 320, backgroundColor: ui.shadow.shadowColor, alignItems: 'center', justifyContent: 'center' }}>
               {Platform.OS === 'web' ? (
                 // @ts-ignore
                 <video
@@ -512,7 +513,7 @@ export default function CheckIn() {
                   muted
                 />
               ) : (
-                <Text style={{ color: '#FFF' }}>Camera not supported on this platform</Text>
+                <Text style={{ color: ui.colors.surface }}>Camera not supported on this platform</Text>
               )}
               {/* Scan overlay corners */}
               <View style={{ position: 'absolute', top: 60, left: 60, width: 180, height: 180, pointerEvents: 'none' }}>
@@ -550,10 +551,10 @@ export default function CheckIn() {
             backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', zIndex: 200, padding: 20,
           }}
         >
-          <View style={{ backgroundColor: '#FFF', borderRadius: 20, width: '100%', maxWidth: 360, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: ui.colors.surface, borderRadius: 20, width: '100%', maxWidth: 360, overflow: 'hidden' }}>
             {/* Green header */}
             <View style={{ backgroundColor: '#1B6B3A', padding: 16, alignItems: 'center' }}>
-              <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 18 }}>Identity Verification</Text>
+              <Text style={{ color: ui.colors.surface, fontWeight: '900', fontSize: 18 }}>Identity Verification</Text>
               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>
                 Confirm this is the right participant
               </Text>
@@ -564,7 +565,7 @@ export default function CheckIn() {
               <View style={{
                 width: 120, height: 120, borderRadius: 60, overflow: 'hidden',
                 borderWidth: 4, borderColor: '#1B6B3A',
-                backgroundColor: '#F3F4F6', marginBottom: 16,
+                backgroundColor: ui.colors.surfaceMuted, marginBottom: 16,
                 alignItems: 'center', justifyContent: 'center',
               }}>
                 {verifyModal.reg.participants?.photo_url ? (
@@ -625,8 +626,8 @@ export default function CheckIn() {
                     borderRadius: 12, padding: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6,
                   }}
                 >
-                  <CheckCircle2 size={18} color="#FFF" />
-                  <Text style={{ color: '#FFF', fontWeight: '700' }}>
+                  <CheckCircle2 size={18} color={ui.colors.surface} />
+                  <Text style={{ color: ui.colors.surface, fontWeight: '700' }}>
                     {isUpdating ? 'Saving...' : 'Verify'}
                   </Text>
                 </TouchableOpacity>

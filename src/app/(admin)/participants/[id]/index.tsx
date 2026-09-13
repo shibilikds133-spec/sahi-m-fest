@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Switch, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -84,7 +85,7 @@ function DetailAccordion({
         <View className="h-8 w-8 items-center justify-center">
           {expanded
             ? <ChevronDown size={16} color="#047857" />
-            : <ChevronRight size={16} color="#64748B" />}
+            : <ChevronRight size={16} color={ui.colors.textMuted} />}
         </View>
         <View className="ml-2.5 flex-1">
           <Text className={`font-poppins-bold text-[12px] ${expanded ? 'text-emerald-800' : 'text-ssf-text'}`}>{title}</Text>
@@ -524,7 +525,7 @@ export default function ParticipantDetails() {
             onPress={goBack}
             className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white"
           >
-            <ArrowLeft size={19} color="#0F172A" />
+            <ArrowLeft size={19} color={ui.colors.text} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text className="text-lg font-poppins-black text-ssf-text">Participant profile</Text>
@@ -615,7 +616,7 @@ export default function ParticipantDetails() {
                     className="flex-row items-center rounded-lg bg-ssf-primary px-4 py-2.5"
                     onPress={() => setIsEditing(true)}
                   >
-                    <Edit3 size={15} color="#FFFFFF" />
+                    <Edit3 size={15} color={ui.colors.surface} />
                     <Text className="ml-1.5 font-poppins-bold text-[11px] text-white">Edit</Text>
                   </TouchableOpacity>
                   )}
@@ -674,7 +675,7 @@ export default function ParticipantDetails() {
                     className="h-11 flex-1 flex-row items-center justify-center rounded-xl bg-ssf-primary"
                     onPress={() => setIsEditing(true)}
                   >
-                    <Edit3 size={16} color="#FFFFFF" />
+                    <Edit3 size={16} color={ui.colors.surface} />
                     <Text className="ml-2 font-poppins-bold text-[11px] text-white">Edit details</Text>
                   </TouchableOpacity>
                 )}
@@ -782,7 +783,7 @@ export default function ParticipantDetails() {
             </View>
             <View className="border-t border-gray-100 pt-4 gap-y-4">
               <View className="flex-row items-center gap-x-2">
-                <Eye size={18} color="#0B6BDB" />
+                <Eye size={18} color={ui.colors.info} />
                 <Text className="font-poppins-bold text-base text-ssf-text">Public Candidate Profile</Text>
               </View>
               <View>
@@ -815,7 +816,7 @@ export default function ParticipantDetails() {
                   value={publicProfileEnabled}
                   onValueChange={setPublicProfileEnabled}
                   trackColor={{ false: '#CBD5E1', true: '#B9EBD1' }}
-                  thumbColor={publicProfileEnabled ? '#078B5A' : '#F8FAFC'}
+                  thumbColor={publicProfileEnabled ? ui.colors.success : '#F8FAFC'}
                 />
               </View>
               <View className="flex-row justify-between items-center bg-green-50 border border-green-100 rounded-xl p-3">
@@ -827,7 +828,7 @@ export default function ParticipantDetails() {
                   value={showOrganisationPublic}
                   onValueChange={setShowOrganisationPublic}
                   trackColor={{ false: '#CBD5E1', true: '#B9EBD1' }}
-                  thumbColor={showOrganisationPublic ? '#078B5A' : '#F8FAFC'}
+                  thumbColor={showOrganisationPublic ? ui.colors.success : '#F8FAFC'}
                 />
               </View>
             </View>
@@ -918,9 +919,9 @@ export default function ParticipantDetails() {
           >
             <View className={`h-10 w-10 items-center justify-center rounded-lg border ${participant.public_profile_enabled === false ? 'border-slate-200 bg-slate-100' : 'border-emerald-100 bg-emerald-50'}`}>
               {participant.public_profile_enabled === false ? (
-                <EyeOff size={20} color="#64748B" />
+                <EyeOff size={20} color={ui.colors.textMuted} />
               ) : (
-                <Globe2 size={20} color="#078B5A" />
+                <Globe2 size={20} color={ui.colors.success} />
               )}
             </View>
             <View className="flex-1">
@@ -933,7 +934,7 @@ export default function ParticipantDetails() {
             </View>
             {publicSectionExpanded
               ? <ChevronDown size={17} color="#047857" />
-              : <ChevronRight size={17} color="#64748B" />}
+              : <ChevronRight size={17} color={ui.colors.textMuted} />}
           </TouchableOpacity>
           {participant.profile_slug && participant.public_profile_enabled !== false && (
             <TouchableOpacity
@@ -942,7 +943,7 @@ export default function ParticipantDetails() {
               accessibilityLabel="Open public profile"
               className={`${isDesktopProfile ? 'ml-3 px-3' : 'ml-2 w-9'} h-9 rounded-xl border border-blue-100 bg-blue-50 flex-row items-center justify-center gap-x-1.5`}
             >
-              <ExternalLink size={15} color="#0B6BDB" />
+              <ExternalLink size={15} color={ui.colors.info} />
               {isDesktopProfile && <Text className="font-poppins-bold text-[11px] text-blue-700">Open</Text>}
             </TouchableOpacity>
           )}
@@ -952,7 +953,7 @@ export default function ParticipantDetails() {
             <View className="flex-1 py-3 pr-3">
               <View className="flex-row items-center">
                 {participant.public_profile_enabled === false
-                  ? <EyeOff size={14} color="#64748B" />
+                  ? <EyeOff size={14} color={ui.colors.textMuted} />
                   : <CheckCircle2 size={14} color="#047857" />}
                 <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Visibility</Text>
               </View>
@@ -962,7 +963,7 @@ export default function ParticipantDetails() {
             </View>
             <View className="flex-1 border-l border-slate-100 py-3 pl-3">
               <View className="flex-row items-center">
-                <ShieldCheck size={14} color={participant.show_organisation_public === false ? '#64748B' : '#2563EB'} />
+                <ShieldCheck size={14} color={participant.show_organisation_public === false ? ui.colors.textMuted : '#2563EB'} />
                 <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Organisation</Text>
               </View>
               <Text className={`mt-1 font-poppins-bold text-[13px] ${participant.show_organisation_public === false ? 'text-gray-500' : 'text-blue-700'}`}>
@@ -972,7 +973,7 @@ export default function ParticipantDetails() {
           </View>
           <View className="border-t border-slate-100 py-3">
             <View className="mb-1 flex-row items-center">
-              <CircleUserRound size={14} color="#64748B" />
+              <CircleUserRound size={14} color={ui.colors.textMuted} />
               <Text className="ml-1.5 font-poppins text-[10px] uppercase tracking-wide text-ssf-text-muted">Profile slug</Text>
             </View>
             <Text selectable className="font-poppins-bold text-xs leading-5 text-ssf-text">
@@ -1003,7 +1004,7 @@ export default function ParticipantDetails() {
             className="flex-row items-center flex-1"
           >
             <View className="h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
-              <Trophy size={17} color="#D97706" />
+              <Trophy size={17} color={ui.colors.warning} />
             </View>
             <View className="ml-2.5">
               <Text className="font-poppins-bold text-base">Registered Events</Text>
@@ -1014,7 +1015,7 @@ export default function ParticipantDetails() {
             <View className="ml-auto mr-3">
               {eventsSectionExpanded
                 ? <ChevronDown size={17} color="#047857" />
-                : <ChevronRight size={17} color="#64748B" />}
+                : <ChevronRight size={17} color={ui.colors.textMuted} />}
             </View>
           </TouchableOpacity>
           {!locked && !isBanned && (
@@ -1022,7 +1023,7 @@ export default function ParticipantDetails() {
               onPress={() => setIsAddingEvent(true)}
               className="bg-ssf-primary px-3 py-2 rounded-xl flex-row items-center gap-x-1"
             >
-              <Plus size={14} color="#FFF" />
+              <Plus size={14} color={ui.colors.surface} />
               <Text className="font-poppins-bold text-xs text-white">Add</Text>
             </TouchableOpacity>
           )}
@@ -1084,7 +1085,7 @@ export default function ParticipantDetails() {
       {/* Add Event Modal */}
       {isAddingEvent && (
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 20 }}>
-          <View style={{ backgroundColor: '#FFF', borderRadius: 16, width: '100%', maxWidth: 400, padding: 24 }}>
+          <View style={{ backgroundColor: ui.colors.surface, borderRadius: 16, width: '100%', maxWidth: 400, padding: 24 }}>
             <Text className="font-poppins-bold text-lg mb-4 text-ssf-text">Register for Event</Text>
             
             {addEventError ? (
@@ -1190,7 +1191,7 @@ export default function ParticipantDetails() {
       {/* Action Modal */}
       {actionModal.visible && (
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: 20 }}>
-          <View style={{ backgroundColor: '#FFF', borderRadius: 16, width: '100%', maxWidth: 400, padding: 24, zIndex: 10000, elevation: 10 }}>
+          <View style={{ backgroundColor: ui.colors.surface, borderRadius: 16, width: '100%', maxWidth: 400, padding: 24, zIndex: 10000, elevation: 10 }}>
             <Text className="font-poppins-bold text-lg mb-2 text-ssf-text">{actionModal.title}</Text>
             {!!actionModal.message && <Text className="font-poppins text-sm text-ssf-text-muted mb-4">{actionModal.message}</Text>}
             

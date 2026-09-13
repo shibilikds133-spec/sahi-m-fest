@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -224,7 +225,7 @@ export default function ImportJuniorDataset() {
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={goBack} className="p-2 mr-2 bg-ssf-surface rounded-full border border-ssf-border">
-          <ArrowLeft size={24} color="#333" />
+          <ArrowLeft size={24} color={ui.colors.text} />
         </TouchableOpacity>
         <Text className="text-3xl font-poppins-black text-ssf-text">Junior Dataset Import</Text>
       </View>

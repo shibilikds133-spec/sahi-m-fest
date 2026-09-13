@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -453,7 +454,7 @@ export default function ScheduleDashboard() {
           <TouchableOpacity
             onPress={exportBlankSchedule}
             disabled={isExportingSchedule}
-            className="px-3 py-2 rounded-lg border border-[#123B63] bg-[#123B63]"
+            className="px-3 py-2 rounded-lg border border-ui-primary bg-ui-primary"
           >
             <Text className="font-poppins-bold text-[10px] text-white">Blank Schedule PDF</Text>
           </TouchableOpacity>
@@ -587,7 +588,7 @@ export default function ScheduleDashboard() {
                 }}
                 className="h-9 px-3 rounded-lg border border-ui-border bg-white flex-row items-center justify-center"
               >
-                <RotateCcw size={13} color="#64748B" />
+                <RotateCcw size={13} color={ui.colors.textMuted} />
                 <Text className="ml-1.5 font-poppins-bold text-[10px] text-ui-text-muted">Reset</Text>
               </TouchableOpacity>
             )}
@@ -607,7 +608,7 @@ export default function ScheduleDashboard() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#FFF',
+                  backgroundColor: ui.colors.surface,
                   border: '1px solid #E2E8F0',
                   padding: '12px',
                   borderRadius: '12px',
@@ -650,7 +651,7 @@ export default function ScheduleDashboard() {
                 onChange={(e) => setSelectedVenue(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#FFF',
+                  backgroundColor: ui.colors.surface,
                   border: '1px solid #E2E8F0',
                   padding: '12px',
                   borderRadius: '12px',
@@ -693,7 +694,7 @@ export default function ScheduleDashboard() {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#FFF',
+                  backgroundColor: ui.colors.surface,
                   border: '1px solid #E2E8F0',
                   padding: '12px',
                   borderRadius: '12px',
@@ -825,7 +826,7 @@ export default function ScheduleDashboard() {
 
       {schedules.length === 0 ? (
         <SsfCard className="items-center py-10">
-          <Calendar size={48} color="#D1D5DB" className="mb-4" />
+          <Calendar size={48} color={ui.colors.border} className="mb-4" />
           <Text className="font-poppins text-ssf-text-muted text-center">No schedules created yet.</Text>
           <SsfButton 
             label="Create First Schedule" 
@@ -835,7 +836,7 @@ export default function ScheduleDashboard() {
         </SsfCard>
       ) : filteredSchedules.length === 0 ? (
         <SsfCard className="items-center py-10">
-          <Search size={48} color="#D1D5DB" className="mb-4" />
+          <Search size={48} color={ui.colors.border} className="mb-4" />
           <Text className="font-poppins text-ssf-text-muted text-center">
             No scheduled events found matching your search or filters.
           </Text>
@@ -877,11 +878,11 @@ export default function ScheduleDashboard() {
                 </View>
                 <View style={{ flex: 1 }} className="pr-3">
                   <View className="flex-row items-center">
-                    <Calendar size={12} color="#64748B" />
+                    <Calendar size={12} color={ui.colors.textMuted} />
                     <Text className="font-poppins text-[10px] text-ui-text-muted ml-1.5">{new Date(schedule.start_time).toLocaleDateString()}</Text>
                   </View>
                   <View className="flex-row items-center mt-1">
-                    <Clock size={12} color="#64748B" />
+                    <Clock size={12} color={ui.colors.textMuted} />
                     <Text className="font-poppins text-[10px] text-ui-text-muted ml-1.5">
                       {new Date(schedule.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(schedule.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
@@ -922,7 +923,7 @@ export default function ScheduleDashboard() {
                       router.push(`/(admin)/schedule/${schedule.id}/edit` as any);
                     }}
                   >
-                    <Edit size={13} color="#475569" />
+                    <Edit size={13} color={ui.colors.textMuted} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="h-8 w-8 rounded-lg border border-red-200 bg-white items-center justify-center"
@@ -962,17 +963,17 @@ export default function ScheduleDashboard() {
                     items={[
                       {
                         label: 'Check-in',
-                        icon: <LogIn size={15} color="#475569" />,
+                        icon: <LogIn size={15} color={ui.colors.textMuted} />,
                         onPress: () => router.push(`/(admin)/schedule/${schedule.id}/checkin` as any),
                       },
                       {
                         label: 'Code letters',
-                        icon: <Shuffle size={15} color="#475569" />,
+                        icon: <Shuffle size={15} color={ui.colors.textMuted} />,
                         onPress: () => router.push(`/(admin)/schedule/${schedule.id}/code-letter` as any),
                       },
                       {
                         label: 'Marks',
-                        icon: <FilePenLine size={15} color="#475569" />,
+                        icon: <FilePenLine size={15} color={ui.colors.textMuted} />,
                         onPress: () => router.push(`/(admin)/schedule/${schedule.id}/marks` as any),
                       },
                       {
@@ -983,7 +984,7 @@ export default function ScheduleDashboard() {
                       {
                         label: schedule.is_shuffle_locked ? 'Edit (locked)' : 'Edit schedule',
                         separatorBefore: true,
-                        icon: <Edit size={15} color="#475569" />,
+                        icon: <Edit size={15} color={ui.colors.textMuted} />,
                         onPress: () => {
                           if (schedule.is_shuffle_locked) {
                             if (Platform.OS === 'web') window.alert('Cannot edit schedule after event is locked.');

@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -151,7 +152,7 @@ export default function ScoringRulesList() {
         {/* Page Title — matches schedule page pattern */}
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={goBack} className="mr-3 p-1.5 bg-ui-muted rounded-full">
-            <ArrowLeft size={18} color="#0F172A" />
+            <ArrowLeft size={18} color={ui.colors.text} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text className="text-3xl font-poppins-black text-ui-text">Scoring Rules</Text>
@@ -247,7 +248,7 @@ export default function ScoringRulesList() {
             <View className="flex-row justify-between items-center mb-4">
               <Text className="font-poppins-bold text-lg text-ui-text">Upload Rules JSON</Text>
               <TouchableOpacity onPress={() => setShowUploadModal(false)}>
-                <X size={22} color="#94A3B8" />
+                <X size={22} color={ui.colors.textSubtle} />
               </TouchableOpacity>
             </View>
             <Text className="font-poppins text-xs text-ui-text-muted mb-3">
@@ -258,7 +259,7 @@ export default function ScoringRulesList() {
               multiline
               textAlignVertical="top"
               placeholder='[ { "event_name": "Speech", "criteria": [...] } ]'
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={ui.colors.textSubtle}
               value={jsonText}
               onChangeText={setJsonText}
             />

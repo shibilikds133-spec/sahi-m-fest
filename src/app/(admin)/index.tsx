@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import {
   Platform,
@@ -79,8 +80,8 @@ type ActionCardProps = {
 
 type InsightView = 'overview' | 'categories' | 'organisations';
 
-const NAVY = '#0F172A'; // Text Primary
-const MUTED = '#64748B'; // Text Secondary
+const NAVY = ui.colors.text; // Text Primary
+const MUTED = ui.colors.textMuted; // Text Secondary
 const PAGE_BG = '#E2E8F0'; // Page Background
 const BORDER = '#E2E8F0'; // Border
 const EMERALD = '#0F766E'; // Primary Green
@@ -110,7 +111,7 @@ const welcomeSurface = {
   borderWidth: 1,
   borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 10,
-  shadowColor: '#0F172A',
+  shadowColor: ui.colors.text,
   shadowOpacity: 0.015,
   shadowRadius: 3,
   shadowOffset: { width: 0, height: 1 },
@@ -122,7 +123,7 @@ const welcomeSurface = {
       boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
     default: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: ui.colors.surface,
     },
   }),
   elevation: 1,
@@ -133,7 +134,7 @@ const cardSurface = {
   borderWidth: 1,
   borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 10,
-  shadowColor: '#0F172A',
+  shadowColor: ui.colors.text,
   shadowOpacity: 0.015,
   shadowRadius: 3,
   shadowOffset: { width: 0, height: 1 },
@@ -145,7 +146,7 @@ const cardSurface = {
       boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
     default: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: ui.colors.surface,
     },
   }),
   elevation: 1,
@@ -156,7 +157,7 @@ const actionCardSurface = {
   borderWidth: 1,
   borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 10,
-  shadowColor: '#0F172A',
+  shadowColor: ui.colors.text,
   shadowOpacity: 0.015,
   shadowRadius: 3,
   shadowOffset: { width: 0, height: 1 },
@@ -168,7 +169,7 @@ const actionCardSurface = {
       boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
     default: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: ui.colors.surface,
     },
   }),
   elevation: 1,
@@ -179,7 +180,7 @@ const panelSurface = {
   borderWidth: 1,
   borderColor: 'rgba(100, 116, 139, 0.25)',
   borderRadius: 10,
-  shadowColor: '#0F172A',
+  shadowColor: ui.colors.text,
   shadowOpacity: 0.015,
   shadowRadius: 3,
   shadowOffset: { width: 0, height: 1 },
@@ -189,7 +190,7 @@ const panelSurface = {
       boxShadow: '0 1px 3px rgba(15, 23, 42, 0.015)',
     },
     default: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: ui.colors.surface,
     },
   }),
   elevation: 1,
@@ -264,8 +265,8 @@ function SidebarItem({ label, icon: Icon, active, onPress }: NavigationItem) {
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-        <Icon color={active ? '#FFFFFF' : 'rgba(255, 255, 255, 0.65)'} size={16} strokeWidth={2.1} />
-        <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: active ? '#FFFFFF' : 'rgba(255, 255, 255, 0.72)', fontSize: 12.5, marginLeft: 10, flex: 1, letterSpacing: 0.3 }}>
+        <Icon color={active ? ui.colors.surface : 'rgba(255, 255, 255, 0.65)'} size={16} strokeWidth={2.1} />
+        <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: active ? ui.colors.surface : 'rgba(255, 255, 255, 0.72)', fontSize: 12.5, marginLeft: 10, flex: 1, letterSpacing: 0.3 }}>
           {label}
         </Text>
       </View>
@@ -286,13 +287,13 @@ function ActionCard({ label, icon: Icon, visible, onPress }: ActionCardProps) {
       className="action-card"
       style={[actionCardSurface, { height: 62, flex: 1, minWidth: 175, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' }]}
     >
-      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center', marginRight: 11 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: ui.colors.successSoft, alignItems: 'center', justifyContent: 'center', marginRight: 11 }}>
         <Icon color={EMERALD_DARK} size={19} strokeWidth={2.4} />
       </View>
       <Text numberOfLines={2} style={{ flex: 1, fontFamily: 'Poppins_700Bold', color: NAVY, fontSize: 11.5, lineHeight: 15 }}>
         {label}
       </Text>
-      <ChevronRight color="#94A3B8" size={15} />
+      <ChevronRight color={ui.colors.textSubtle} size={15} />
     </TouchableOpacity>
   );
 }
@@ -316,7 +317,7 @@ function InsightChip({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: active ? EMERALD : BORDER,
-        backgroundColor: active ? '#E6F6F2' : '#FFFFFF',
+        backgroundColor: active ? '#E6F6F2' : ui.colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -336,7 +337,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
         <TouchableOpacity
           onPress={onAction}
           disabled={!onAction}
-          style={{ height: 28, paddingHorizontal: 14, borderRadius: 999, backgroundColor: '#ECFDF5', flexDirection: 'row', alignItems: 'center' }}
+          style={{ height: 28, paddingHorizontal: 14, borderRadius: 999, backgroundColor: ui.colors.successSoft, flexDirection: 'row', alignItems: 'center' }}
         >
           <Text style={{ fontFamily: 'Poppins_700Bold', color: EMERALD_DARK, fontSize: 10 }}>{action}</Text>
           <ChevronRight color={EMERALD_DARK} size={13} />
@@ -456,7 +457,7 @@ export default function AdminDashboard() {
     detail: `${registration.itemName} • ${registration.organisationName}`,
     time: formatRelativeTime(registration.createdAt),
     icon: Users,
-    bg: '#ECFDF5',
+    bg: ui.colors.successSoft,
     color: EMERALD_DARK,
   }));
 
@@ -471,14 +472,14 @@ export default function AdminDashboard() {
           <View style={{ width: 210, backgroundColor: SIDEBAR }}>
             <View style={{ height: 84, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: SIDEBAR_DARK }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: ui.colors.surface, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <ShieldCheck color={EMERALD_DARK} size={25} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: 'Poppins_700Bold', color: '#D1FAE5', fontSize: 8, letterSpacing: 1.4, textTransform: 'uppercase' }}>
                     {orgType} Portal
                   </Text>
-                  <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 18, lineHeight: 21, letterSpacing: 0.4 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 18, lineHeight: 21, letterSpacing: 0.4 }}>
                     {orgName}
                   </Text>
                   <Text style={{ fontFamily: 'Poppins_400Regular', color: '#D1FAE5', fontSize: 10 }}>Manage your festival operations</Text>
@@ -496,16 +497,16 @@ export default function AdminDashboard() {
               <View style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 12, marginBottom: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: EMERALD, alignItems: 'center', justifyContent: 'center' }}>
-                    <ShieldCheck color="#FFFFFF" size={16} />
+                    <ShieldCheck color={ui.colors.surface} size={16} />
                   </View>
                   <View style={{ marginLeft: 10, flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 10 }}>{orgName}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 10 }}>{orgName}</Text>
                     <Text style={{ fontFamily: 'Poppins_400Regular', color: '#CFFAFE', fontSize: 9 }}>Festival Management System</Text>
                   </View>
                 </View>
               </View>
               <View style={{ height: 116, borderRadius: 18, backgroundColor: SIDEBAR_DARK, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <Building2 color="#FFFFFF" size={84} strokeWidth={1.2} />
+                <Building2 color={ui.colors.surface} size={84} strokeWidth={1.2} />
                 <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(15,118,110,0.18)' }} />
               </View>
             </View>
@@ -515,7 +516,7 @@ export default function AdminDashboard() {
         <View style={[{ flex: 1 }, dashboardBgStyle]}>
           <View
             style={[
-              { display: isTablet ? 'none' : 'flex', height: 56, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(226, 232, 240, 0.8)', paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
+              { display: isTablet ? 'none' : 'flex', height: 56, backgroundColor: ui.colors.surface, borderBottomWidth: 1, borderBottomColor: 'rgba(226, 232, 240, 0.8)', paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
               Platform.OS === 'web' ? { position: 'sticky' as any, top: 0 } : undefined,
             ]}
           >
@@ -531,13 +532,13 @@ export default function AdminDashboard() {
                 </TouchableOpacity>
               )}
               <View style={{ width: isDesktop ? 280 : 210, position: 'relative', zIndex: 20 }}>
-                <View style={{ height: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(226, 232, 240, 0.8)', backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13 }}>
-                  <Search color="#64748B" size={16} />
+                <View style={{ height: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(226, 232, 240, 0.8)', backgroundColor: ui.colors.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13 }}>
+                  <Search color={ui.colors.textMuted} size={16} />
                   <TextInput
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Search pages..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={ui.colors.textSubtle}
                     style={{ flex: 1, marginLeft: 10, fontFamily: 'Poppins_400Regular', color: NAVY, fontSize: 12, paddingVertical: 0 }}
                   />
                 </View>
@@ -551,9 +552,9 @@ export default function AdminDashboard() {
                       borderWidth: 1,
                       borderColor: BORDER,
                       borderRadius: 10,
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: ui.colors.surface,
                       padding: 6,
-                      shadowColor: '#0F172A',
+                      shadowColor: ui.colors.text,
                       shadowOpacity: 0.12,
                       shadowRadius: 10,
                       elevation: 8,
@@ -592,7 +593,7 @@ export default function AdminDashboard() {
                 <Bell color={NAVY} size={19} />
                 {unreadNotificationCount > 0 && (
                   <View style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, paddingHorizontal: 3, borderRadius: 8, backgroundColor: EMERALD, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 8 }}>
+                    <Text style={{ fontFamily: 'Poppins_700Bold', color: ui.colors.surface, fontSize: 8 }}>
                       {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
                     </Text>
                   </View>
@@ -627,7 +628,7 @@ export default function AdminDashboard() {
             {!isTablet && (
               <View style={{ backgroundColor: SIDEBAR, borderRadius: 14, padding: 14, marginBottom: 12 }}>
                 <Text style={{ fontFamily: 'Poppins_700Bold', color: '#D1FAE5', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2 }}>{orgType} Portal</Text>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 21 }}>{orgName}</Text>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: ui.colors.surface, fontSize: 21 }}>{orgName}</Text>
               </View>
             )}
 
@@ -645,7 +646,7 @@ export default function AdminDashboard() {
               ]}
             >
               <LinearGradient
-                colors={['#FFFFFF', '#F8FBFA']}
+                colors={[ui.colors.surface, '#F8FBFA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
@@ -666,7 +667,7 @@ export default function AdminDashboard() {
                     <Text style={{ fontFamily: 'Poppins_400Regular', color: MUTED, fontSize: 10 }}>Last updated: {updatedAt}</Text>
                     <RefreshCw color={MUTED} size={13} style={{ marginLeft: 8 }} />
                   </TouchableOpacity>
-                  <View style={{ width: 194, height: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(226, 232, 240, 0.6)', backgroundColor: '#FFFFFF', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 194, height: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(226, 232, 240, 0.6)', backgroundColor: ui.colors.surface, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: isError ? DANGER : SUCCESS, marginRight: 10 }} />
                     <View>
                       <Text style={{ fontFamily: 'Poppins_400Regular', color: MUTED, fontSize: 10 }}>Dashboard Data</Text>
@@ -680,10 +681,10 @@ export default function AdminDashboard() {
             </Animated.View>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
-              <MetricCard label="Participants" value={stats.participants.toLocaleString()} delta={`${data?.participantsLast7Days ?? 0} added in last 7 days`} trend="neutral" icon={Users} iconBg="rgba(15, 118, 110, 0.1)" iconColor={EMERALD} delay={80} />
-              <MetricCard label="Items" value={stats.items.toLocaleString()} delta="Active festival items" trend="neutral" icon={Trophy} iconBg="rgba(245, 158, 11, 0.1)" iconColor={WARNING} delay={140} />
-              <MetricCard label="Pending Registrations" value={stats.pendingRegs.toLocaleString()} delta={`${data?.pendingRegsLast7Days ?? 0} created in last 7 days`} trend="neutral" icon={Clock} iconBg="rgba(239, 68, 68, 0.1)" iconColor={DANGER} delay={200} />
-              <MetricCard label="Active Schedules" value={(data?.activeSchedulesCount ?? 0).toLocaleString()} delta="Scheduled or ongoing events" trend="neutral" icon={Calendar} iconBg="rgba(59, 130, 246, 0.1)" iconColor={INFO} delay={260} />
+              <MetricCard label="Participants" value={stats.participants.toLocaleString()} delta={`${data?.participantsLast7Days ?? 0} added in last 7 days`} trend="neutral" icon={Users} iconBg={ui.colors.primarySoft} iconColor={EMERALD} delay={80} />
+              <MetricCard label="Items" value={stats.items.toLocaleString()} delta="Active festival items" trend="neutral" icon={Trophy} iconBg={ui.colors.warningSoft} iconColor={WARNING} delay={140} />
+              <MetricCard label="Pending Registrations" value={stats.pendingRegs.toLocaleString()} delta={`${data?.pendingRegsLast7Days ?? 0} created in last 7 days`} trend="neutral" icon={Clock} iconBg={ui.colors.destructiveSoft} iconColor={DANGER} delay={200} />
+              <MetricCard label="Active Schedules" value={(data?.activeSchedulesCount ?? 0).toLocaleString()} delta="Scheduled or ongoing events" trend="neutral" icon={Calendar} iconBg={ui.colors.infoSoft} iconColor={INFO} delay={260} />
             </View>
 
 
@@ -890,7 +891,7 @@ export default function AdminDashboard() {
               </Animated.View>
             </View>
 
-            <Text style={{ textAlign: 'center', fontFamily: 'Poppins_400Regular', color: '#64748B', fontSize: 12.5, marginTop: 24, marginBottom: 24 }}>
+            <Text style={{ textAlign: 'center', fontFamily: 'Poppins_400Regular', color: ui.colors.textMuted, fontSize: 12.5, marginTop: 24, marginBottom: 24 }}>
               © {new Date().getFullYear()} {orgName} Festival Management System. All rights reserved.
             </Text>
           </ScrollView>

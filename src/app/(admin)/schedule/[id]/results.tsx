@@ -1,3 +1,5 @@
+import { AdminMarkEntryModal } from '@/components/ui/AdminMarkEntryModal';
+import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -36,6 +38,9 @@ type ResultEntry = {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ResultsPage() {
+    const [markModalVisible, setMarkModalVisible] = useState(false);
+  const [selectedJudgeId, setSelectedJudgeId] = useState<string | null>(null);
+  const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
   const { id } = useLocalSearchParams();
   const scheduleId = Array.isArray(id) ? id[0] : id;
   const goBack = useGoBack('/(admin)/schedule');
@@ -477,7 +482,7 @@ export default function ResultsPage() {
         <View className="border-b border-ui-border bg-white px-4 py-3">
           <View className="flex-row items-center mb-2">
             <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-              <ArrowLeft size={18} color="#0F172A" />
+              <ArrowLeft size={18} color={ui.colors.text} />
             </TouchableOpacity>
             <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
               Result Entry
@@ -531,9 +536,17 @@ export default function ResultsPage() {
             </TouchableOpacity>
           )}
         </View>
-      </View>
-    );
-  }
+            <AdminMarkEntryModal 
+        visible={markModalVisible}
+        onClose={() => setMarkModalVisible(false)}
+        scheduleId={id as string}
+        judgeId={selectedJudgeId!}
+        registration={selectedRegistration!}
+        criteria={activeCriteria || []}
+      />
+    </View>
+  );
+}
 
   // ── Entry screen (shared for both modes) ──────────────────────────────────
   return (
@@ -542,7 +555,7 @@ export default function ResultsPage() {
       <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-1">
           <TouchableOpacity onPress={() => setMode('none')} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-            <ArrowLeft size={18} color="#0F172A" />
+            <ArrowLeft size={18} color={ui.colors.text} />
           </TouchableOpacity>
           <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
             {mode === 'marks' ? '📊 Mark-Based Result' : '✏️ Direct Entry'}

@@ -1,3 +1,4 @@
+import { ui } from "@/constants/designSystem";
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,25 +28,25 @@ import { useAuthStore } from '../../../../core/store/authStore';
 import { FestivalResult, ResultStatus } from '../../../../services/resultVisibilityService';
 
 const colors = {
-  navy: '#0B1F3A',
-  blue: '#123B73',
-  cyan: '#16B8D9',
-  teal: '#0F766E',
-  green: '#22C55E',
-  bg: '#F3F8FB',
-  card: '#FFFFFF',
-  border: '#DDEAF1',
-  text: '#0F172A',
-  muted: '#64748B',
-  soft: '#EAF7FA',
+  navy: ui.colors.primaryHover,
+  blue: ui.colors.primary,
+  cyan: ui.colors.info,
+  teal: ui.colors.primary,
+  green: ui.colors.success,
+  bg: ui.colors.background,
+  card: ui.colors.surface,
+  border: ui.colors.border,
+  text: ui.colors.text,
+  muted: ui.colors.textMuted,
+  soft: ui.colors.infoSoft,
 };
 
 const STATUS_CONFIG: Record<ResultStatus, { label: string; bg: string; text: string }> = {
-  draft:     { label: 'Draft',     bg: '#F1F5F9', text: '#475569' },
-  ready:     { label: 'Ready',     bg: '#EFF6FF', text: '#1D4ED8' },
-  published: { label: 'Published', bg: '#DCFCE7', text: '#15803D' },
-  hidden:    { label: 'Hidden',    bg: '#FEE2E2', text: '#B91C1C' },
-  archived:  { label: 'Archived',  bg: '#F3F4F6', text: '#374151' },
+  draft:     { label: 'Draft',     bg: '#F1F5F9', text: ui.colors.textMuted },
+  ready:     { label: 'Ready',     bg: '#EFF6FF', text: ui.colors.info },
+  published: { label: 'Published', bg: ui.colors.successSoft, text: '#15803D' },
+  hidden:    { label: 'Hidden',    bg: ui.colors.dangerSoft, text: ui.colors.danger },
+  archived:  { label: 'Archived',  bg: ui.colors.surfaceMuted, text: '#374151' },
 };
 
 const ResultStatusBadge = ({ status }: { status: ResultStatus }) => {
@@ -59,14 +60,14 @@ const ResultStatusBadge = ({ status }: { status: ResultStatus }) => {
 
 const PublicVisibilityBadge = ({ visible }: { visible: boolean }) => (
   <View style={{
-    backgroundColor: visible ? '#DCFCE7' : '#F1F5F9',
+    backgroundColor: visible ? ui.colors.successSoft : '#F1F5F9',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
   }}>
     <Text style={{
-      color: visible ? '#15803D' : '#475569',
+      color: visible ? '#15803D' : ui.colors.textMuted,
       fontFamily: 'Poppins_700Bold',
       fontSize: 11,
     }}>
@@ -322,10 +323,10 @@ export default function ItemResultsPage() {
             let groupStatusColor = '#F59E0B'; // Amber
             let groupStatusBg = '#FEF3C7';
             
-            if (isAllPublished && isAllPublic) { groupStatusText = 'Public'; groupStatusColor = '#15803D'; groupStatusBg = '#DCFCE7'; }
-            else if (isAllPublished && isAllPublicHidden) { groupStatusText = 'Admin Published'; groupStatusColor = '#1D4ED8'; groupStatusBg = '#DBEAFE'; }
-            else if (isAllReady) { groupStatusText = 'All Ready'; groupStatusColor = '#1D4ED8'; groupStatusBg = '#DBEAFE'; }
-            else if (group.status_summary.draft === group.status_summary.total) { groupStatusText = 'All Draft'; groupStatusColor = '#475569'; groupStatusBg = '#F1F5F9'; }
+            if (isAllPublished && isAllPublic) { groupStatusText = 'Public'; groupStatusColor = '#15803D'; groupStatusBg = ui.colors.successSoft; }
+            else if (isAllPublished && isAllPublicHidden) { groupStatusText = 'Admin Published'; groupStatusColor = ui.colors.info; groupStatusBg = ui.colors.infoSoft; }
+            else if (isAllReady) { groupStatusText = 'All Ready'; groupStatusColor = ui.colors.info; groupStatusBg = ui.colors.infoSoft; }
+            else if (group.status_summary.draft === group.status_summary.total) { groupStatusText = 'All Draft'; groupStatusColor = ui.colors.textMuted; groupStatusBg = '#F1F5F9'; }
 
             return (
               <View key={group.item_id} style={styles.itemGroupCard}>
@@ -350,15 +351,15 @@ export default function ItemResultsPage() {
                     </TouchableOpacity>
                     
                     {!isAllPublic && (
-                      <TouchableOpacity onPress={() => handleItemBulkAction(group, 'published')} style={[styles.bulkActionBtn, { backgroundColor: '#DCFCE7', borderColor: '#BBF7D0' }]}>
+                      <TouchableOpacity onPress={() => handleItemBulkAction(group, 'published')} style={[styles.bulkActionBtn, { backgroundColor: ui.colors.successSoft, borderColor: '#BBF7D0' }]}>
                         <CheckCircle2 size={16} color="#15803D" />
                         <Text style={[styles.bulkActionBtnText, { color: '#15803D' }]}>Show Public</Text>
                       </TouchableOpacity>
                     )}
                     {!isAllPublicHidden && (
-                      <TouchableOpacity onPress={() => handleItemBulkAction(group, 'hidden')} style={[styles.bulkActionBtn, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}>
-                        <EyeOff size={16} color="#B91C1C" />
-                        <Text style={[styles.bulkActionBtnText, { color: '#B91C1C' }]}>Hide Public</Text>
+                      <TouchableOpacity onPress={() => handleItemBulkAction(group, 'hidden')} style={[styles.bulkActionBtn, { backgroundColor: ui.colors.dangerSoft, borderColor: '#FECACA' }]}>
+                        <EyeOff size={16} color={ui.colors.danger} />
+                        <Text style={[styles.bulkActionBtnText, { color: ui.colors.danger }]}>Hide Public</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -391,18 +392,18 @@ export default function ItemResultsPage() {
                         {/* Individual Overrides */}
                         <View style={styles.nestedActions}>
                            {r.public_visible !== true && (
-                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'published')} style={[styles.nestedActionBtn, { backgroundColor: '#DCFCE7' }]}>
+                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'published')} style={[styles.nestedActionBtn, { backgroundColor: ui.colors.successSoft }]}>
                                 <CheckCircle2 size={14} color="#15803D" />
                               </TouchableOpacity>
                             )}
                             {status !== 'ready' && status !== 'published' && (
-                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'ready')} style={[styles.nestedActionBtn, { backgroundColor: '#DBEAFE' }]}>
-                                <Eye size={14} color="#1D4ED8" />
+                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'ready')} style={[styles.nestedActionBtn, { backgroundColor: ui.colors.infoSoft }]}>
+                                <Eye size={14} color={ui.colors.info} />
                               </TouchableOpacity>
                             )}
                             {r.public_visible === true && (
-                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'hidden')} style={[styles.nestedActionBtn, { backgroundColor: '#FEE2E2' }]}>
-                                <EyeOff size={14} color="#B91C1C" />
+                              <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'hidden')} style={[styles.nestedActionBtn, { backgroundColor: ui.colors.dangerSoft }]}>
+                                <EyeOff size={14} color={ui.colors.danger} />
                               </TouchableOpacity>
                             )}
                         </View>
@@ -466,7 +467,7 @@ export default function ItemResultsPage() {
                     style={[styles.primaryAction, { flex: 1 }]}
                     onPress={() => { handleItemBulkAction(previewGroup, 'published'); setPreviewGroup(null); }}
                   >
-                    <CheckCircle2 size={16} color="#fff" />
+                    <CheckCircle2 size={16} color={ui.colors.surface} />
                     <Text style={styles.primaryActionText}>Show Public</Text>
                   </TouchableOpacity>
                   
@@ -474,8 +475,8 @@ export default function ItemResultsPage() {
                     style={[styles.outlineAction, { flex: 1 }]}
                     onPress={() => { handleItemBulkAction(previewGroup, 'hidden'); setPreviewGroup(null); }}
                   >
-                    <EyeOff size={16} color="#B91C1C" />
-                    <Text style={[styles.outlineActionText, { color: '#B91C1C' }]}>Hide Public</Text>
+                    <EyeOff size={16} color={ui.colors.danger} />
+                    <Text style={[styles.outlineActionText, { color: ui.colors.danger }]}>Hide Public</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.08,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
@@ -529,7 +530,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: '#F8FCFD',
+    backgroundColor: ui.colors.background,
   },
   secondaryActionText: {
     color: colors.teal,
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: '#F6FAFC',
+    backgroundColor: ui.colors.background,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     paddingHorizontal: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -592,7 +593,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
   },
   filterDivider: {
     width: 1.5,
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   errorText: {
-    color: '#B91C1C',
+    color: ui.colors.danger,
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
   },
@@ -621,7 +622,7 @@ const styles = StyleSheet.create({
   itemGroupCard: {
     marginHorizontal: 20,
     marginVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -679,7 +680,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -725,7 +726,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.48)',
+    backgroundColor: ui.colors.surfaceStrong,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -733,12 +734,12 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 460,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ui.colors.surface,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 20,
-    shadowColor: '#0F2A45',
+    shadowColor: ui.shadow.shadowColor,
     shadowOpacity: 0.16,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 16 },
@@ -779,7 +780,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryActionText: {
-    color: '#FFFFFF',
+    color: ui.colors.surface,
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
   },

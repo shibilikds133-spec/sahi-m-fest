@@ -1,3 +1,4 @@
+import { ui } from '@/constants/designSystem';
 import React, { useMemo, useState } from 'react';
 import {
   ScrollView,
@@ -82,7 +83,7 @@ export default function JudgeAuditPage() {
             accessibilityRole="button"
             accessibilityLabel="Back to Judge Panel"
           >
-            <ArrowLeft size={22} color="#FFFFFF" />
+            <ArrowLeft size={22} color={ui.colors.surface} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text className="font-poppins-black text-white text-2xl">
@@ -163,7 +164,7 @@ export default function JudgeAuditPage() {
         </View>
       ) : filteredLogs.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <ShieldCheck size={48} color="#D1D5DB" />
+          <ShieldCheck size={48} color={ui.colors.border} />
           <Text className="font-poppins-bold text-gray-500 mt-3">
             No matching audit activity
           </Text>
