@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { RefreshCcw, Radio, Trophy, CheckCircle, QrCode, Copy, Share, ExternalLink } from 'lucide-react-native';
 import { Modal, Platform } from 'react-native';
@@ -20,6 +20,7 @@ interface StrategicResult {
   new_2nd_points: number;
   new_3rd_points: number;
   leader_name: string;
+  is_public: boolean;
 }
 
 export default function SmartAnnouncerPage() {
