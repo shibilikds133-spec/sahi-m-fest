@@ -14,11 +14,11 @@ export default function GraceMarksScreen() {
   const { useActiveFestival, usePointsConfig } = useFestival();
   const { data: festival, isLoading: isFestivalLoading } = useActiveFestival();
   const { data: config, isLoading: isConfigLoading } = usePointsConfig(festival?.id);
-  const { childOrganisationsQuery } = useOrganisations();
+  const { childOrganisations, isLoadingChildren } = useOrganisations();
   const queryClient = useQueryClient();
 
   const festivalId = festival?.id;
-  const groups = childOrganisationsQuery.data || [];
+  const groups = childOrganisations || [];
 
   const graceMarksQuery = useQuery({
     queryKey: ['grace-marks', festivalId],
