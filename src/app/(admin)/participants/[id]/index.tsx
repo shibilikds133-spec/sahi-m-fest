@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useGoBack } from '../../../../core/hooks/useGoBack';
 import { SsfCard } from '../../../../components/ui/SsfCard';
 import { SsfButton } from '../../../../components/ui/SsfButton';
+import { useAuthStore } from '../../../../core/store/authStore';
 import { useParticipants } from '../../../../core/hooks/useParticipants';
 import {
   ArrowLeft,
@@ -105,6 +106,8 @@ function DetailAccordion({
 }
 
 export default function ParticipantDetails() {
+  const tenant_id = useAuthStore((state) => state.tenant_id);
+  const validTenantId = tenant_id;
   const { id } = useLocalSearchParams();
   const participantId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();

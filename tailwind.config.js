@@ -49,7 +49,7 @@ module.exports = {
         video: '16 / 9',
       },
       colors: {
-        'alviora-bg': 'rgb(28, 51, 56)',
+        'alviora-bg': '#011635',
         'alviora-surface': 'rgba(255, 255, 255, 0.05)',
         'alviora-primary': '#3b82f6',
         'alviora-heading': '#ffffff',
@@ -159,3 +159,4 @@ module.exports = {
   },
   plugins: [],
 }
+

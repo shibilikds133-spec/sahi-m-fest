@@ -168,7 +168,7 @@ export default function JudgesPage() {
     fetchJudgeManagementData();
 
     const channel = supabase
-      .channel(`admin_judge_management_${tenant_id}`)
+      .channel(`admin_judge_management_${tenant_id}_${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'judge_tokens', filter: `tenant_id=eq.${tenant_id}` },

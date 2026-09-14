@@ -49,7 +49,7 @@ export default function JudgePortalLanding() {
     if (!waitingForApproval || !currentTokenId) return;
 
     const channel = supabase
-      .channel(`judge_token_${currentTokenId}`)
+      .channel(`judge_token_${currentTokenId}_${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         {

@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Platform, TextInput, useWindowDimensions, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SsfCard } from '../../components/ui/SsfCard';
-import { SsfButton } from '../../components/ui/SsfButton';
-import { useStageManagement } from '../../core/hooks/useStageManagement';
+import { SsfCard } from '../../../components/ui/SsfCard';
+import { SsfButton } from '../../../components/ui/SsfButton';
+import { useStageManagement } from '../../../core/hooks/useStageManagement';
 import { Calendar, MapPin, Clock, Search, X, Lock, Bell, RefreshCw, Copy, Check, ExternalLink, RotateCcw } from 'lucide-react-native';
-import { SsfSelectMenu } from '../../components/ui/SsfSelectMenu';
-import { SsfTableSkeleton } from '../../components/ui/SsfSkeleton';
-import { useAuthStore } from '../../core/store/authStore';
+import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
+import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
+import { useAuthStore } from '../../../core/store/authStore';
 
 function ScheduleWorkflowBadges({ registrations = [] }: { registrations?: any[] }) {
   const activeRegs = registrations.filter((r: any) => r.status !== 'rejected');

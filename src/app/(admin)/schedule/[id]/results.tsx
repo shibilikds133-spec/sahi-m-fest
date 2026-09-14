@@ -1,5 +1,4 @@
-import { AdminMarkEntryModal } from '@/components/ui/AdminMarkEntryModal';
-import { ui } from '@/constants/designSystem';
+import { AdminMarkEntryModal } from '../../../../components/ui/AdminMarkEntryModal';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -38,9 +37,6 @@ type ResultEntry = {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ResultsPage() {
-    const [markModalVisible, setMarkModalVisible] = useState(false);
-  const [selectedJudgeId, setSelectedJudgeId] = useState<string | null>(null);
-  const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
   const { id } = useLocalSearchParams();
   const scheduleId = Array.isArray(id) ? id[0] : id;
   const goBack = useGoBack('/(admin)/schedule');
@@ -88,6 +84,7 @@ export default function ResultsPage() {
   const [results, setResults] = useState<Record<string, ResultEntry>>({});
   const [saving, setSaving] = useState(false);
   const [published, setPublished] = useState(false);
+  const [editingRegistration, setEditingRegistration] = useState<any>(null);
   
   const [officialBracket, setOfficialBracket] = useState<string>('1');
   const [bracketManuallyOverridden, setBracketManuallyOverridden] = useState(false);
@@ -376,6 +373,7 @@ export default function ResultsPage() {
         const confirmed = window.confirm(warnMsg);
         if (!confirmed) return;
         setForceRepublishConfirmed(true);
+        return;
       } else {
         Alert.alert('Republish Warning', warnMsg, [
           { text: 'Cancel', style: 'cancel' },
@@ -482,7 +480,7 @@ export default function ResultsPage() {
         <View className="border-b border-ui-border bg-white px-4 py-3">
           <View className="flex-row items-center mb-2">
             <TouchableOpacity onPress={goBack} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-              <ArrowLeft size={18} color={ui.colors.text} />
+              <ArrowLeft size={18} color="#0F172A" />
             </TouchableOpacity>
             <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
               Result Entry
@@ -536,17 +534,9 @@ export default function ResultsPage() {
             </TouchableOpacity>
           )}
         </View>
-            <AdminMarkEntryModal 
-        visible={markModalVisible}
-        onClose={() => setMarkModalVisible(false)}
-        scheduleId={id as string}
-        judgeId={selectedJudgeId!}
-        registration={selectedRegistration!}
-        criteria={activeCriteria || []}
-      />
-    </View>
-  );
-}
+      </View>
+    );
+  }
 
   // ── Entry screen (shared for both modes) ──────────────────────────────────
   return (
@@ -555,7 +545,7 @@ export default function ResultsPage() {
       <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-1">
           <TouchableOpacity onPress={() => setMode('none')} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
-            <ArrowLeft size={18} color={ui.colors.text} />
+            <ArrowLeft size={18} color="#0F172A" />
           </TouchableOpacity>
           <Text className="text-lg font-poppins-black text-ssf-text flex-1" numberOfLines={1}>
             {mode === 'marks' ? '📊 Mark-Based Result' : '✏️ Direct Entry'}
@@ -675,11 +665,18 @@ export default function ResultsPage() {
               </View>
 
               {/* Judge marks breakdown — marks mode only */}
-              {false && mode === 'marks' && judgeMarks.length > 0 && (
+              {mode === 'marks' && (
                 <View className="border-l-2 border-blue-200 pl-3 py-1 mb-2">
-                  <Text className="font-poppins-bold text-[10px] text-ssf-text-muted mb-1">
+                  <View className="flex-row justify-between items-center mb-1">
+                    <Text className="font-poppins-bold text-[10px] text-ssf-text-muted">
                     Judge Marks:
-                  </Text>
+                    </Text>
+                    {!published && (
+                      <TouchableOpacity onPress={() => setEditingRegistration(reg)} className="bg-blue-50 border border-blue-200 px-2 py-1 rounded shadow-sm">
+                        <Text className="text-blue-700 font-poppins-bold text-[10px]">?? Edit Marks</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   {judgeMarks.map((m: any, i: number) => (
                     <View key={m.id} className="flex-row justify-between mb-1">
                       <Text className="font-poppins text-[10px] text-ssf-text">
@@ -690,7 +687,10 @@ export default function ResultsPage() {
                       </Text>
                     </View>
                   ))}
-                  {judgeMarks.length < expectedJudges && (
+                  {judgeMarks.length === 0 && (
+                     <Text className="font-poppins text-[10px] text-gray-500 italic mt-1">No marks submitted yet.</Text>
+                  )}
+                  {judgeMarks.length > 0 && judgeMarks.length < expectedJudges && (
                     <Text className="font-poppins text-[10px] text-orange-600 mt-1">
                       ⚠️ Only {judgeMarks.length}/{expectedJudges} judges submitted
                     </Text>
@@ -834,19 +834,19 @@ export default function ResultsPage() {
             <TouchableOpacity
               onPress={() => {
                 if (Platform.OS === 'web') {
-                  const ans = window.prompt("To unlock all marks for this event, type 'UNLOCK' in uppercase:");
-                  if (ans === 'UNLOCK') {
-                    unlockScheduleMarks.mutate(scheduleId);
+                  const ans = window.prompt("Security Check: Enter Admin Password (Tenant ID) to unlock marks:");
+                  if (ans === schedule?.tenant_id) {
+                    unlockScheduleMarks.mutate(scheduleId, { onSuccess: () => setPublished(false) });
                   } else if (ans !== null) {
-                    window.alert("Invalid input. Marks were not unlocked.");
+                    window.alert("Incorrect Password! Marks were not unlocked.");
                   }
                 } else {
                   Alert.alert(
                     "Unlock All Marks",
-                    "Are you sure you want to unlock ALL marks for this event? Results will be unpublished and judges can edit marks again.",
+                    "Security Notice: Unlocking will unpublish results and allow mark edits. Proceed?",
                     [
                       { text: "Cancel", style: "cancel" },
-                      { text: "Yes, Unlock All", style: "destructive", onPress: () => unlockScheduleMarks.mutate(scheduleId) }
+                      { text: "Yes, Unlock All", style: "destructive", onPress: () => unlockScheduleMarks.mutate(scheduleId, { onSuccess: () => setPublished(false) }) }
                     ]
                   );
                 }
@@ -868,6 +868,23 @@ export default function ResultsPage() {
           </View>
         </View>
       </View>
+
+      {editingRegistration && (
+        <AdminMarkEntryModal
+          visible={!!editingRegistration}
+          onClose={() => setEditingRegistration(null)}
+          scheduleId={id as string}
+          registrationId={editingRegistration.id}
+          participantName={editingRegistration.participants?.name || 'Unknown'}
+          codeLetter={editingRegistration.code_letter}
+          tenantId={schedule?.tenant_id || ''}
+          itemNameEn={schedule?.items?.item_name_en || ''}
+          itemNameMl={schedule?.items?.item_name_ml || ''}
+          itemType={schedule?.items?.item_type || ''}
+          existingMarks={getJudgeMarks(editingRegistration.id)}
+          assignedJudges={(judgeSummary as any[]) || []}
+        />
+      )}
     </View>
   );
 }

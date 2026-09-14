@@ -124,6 +124,9 @@ export const useJudges = () => {
   });
 
   const unlockScheduleMarks = useMutation({
+      onError: (err: any) => {
+        window.alert("Error unlocking marks: " + err.message);
+      },
     mutationFn: (scheduleId: string) => judgeService.unlockScheduleMarks(scheduleId),
     onSuccess: (_, scheduleId) => {
       queryClient.invalidateQueries({ queryKey: ['markEntries', scheduleId] });
@@ -169,22 +172,33 @@ export const useJudges = () => {
 
   
   // Admin manual mark override
-  const adminUpsertMark = useMutation({
-    mutationFn: async ({ scheduleId, judgeId, registrationId, criteriaMarks, isAbsent }: { scheduleId: string, judgeId: string, registrationId: string, criteriaMarks: any, isAbsent: boolean }) => {
-      const { data, error } = await supabase.rpc('admin_upsert_mark', {
-        p_schedule_id: scheduleId,
-        p_judge_id: judgeId,
-        p_registration_id: registrationId,
-        p_criteria_marks: criteriaMarks,
-        p_is_absent: isAbsent
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_, variables) => {
+      // Admin manual mark override
+    const adminUpsertMark = useMutation({
+      mutationFn: async ({ scheduleId, judgeId, registrationId, criteriaScores, totalMark, maxMark, criteriaSnapshot, status }: { scheduleId: string, judgeId: string, registrationId: string, criteriaScores: any, totalMark: number, maxMark: number, criteriaSnapshot: any, status: string }) => {
+        const { data: schedule } = await supabase.from('schedules').select('tenant_id').eq('id', scheduleId).single();
+        const { data, error } = await supabase.from('mark_entries').upsert({
+          schedule_id: scheduleId,
+          judge_id: judgeId,
+          registration_id: registrationId,
+          tenant_id: schedule?.tenant_id,
+          criteria_scores: criteriaScores,
+          total_mark: totalMark,
+          max_mark_snapshot: maxMark,
+          criteria_snapshot: criteriaSnapshot,
+          entry_mode_snapshot: Object.keys(criteriaScores || {}).length > 0 ? 'criteria' : 'total_only',
+          is_draft: status === 'draft',
+          is_final: status === 'final',
+          submitted_at: status === 'final' ? new Date().toISOString() : null,
+        }, { onConflict: 'schedule_id,judge_id,registration_id' }).select().single();
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['results', variables.scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['registrations', variables.scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['judges', variables.scheduleId] });
+        queryClient.invalidateQueries({ queryKey: ['markEntries', variables.scheduleId] });
+        queryClient.invalidateQueries({ queryKey: ['judgeSubmissionSummary', variables.scheduleId] });
     }
   });
   return {

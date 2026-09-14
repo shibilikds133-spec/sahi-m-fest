@@ -47,7 +47,7 @@ export default function ParticipantResultPage() {
       </Head>
       
       {/* TopNavBar */}
-      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-alviora-border sticky top-0 z-50 shadow-sm w-full">
+      <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-alviora-border sticky top-0 z-50 shadow-sm w-full">
         <div className="flex items-center px-gutter py-4 max-w-container-max mx-auto">
           <TouchableOpacity onPress={() => router.back()} className="mr-4 text-alviora-primary flex flex-row items-center gap-1 hover:opacity-80">
             <ArrowLeft size={20} color="#1C5FA8" />
@@ -125,3 +125,4 @@ export default function ParticipantResultPage() {
     </div>
   );
 }
+

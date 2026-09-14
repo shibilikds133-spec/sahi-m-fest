@@ -196,7 +196,7 @@ export default function JudgeApprovalsPage() {
 
     if (!tenant_id) return;
     const channel = supabase
-      .channel(`judge_approvals_${tenant_id}`)
+      .channel(`judge_approvals_${tenant_id}_${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         {

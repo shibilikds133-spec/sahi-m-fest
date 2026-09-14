@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SsfCard } from '../../../components/ui/SsfCard';
-import { SsfButton } from '../../../components/ui/SsfButton';
-import { useStageManagement } from '../../../core/hooks/useStageManagement';
-import { useParticipants } from '../../../core/hooks/useParticipants';
-import { useGoBack } from '../../../core/hooks/useGoBack';
+import { SsfCard } from '../../../../components/ui/SsfCard';
+import { SsfButton } from '../../../../components/ui/SsfButton';
+import { useStageManagement } from '../../../../core/hooks/useStageManagement';
+import { useParticipants } from '../../../../core/hooks/useParticipants';
+import { useGoBack } from '../../../../core/hooks/useGoBack';
 import { ArrowLeft, RefreshCw, Lock, AlertTriangle, XCircle, Edit2 } from 'lucide-react-native';
-import { useAuthStore } from '../../../core/store/authStore';
+import { useAuthStore } from '../../../../core/store/authStore';
 
 export default function CodeLetterGeneration() {
   const { id } = useLocalSearchParams();

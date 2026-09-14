@@ -31,7 +31,7 @@ import { NotificationToast } from "../components/ui/NotificationToast";
 
 // Removed top-level preventAutoHideAsync, moving it inside component
 
-const LOADING_BG = "#1C3338";
+const LOADING_BG = "#011635";
 
 function AppLoadingScreen() {
   return (
@@ -113,3 +113,4 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+

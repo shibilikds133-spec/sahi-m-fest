@@ -1,4 +1,4 @@
-﻿import { ScrollViewStyleReset } from 'expo-router/html';
+import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 export default function Root({ children }: PropsWithChildren) {
   return (
@@ -10,7 +10,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="apple-touch-icon" href="/favicon.ico" />
         <ScrollViewStyleReset />
       </head>
-      <body style={{ backgroundColor: '#1C3338' }}>{children}</body>
+      <body style={{ backgroundColor: '#011635' }}>{children}</body>
     </html>
   );
 }

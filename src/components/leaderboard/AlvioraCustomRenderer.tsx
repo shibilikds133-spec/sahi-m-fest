@@ -322,7 +322,7 @@ export function AlvioraCustomRenderer({ page = 'landing' }: { page?: PublicLeade
     };
 
     const channel = supabase
-      .channel(`public-leaderboard:${tenantId}:${festivalId}`)
+      .channel(`public-leaderboard:${tenantId}:${festivalId}_${Math.random().toString(36).substring(7)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'results', filter: `tenant_id=eq.${tenantId}` }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules', filter: `tenant_id=eq.${tenantId}` }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'festival_leaderboard_settings', filter: `tenant_id=eq.${tenantId}` }, refresh)

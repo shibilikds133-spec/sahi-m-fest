@@ -10,10 +10,10 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SsfCard } from '../../../components/ui/SsfCard';
-import { SsfButton } from '../../../components/ui/SsfButton';
-import { useStageManagement } from '../../../core/hooks/useStageManagement';
-import { useAuthStore } from '../../../core/store/authStore';
+import { SsfCard } from '../../../../components/ui/SsfCard';
+import { SsfButton } from '../../../../components/ui/SsfButton';
+import { useStageManagement } from '../../../../core/hooks/useStageManagement';
+import { useAuthStore } from '../../../../core/store/authStore';
 import {
   ArrowLeft,
   CheckCircle2,

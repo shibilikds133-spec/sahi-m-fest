@@ -21,7 +21,7 @@ const InitialLoader = ({ isReady }: { isReady: boolean }) => {
   if (!shouldRender) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1C3338] transition-opacity duration-500 ease-in-out ${isReady ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-alviora-bg transition-opacity duration-500 ease-in-out ${isReady ? 'opacity-0' : 'opacity-100'}`}>
       <div className="flex flex-col items-center gap-8 fade-in-up visible">
         <span className="text-5xl uppercase tracking-widest text-alviora-primary keep-font drop-shadow-lg" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>
           ALVIORA
@@ -77,6 +77,215 @@ const VideoBackground = () => {
         );
       })}
     </>
+  );
+};
+
+
+
+
+const PremiumScheduleCarousel = ({ schedules, onSelectSchedule }: any) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(true);
+
+  const getActiveIndex = () => {
+    const now = new Date();
+    let activeIdx = -1;
+    for (let i = 0; i < schedules.length; i++) {
+      const s = schedules[i];
+      if ((s.status || "").toLowerCase() === "ongoing") return i;
+      if (s.start_time && new Date(s.start_time) > now) {
+        if (activeIdx === -1) activeIdx = i;
+      }
+    }
+    return activeIdx !== -1 ? activeIdx : 0;
+  };
+  const activeIndex = getActiveIndex();
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    
+    requestAnimationFrame(() => {
+      if (!scrollRef.current) return;
+      const container = scrollRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.left + container.clientWidth / 2;
+      const cards = container.querySelectorAll('.schedule-card-element');
+      
+      cards.forEach((card: any) => {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.left + rect.width / 2;
+        const dist = Math.abs(containerCenter - cardCenter);
+        const maxDist = container.clientWidth / 1.5;
+        
+        let scale = 1 - (dist / maxDist) * 0.15; 
+        if (scale < 0.85) scale = 0.85;
+        if (scale > 1) scale = 1;
+
+        let opacity = 1 - (dist / maxDist) * 0.4;
+        if (opacity < 0.5) opacity = 0.5;
+        if (opacity > 1) opacity = 1;
+
+        card.style.transform = `scale(${scale})`;
+        card.style.opacity = opacity.toString();
+      });
+    });
+  };
+
+  React.useEffect(() => {
+    handleScroll();
+    const container = scrollRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll, { passive: true });
+      window.addEventListener("resize", handleScroll, { passive: true });
+      setTimeout(handleScroll, 100);
+    }
+    return () => {
+      if (container) container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [schedules]);
+
+  const scrollBy = (amount: number) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+    }
+  };
+
+  if (!schedules || schedules.length === 0) {
+    return (
+      <div className="w-full text-center py-16 bg-white/5 rounded-2xl border border-white/10 flex flex-col items-center justify-center backdrop-blur-sm max-w-[1400px] mx-auto">
+        <span className="material-symbols-outlined text-4xl text-white/20 mb-4" style={{fontSize:"48px"}}>event_busy</span>
+        <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full group/carousel pb-8">
+      {/* Desktop Arrows */}
+      <button 
+        onClick={() => scrollBy(-400)}
+        className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all hover:bg-alviora-primary hover:border-alviora-primary hover:scale-110 shadow-xl ${canScrollLeft ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        aria-label="Previous events"
+      >
+        <span className="material-symbols-outlined" style={{fontSize: "24px"}}>chevron_left</span>
+      </button>
+
+      <button 
+        onClick={() => scrollBy(400)}
+        className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all hover:bg-alviora-primary hover:border-alviora-primary hover:scale-110 shadow-xl ${canScrollRight ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        aria-label="Next events"
+      >
+        <span className="material-symbols-outlined" style={{fontSize: "24px"}}>chevron_right</span>
+      </button>
+
+      {/* Scroll Container */}
+      <div 
+        ref={scrollRef}
+        className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 md:px-8 py-12"
+        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
+      >
+        {schedules.map((schedule: any, idx: number) => {
+          const isTimeActive = idx === activeIndex;
+          const bgId = (idx % 10) + 1;
+          const bgImage = `/images/schedule/bg-${bgId}.jpg`;
+          
+          let dateStr = "TBA";
+          let monthStr = "";
+          if (schedule.start_time) {
+            const d = new Date(schedule.start_time);
+            dateStr = d.getDate().toString().padStart(2, "0");
+            monthStr = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+          }
+
+          let timeStr = "TBA";
+          if (schedule.start_time) {
+            const start = new Date(schedule.start_time).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"});
+            timeStr = start;
+            if (schedule.end_time) {
+              const end = new Date(schedule.end_time).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"});
+              timeStr = `${start} - ${end}`;
+            }
+          }
+
+          const statusRaw = (schedule.status || "").toLowerCase();
+          const isOngoing = statusRaw === "ongoing";
+          const isCompleted = statusRaw === "completed";
+          const isPublished = schedule.is_published === true || statusRaw === "published";
+          const isPending = schedule.has_results === true || schedule.has_marks === true || ["mark submitted", "checking pending", "checking completed"].includes(statusRaw);
+          
+          let statusText = schedule.status || "SCHEDULED";
+          let statusStyle = "bg-alviora-primary/20 text-[#60a5fa] border-[#60a5fa]/30"; 
+          
+          if (isPublished) { statusText = "PUBLISHED"; statusStyle = "bg-green-500/20 text-green-400 border-green-500/30"; }
+          else if (isPending) { statusText = "VERIFICATION PENDING"; statusStyle = "bg-[#c69a53]/20 text-[#c69a53] border-[#c69a53]/30"; }
+          else if (isCompleted) { statusText = "COMPLETED"; statusStyle = "bg-[#a9f5d0]/20 text-[#a9f5d0] border-[#a9f5d0]/30"; }
+          else if (isOngoing) { statusText = "ONGOING"; statusStyle = "bg-error-container text-on-error-container border-error-container/50"; }
+
+          return (
+            <div 
+              key={idx}
+              onClick={() => onSelectSchedule(schedule)}
+              className={`schedule-card-element relative shrink-0 snap-center cursor-pointer group/card
+                w-[85vw] sm:w-[320px] md:w-[360px] h-[400px] rounded-[2rem] overflow-hidden shadow-2xl transition-shadow
+                ${isTimeActive ? "ring-2 ring-alviora-primary/50 shadow-[0_0_40px_rgba(59,130,246,0.3)]" : "hover:ring-1 hover:ring-white/20"}
+              `}
+              style={{ transformOrigin: "center center", willChange: "transform, opacity" }}
+            >
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover/card:scale-110"
+                style={{ backgroundImage: `url('${bgImage}')` }}
+              />
+              <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#011635] via-[#011635]/80 to-transparent" />
+              <div className="absolute inset-0 rounded-[2rem] border border-white/10 group-hover/card:border-white/30 transition-colors pointer-events-none" />
+
+              <div className="relative h-full w-full p-6 flex flex-col justify-between z-10 pointer-events-none">
+                <div className="flex justify-between items-start">
+                  <div className="bg-[#011635]/60 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center min-w-[70px] shadow-lg">
+                    <span className="font-headline-lg font-bold text-white leading-none text-2xl">{dateStr}</span>
+                    <span className="text-[10px] uppercase tracking-widest text-alviora-accent mt-1 font-bold">{monthStr}</span>
+                  </div>
+                  {isTimeActive && (
+                    <div className="bg-alviora-primary/30 backdrop-blur-md w-10 h-10 rounded-full border border-alviora-primary/50 flex items-center justify-center text-alviora-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                      <span className="material-symbols-outlined text-lg" style={{fontSize: "20px"}}>star</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4 flex flex-col justify-end h-full">
+                  <div>
+                    <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 border backdrop-blur-md shadow-sm ${statusStyle}`}>
+                      {statusText}
+                    </span>
+                    <h3 className="font-title-lg text-2xl text-white font-bold leading-tight group-hover/card:text-alviora-primary transition-colors line-clamp-2 drop-shadow-md">
+                      {schedule.items?.item_name_en || schedule.items?.name || "Event Item"}
+                    </h3>
+                    <p className="text-alviora-accent-dim text-xs font-semibold uppercase tracking-wider mt-2 opacity-90">
+                      {schedule.categories?.name || "General Category"}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-white/90 text-sm">
+                      <span className="material-symbols-outlined text-alviora-primary" style={{fontSize: "16px"}}>location_on</span>
+                      <span className="truncate drop-shadow-sm">{schedule.venues?.name || `Stage ${(idx % 10) + 1}`}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/90 text-sm font-mono">
+                      <span className="material-symbols-outlined text-alviora-primary" style={{fontSize: "16px"}}>schedule</span>
+                      <span className="drop-shadow-sm">{timeStr}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
@@ -304,14 +513,16 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
       {/* TopAppBar (Ticker) */}
       <div className="bg-black/20 backdrop-blur-sm text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-alviora-border">
-        <div className="flex items-center gap-4 w-full max-w-container-max mx-auto marquee-container">
-          <span className="material-symbols-outlined text-alviora-accent" style={{fontVariationSettings:"'FILL' 1"}}>sensors</span>
-          <span className="marquee-content">{tickerString}</span>
-        </div>
+        <div className="flex items-center gap-3 w-full max-w-container-max mx-auto">
+            <span className="material-symbols-outlined text-alviora-accent shrink-0 z-10" style={{fontVariationSettings:"'FILL' 1", fontSize: "18px"}}>sensors</span>
+            <div className="marquee-container flex-1 overflow-hidden relative" style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="marquee-content whitespace-nowrap">{tickerString}</span>
+            </div>
+          </div>
       </div>
 
       {/* TopNavBar */}
-      <nav className="bg-[#1C3338]/80 backdrop-blur-xl border-b border-white/5 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
+      <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-white/5 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <Link className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>
             <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
@@ -339,14 +550,14 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           <>
           {page === 'landing' && (<>{/* Hero Section */}
         <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible hero-section">
-          <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
+          <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-fit md:min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
             {/* Background Video using Load Manager */}
             <VideoBackground />
             
             {/* Dark Overlays for readability and matching theme */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1a1c]/95 via-[#1C3338]/80 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-[#1C3338]/40 z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-alviora-bg/95 via-alviora-bg/80 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-alviora-bg/40 z-10"></div>
             
             {/* Top Right Logo Placeholder */}
             <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
@@ -391,6 +602,14 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         </section>
 
         
+
+          </>)}
+          
+          {/* POST-HERO BACKGROUND WRAPPER */}
+          <div className="relative w-full md:bg-[url('/images/post-hero-bg.png')] bg-cover bg-top bg-no-repeat">
+            <div className="absolute inset-0 bg-alviora-bg/15 z-0 pointer-events-none transition-colors duration-300"></div>
+            <div className="relative z-10 flex flex-col">
+              {page === 'landing' && (<>
         {/* Stats Section */}
         <section className="bg-transparent py-8 md:py-12 relative z-20 overflow-hidden handjet-wrapper">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -398,8 +617,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               
               {/* Stat 1 */}
               <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
-                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
-                  <span className="material-symbols-outlined text-[#c69a53] text-[3rem] md:text-[5rem]">calendar_month</span>
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg text-[48px] md:text-[88px]">
+                  <span className="material-symbols-outlined text-[#c69a53]" style={{ fontSize: "inherit" }}>calendar_month</span>
                 </div>
                 <div className="text-center">
                   <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.days < 10 ? '0'+stats.days : stats.days}</div>
@@ -409,8 +628,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
               {/* Stat 2 */}
               <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
-                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
-                  <span className="material-symbols-outlined text-[#f5a9a9] text-[3rem] md:text-[5rem]">apartment</span>
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg text-[48px] md:text-[88px]">
+                  <span className="material-symbols-outlined text-[#f5a9a9]" style={{ fontSize: "inherit" }}>apartment</span>
                 </div>
                 <div className="text-center">
                   <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">{stats.campuses < 10 ? '0'+stats.campuses : stats.campuses}</div>
@@ -420,8 +639,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
               {/* Stat 3 */}
               <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
-                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
-                  <span className="material-symbols-outlined text-[#a9f5d0] text-[3rem] md:text-[5rem]">local_activity</span>
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg text-[48px] md:text-[88px]">
+                  <span className="material-symbols-outlined text-[#a9f5d0]" style={{ fontSize: "inherit" }}>local_activity</span>
                 </div>
                 <div className="text-center">
                   <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">100+</div>
@@ -431,8 +650,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
               {/* Stat 4 */}
               <div className="flex-1 flex flex-col items-center justify-center gap-6 group min-w-[20%]">
-                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg">
-                  <span className="material-symbols-outlined text-[#a9c5f5] text-[3rem] md:text-[5rem]">emoji_events</span>
+                <div className="w-16 h-16 md:w-28 md:h-28 rounded-2xl md:rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform shadow-lg text-[48px] md:text-[88px]">
+                  <span className="material-symbols-outlined text-[#a9c5f5]" style={{ fontSize: "inherit" }}>emoji_events</span>
                 </div>
                 <div className="text-center">
                   <div className="font-headline-lg font-bold text-4xl md:text-7xl text-white mb-2 leading-none tracking-tight">40+</div>
@@ -444,139 +663,48 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         </section></>)}
         {/* Live Schedule */}
         {(page === 'landing' || page === 'schedule') && (
-        <section id="live-schedule" className="px-gutter pt-4 md:pt-8 pb-section-gap max-w-[1400px] mx-auto fade-in-up visible handjet-wrapper">
-          <div className="flex justify-between items-end mb-6">
-            <div>
-              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
-              <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
-            </div>
-          </div>
-          
-          {page === 'schedule' && (
-            <div className="flex flex-wrap gap-2 mb-8">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveFilter(tab.id)}
-                  className={`px-4 py-2 rounded-full font-title-sm text-title-sm transition-all ${
-                    activeFilter === tab.id 
-                      ? 'bg-alviora-primary text-white shadow-md' 
-                      : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {page === 'landing' ? (
-            <div className="schedule-marquee-container -mx-4 px-4 overflow-hidden">
-              <div className="schedule-marquee-track">
-                {marqueeSchedules.length > 0 ? marqueeSchedules.map((schedule: any, idx: number) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => setSelectedSchedule(schedule)}
-                    className="bg-white/5 border border-white/10 hover:border-alviora-primary/50 hover:bg-white/10 rounded-xl p-6 cursor-pointer transition-all shadow-md group flex flex-col justify-between min-h-[160px] w-[280px] sm:w-[320px] shrink-0"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 ${
-                          (schedule.status || '').toLowerCase() === 'ongoing' 
-                            ? 'bg-error-container text-on-error-container' 
-                            : (schedule.status || '').toLowerCase() === 'completed' 
-                              ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' 
-                              : (schedule.is_published === true || (schedule.status || '').toLowerCase() === 'published')
-                                ? 'bg-green-500/20 text-green-400'
-                                : (schedule.has_results === true || schedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((schedule.status || '').toLowerCase()))
-                                  ? 'bg-[#c69a53]/20 text-[#c69a53]'
-                                  : 'bg-alviora-primary/20 text-alviora-primary'
-                        }`}>
-                          {
-                            (schedule.is_published === true || (schedule.status || '').toLowerCase() === 'published') ? 'PUBLISHED' :
-                            (schedule.has_results === true || schedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((schedule.status || '').toLowerCase())) ? 'VERIFICATION PENDING' :
-                            schedule.status || 'Scheduled'
-                          }
-                        </span>
-                        <span className="text-white/50 text-xs flex items-center gap-1 font-mono">
-                          <span className="material-symbols-outlined text-[14px]">schedule</span>
-                          {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'}
-                        </span>
-                      </div>
-                      <h3 className="font-title-lg text-title-lg text-white font-bold mb-3 group-hover:text-alviora-primary transition-colors line-clamp-2 leading-tight">
-                        {schedule.items?.item_name_en || schedule.items?.name || 'Event Item'}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2 text-alviora-body text-xs mt-2 border-t border-white/10 pt-3">
-                      <span className="material-symbols-outlined text-[16px] text-alviora-primary">location_on</span>
-                      <span className="truncate">{schedule.venues?.name || `Stage ${idx % filteredSchedules.length + 1}`}</span>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="w-full text-center py-16 bg-white/5 rounded-xl border border-white/10 flex flex-col items-center justify-center">
-                    <span className="material-symbols-outlined text-4xl text-white/20 mb-4">event_busy</span>
-                    <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
-                  </div>
-                )}
+        
+          <section id="live-schedule" className="pt-4 md:pt-8 pb-section-gap max-w-full mx-auto fade-in-up visible handjet-wrapper overflow-hidden">
+            <div className="max-w-[1400px] mx-auto px-gutter flex justify-between items-end mb-8">
+              <div>
+                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
+                <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredSchedules.length > 0 ? filteredSchedules.map((schedule: any, idx: number) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setSelectedSchedule(schedule)}
-                  className="bg-white/5 border border-white/10 hover:border-alviora-primary/50 hover:bg-white/10 rounded-xl p-6 cursor-pointer transition-all shadow-md group flex flex-col justify-between min-h-[160px]"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 ${
-                        (schedule.status || '').toLowerCase() === 'ongoing' 
-                          ? 'bg-error-container text-on-error-container' 
-                          : (schedule.status || '').toLowerCase() === 'completed' 
-                            ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' 
-                            : (schedule.is_published === true || (schedule.status || '').toLowerCase() === 'published')
-                              ? 'bg-green-500/20 text-green-400'
-                              : (schedule.has_results === true || schedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((schedule.status || '').toLowerCase()))
-                                ? 'bg-[#c69a53]/20 text-[#c69a53]'
-                                : 'bg-alviora-primary/20 text-alviora-primary'
-                      }`}>
-                        {
-                          (schedule.is_published === true || (schedule.status || '').toLowerCase() === 'published') ? 'PUBLISHED' :
-                          (schedule.has_results === true || schedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((schedule.status || '').toLowerCase())) ? 'VERIFICATION PENDING' :
-                          schedule.status || 'Scheduled'
-                        }
-                      </span>
-                      <span className="text-white/50 text-xs flex items-center gap-1 font-mono">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        {schedule.start_time ? new Date(schedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'}
-                      </span>
-                    </div>
-                    <h3 className="font-title-lg text-title-lg text-white font-bold mb-3 group-hover:text-alviora-primary transition-colors line-clamp-2 leading-tight">
-                      {schedule.items?.item_name_en || schedule.items?.name || 'Event Item'}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2 text-alviora-body text-xs mt-2 border-t border-white/10 pt-3">
-                    <span className="material-symbols-outlined text-[16px] text-alviora-primary">location_on</span>
-                    <span className="truncate">{schedule.venues?.name || `Stage ${idx + 1}`}</span>
-                  </div>
-                </div>
-              )) : (
-                <div className="col-span-full text-center py-16 bg-white/5 rounded-xl border border-white/10 flex flex-col items-center justify-center">
-                  <span className="material-symbols-outlined text-4xl text-white/20 mb-4">event_busy</span>
-                  <p className="text-alviora-body font-title-md">No events scheduled at the moment.</p>
-                </div>
-              )}
+            
+            {page === 'schedule' && (
+              <div className="max-w-[1400px] mx-auto px-gutter flex flex-wrap gap-2 mb-8">
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveFilter(tab.id)}
+                    className={`px-4 py-2 rounded-full font-title-sm text-title-sm transition-all ${
+                      activeFilter === tab.id 
+                        ? 'bg-alviora-primary text-white shadow-md' 
+                        : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="w-full relative">
+              <PremiumScheduleCarousel 
+                schedules={page === 'landing' ? marqueeSchedules : filteredSchedules} 
+                onSelectSchedule={setSelectedSchedule} 
+              />
             </div>
-          )}
-        </section>
+          </section>
+
         )}
 
         {/* Schedule Modal */}
         {selectedSchedule && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSchedule(null)}></div>
-            <div className="relative bg-[#1C3338] border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="relative bg-alviora-bg border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
               <button 
                 onClick={() => setSelectedSchedule(null)}
                 className="absolute top-4 right-4 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
@@ -717,7 +845,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
-        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible ${page === 'units' ? '' : 'border-y'}`}>
+        <section id="leaderboard" className={`bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible ${page === 'units' ? '' : 'border-transparent border-none'}`}>
           <div className="max-w-container-max mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Team Rankings</h2>
@@ -733,7 +861,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               </div>
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
-                <div key={idx} className="grid grid-cols-12 gap-4 p-4 md:px-6 md:py-8 border-b border-white/5 items-center bg-[#1c3338]/50 hover:bg-[#1f383e] transition-colors">
+                <div key={idx} className="grid grid-cols-12 gap-4 p-4 md:px-6 md:py-8 border-b border-white/5 items-center bg-alviora-bg/50 hover:bg-white/5 transition-colors">
                   <div className={`col-span-2 text-center font-['Handjet'] text-2xl md:text-3xl font-extrabold ${idx < 3 ? 'text-[#c69a53]' : 'text-white/40'}`}>
                     {unit.rank}
                   </div>
@@ -873,6 +1001,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </div>
         </section>
         )}
+            </div>
+          </div>
         </>
         )}
       </main>
@@ -913,4 +1043,13 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
 

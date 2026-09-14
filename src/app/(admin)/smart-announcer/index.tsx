@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Alert } from 'react-native';
 import { Stack } from 'expo-router';
-import { RefreshCcw, Radio, Trophy, CheckCircle } from 'lucide-react-native';
+import { RefreshCcw, Radio, Trophy, CheckCircle, QrCode, Copy, Share, ExternalLink } from 'lucide-react-native';
+import { Modal, Platform } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
+import { SsfButton } from '@/components/ui/SsfButton';
 import { supabase } from '@/core/config/supabase';
 import { useAuthStore } from '@/core/store/authStore';
 import { useFestival } from '@/core/hooks/useFestival';
 import { ui } from '@/constants/designSystem';
-import { AdminAppShell } from '@/components/layout/AdminAppShell';
+
 
 interface StrategicResult {
   result_id: string;
@@ -21,13 +24,60 @@ interface StrategicResult {
 
 export default function SmartAnnouncerPage() {
   const { user } = useAuthStore();
-  const { currentFestival } = useFestival();
+  const { useActiveFestival } = useFestival();
+  const { data: currentFestival, isLoading: festivalLoading } = useActiveFestival();
   const [results, setResults] = useState<StrategicResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+  const [announcerToken, setAnnouncerToken] = useState<string | null>(null);
+  const [generatingToken, setGeneratingToken] = useState(false);
+
+
+  
+  const handleGenerateToken = async () => {
+    if (!currentFestival?.id || !user?.tenant_id) return;
+    setGeneratingToken(true);
+    try {
+      // Check if active token exists
+      const { data: existing } = await supabase
+        .from('announcer_tokens')
+        .select('token')
+        .eq('festival_id', currentFestival.id)
+        .eq('is_active', true)
+        .single();
+        
+      if (existing?.token) {
+        setAnnouncerToken(existing.token);
+      } else {
+        // Generate new token (6 chars)
+        const newToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const { error } = await supabase
+          .from('announcer_tokens')
+          .insert({
+            tenant_id: user.tenant_id,
+            festival_id: currentFestival.id,
+            token: newToken,
+            created_by: user.id
+          });
+        if (error) throw error;
+        setAnnouncerToken(newToken);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Could not generate announcer token.");
+    } finally {
+      setGeneratingToken(false);
+    }
+  };
+
+  const openTokenModal = () => {
+    setIsTokenModalOpen(true);
+    handleGenerateToken();
+  };
 
   const fetchQueue = async () => {
-    if (!currentFestival || !user?.tenant_id) return;
+    if (!currentFestival || !user?.tenant_id) { setLoading(false); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_strategic_publish_order', {
@@ -48,6 +98,7 @@ export default function SmartAnnouncerPage() {
     fetchQueue();
   }, [currentFestival]);
 
+  
   const handlePublish = async (resultId: string, itemName: string) => {
     Alert.alert(
       "Publish Result",
@@ -62,13 +113,13 @@ export default function SmartAnnouncerPage() {
             try {
               const { error } = await supabase
                 .from('results')
-                .update({ is_published: true, published_at: new Date().toISOString() })
-                .eq('id', resultId);
+                .update({ public_visible: true, published_at: new Date().toISOString() })
+                .eq('item_id', resultId);
               
               if (error) throw error;
               
               Alert.alert("Success", "Result published successfully!");
-              fetchQueue(); // Refresh the queue
+              fetchQueue();
             } catch (err) {
               console.error(err);
               Alert.alert("Error", "Failed to publish result.");
@@ -81,8 +132,42 @@ export default function SmartAnnouncerPage() {
     );
   };
 
+  const handleHide = async (resultId: string, itemName: string) => {
+    Alert.alert(
+      "Hide Result",
+      `Are you sure you want to hide the result for ${itemName} from the public leaderboard?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Hide",
+          style: "destructive",
+          onPress: async () => {
+            setPublishing(resultId);
+            try {
+              const { error } = await supabase
+                .from('results')
+                .update({ public_visible: false })
+                .eq('item_id', resultId);
+              
+              if (error) throw error;
+              
+              Alert.alert("Success", "Result hidden successfully!");
+              fetchQueue();
+            } catch (err) {
+              console.error(err);
+              Alert.alert("Error", "Failed to hide result.");
+            } finally {
+              setPublishing(null);
+            }
+          }
+        }
+      ]
+    );
+  };
+  
+
   return (
-    <AdminAppShell>
+    <>
       <Stack.Screen options={{ title: 'Smart Announcer' }} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
@@ -90,14 +175,14 @@ export default function SmartAnnouncerPage() {
             <Text style={styles.title}>Smart Announcer Queue</Text>
             <Text style={styles.subtitle}>Strategically publish results to maintain leaderboard suspense</Text>
           </View>
-          <Pressable 
+          <TouchableOpacity 
             style={[styles.refreshBtn, loading && styles.disabledBtn]} 
             onPress={fetchQueue}
             disabled={loading}
           >
             <RefreshCcw size={20} color="white" />
             <Text style={styles.refreshText}>Recalculate</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -151,7 +236,7 @@ export default function SmartAnnouncerPage() {
                     </Text>
                   </View>
 
-                  <Pressable 
+                  <TouchableOpacity 
                     style={[styles.publishBtn, publishing === res.result_id && styles.disabledBtn]}
                     onPress={() => handlePublish(res.result_id, res.item_name)}
                     disabled={publishing === res.result_id}
@@ -164,14 +249,49 @@ export default function SmartAnnouncerPage() {
                         <Text style={styles.publishText}>Announce & Publish</Text>
                       </>
                     )}
-                  </Pressable>
+                  </TouchableOpacity>
                 </View>
               );
             })}
           </View>
         )}
-      </ScrollView>
-    </AdminAppShell>
+      
+      {/* QR Code Modal */}
+      <Modal visible={isTokenModalOpen} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <View style={{ width: '100%', maxWidth: 400, backgroundColor: 'white', borderRadius: 16, padding: 24 }}>
+            <Text style={{ fontSize: 20, fontFamily: 'Poppins_900Black', color: '#1e293b', marginBottom: 16 }}>Announcer Access</Text>
+            
+            {generatingToken ? (
+              <ActivityIndicator size="large" color="#0f766e" style={{ marginVertical: 32 }} />
+            ) : announcerToken ? (
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ padding: 16, backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 16 }}>
+                  <QRCode
+                    value={typeof window !== 'undefined' ? `${window.location.origin}/announcer/${announcerToken}` : `https://sahi-app.com/announcer/${announcerToken}`}
+                    size={160}
+                    color="#0f766e"
+                    backgroundColor="white"
+                  />
+                </View>
+                <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>Access Code</Text>
+                <Text style={{ fontFamily: 'Poppins_900Black', fontSize: 28, color: '#0f766e', letterSpacing: 4, marginBottom: 24 }}>{announcerToken}</Text>
+                
+                <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#64748b', textAlign: 'center', marginBottom: 24 }}>
+                  Scan this QR code or use the link to access the Announcer Portal. No login required.
+                </Text>
+              </View>
+            ) : null}
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+              <SsfButton label="Close" variant="outline" onPress={() => setIsTokenModalOpen(false)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+  
+</ScrollView>
+    </>
   );
 }
 
