@@ -852,16 +852,16 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               <p className="font-body-lg text-body-lg text-alviora-body">Current point standings for the top institutions.</p>
             </div>
             
-            <div className="bg-[#1f383e] rounded-xl border border-white/5 overflow-hidden shadow-2xl">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-[#182d31] font-label-sm text-label-sm text-white/50 uppercase tracking-widest font-bold">
+              <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/10 bg-black/20 font-label-sm text-label-sm text-white/60 uppercase tracking-widest font-bold">
                 <div className="col-span-2 text-center font-['Handjet']">Rank</div>
                 <div className="col-span-6 font-['Handjet']">Teams</div>
                 <div className="col-span-4 text-right font-['Handjet']">Points</div>
               </div>
 
               {topUnits.length > 0 ? topUnits.map((unit: any, idx: number) => (
-                <div key={idx} className="grid grid-cols-12 gap-4 p-4 md:px-6 md:py-8 border-b border-white/5 items-center bg-alviora-bg/50 hover:bg-white/5 transition-colors">
+                <div key={idx} className="grid grid-cols-12 gap-4 p-4 md:px-6 md:py-8 border-b border-white/5 items-center bg-transparent hover:bg-white/10 transition-colors duration-300">
                   <div className={`col-span-2 text-center font-['Handjet'] text-2xl md:text-3xl font-extrabold ${idx < 3 ? 'text-[#c69a53]' : 'text-white/40'}`}>
                     {unit.rank}
                   </div>
