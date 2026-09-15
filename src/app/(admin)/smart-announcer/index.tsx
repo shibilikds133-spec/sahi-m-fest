@@ -24,7 +24,7 @@ interface StrategicResult {
 }
 
 export default function SmartAnnouncerPage() {
-  const { user } = useAuthStore();
+  const { user, tenant_id } = useAuthStore();
   const { useActiveFestival } = useFestival();
   const { data: currentFestival, isLoading: festivalLoading } = useActiveFestival();
   const [results, setResults] = useState<StrategicResult[]>([]);
@@ -37,7 +37,7 @@ export default function SmartAnnouncerPage() {
 
   
   const handleGenerateToken = async () => {
-    if (!currentFestival?.id || !user?.tenant_id) return;
+    if (!currentFestival?.id || !tenant_id) return;
     setGeneratingToken(true);
     try {
       // Check if active token exists
@@ -56,10 +56,10 @@ export default function SmartAnnouncerPage() {
         const { error } = await supabase
           .from('announcer_tokens')
           .insert({
-            tenant_id: user.tenant_id,
+            tenant_id,
             festival_id: currentFestival.id,
             token: newToken,
-            created_by: user.id
+            created_by: user?.id
           });
         if (error) throw error;
         setAnnouncerToken(newToken);
@@ -78,12 +78,12 @@ export default function SmartAnnouncerPage() {
   };
 
   const fetchQueue = async () => {
-    if (!currentFestival || !user?.tenant_id) { setLoading(false); return; }
+    if (!currentFestival || !tenant_id) { setLoading(false); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_strategic_publish_order', {
         p_festival_id: currentFestival.id,
-        p_tenant_id: user.tenant_id
+        p_tenant_id: tenant_id
       });
       if (error) throw error;
       setResults(data || []);
@@ -200,60 +200,50 @@ export default function SmartAnnouncerPage() {
         ) : (
           <View style={styles.list}>
             {results.map((res, index) => {
-              const isTop = index === 0;
-              return (
-                <View key={res.result_id} style={[styles.card, isTop && styles.topCard]}>
-                  {isTop && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>🔥 Recommended Next</Text>
+                const isTop = index === 0;
+                return (
+                  <View key={res.result_id} style={[styles.row, isTop && styles.topRow]}>
+                    <View style={styles.rowLeft}>
+                      {isTop && (
+                        <View style={styles.badgeSmall}>
+                          <Text style={styles.badgeTextSmall}>? Recommended Next</Text>
+                        </View>
+                      )}
+                      <Text style={styles.itemName}>{res.item_name}</Text>
+                      <Text style={styles.orderTextSmall}>Order: {res.recommended_order} � Suspense Score: {res.suspense_score}</Text>
                     </View>
-                  )}
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.itemName}>{res.item_name}</Text>
-                    <Text style={styles.orderText}>Order: {res.recommended_order}</Text>
-                  </View>
-                  
-                  <View style={styles.impactContainer}>
-                    <Text style={styles.impactTitle}>If published, Leaderboard will be:</Text>
-                    <View style={styles.statsRow}>
-                      <View style={styles.statBox}>
-                        <Trophy size={16} color="#fbbf24" />
-                        <Text style={styles.statLabel}>1st Place</Text>
-                        <Text style={styles.statValue}>{res.new_1st_points} pts</Text>
+                    
+                    <View style={styles.rowMiddle}>
+                      <Text style={styles.impactTitleSmall}>Projected Leaderboard</Text>
+                      <View style={styles.statsCompact}>
+                        <Text style={styles.statCompactText}><Trophy size={14} color="#fbbf24" /> 1st: {res.new_1st_points}</Text>
+                        <Text style={styles.statCompactText}><Trophy size={14} color="#64748b" /> 2nd: {res.new_2nd_points}</Text>
+                        <Text style={styles.statCompactText}><Trophy size={14} color="#b45309" /> 3rd: {res.new_3rd_points}</Text>
                       </View>
-                      <View style={styles.statBox}>
-                        <Trophy size={16} color={ui.colors.textSubtle} />
-                        <Text style={styles.statLabel}>2nd Place</Text>
-                        <Text style={styles.statValue}>{res.new_2nd_points} pts</Text>
-                      </View>
-                      <View style={styles.statBox}>
-                        <Trophy size={16} color="#b45309" />
-                        <Text style={styles.statLabel}>3rd Place</Text>
-                        <Text style={styles.statValue}>{res.new_3rd_points} pts</Text>
-                      </View>
+                      <Text style={styles.leaderTextSmall}>
+                        Leader: <Text style={styles.leaderHighlight}>{res.leader_name}</Text>
+                      </Text>
                     </View>
-                    <Text style={styles.leaderText}>
-                      Leader will be: <Text style={styles.leaderHighlight}>{res.leader_name}</Text> (Suspense Score: {res.suspense_score})
-                    </Text>
-                  </View>
 
-                  <TouchableOpacity 
-                    style={[styles.publishBtn, publishing === res.result_id && styles.disabledBtn]}
-                    onPress={() => handlePublish(res.result_id, res.item_name)}
-                    disabled={publishing === res.result_id}
-                  >
-                    {publishing === res.result_id ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
-                      <>
-                        <CheckCircle size={18} color="white" />
-                        <Text style={styles.publishText}>Announce & Publish</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
+                    <View style={styles.rowRight}>
+                      <TouchableOpacity 
+                        style={[styles.publishBtnSmall, publishing === res.result_id && styles.disabledBtn]}
+                        onPress={() => handlePublish(res.result_id, res.item_name)}
+                        disabled={publishing === res.result_id}
+                      >
+                        {publishing === res.result_id ? (
+                          <ActivityIndicator size="small" color="white" />
+                        ) : (
+                          <>
+                            <CheckCircle size={16} color="white" />
+                            <Text style={styles.publishTextSmall}>Announce</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
           </View>
         )}
       
@@ -351,10 +341,12 @@ const styles = StyleSheet.create({
   list: {
     gap: 16,
   },
-  card: {
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 8,
+    padding: 16,
     borderWidth: 1,
     borderColor: ui.colors.border,
     shadowColor: ui.shadow.shadowColor,
@@ -362,104 +354,90 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
+    gap: 16,
+    flexWrap: 'wrap',
   },
-  topCard: {
+  topRow: {
     borderColor: ui.colors.primary,
     borderWidth: 2,
   },
-  badge: {
+  rowLeft: {
+    flex: 1,
+    minWidth: 200,
+  },
+  badgeSmall: {
     backgroundColor: ui.colors.primary,
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    marginBottom: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 8,
   },
-  badgeText: {
+  badgeTextSmall: {
     color: 'white',
     fontWeight: '700',
-    fontSize: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    fontSize: 10,
+    textTransform: 'uppercase',
   },
   itemName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: ui.colors.text,
+    marginBottom: 4,
   },
-  orderText: {
-    fontSize: 14,
-    fontWeight: '600',
+  orderTextSmall: {
+    fontSize: 12,
+    fontWeight: '500',
     color: ui.colors.textMuted,
-    backgroundColor: ui.colors.surfaceStrong,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 100,
   },
-  impactContainer: {
+  rowMiddle: {
+    flex: 2,
+    minWidth: 250,
     backgroundColor: ui.colors.surfaceMuted,
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  impactTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ui.colors.text,
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  statBox: {
-    flex: 1,
-    minWidth: 100,
-    backgroundColor: 'white',
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: ui.colors.border,
-    alignItems: 'center',
-    gap: 4,
   },
-  statLabel: {
+  impactTitleSmall: {
     fontSize: 12,
+    fontWeight: '600',
     color: ui.colors.textMuted,
-    fontWeight: '500',
+    marginBottom: 8,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
+  statsCompact: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  statCompactText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: ui.colors.text,
   },
-  leaderText: {
-    fontSize: 14,
+  leaderTextSmall: {
+    fontSize: 12,
     color: ui.colors.textMuted,
-    textAlign: 'center',
   },
   leaderHighlight: {
     fontWeight: '700',
     color: ui.colors.text,
   },
-  publishBtn: {
+  rowRight: {
+    justifyContent: 'center',
+  },
+  publishBtnSmall: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: ui.colors.text,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
     gap: 8,
   },
-  publishText: {
+  publishTextSmall: {
     color: 'white',
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
   },
 });

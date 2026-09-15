@@ -181,7 +181,7 @@ export default function ResultsPage() {
   );
 
   const getMarkSummary = React.useCallback((regId: string) => {
-    const entries = getJudgeMarks(regId).filter((e: any) => e.is_final);
+    const entries = getJudgeMarks(regId).filter((e: any) => e.is_final || e.total_mark != null);
     if (!entries.length) return null;
     const rawAverage = entries.reduce(
       (sum: number, entry: any) => sum + Number(entry.total_mark ?? 0),
@@ -238,7 +238,7 @@ export default function ResultsPage() {
     let anySubmissions = false;
 
     regs.forEach(reg => {
-      const marks = getJudgeMarks(reg.id).filter(m => m.is_final);
+      const marks = getJudgeMarks(reg.id).filter(m => m.is_final || m.total_mark != null);
       if (marks.length > 0) anySubmissions = true;
       if (marks.length >= expectedJudges) fullyReadyCount++;
     });
@@ -340,7 +340,7 @@ export default function ResultsPage() {
       let anySubmissions = false;
 
       regs.forEach(reg => {
-        const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final);
+        const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null);
         if (marks.length === 0) {
           missingMarksCount++;
         } else {
