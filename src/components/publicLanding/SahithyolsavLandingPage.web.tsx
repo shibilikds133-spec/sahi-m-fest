@@ -523,8 +523,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
       {/* TopAppBar (Ticker) */}
       <div className="bg-white/5 backdrop-blur-md text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-white/10">
-        <div className="flex items-center gap-3 w-full max-w-container-max mx-auto">
-            <span className="material-symbols-outlined text-alviora-accent shrink-0 z-10" style={{fontVariationSettings:"'FILL' 1", fontSize: "18px"}}>sensors</span>
+        <div className="flex items-center md:gap-3 w-full max-w-container-max mx-auto px-2 md:px-0">
+            <span className="hidden md:block material-symbols-outlined text-alviora-accent shrink-0 z-10" style={{fontVariationSettings:"'FILL' 1", fontSize: "18px"}}>sensors</span>
             <div className="marquee-container flex-1 overflow-hidden relative" style={{ display: 'flex', alignItems: 'center' }}>
               <span className="marquee-content whitespace-nowrap">{tickerString}</span>
             </div>
