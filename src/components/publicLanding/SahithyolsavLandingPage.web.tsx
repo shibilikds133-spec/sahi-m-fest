@@ -472,8 +472,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   return (
     <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-[#050505] text-alviora-body font-body-md antialiased relative">
       {/* Fixed Ambient Background Glows */}
-      <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-gradient-to-br from-[#1C5FA8]/15 via-[#1C5FA8]/5 to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
-      <div className="fixed bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tl from-[#1C5FA8]/15 via-[#1C5FA8]/5 to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="fixed top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1C5FA8]/20 via-black/5 to-transparent rounded-full blur-[100px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1C5FA8]/20 via-black/5 to-transparent rounded-full blur-[100px] pointer-events-none z-0"></div>
       <InitialLoader isReady={isAppReady} />
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
@@ -617,8 +617,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </>)}
           
           {/* POST-HERO BACKGROUND WRAPPER */}
-          <div className="relative w-full bg-[#050505] bg-cover bg-top bg-no-repeat">
-            <div className="absolute inset-0 bg-[#050505] z-0 pointer-events-none"></div>
+          <div className="relative w-full bg-transparent">
+            {/* Background removed for uniformity */}
             <div className="relative z-10 flex flex-col">
               {page === 'landing' && (<>
         {/* Stats Section */}
@@ -839,7 +839,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
           <div className="max-w-[1200px] mx-auto">
             {/* The main container */}
-            <div className="bg-[#121212] rounded-[2.5rem] border border-[#222] p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row gap-12">
+            <div className="bg-[#121212]/70 backdrop-blur-3xl rounded-[2.5rem] border border-[#333] p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row gap-12">
               
               {/* Left Side: Text and List */}
               <div className="flex-1 relative z-10 flex flex-col justify-center">
