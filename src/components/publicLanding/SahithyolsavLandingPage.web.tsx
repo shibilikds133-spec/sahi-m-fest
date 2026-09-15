@@ -635,6 +635,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </div>
         </div>
 
+        </>)}
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
         <section id="leaderboard" className={`py-section-gap px-gutter fade-in-up visible relative ${page === 'units' ? '' : 'border-none'}`}>
