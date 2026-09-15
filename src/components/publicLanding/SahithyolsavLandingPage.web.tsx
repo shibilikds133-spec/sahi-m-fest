@@ -843,16 +843,11 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               
               {/* Left Side: Text and List */}
               <div className="flex-1 relative z-10 flex flex-col justify-center">
-                {/* Rotated Badge */}
-                <div className="hidden lg:block absolute -left-[5.5rem] top-24 -rotate-90 origin-bottom-right">
-                  <span className="bg-[#1C5FA8] text-white text-[12px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 rounded-sm">
-                    LEADERBOARD
-                  </span>
-                </div>
+                {/* Rotated Badge removed */}
                 
                 <div className="pl-0 lg:pl-12">
-                  <h2 className="text-4xl md:text-5xl font-bold glass-text mb-4 leading-tight tracking-tight">
-                    Team <span className="inline-block bg-[#1C5FA8] text-white px-4 py-1 rounded-2xl -translate-y-1">Rankings</span>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight tracking-tight">
+                    <span className="glass-text">Team</span> <span className="inline-block bg-[#1C5FA8] text-white px-4 py-1 rounded-2xl -translate-y-1">Rankings</span>
                   </h2>
                   <p className="text-white/60 text-sm md:text-base mb-10 max-w-md leading-relaxed">
                     Current point standings for the top institutions. Witness the creative and competitive spirit unfold on the grand stage.
