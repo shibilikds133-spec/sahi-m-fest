@@ -636,6 +636,188 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         </div>
 
         </>)}
+        {/* Live Schedule */}
+        {(page === 'landing' || page === 'schedule') && (
+        
+          <section id="live-schedule" className="pt-4 md:pt-8 pb-section-gap max-w-full mx-auto fade-in-up visible handjet-wrapper overflow-hidden">
+            <div className="max-w-[1400px] mx-auto px-gutter flex justify-between items-end mb-8">
+              <div>
+                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
+                <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
+              </div>
+            </div>
+            
+            {page === 'schedule' && (
+              <div className="max-w-[1400px] mx-auto px-gutter flex flex-wrap gap-2 mb-8">
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveFilter(tab.id)}
+                    className={`px-4 py-2 rounded-full font-title-sm text-title-sm transition-all ${
+                      activeFilter === tab.id 
+                        ? 'bg-alviora-primary text-white shadow-md' 
+                        : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="w-full relative">
+              <PremiumScheduleCarousel 
+                schedules={page === 'landing' ? marqueeSchedules : filteredSchedules} 
+                onSelectSchedule={setSelectedSchedule} 
+              />
+            </div>
+          </section>
+
+        )}
+
+        {/* Schedule Modal */}
+        {selectedSchedule && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSchedule(null)}></div>
+            <div className="relative bg-alviora-bg border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setSelectedSchedule(null)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+              
+              <div className="mb-6 pr-8">
+                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 ${
+                  (selectedSchedule.status || '').toLowerCase() === 'ongoing' 
+                    ? 'bg-error-container text-on-error-container' 
+                    : (selectedSchedule.status || '').toLowerCase() === 'completed' 
+                      ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' 
+                      : (selectedSchedule.is_published === true || (selectedSchedule.status || '').toLowerCase() === 'published')
+                        ? 'bg-green-500/20 text-green-400'
+                        : (selectedSchedule.has_results === true || selectedSchedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((selectedSchedule.status || '').toLowerCase()))
+                          ? 'bg-[#c69a53]/20 text-[#c69a53]'
+                          : 'bg-alviora-primary/20 text-alviora-primary'
+                }`}>
+                  {
+                    (selectedSchedule.is_published === true || (selectedSchedule.status || '').toLowerCase() === 'published') ? 'PUBLISHED' :
+                    (selectedSchedule.has_results === true || selectedSchedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((selectedSchedule.status || '').toLowerCase())) ? 'VERIFICATION PENDING' :
+                    selectedSchedule.status || 'Scheduled'
+                  }
+                </span>
+                <h2 className="text-3xl font-bold text-white mb-2 leading-tight">{selectedSchedule.items?.item_name_en || selectedSchedule.items?.name || 'Event Item'}</h2>
+                {selectedSchedule.items?.category_name && (
+                  <p className="text-alviora-primary text-sm font-bold uppercase tracking-wider">Category: {selectedSchedule.items?.category_name}</p>
+                )}
+              </div>
+              
+              {/* Dynamic Status Alert Block */}
+              {(() => {
+                let stage = {
+                  title: "Scheduled",
+                  description: "This event is scheduled but has not started yet.",
+                  bgColor: "bg-[#009499]/10", borderColor: "border-[#009499]/30", textColor: "text-[#009499]", icon: "schedule"
+                };
+
+                const schedStatus = (selectedSchedule.status || '').toLowerCase();
+                const resStatus = (selectedSchedule.result_status || selectedSchedule.items?.result_status || '').toLowerCase();
+                
+                const isPublished = selectedSchedule.is_published === true || selectedSchedule.items?.result_published || schedStatus === 'published' || resStatus === 'published';
+                const isUnderVerification = selectedSchedule.has_results === true || ['mark submitted', 'checking pending', 'checking completed', 'mark_submitted', 'checking_pending', 'checking_completed'].includes(schedStatus) || ['mark_submitted', 'checking_pending', 'checking_completed'].includes(resStatus);
+
+                if (isPublished) {
+                  stage = {
+                    title: "Results Published",
+                    description: "The results for this event are now available on the public leaderboard.",
+                    bgColor: "bg-green-500/10", borderColor: "border-green-500/30", textColor: "text-green-400", icon: "verified"
+                  };
+                } else if (isUnderVerification) {
+                  stage = {
+                    title: "Results Under Verification",
+                    description: "Results are currently being verified and will be published soon.",
+                    bgColor: "bg-[#c69a53]/10", borderColor: "border-[#c69a53]/30", textColor: "text-[#c69a53]", icon: "rule"
+                  };
+                } else if (schedStatus === 'completed') {
+                  stage = {
+                    title: "Competition Ended",
+                    description: "This event has successfully concluded. Awaiting evaluations.",
+                    bgColor: "bg-[#c69a53]/10", borderColor: "border-[#c69a53]/30", textColor: "text-[#c69a53]", icon: "task_alt"
+                  };
+                } else if (schedStatus === 'ongoing') {
+                  stage = {
+                    title: "Live Now",
+                    description: "This competition is currently happening at the venue.",
+                    bgColor: "bg-red-500/10", borderColor: "border-red-500/30", textColor: "text-red-400", icon: "sensors"
+                  };
+                }
+
+                return (
+                  <div className={`mb-6 ${stage.bgColor} border ${stage.borderColor} rounded-xl p-4 flex items-start gap-3 shadow-sm backdrop-blur-sm`}>
+                    <span className={`material-symbols-outlined ${stage.textColor}`}>{stage.icon}</span>
+                    <div>
+                      <div className={`${stage.textColor} font-bold text-sm`}>{stage.title}</div>
+                      <div className={`${stage.textColor} opacity-80 text-xs mt-1`}>{stage.description}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="space-y-5 mb-8 bg-black/20 p-5 rounded-2xl border border-white/5">
+                <div className="flex items-start gap-4 text-alviora-body">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white">location_on</span>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Venue</div>
+                    <div className="text-white font-medium text-lg">{selectedSchedule.venues?.name || 'TBA'}</div>
+                    {selectedSchedule.venues?.location && <div className="text-sm mt-1">{selectedSchedule.venues.location}</div>}
+                  </div>
+                </div>
+                
+                <div className="h-[1px] w-full bg-white/5"></div>
+                
+                <div className="flex items-start gap-4 text-alviora-body">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white">event</span>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Time & Date</div>
+                    <div className="text-white font-medium text-lg">
+                      {selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'} 
+                      {selectedSchedule.end_time ? ` - ${new Date(selectedSchedule.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ''}
+                    </div>
+                    <div className="text-sm mt-1">{selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : ''}</div>
+                  </div>
+                </div>
+                
+                {selectedSchedule.judges && (
+                  <>
+                    <div className="h-[1px] w-full bg-white/5"></div>
+                    <div className="flex items-start gap-4 text-alviora-body">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-white">gavel</span>
+                      </div>
+                      <div>
+                        <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Assigned Judges</div>
+                        <div className="text-white font-medium">
+                          {Array.isArray(selectedSchedule.judges) ? selectedSchedule.judges.map((j:any) => j.name || j).join(', ') : selectedSchedule.judges}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setSelectedSchedule(null)}
+                className="w-full bg-white hover:bg-gray-200 text-black py-4 rounded-xl font-bold transition-colors shadow-lg"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
         <section id="leaderboard" className={`py-section-gap px-gutter fade-in-up visible relative ${page === 'units' ? '' : 'border-none'}`}>
