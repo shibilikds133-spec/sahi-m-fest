@@ -12,6 +12,15 @@ module.exports = {
       },
     },
     extend: {
+      animation: {
+        marquee: 'marquee 25s linear infinite',
+      },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        }
+      },
       fontFamily: {
         "barabara": ["Barabara", "sans-serif"],
         "headline-lg": ["Plus Jakarta Sans"],
