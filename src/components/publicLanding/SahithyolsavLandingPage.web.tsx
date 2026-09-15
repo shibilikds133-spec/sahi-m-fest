@@ -592,7 +592,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   <span className="material-symbols-outlined">emoji_events</span>
                   View Leaderboard
                 </a>
-                <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-white/10 transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
+                <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-[#333] transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
                   <span className="material-symbols-outlined">calendar_today</span>
                   Today's Schedule
                 </a>
@@ -606,235 +606,59 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </>)}
           
           {/* POST-HERO BACKGROUND WRAPPER */}
-          <div className="relative w-full bg-cover bg-top bg-no-repeat">
-            <div className="absolute inset-0 bg-alviora-bg/15 z-0 pointer-events-none transition-colors duration-300"></div>
+          <div className="relative w-full bg-[#050505] bg-cover bg-top bg-no-repeat">
+            <div className="absolute inset-0 bg-[#050505] z-0 pointer-events-none"></div>
             <div className="relative z-10 flex flex-col">
               {page === 'landing' && (<>
         {/* Stats Section */}
         <div className="relative z-20 max-w-5xl mx-auto px-4 -mt-10 mb-20 fade-in-up visible">
-          <div className="bg-[#0a121c]/90 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 flex flex-wrap items-center justify-between md:justify-around gap-6 shadow-2xl">
+          <div className="bg-[#121212] border border-[#222] rounded-[2rem] p-6 md:p-8 flex flex-wrap items-center justify-between md:justify-around gap-6 shadow-2xl">
             <div className="text-center">
               <div className="text-3xl md:text-5xl font-['Handjet'] font-bold text-white mb-1">{stats.campuses}+</div>
               <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/50 font-bold">Teams</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-white/10"></div>
+            <div className="hidden md:block w-px h-12 bg-[#333]"></div>
             <div className="text-center">
               <div className="text-3xl md:text-5xl font-['Handjet'] font-bold text-white mb-1">100+</div>
               <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/50 font-bold">Items</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-white/10"></div>
+            <div className="hidden md:block w-px h-12 bg-[#333]"></div>
             <div className="text-center">
               <div className="text-3xl md:text-5xl font-['Handjet'] font-bold text-white mb-1">{stats.days}</div>
               <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/50 font-bold">Days of Digital</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-white/10"></div>
+            <div className="hidden md:block w-px h-12 bg-[#333]"></div>
             <div className="text-center">
               <div className="text-3xl md:text-5xl font-['Handjet'] font-bold text-white mb-1">40+</div>
               <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/50 font-bold">Participants</div>
             </div>
           </div>
-        </div></>)}
-        {/* Live Schedule */}
-        {(page === 'landing' || page === 'schedule') && (
-        
-          <section id="live-schedule" className="pt-4 md:pt-8 pb-section-gap max-w-full mx-auto fade-in-up visible handjet-wrapper overflow-hidden">
-            <div className="max-w-[1400px] mx-auto px-gutter flex justify-between items-end mb-8">
-              <div>
-                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
-                <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
-              </div>
-            </div>
-            
-            {page === 'schedule' && (
-              <div className="max-w-[1400px] mx-auto px-gutter flex flex-wrap gap-2 mb-8">
-                {filterTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveFilter(tab.id)}
-                    className={`px-4 py-2 rounded-full font-title-sm text-title-sm transition-all ${
-                      activeFilter === tab.id 
-                        ? 'bg-alviora-primary text-white shadow-md' 
-                        : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="w-full relative">
-              <PremiumScheduleCarousel 
-                schedules={page === 'landing' ? marqueeSchedules : filteredSchedules} 
-                onSelectSchedule={setSelectedSchedule} 
-              />
-            </div>
-          </section>
-
-        )}
-
-        {/* Schedule Modal */}
-        {selectedSchedule && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSchedule(null)}></div>
-            <div className="relative bg-alviora-bg border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-              <button 
-                onClick={() => setSelectedSchedule(null)}
-                className="absolute top-4 right-4 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-              
-              <div className="mb-6 pr-8">
-                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 ${
-                  (selectedSchedule.status || '').toLowerCase() === 'ongoing' 
-                    ? 'bg-error-container text-on-error-container' 
-                    : (selectedSchedule.status || '').toLowerCase() === 'completed' 
-                      ? 'bg-[#a9f5d0]/20 text-[#a9f5d0]' 
-                      : (selectedSchedule.is_published === true || (selectedSchedule.status || '').toLowerCase() === 'published')
-                        ? 'bg-green-500/20 text-green-400'
-                        : (selectedSchedule.has_results === true || selectedSchedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((selectedSchedule.status || '').toLowerCase()))
-                          ? 'bg-[#c69a53]/20 text-[#c69a53]'
-                          : 'bg-alviora-primary/20 text-alviora-primary'
-                }`}>
-                  {
-                    (selectedSchedule.is_published === true || (selectedSchedule.status || '').toLowerCase() === 'published') ? 'PUBLISHED' :
-                    (selectedSchedule.has_results === true || selectedSchedule.has_marks === true || ['mark submitted', 'checking pending', 'checking completed'].includes((selectedSchedule.status || '').toLowerCase())) ? 'VERIFICATION PENDING' :
-                    selectedSchedule.status || 'Scheduled'
-                  }
-                </span>
-                <h2 className="text-3xl font-bold text-white mb-2 leading-tight">{selectedSchedule.items?.item_name_en || selectedSchedule.items?.name || 'Event Item'}</h2>
-                {selectedSchedule.items?.category_name && (
-                  <p className="text-alviora-primary text-sm font-bold uppercase tracking-wider">Category: {selectedSchedule.items?.category_name}</p>
-                )}
-              </div>
-              
-              {/* Dynamic Status Alert Block */}
-              {(() => {
-                let stage = {
-                  title: "Scheduled",
-                  description: "This event is scheduled but has not started yet.",
-                  bgColor: "bg-[#009499]/10", borderColor: "border-[#009499]/30", textColor: "text-[#009499]", icon: "schedule"
-                };
-
-                const schedStatus = (selectedSchedule.status || '').toLowerCase();
-                const resStatus = (selectedSchedule.result_status || selectedSchedule.items?.result_status || '').toLowerCase();
-                
-                const isPublished = selectedSchedule.is_published === true || selectedSchedule.items?.result_published || schedStatus === 'published' || resStatus === 'published';
-                const isUnderVerification = selectedSchedule.has_results === true || ['mark submitted', 'checking pending', 'checking completed', 'mark_submitted', 'checking_pending', 'checking_completed'].includes(schedStatus) || ['mark_submitted', 'checking_pending', 'checking_completed'].includes(resStatus);
-
-                if (isPublished) {
-                  stage = {
-                    title: "Results Published",
-                    description: "The results for this event are now available on the public leaderboard.",
-                    bgColor: "bg-green-500/10", borderColor: "border-green-500/30", textColor: "text-green-400", icon: "verified"
-                  };
-                } else if (isUnderVerification) {
-                  stage = {
-                    title: "Results Under Verification",
-                    description: "Results are currently being verified and will be published soon.",
-                    bgColor: "bg-[#c69a53]/10", borderColor: "border-[#c69a53]/30", textColor: "text-[#c69a53]", icon: "rule"
-                  };
-                } else if (schedStatus === 'completed') {
-                  stage = {
-                    title: "Competition Ended",
-                    description: "This event has successfully concluded. Awaiting evaluations.",
-                    bgColor: "bg-[#c69a53]/10", borderColor: "border-[#c69a53]/30", textColor: "text-[#c69a53]", icon: "task_alt"
-                  };
-                } else if (schedStatus === 'ongoing') {
-                  stage = {
-                    title: "Live Now",
-                    description: "This competition is currently happening at the venue.",
-                    bgColor: "bg-red-500/10", borderColor: "border-red-500/30", textColor: "text-red-400", icon: "sensors"
-                  };
-                }
-
-                return (
-                  <div className={`mb-6 ${stage.bgColor} border ${stage.borderColor} rounded-xl p-4 flex items-start gap-3 shadow-sm backdrop-blur-sm`}>
-                    <span className={`material-symbols-outlined ${stage.textColor}`}>{stage.icon}</span>
-                    <div>
-                      <div className={`${stage.textColor} font-bold text-sm`}>{stage.title}</div>
-                      <div className={`${stage.textColor} opacity-80 text-xs mt-1`}>{stage.description}</div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div className="space-y-5 mb-8 bg-black/20 p-5 rounded-2xl border border-white/5">
-                <div className="flex items-start gap-4 text-alviora-body">
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-white">location_on</span>
-                  </div>
-                  <div>
-                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Venue</div>
-                    <div className="text-white font-medium text-lg">{selectedSchedule.venues?.name || 'TBA'}</div>
-                    {selectedSchedule.venues?.location && <div className="text-sm mt-1">{selectedSchedule.venues.location}</div>}
-                  </div>
-                </div>
-                
-                <div className="h-[1px] w-full bg-white/5"></div>
-                
-                <div className="flex items-start gap-4 text-alviora-body">
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-white">event</span>
-                  </div>
-                  <div>
-                    <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Time & Date</div>
-                    <div className="text-white font-medium text-lg">
-                      {selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBA'} 
-                      {selectedSchedule.end_time ? ` - ${new Date(selectedSchedule.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ''}
-                    </div>
-                    <div className="text-sm mt-1">{selectedSchedule.start_time ? new Date(selectedSchedule.start_time).toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : ''}</div>
-                  </div>
-                </div>
-                
-                {selectedSchedule.judges && (
-                  <>
-                    <div className="h-[1px] w-full bg-white/5"></div>
-                    <div className="flex items-start gap-4 text-alviora-body">
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-white">gavel</span>
-                      </div>
-                      <div>
-                        <div className="text-white/60 text-xs uppercase tracking-widest mb-1">Assigned Judges</div>
-                        <div className="text-white font-medium">
-                          {Array.isArray(selectedSchedule.judges) ? selectedSchedule.judges.map((j:any) => j.name || j).join(', ') : selectedSchedule.judges}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              <button 
-                onClick={() => setSelectedSchedule(null)}
-                className="w-full bg-white hover:bg-gray-200 text-black py-4 rounded-xl font-bold transition-colors shadow-lg"
-              >
-                Close Details
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Top Leaderboard */}
         {(page === 'landing' || page === 'units') && (
-        <section id="leaderboard" className={`py-section-gap px-gutter fade-in-up visible ${page === 'units' ? '' : 'border-none'}`}>
+        <section id="leaderboard" className={`py-section-gap px-gutter fade-in-up visible relative ${page === 'units' ? '' : 'border-none'}`}>
+          
+          {/* Subtle Glows in background like the image */}
+          <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#1C5FA8]/10 rounded-full blur-[120px] -translate-y-1/2 pointer-events-none"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#1C5FA8]/10 rounded-full blur-[120px] pointer-events-none"></div>
+
           <div className="max-w-[1200px] mx-auto">
             {/* The main container */}
-            <div className="bg-[#0d1723]/90 md:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row gap-12">
+            <div className="bg-[#121212] rounded-[2.5rem] border border-[#222] p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row gap-12">
               
               {/* Left Side: Text and List */}
               <div className="flex-1 relative z-10 flex flex-col justify-center">
                 {/* Rotated Badge */}
                 <div className="hidden lg:block absolute -left-[5.5rem] top-24 -rotate-90 origin-bottom-right">
-                  <span className="bg-[#c69a53] text-black text-[12px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 rounded-sm shadow-md">
+                  <span className="bg-[#1C5FA8] text-white text-[12px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 rounded-sm">
                     LEADERBOARD
                   </span>
                 </div>
                 
                 <div className="pl-0 lg:pl-12">
                   <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
-                    Team <span className="inline-block bg-[#1C5FA8] text-white px-4 py-1 rounded-2xl -translate-y-1 shadow-lg">Rankings</span>
+                    Team <span className="inline-block bg-[#1C5FA8] text-white px-4 py-1 rounded-2xl -translate-y-1">Rankings</span>
                   </h2>
                   <p className="text-white/60 text-sm md:text-base mb-10 max-w-md leading-relaxed">
                     Current point standings for the top institutions. Witness the creative and competitive spirit unfold on the grand stage.
@@ -843,7 +667,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   {/* Top Teams List */}
                   <div className="space-y-4 max-w-md">
                     {topUnits.slice(0, 4).map((unit: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between border border-white/10 bg-black/20 hover:bg-white/5 hover:border-white/20 transition-all rounded-[2rem] px-6 py-4 cursor-pointer group">
+                      <div key={idx} className="flex items-center justify-between border border-[#333] bg-[#0A0A0A] hover:bg-[#1A1A1A] hover:border-[#444] transition-all rounded-[2rem] px-6 py-4 cursor-pointer group">
                         <div className="flex items-center gap-6">
                           <span className="font-['Handjet'] text-[#1C5FA8] text-3xl font-bold">
                             {String(idx + 1).padStart(2, '0')}
@@ -859,7 +683,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                       </div>
                     ))}
                     {topUnits.length === 0 && (
-                      <div className="text-white/50 text-sm italic py-8 text-center border border-white/5 rounded-3xl bg-black/20">Leaderboard data will appear here once results are published.</div>
+                      <div className="text-white/50 text-sm italic py-8 text-center border border-[#333] rounded-3xl bg-[#0A0A0A]">Leaderboard data will appear here once results are published.</div>
                     )}
                   </div>
                 </div>
@@ -868,31 +692,25 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               {/* Right Side: Bento Grid */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 relative z-10">
                 {/* Main Large Image */}
-                <div className="col-span-1 md:col-span-1 md:row-span-2 rounded-[2.5rem] overflow-hidden border border-white/10 relative h-[350px] md:h-auto group">
-                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-110" style={{ backgroundImage: "url('/images/schedule/bg-1.jpg')", filter: "grayscale(100%) brightness(0.8)" }}></div>
-                   <div className="absolute inset-0 bg-[#1C5FA8]/20 mix-blend-overlay"></div>
-                   
-                   {/* Graphic text overlay like in the image */}
-                   <div className="absolute inset-0 flex items-center justify-center p-6 opacity-30">
-                     <div className="w-[85%] h-[85%] border-2 border-[#1C5FA8]/50 rounded-[1.5rem] transform rotate-3 transition-transform group-hover:rotate-6"></div>
-                   </div>
+                <div className="col-span-1 md:col-span-1 md:row-span-2 rounded-[2.5rem] overflow-hidden bg-[#1A1A1A] relative h-[350px] md:h-auto group">
+                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105" style={{ backgroundImage: "url('/images/schedule/bg-1.jpg')", filter: "grayscale(100%)" }}></div>
                 </div>
 
                 {/* Top Right Card */}
-                <div className="bg-[#121f2d]/90 backdrop-blur-md rounded-[2.5rem] border border-white/10 p-8 flex flex-col justify-center gap-6 items-center text-center shadow-lg hover:border-white/20 transition-colors">
+                <div className="bg-[#181818] rounded-[2.5rem] border border-[#222] p-8 flex flex-col justify-center gap-6 items-center text-center shadow-lg hover:border-[#333] transition-colors">
                   <p className="text-white/70 text-sm leading-relaxed">Ever wondered how the complete standings look?</p>
                   <button onClick={() => router.push(`/leaderboard/unit-rankings?tenant_id=${tenantId}`)} className="flex items-center gap-3 text-white font-bold text-lg group/btn">
                     See how
                     <br/>they perform
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover/btn:bg-[#1C5FA8] transition-colors shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-[#222] border border-[#333] flex items-center justify-center group-hover/btn:bg-[#1C5FA8] group-hover/btn:border-[#1C5FA8] transition-colors shrink-0">
                       <span className="material-symbols-outlined text-sm">north_east</span>
                     </div>
                   </button>
                 </div>
 
                 {/* Bottom Right Highlight Card */}
-                <div className="bg-[#1C5FA8] rounded-[2.5rem] p-8 flex flex-col justify-between shadow-[0_0_40px_rgba(28,95,168,0.3)] relative overflow-hidden group">
-                  <div className="absolute -right-12 -top-12 w-40 h-40 bg-white/20 rounded-full blur-3xl group-hover:bg-white/30 transition-colors"></div>
+                <div className="bg-[#1C5FA8] rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden group">
+                  <div className="absolute -right-12 -top-12 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors"></div>
                   
                   <p className="text-white/90 text-sm mb-6 relative z-10 font-medium leading-relaxed">
                     Looking for the leading champions who dominate the festival?
@@ -902,7 +720,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                      <span className="text-white font-bold text-xl tracking-wide max-w-[100px]">
                        Meet our leader
                      </span>
-                     <button onClick={() => router.push(`/leaderboard/unit-rankings?tenant_id=${tenantId}`)} className="w-12 h-12 rounded-full bg-white text-[#1C5FA8] flex items-center justify-center shadow-md transform group-hover:scale-110 transition-transform shrink-0 hover:bg-[#c69a53] hover:text-black">
+                     <button onClick={() => router.push(`/leaderboard/unit-rankings?tenant_id=${tenantId}`)} className="w-12 h-12 rounded-full bg-white text-[#1C5FA8] flex items-center justify-center shadow-md transform group-hover:scale-110 transition-transform shrink-0">
                        <span className="material-symbols-outlined text-base font-bold">north_east</span>
                      </button>
                   </div>
@@ -935,7 +753,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   <div className="space-y-3">
                     {result.participants && [...result.participants].sort((a:any,b:any) => a.position - b.position).map((p: any, pIdx: number) => (
                       <div key={pIdx} className="flex items-center gap-4 bg-black/20 p-3 rounded-lg border border-white/5">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${p.position === 1 ? 'bg-[#FBBF24] text-black' : p.position === 2 ? 'bg-[#D1D5DB] text-black' : p.position === 3 ? 'bg-[#D97706] text-white' : 'bg-white/10 text-white'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${p.position === 1 ? 'bg-[#FBBF24] text-black' : p.position === 2 ? 'bg-[#D1D5DB] text-black' : p.position === 3 ? 'bg-[#D97706] text-white' : 'bg-[#333] text-white'}`}>
                           {p.position}
                         </div>
                         <div className="flex-1">
