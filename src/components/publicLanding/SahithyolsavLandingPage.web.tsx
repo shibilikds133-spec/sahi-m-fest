@@ -552,12 +552,9 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible hero-section">
           <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-fit md:min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
-            {/* Background Video using Load Manager */}
-            <VideoBackground />
+            {/* Background Video Removed as per request */}
             
-            {/* Dark Overlays for readability and matching theme */}
-            <div className="absolute inset-0 bg-gradient-to-r from-alviora-bg/95 via-alviora-bg/80 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-alviora-bg/40 z-10"></div>
+            {/* Overlays Removed */}
             
             {/* Top Right Logo Placeholder */}
             <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
