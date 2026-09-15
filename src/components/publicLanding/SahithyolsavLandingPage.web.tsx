@@ -240,12 +240,12 @@ const PremiumScheduleCarousel = ({ schedules, onSelectSchedule }: any) => {
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover/card:scale-110"
                 style={{ backgroundImage: `url('${bgImage}')` }}
               />
-              <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#011635] via-[#011635]/80 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black via-black/80 to-transparent" />
               <div className="absolute inset-0 rounded-[2rem] border border-white/10 group-hover/card:border-white/30 transition-colors pointer-events-none" />
 
               <div className="relative h-full w-full p-6 flex flex-col justify-between z-10 pointer-events-none">
                 <div className="flex justify-between items-start">
-                  <div className="bg-[#011635]/60 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center min-w-[70px] shadow-lg">
+                  <div className="bg-black/60 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center min-w-[70px] shadow-lg">
                     <span className="font-headline-lg font-bold text-white leading-none text-2xl">{dateStr}</span>
                     <span className="text-[10px] uppercase tracking-widest text-alviora-accent mt-1 font-bold">{monthStr}</span>
                   </div>
