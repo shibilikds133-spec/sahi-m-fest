@@ -1,4 +1,7 @@
 import { ui } from "@/constants/designSystem";
+import * as DocumentPicker from 'expo-document-picker';
+import { storageService } from '@/services/storage/storageService';
+import { useActiveFestival } from '@/core/hooks/useFestival';
 import React, { useState } from 'react';
 import {
   StyleSheet,

@@ -4,6 +4,7 @@ import { BentoVideo } from './BentoVideo';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { useAuthStore } from '../../core/store/authStore';
+import { storageService } from '../../services/storage/storageService';
 import { useGetPublicLeaderboardSettings } from '../../core/hooks/useLeaderboardSettings';
 import { usePublicPublishedResults, usePublicLeaderboard } from '../../core/hooks/useLeaderboard';
 import { usePublicSchedule } from '../../core/hooks/useSchedule';
@@ -290,7 +291,7 @@ const PremiumScheduleCarousel = ({ schedules, onSelectSchedule }: any) => {
   );
 };
 
-export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing' | 'schedule' | 'units' | 'items' }) {
+export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing' | 'schedule' | 'units' | 'items' | 'media' }) {
   const router = useRouter();
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
@@ -370,6 +371,45 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
 
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [resolvedPosters, setResolvedPosters] = useState<string[]>([]);
+  const [activePosterIdx, setActivePosterIdx] = useState(0);
+
+  React.useEffect(() => {
+    const rawPosters = settingsQuery.data?.theme_config?.team_point_posters || [];
+    if (rawPosters.length === 0) {
+      setResolvedPosters([]);
+      return;
+    }
+    
+    // Resolve any r2:// urls
+    const resolveUrls = async () => {
+      const urls = await Promise.all(rawPosters.map(async (p: string) => {
+        if (p.startsWith('r2://')) {
+          const key = p.replace('r2://', '');
+          try {
+             const signed = await storageService.getPresignedUrl(key, 'image/jpeg', 'download');
+             return signed;
+          } catch(e) {
+             return p;
+          }
+        }
+        return p;
+      }));
+      setResolvedPosters(urls);
+    };
+    resolveUrls();
+  }, [settingsQuery.data?.theme_config?.team_point_posters]);
+
+  React.useEffect(() => {
+    if (resolvedPosters.length > 1) {
+      const timer = setInterval(() => {
+        setActivePosterIdx(prev => (prev + 1) % resolvedPosters.length);
+      }, 4000);
+      return () => clearInterval(timer);
+    }
+  }, [resolvedPosters.length]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const handleSearch = (e: any) => {
@@ -543,6 +583,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</Link>
+              <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'media' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/media?tenant_id=${tenantId}`}>Posters</Link>
           </div>
           <div className="flex gap-4 handjet-wrapper">
             
@@ -569,30 +610,37 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <Link 
               className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'landing' ? 'text-[#c69a53]' : 'text-white'}`} 
               href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onPress={() => setIsMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link 
               className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white'}`} 
               href={`/leaderboard/schedule?tenant_id=${tenantId}`}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onPress={() => setIsMobileMenuOpen(false)}
             >
               Schedule
             </Link>
             <Link 
               className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'units' ? 'text-[#c69a53]' : 'text-white'}`} 
               href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onPress={() => setIsMobileMenuOpen(false)}
             >
               Teams
             </Link>
             <Link 
               className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'items' ? 'text-[#c69a53]' : 'text-white'}`} 
               href={`/leaderboard/item-results?tenant_id=${tenantId}`}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onPress={() => setIsMobileMenuOpen(false)}
             >
               Results
+            </Link>
+            <Link 
+              className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'media' ? 'text-[#c69a53]' : 'text-white'}`} 
+              href={`/leaderboard/media?tenant_id=${tenantId}`}
+              onPress={() => setIsMobileMenuOpen(false)}
+            >
+              Posters
             </Link>
             <button className="mt-8 bg-[#c69a53] text-black px-6 py-4 rounded-xl font-bold text-2xl uppercase tracking-widest shadow-sm">
               Get In Touch
@@ -1012,6 +1060,47 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
 
               </div>
               )}
+
+              {/* Right Side: Team Point Posters (Units Page) */}
+              {page === 'units' && (
+              <div className="flex-1 relative z-10 flex flex-col justify-center items-center bg-[#1A1A1A]/40 rounded-[2.5rem] border border-[#333]/50 p-6 min-h-[400px]">
+                <div className="w-full text-center mb-6">
+                  <h3 className="text-xl font-bold text-white mb-2">Team Point Posters</h3>
+                  <p className="text-white/50 text-sm">Latest updates from the media center</p>
+                </div>
+                <div className="w-full max-w-sm aspect-square bg-[#0a0a0a] rounded-3xl border border-white/10 overflow-hidden relative shadow-2xl flex items-center justify-center group">
+                  {resolvedPosters.length > 0 ? (
+                    <>
+                      {resolvedPosters.map((url, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`absolute inset-0 transition-opacity duration-1000 ${idx === activePosterIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        >
+                          <img src={url} alt="Team Points" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {/* Carousel Indicators */}
+                      {resolvedPosters.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                          {resolvedPosters.map((_, idx) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setActivePosterIdx(idx)}
+                              className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === activePosterIdx ? 'bg-alviora-primary w-4' : 'bg-white/40 hover:bg-white/60'}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 p-8 text-center gap-4">
+                       <span className="material-symbols-outlined text-5xl">imagesmode</span>
+                       <p>Posters will appear here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              )}
               </div>
               
               {/* Mobile Leaderboard Layout */}
@@ -1039,6 +1128,39 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                     <div className="text-white/50 text-sm italic py-6 text-center border border-[#333] rounded-2xl bg-black/40">Leaderboard data will appear here.</div>
                   )}
                 </div>
+
+                {page === 'units' && (
+                <div className="w-full rounded-[2rem] overflow-hidden bg-[#1A1A1A] relative aspect-square border border-[#333] shadow-lg flex flex-col items-center justify-center">
+                  {resolvedPosters.length > 0 ? (
+                    <>
+                      {resolvedPosters.map((url, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`absolute inset-0 transition-opacity duration-1000 ${idx === activePosterIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        >
+                          <img src={url} alt="Team Points" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {resolvedPosters.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                          {resolvedPosters.map((_, idx) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setActivePosterIdx(idx)}
+                              className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === activePosterIdx ? 'bg-alviora-primary w-4' : 'bg-white/40 hover:bg-white/60'}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 text-center">
+                      <span className="material-symbols-outlined text-4xl text-white/30 mb-2">imagesmode</span>
+                      <p className="text-white/30 text-sm">Team Posters</p>
+                    </div>
+                  )}
+                </div>
+                )}
 
                 {page === 'landing' && (
                 <div className="w-full rounded-[2rem] overflow-hidden bg-[#1A1A1A] relative h-[200px] border border-[#333] shadow-lg group">
