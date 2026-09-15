@@ -556,8 +556,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <VideoBackground />
             
             {/* Dark Overlays for readability and matching theme */}
-            <div className="absolute inset-0 bg-gradient-to-r from-alviora-bg/95 via-alviora-bg/80 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-alviora-bg/40 z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/95 via-[#050505]/80 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-black/40 z-10"></div>
             
             {/* Top Right Logo Placeholder */}
             <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
