@@ -622,8 +622,8 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
             <div className="relative z-10 flex flex-col">
               {page === 'landing' && (<>
         {/* Stats Section */}
-        <div className="relative z-20 max-w-5xl mx-auto px-4 -mt-10 mb-20 fade-in-up visible">
-          <div className="bg-[#121212] border border-[#222] rounded-[2rem] p-6 md:p-8 flex flex-wrap items-center justify-between md:justify-around gap-6 shadow-2xl">
+        <div className="relative z-20 max-w-[1200px] w-full mx-auto px-4 mt-8 mb-20 fade-in-up visible">
+          <div className="bg-[#121212]/70 backdrop-blur-3xl border border-[#333] rounded-[2rem] p-6 md:p-10 flex flex-wrap items-center justify-between md:justify-around gap-6 shadow-2xl">
             <div className="text-center">
               <div className="text-3xl md:text-5xl font-['Handjet'] font-bold text-white mb-1">{stats.campuses}+</div>
               <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/50 font-bold">Teams</div>
