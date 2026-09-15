@@ -469,7 +469,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   }, [page, settingsQuery.isLoading, scheduleQuery.isLoading, organisationQuery.isLoading, publishedResultsQuery.isLoading]);
 
   return (
-    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-alviora-bg text-alviora-body font-body-md antialiased">
+    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-[#050505] text-alviora-body font-body-md antialiased">
       <InitialLoader isReady={isAppReady} />
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
@@ -512,7 +512,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       </Head>
 
       {/* TopAppBar (Ticker) */}
-      <div className="bg-black/20 backdrop-blur-sm text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-alviora-border">
+      <div className="bg-white/5 backdrop-blur-md text-alviora-accent font-label-sm text-label-sm uppercase tracking-widest docked full-width top-0 z-[60] h-10 flex items-center px-margin-desktop overflow-hidden whitespace-nowrap border-b border-white/10">
         <div className="flex items-center gap-3 w-full max-w-container-max mx-auto">
             <span className="material-symbols-outlined text-alviora-accent shrink-0 z-10" style={{fontVariationSettings:"'FILL' 1", fontSize: "18px"}}>sensors</span>
             <div className="marquee-container flex-1 overflow-hidden relative" style={{ display: 'flex', alignItems: 'center' }}>
@@ -522,7 +522,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
       </div>
 
       {/* TopNavBar */}
-      <nav className="bg-alviora-bg/80 backdrop-blur-xl border-b border-white/5 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-sm">
+      <nav className="bg-white/5 backdrop-blur-3xl border-b border-white/10 docked full-width top-0 sticky z-50 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto">
           <Link className="font-headline-lg text-headline-lg font-bold text-alviora-primary tracking-tighter" href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>
             <span className="text-2xl uppercase keep-font" style={{fontFamily:"Barabara, sans-serif",fontWeight:"normal",letterSpacing:"0.05em",color:"#ffffff"}}>ALVIORA</span>
@@ -552,9 +552,12 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
         <section className="p-4 md:p-6 w-full max-w-full mx-auto fade-in-up visible hero-section">
           <div className="relative w-full rounded-[2.5rem] overflow-hidden min-h-fit md:min-h-[85vh] flex items-center shadow-2xl border border-white/5 bg-black">
             
-            {/* Background Video Removed as per request */}
+            {/* Background Video using Load Manager */}
+            <VideoBackground />
             
-            {/* Overlays Removed */}
+            {/* Dark Overlays for readability and matching theme */}
+            <div className="absolute inset-0 bg-gradient-to-r from-alviora-bg/95 via-alviora-bg/80 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-alviora-bg/40 z-10"></div>
             
             {/* Top Right Logo Placeholder */}
             <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
