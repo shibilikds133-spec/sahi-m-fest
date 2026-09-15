@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Head from 'expo-router/head';
+import { BentoVideo } from './BentoVideo';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { useAuthStore } from '../../core/store/authStore';

@@ -1,21 +1,20 @@
-
 import React, { useRef, useEffect } from 'react';
 
 export function BentoVideo() {
-  const videoRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    let fadeInterval;
+    let fadeInterval: any;
 
     const observer = new IntersectionObserver((entries) => {
       const [entry] = entries;
       if (entry.isIntersecting) {
         // Start playing when in view
         video.volume = 0;
-        video.play().catch(e => console.log("Autoplay prevented:", e));
+        video.play().catch((e: any) => console.log("Autoplay prevented:", e));
         
         // Fade in volume over 2 seconds (0 to 1 in steps of 0.05 every 100ms)
         clearInterval(fadeInterval);
