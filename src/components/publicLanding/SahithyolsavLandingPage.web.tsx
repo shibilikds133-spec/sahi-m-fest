@@ -877,7 +877,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 relative z-10">
                 {/* Main Large Image */}
                 <div className="col-span-1 md:col-span-1 md:row-span-2 rounded-[2.5rem] overflow-hidden bg-[#1A1A1A] relative h-[350px] md:h-auto group">
-                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105" style={{ backgroundImage: "url('/images/schedule/bg-1.jpg')", filter: "grayscale(100%)" }}></div>
+                   <BentoVideo />
                 </div>
 
                 {/* Top Right Card */}
