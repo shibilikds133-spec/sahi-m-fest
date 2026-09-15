@@ -973,6 +973,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
               </div>
 
               {/* Right Side: Bento Grid */}
+              {page === 'landing' && (
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 relative z-10">
                 {/* Main Large Image */}
                 <div className="col-span-1 md:col-span-1 md:row-span-2 rounded-[2.5rem] overflow-hidden bg-[#1A1A1A] relative h-[350px] md:h-auto group">
@@ -1010,6 +1011,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                 </div>
 
               </div>
+              )}
               </div>
               
               {/* Mobile Leaderboard Layout */}
@@ -1038,14 +1040,18 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   )}
                 </div>
 
+                {page === 'landing' && (
                 <div className="w-full rounded-[2rem] overflow-hidden bg-[#1A1A1A] relative h-[200px] border border-[#333] shadow-lg group">
                   <BentoVideo />
                 </div>
+                )}
 
+                {page === 'landing' && (
                 <button onClick={() => router.push(`/leaderboard/unit-rankings?tenant_id=${tenantId}`)} className="w-full mt-2 bg-white text-[#1C5FA8] font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors">
                   See full standings
                   <span className="material-symbols-outlined text-lg">arrow_forward</span>
                 </button>
+                )}
               </div>
             </div>
           </div>
