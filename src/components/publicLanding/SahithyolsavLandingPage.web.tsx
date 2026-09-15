@@ -973,10 +973,6 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   </p>
                 </div>
 
-                <div className="w-full rounded-[2rem] overflow-hidden bg-[#1A1A1A] relative h-[200px] border border-[#333] shadow-lg group">
-                  <BentoVideo />
-                </div>
-
                 <div className="flex flex-col gap-3 w-full">
                   {topUnits.slice(0,3).map((unit, index) => (
                     <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-[#222] backdrop-blur-md">
@@ -990,6 +986,10 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   {topUnits.length === 0 && (
                     <div className="text-white/50 text-sm italic py-6 text-center border border-[#333] rounded-2xl bg-black/40">Leaderboard data will appear here.</div>
                   )}
+                </div>
+
+                <div className="w-full rounded-[2rem] overflow-hidden bg-[#1A1A1A] relative h-[200px] border border-[#333] shadow-lg group">
+                  <BentoVideo />
                 </div>
 
                 <button onClick={() => router.push(`/leaderboard/unit-rankings?tenant_id=${tenantId}`)} className="w-full mt-2 bg-white text-[#1C5FA8] font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors">
