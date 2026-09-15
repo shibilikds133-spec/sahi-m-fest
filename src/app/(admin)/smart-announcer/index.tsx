@@ -199,7 +199,7 @@ export default function SmartAnnouncerPage() {
           </View>
         ) : (
           <View style={styles.list}>
-            {results.map((res, index) => {
+            {results.map((res, index) => { if (res.is_public) return null;
                 const isTop = index === 0;
                 return (
                   <View key={res.result_id} style={[styles.row, isTop && styles.topRow]}>
@@ -441,3 +441,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

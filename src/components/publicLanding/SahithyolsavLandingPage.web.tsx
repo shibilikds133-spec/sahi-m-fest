@@ -291,7 +291,7 @@ const PremiumScheduleCarousel = ({ schedules, onSelectSchedule }: any) => {
   );
 };
 
-export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing' | 'schedule' | 'units' | 'items' | 'media' }) {
+export function SahithyolsavLandingPage({ page = 'landing', children }: { page?: 'landing' | 'schedule' | 'units' | 'items' | 'media', children?: React.ReactNode }) {
   const router = useRouter();
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
@@ -1304,6 +1304,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           </div>
         )}
 
+        {children}
         {/* Footer */}
       <footer className="bg-black/40 backdrop-blur-md border-t border-white/5 full-width mt-12">
         <div className="flex flex-col md:flex-row justify-between items-center px-gutter py-8 max-w-container-max mx-auto gap-6">
@@ -1340,6 +1341,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
     </div>
   );
 }
+
 
 
 

@@ -21,10 +21,10 @@ export default function PublicMediaCenter() {
     queryFn: async () => {
       if (!tenantId) return null;
       const { data, error } = await supabase
-        .from('festivals')
-        .select('id, name')
+        .from('festival_calendar')
+        .select('id, custom_name')
         .eq('tenant_id', tenantId)
-        .eq('status', 'active')
+        .eq('is_active', true)
         .single();
       if (error) return null;
       return data;
@@ -125,11 +125,10 @@ export default function PublicMediaCenter() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#050505]">
-      <SahithyolsavLandingPage page="media" />
-      
-      <div className="absolute top-[80px] md:top-[120px] left-0 right-0 bottom-0 z-40 overflow-y-auto px-4 pb-24">
-        <div className="max-w-[1200px] mx-auto pt-8">
+    <>
+    <SahithyolsavLandingPage page="media">
+      <div className="w-full px-4 pb-24 relative z-10 pt-8">
+        <div className="max-w-[1200px] mx-auto">
           
           <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-white/5 p-6 rounded-[2rem] border border-white/10 backdrop-blur-md">
             <div>
@@ -188,6 +187,7 @@ export default function PublicMediaCenter() {
           )}
         </div>
       </div>
+      </SahithyolsavLandingPage>
 
       {isFullscreen && (
         <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
@@ -221,7 +221,10 @@ export default function PublicMediaCenter() {
           </div>
         </div>
       )}
-      
-    </div>
+      </>
   );
 }
+
+
+
+
