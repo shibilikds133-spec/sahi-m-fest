@@ -469,7 +469,10 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
   }, [page, settingsQuery.isLoading, scheduleQuery.isLoading, organisationQuery.isLoading, publishedResultsQuery.isLoading]);
 
   return (
-    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-[#050505] text-alviora-body font-body-md antialiased">
+    <div style={{ flex: 1, width: "100%", height: "100vh", overflowY: "auto", overflowX: "hidden" }} className="bg-[#050505] text-alviora-body font-body-md antialiased relative">
+      {/* Fixed Ambient Background Glows */}
+      <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-gradient-to-br from-[#1C5FA8]/15 via-[#1C5FA8]/5 to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tl from-[#1C5FA8]/15 via-[#1C5FA8]/5 to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
       <InitialLoader isReady={isAppReady} />
       <Head>
         <title>{settingsQuery.data?.public_festival_name || 'ADSA Art Fiesta 2.0'}</title>
@@ -501,6 +504,12 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                   50% { color: #00b3b8; text-shadow: 0 0 25px rgba(0,148,153,0.8); }
               }
               .animate-subtle-motion { animation: subtle-motion 3s ease-in-out infinite; display: inline-block; }
+              .glass-text { 
+                background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.7) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 4px 20px rgba(255,255,255,0.15);
+              }
           }
           @media (prefers-reduced-motion: reduce) {
               .fade-in-up { opacity: 1; transform: none; }
@@ -578,7 +587,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                 ADSA ART FIESTA 2.0
               </div>
               
-              <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl text-white mb-6 leading-tight font-bold">
+              <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl glass-text mb-6 leading-tight font-bold">
                 <span style={{fontFamily: "Barabara, sans-serif"}} className="uppercase tracking-wide">ALVIORA</span><br />
                 Between <span className="text-[#009499] animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>Pixels</span><br />
                 and <span className="text-[#009499] animate-subtle-motion drop-shadow-lg" style={{fontFamily:"'VT323', monospace"}}>People</span>
@@ -643,7 +652,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
           <section id="live-schedule" className="pt-4 md:pt-8 pb-section-gap max-w-full mx-auto fade-in-up visible handjet-wrapper overflow-hidden">
             <div className="max-w-[1400px] mx-auto px-gutter flex justify-between items-end mb-8">
               <div>
-                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
+                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg glass-text mb-2 font-bold">{page === 'schedule' ? 'Festival Schedule' : 'Event Schedule'}</h2>
                 <p className="font-body-lg text-body-lg text-alviora-body">All scheduled programs across stages.</p>
               </div>
             </div>
@@ -841,7 +850,7 @@ export function SahithyolsavLandingPage({ page = 'landing' }: { page?: 'landing'
                 </div>
                 
                 <div className="pl-0 lg:pl-12">
-                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
+                  <h2 className="text-4xl md:text-5xl font-bold glass-text mb-4 leading-tight tracking-tight">
                     Team <span className="inline-block bg-[#1C5FA8] text-white px-4 py-1 rounded-2xl -translate-y-1">Rankings</span>
                   </h2>
                   <p className="text-white/60 text-sm md:text-base mb-10 max-w-md leading-relaxed">
