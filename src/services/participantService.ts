@@ -340,6 +340,16 @@ export const participantService = {
     throwIfError(error);
   },
 
+  async terminateParticipant(participantId: string, reason: string): Promise<void> {
+    const { error } = await participantRepository.terminateParticipant(participantId, reason);
+    throwIfError(error);
+  },
+
+  async revokeTermination(participantId: string): Promise<void> {
+    const { error } = await participantRepository.revokeTermination(participantId);
+    throwIfError(error);
+  },
+
   async deleteParticipants(participantIds: string[]): Promise<void> {
     const { error } = await participantRepository.deleteParticipants(participantIds);
     throwIfError(error);

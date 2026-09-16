@@ -122,6 +122,10 @@ export default function ParticipantDetails() {
     updateStatus,
     updateParticipant,
     deleteParticipant,
+    terminateParticipant,
+    revokeTermination,
+    isTerminating,
+    isRevokingTermination,
     isUpdatingParticipant,
     registerParticipant,
     isRegistering,
@@ -293,6 +297,47 @@ export default function ParticipantDetails() {
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
+  };
+
+  const handleTerminate = async () => {
+    if (!participantId) return;
+    setActionModal({
+      visible: true,
+      type: 'prompt_reason',
+      title: 'Terminate Participant',
+      message: 'Enter reason for termination:',
+      inputValue: '',
+      action: async (reason: string) => {
+        if (!reason) {
+          Alert.alert('Error', 'Termination reason is required.');
+          return;
+        }
+        try {
+          await terminateParticipant({ id: participantId, reason });
+        } catch (error: any) {
+          setTimeout(() => {
+            setActionModal({ visible: true, type: 'alert', title: 'Error', message: error.message, action: null });
+          }, 300);
+        }
+      }
+    });
+  };
+
+  const handleRevokeTermination = async () => {
+    if (!participantId) return;
+    setActionModal({
+      visible: true,
+      type: 'confirm',
+      title: 'Revoke Termination',
+      message: 'Are you sure you want to revoke this termination?',
+      action: async () => {
+        try {
+          await revokeTermination(participantId);
+        } catch (error: any) {
+          setActionModal({ visible: true, type: 'alert', title: 'Error', message: error.message, action: null });
+        }
+      }
+    });
   };
 
   const handleDelete = async () => {
@@ -533,6 +578,16 @@ export default function ParticipantDetails() {
           <View className="flex-1">
             <Text className="text-lg font-poppins-black text-ssf-text">Participant profile</Text>
             <Text className="text-[10px] font-poppins text-ssf-text-muted">Identity, eligibility and registrations</Text>
+          </View>
+        </View>
+      )}
+
+      {participant.is_terminated && (
+        <View className="bg-amber-100 border border-amber-300 rounded-xl p-4 mb-4 flex-row items-center gap-x-3">
+          <AlertTriangle size={24} color="#D97706" />
+          <View className="flex-1">
+            <Text className="font-poppins-bold text-amber-700">Participant Terminated</Text>
+            <Text className="font-poppins text-xs text-amber-600">Reason: {participant.termination_reason || 'No reason provided'}</Text>
           </View>
         </View>
       )}
@@ -1072,7 +1127,28 @@ export default function ParticipantDetails() {
         </View>
 
       {!locked && (
-        <View className="items-end">
+        <View className={`mt-4 ${isDesktopProfile ? 'flex-row justify-end gap-x-2' : 'flex-col gap-y-2'}`}>
+          {!participant.is_terminated ? (
+            <SsfButton
+              label="Terminate Participant"
+              variant="outline"
+              size={isDesktopProfile ? 'md' : 'sm'}
+              className={isDesktopProfile ? 'border-amber-200 bg-amber-50' : 'w-full border-amber-200 bg-amber-50'}
+              icon={<AlertTriangle size={16} color="#D97706" />}
+              onPress={handleTerminate}
+              disabled={isTerminating}
+            />
+          ) : (
+            <SsfButton
+              label="Revoke Termination"
+              variant="outline"
+              size={isDesktopProfile ? 'md' : 'sm'}
+              className={isDesktopProfile ? 'border-emerald-200 bg-emerald-50' : 'w-full border-emerald-200 bg-emerald-50'}
+              icon={<Unlock size={16} color="#059669" />}
+              onPress={handleRevokeTermination}
+              disabled={isRevokingTermination}
+            />
+          )}
           <SsfButton
             label="Delete Participant"
             variant="outline"
@@ -1255,3 +1331,5 @@ export default function ParticipantDetails() {
     </ScrollView>
   );
 }
+
+

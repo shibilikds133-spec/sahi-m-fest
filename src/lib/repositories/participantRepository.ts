@@ -56,6 +56,14 @@ export const participantRepository = {
     return databaseProvider.deleteParticipant(participantId);
   },
 
+  terminateParticipant(participantId: string, reason: string) {
+    return databaseProvider.terminateParticipant(participantId, reason);
+  },
+
+  revokeTermination(participantId: string) {
+    return databaseProvider.revokeTermination(participantId);
+  },
+
   deleteParticipants(participantIds: string[]) {
     return databaseProvider.deleteParticipants(participantIds);
   },

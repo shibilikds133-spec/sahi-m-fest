@@ -300,6 +300,21 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: undefined, error: normalizeError(error) };
   }
 
+  async terminateParticipant(participantId: string, reason: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('terminate_participant', {
+      p_participant_id: participantId,
+      p_reason: reason
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async revokeTermination(participantId: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('revoke_termination', {
+      p_participant_id: participantId
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
   async deleteParticipants(participantIds: string[]): Promise<QueryResult<void>> {
     const { error } = await supabase.from('participants').delete().in('id', participantIds);
     return { data: undefined, error: normalizeError(error) };

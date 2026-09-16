@@ -172,6 +172,22 @@ export const useParticipants = (participantId?: string) => {
     },
   });
 
+  const terminateParticipantMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => participantService.terminateParticipant(id, reason),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      queryClient.invalidateQueries({ queryKey: ['participant', variables.id] });
+    },
+  });
+
+  const revokeTerminationMutation = useMutation({
+    mutationFn: (id: string) => participantService.revokeTermination(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      queryClient.invalidateQueries({ queryKey: ['participant', id] });
+    },
+  });
+
   const deleteMultipleMutation = useMutation({
     mutationFn: (ids: string[]) => participantService.deleteParticipants(ids),
     onSuccess: () => {
@@ -260,6 +276,10 @@ export const useParticipants = (participantId?: string) => {
     isRemovingProfilePhoto: removeProfilePhotoMutation.isPending,
     
     deleteParticipant: deleteParticipantMutation.mutateAsync,
+    terminateParticipant: terminateParticipantMutation.mutateAsync,
+    revokeTermination: revokeTerminationMutation.mutateAsync,
+    isTerminating: terminateParticipantMutation.isPending,
+    isRevokingTermination: revokeTerminationMutation.isPending,
     deleteMultiple: deleteMultipleMutation.mutateAsync,
     approveMultiple: approveMultipleMutation.mutateAsync,
     

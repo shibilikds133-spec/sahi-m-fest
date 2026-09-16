@@ -41,6 +41,8 @@ export interface Participant {
   organisation_id?: string | null;
   is_post_hs_religious?: boolean;
   is_recognized_board_student?: boolean;
+  is_terminated?: boolean;
+  termination_reason?: string | null;
   photo_url?: string;
   phone?: string;
   org_name?: string;
