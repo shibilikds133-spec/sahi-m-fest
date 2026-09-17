@@ -277,17 +277,30 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
     setShowValidation(true);
   };
 
-  // Background image upload handler
-  const handleBgUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  // Background image upload handler (Uploading properly to R2 instead of heavy Base64 local state)
+  const handleBgUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target?.result as string;
-      useTemplateStore.getState().updateTemplateMeta({ background_url: url });
-    };
-    reader.readAsDataURL(file);
-  }, []);
+    try {
+      // Compress the image before uploading to avoid huge storage costs
+      const { compressImage } = await import('./Utils/imageCompressor');
+      const compressedFile = await compressImage(file, 2048, 2048, 0.85);
+      
+      const metadata = await uploadService.uploadTemplate(
+        compressedFile,
+        festivalId,
+        tenantId,
+        'background',
+        'jpg',
+        () => {} // progress
+      );
+      
+      useTemplateStore.getState().updateTemplateMeta({ background_url: `r2://${metadata.object_key}` });
+    } catch (err) {
+      console.error('Top bar BG upload failed:', err);
+      alert('Failed to upload background image');
+    }
+  }, [festivalId, tenantId]);
 
   // Layer quick actions
   const handleDuplicateLayer = () => {
@@ -657,21 +670,56 @@ export default function PosterStudio({ festivalId, tenantId }: PosterStudioProps
                 onClick={async () => {
                   setIsSaving(true);
                   await saveDraft();
-                  // Also persist layers to Supabase for publishable templates
-                  if (activeTemplate?.isPublishable && activeTemplate.id) {
-                    const currentLayers = useLayerStore.getState().layers;
+                  
+                  const currentLayers = useLayerStore.getState().layers;
+                  const currentBg = activeTemplate?.background_url || '';
+                  
+                  if (activeTemplate?.isPublishable && activeTemplate.id && activeTemplate.id !== 'starter-template') {
                     await supabase
                       .from('poster_templates')
                       .update({
                         layers: currentLayers,
-                        background_url: activeTemplate.background_url,
+                        background_url: currentBg,
                         width: activeTemplate.width,
                         height: activeTemplate.height,
                         aspect_ratio: activeTemplate.aspect_ratio,
                       })
                       .eq('id', activeTemplate.id);
                     queryClient.invalidateQueries({ queryKey: ['poster-templates', festivalId] });
+                  } else {
+                    const templateName = window.prompt('Enter a name to save this new template:', 'Custom Template');
+                    if (templateName) {
+                      const newId = crypto.randomUUID();
+                      const { error } = await supabase
+                        .from('poster_templates')
+                        .insert({
+                          id: newId,
+                          tenant_id: tenantId,
+                          festival_id: festivalId,
+                          name: templateName,
+                          background_url: currentBg,
+                          width: activeTemplate?.width || 1080,
+                          height: activeTemplate?.height || 1080,
+                          aspect_ratio: activeTemplate?.aspect_ratio || '1:1',
+                          layers: currentLayers,
+                          is_active: true,
+                          status: 'draft'
+                        });
+                      if (!error) {
+                        useTemplateStore.getState().setActiveTemplate({
+                          ...activeTemplate!,
+                          id: newId,
+                          name: templateName,
+                          isPublishable: true,
+                          isLocal: false
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['poster-templates', festivalId] });
+                      } else {
+                        alert('Failed to save template: ' + error.message);
+                      }
+                    }
                   }
+                  useTemplateStore.getState().markSaved();
                   setIsSaving(false);
                 }}
                 disabled={isSaving}

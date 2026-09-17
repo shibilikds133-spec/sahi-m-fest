@@ -68,6 +68,8 @@ export const EN_FONTS: FontDefinition[] = [
   { family: 'Karla', category: 'Friendly / Editorial', weights: '300,400,500,600,700' },
 ].map(f => ({ ...f, url: 'https://fonts.gstatic.com/' }));
 
+EN_FONTS.unshift({ family: 'Authenia Textured', category: 'Display / Poster', url: '/fonts/Authenia-Textured.ttf' });
+
 const loadedFonts = new Set<string>();
 const fontLoadCache = new Map<string, Promise<'loaded' | 'failed'>>();
 

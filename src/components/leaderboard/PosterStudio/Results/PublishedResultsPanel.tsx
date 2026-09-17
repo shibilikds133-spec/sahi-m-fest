@@ -13,7 +13,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { resultVisibilityService, FestivalResult } from '../../../../services/resultVisibilityService';
 import { useTemplateStore, TemplateVariables } from '../Stores/templateStore';
 import { supabase } from '../../../../core/config/supabase';
-import { CATEGORIES } from '../../../../constants/categories';
+import { CATEGORIES, SAHITHYOLSAV_CATEGORY_ALIASES } from '../../../../constants/categories';
 
 interface PublishedResultsPanelProps {
   festivalId: string;
@@ -60,7 +60,7 @@ export default function PublishedResultsPanel({ festivalId, tenantId }: Publishe
           const codes = item.category_codes || [];
           if (codes.length > 0) {
             const firstCode = codes[0];
-            const catObj = CATEGORIES.find(c => c.code === firstCode);
+            const catObj = CATEGORIES.find(c => c.code.toUpperCase() === firstCode.toUpperCase() || SAHITHYOLSAV_CATEGORY_ALIASES[firstCode.toUpperCase()] === c.code);
             catMap[item.id] = {
               name_en: catObj ? catObj.name_en : firstCode,
               name_ml: catObj ? catObj.name_ml : firstCode,

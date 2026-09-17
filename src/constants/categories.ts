@@ -6,6 +6,13 @@ import {
 
 export const CATEGORIES = [
   {
+    code: "SBJ",
+    name_en: "Sub Junior",
+    name_ml: "Sub Junior",
+    age_max: 14,
+    gender: "boys"
+  },
+  {
     code: 'LP',
     name_en: 'Lower Primary',
     name_ml: 'ലോവർ പ്രൈമറി',
@@ -38,17 +45,17 @@ export const CATEGORIES = [
     gender: 'both'
   },
   {
-    code: 'JR',
-    name_en: 'Junior',
-    name_ml: 'ജൂനിയർ',
+    code: "JR",
+    name_en: "Junior",
+    name_ml: "Junior",
     age_min: 15,
     age_max: 20,
     gender: 'boys'
   },
   {
-    code: 'SR',
-    name_en: 'Senior',
-    name_ml: 'സീനിയർ',
+    code: "SR",
+    name_en: "Senior",
+    name_ml: "Senior",
     age_min: 21,
     age_max: 25,
     gender: 'boys'
@@ -84,11 +91,15 @@ export const CATEGORIES = [
   }
 ];
 
-const SAHITHYOLSAV_CATEGORY_ALIASES: Record<string, string> = {
-  JUNIOR: 'JR',
-  SENIOR: 'SR',
-  CAMPUS: 'CA',
-  GENERAL: 'GN',
+export const SAHITHYOLSAV_CATEGORY_ALIASES: Record<string, string> = {
+  SBJ: "SBJ",
+  SUB_JUNIOR: "SBJ",
+  JNR: "JR",
+  SNR: "SR",
+  JUNIOR: "JR",
+  SENIOR: "SR",
+  CAMPUS: "CA",
+  GENERAL: "GN",
 };
 
 export function getCategoryLabel(code: string, template?: FestivalTemplate): string {

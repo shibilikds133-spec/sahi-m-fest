@@ -38,13 +38,16 @@ export default function BackgroundBlock({ festivalId, tenantId }: BackgroundBloc
       if (!file) return;
       try {
         setIsUploading(true);
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        // Dynamically import to avoid top-level issues if needed, or import at top
+        const { compressImage } = await import('../Utils/imageCompressor');
+        const compressedFile = await compressImage(file, 2048, 2048, 0.85);
+        
         const metadata = await uploadService.uploadTemplate(
-          file,
+          compressedFile,
           festivalId,
           tenantId,
           'background',
-          ext,
+          'jpg',
           () => {} // progress
         );
         updateTemplateMeta({ background_url: `r2://${metadata.object_key}` });
