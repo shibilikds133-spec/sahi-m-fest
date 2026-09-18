@@ -102,67 +102,9 @@ export default function MarkEntryPage() {
 
   const judge = judges.find((j: any) => j.id === selectedJudge);
 
-  const updateScore = (regId: string, judgeId: string, criteriaKey: string, value: number) => {
-    setMarks(prev => ({
-      ...prev,
-      [regId]: {
-        ...prev[regId],
-        [judgeId]: {
-          ...(prev[regId]?.[judgeId] ?? {}),
-          [criteriaKey]: value,
-        },
-      },
-    }));
-  };
-
   const getTotal = (regId: string, judgeId: string) => {
     const scores = marks[regId]?.[judgeId] ?? {};
     return Object.values(scores).reduce((a, b) => a + b, 0);
-  };
-
-  const handleSaveAll = async () => {
-    if (!selectedJudge) {
-      Alert.alert('Select Judge', 'Please select a judge first.');
-      return;
-    }
-    
-    if (!registrations || (registrations as any[]).length === 0) return;
-
-    setIsSavingAll(true);
-    try {
-      const editableRegistrations = (registrations as any[]).filter(
-        reg => !getEntry(reg.id, selectedJudge)?.is_final,
-      );
-      if (editableRegistrations.length === 0) return;
-
-      for (const reg of editableRegistrations) {
-        const scores = marks[reg.id]?.[selectedJudge] ?? {};
-        const total = Object.values(scores).reduce((a, b) => a + b, 0);
-
-        await saveMarkEntry.mutateAsync({
-          schedule_id: scheduleId,
-          judge_id: selectedJudge,
-          registration_id: reg.id,
-          criteria_scores: scores,
-          total_mark: total,
-          is_draft: false,
-        });
-      }
-      refetchMarks();
-      if (Platform.OS === 'web') {
-        window.alert('Success: All marks for this judge have been submitted successfully!');
-      } else {
-        Alert.alert('Success', 'All marks for this judge have been submitted successfully!');
-      }
-    } catch (e: any) {
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + (e.message || 'Failed to save marks'));
-      } else {
-        Alert.alert('Error', e.message || 'Failed to save marks');
-      }
-    } finally {
-      setIsSavingAll(false);
-    }
   };
 
   // Get existing entry for a reg + judge
@@ -315,14 +257,11 @@ export default function MarkEntryPage() {
                         {Array.from({ length: c.max / 5 + 1 }, (_, i) => i * 5).map(val => (
                           <TouchableOpacity
                             key={val}
-                            onPress={() => {
-                              if (!isFinalized) updateScore(reg.id, selectedJudge, c.key, val);
-                            }}
-                            disabled={isFinalized}
+                            disabled={true}
                             className={`px-2.5 py-1 rounded-lg mb-1 border ${
                               (marks[reg.id]?.[selectedJudge]?.[c.key] ?? -1) === val
                                 ? 'bg-ssf-primary border-ssf-primary'
-                                : isFinalized ? 'bg-gray-100 border-gray-200 opacity-60' : 'bg-gray-50 border-gray-200'
+                                : 'bg-gray-100 border-gray-200 opacity-80'
                             }`}
                           >
                             <Text className={`font-poppins-bold text-xs ${
@@ -356,18 +295,6 @@ export default function MarkEntryPage() {
                 </SsfCard>
               );
             })
-          )}
-          
-          {registrations && (registrations as any[]).some(
-            reg => !getEntry(reg.id, selectedJudge)?.is_final
-          ) && (
-            <View className="mt-2 mb-8 px-1">
-              <SsfButton
-                label={isSavingAll ? 'Submitting...' : 'Submit All Marks for Judge'}
-                onPress={handleSaveAll}
-                isLoading={isSavingAll}
-              />
-            </View>
           )}
           
           <View className="h-16" />
