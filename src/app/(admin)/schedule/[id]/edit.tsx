@@ -10,8 +10,6 @@ import { SsfDatePicker } from '../../../../components/ui/SsfDatePicker';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
-import { isoToScheduleTimeParts, localDateTimeToIso, ScheduleTimeParts, timePartsTo24Hour } from '../../../../services/scheduleTime';
-
 import { SmartTimeInput } from '@/components/ui/SmartTimeInput';
 
 export default function EditSchedule() {
@@ -29,9 +27,9 @@ export default function EditSchedule() {
   const [itemId, setItemId] = useState('');
   const [venueId, setVenueId] = useState('');
   const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState<ScheduleTimeParts>({ hour: '09', minute: '00', period: 'AM' });
+  const [startTimeStr, setStartTimeStr] = useState('09:00');
   const [endDate, setEndDate] = useState('');
-  const [endTime, setEndTime] = useState<ScheduleTimeParts>({ hour: '10', minute: '00', period: 'AM' });
+  const [endTimeStr, setEndTimeStr] = useState('10:00');
   const [judgeCount, setJudgeCount] = useState(3);
 
   useEffect(() => {
@@ -46,7 +44,9 @@ export default function EditSchedule() {
         const dd = String(startDt.getDate()).padStart(2, '0');
         setStartDate(`${yyyy}-${mm}-${dd}`);
         
-        setStartTime(isoToScheduleTimeParts(schedule.start_time));
+        const hh = String(startDt.getHours()).padStart(2, '0');
+        const mins = String(startDt.getMinutes()).padStart(2, '0');
+        setStartTimeStr(`${hh}:${mins}`);
       }
       
       if (schedule.end_time) {
@@ -56,7 +56,9 @@ export default function EditSchedule() {
         const dd = String(endDt.getDate()).padStart(2, '0');
         setEndDate(`${yyyy}-${mm}-${dd}`);
         
-        setEndTime(isoToScheduleTimeParts(schedule.end_time));
+        const hh = String(endDt.getHours()).padStart(2, '0');
+        const mins = String(endDt.getMinutes()).padStart(2, '0');
+        setEndTimeStr(`${hh}:${mins}`);
       }
       
       setJudgeCount(schedule.expected_judge_count || 3);
@@ -64,8 +66,6 @@ export default function EditSchedule() {
   }, [schedule]);
 
   const checkForConflicts = () => {
-    const startTimeStr = timePartsTo24Hour(startTime);
-    const endTimeStr = timePartsTo24Hour(endTime);
     if (!venueId || !startDate || !startTimeStr || !endDate || !endTimeStr) return null;
     
     const start = new Date(`${startDate}T${startTimeStr}`).getTime();
@@ -91,17 +91,16 @@ export default function EditSchedule() {
   };
 
   const handleSave = async () => {
-    const startTimeStr = timePartsTo24Hour(startTime);
-    const endTimeStr = timePartsTo24Hour(endTime);
     if (!itemId || !venueId || !startDate || !startTimeStr || !endDate || !endTimeStr) {
       return showAlert('Error', 'Please fill all fields');
     }
 
-    const startIso = localDateTimeToIso(startDate, startTime);
-    const endIso = localDateTimeToIso(endDate, endTime);
-    if (!startIso || !endIso) return showAlert('Error', 'Please select valid 12-hour times with AM/PM.');
-    const startDateTime = new Date(startIso);
-    const endDateTime = new Date(endIso);
+    const startDateTime = new Date(`${startDate}T${startTimeStr}`);
+    const endDateTime = new Date(`${endDate}T${endTimeStr}`);
+
+    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+      return showAlert('Error', 'Please select valid times.');
+    }
 
     if (startDateTime >= endDateTime) {
       return showAlert('Error', 'End time must be after start time');
@@ -123,8 +122,8 @@ export default function EditSchedule() {
         payload: {
           item_id: itemId,
           venue_id: venueId,
-          start_time: startIso,
-          end_time: endIso,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
           status: schedule?.status || 'scheduled',
           expected_judge_count: judgeCount,
         }
@@ -202,7 +201,7 @@ export default function EditSchedule() {
                 onValueChange={setStartDate}
                 style={{ flex: 1 }}
               />
-              <SmartTimeInput value={startTime} onChange={setStartTime} />
+              <SmartTimeInput value={startTimeStr} onChange={setStartTimeStr} />
             </View>
           </View>
           <View style={{ flex: 1 }}>
@@ -213,7 +212,7 @@ export default function EditSchedule() {
                 onValueChange={setEndDate}
                 style={{ flex: 1 }}
               />
-              <SmartTimeInput value={endTime} onChange={setEndTime} />
+              <SmartTimeInput value={endTimeStr} onChange={setEndTimeStr} />
             </View>
           </View>
         </View>
@@ -271,16 +270,3 @@ export default function EditSchedule() {
     </ScrollView>
   );
 }
-
-const dateTimeInputStyle: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-  height: 42,
-  padding: '0 12px',
-  borderRadius: 9,
-  border: '1px solid #D8E0EA',
-  background: ui.colors.surface,
-  color: ui.colors.text,
-  fontFamily: 'Poppins_400Regular',
-  outline: 'none',
-};
