@@ -1,4 +1,5 @@
 import { AdminMarkEntryModal } from '../../../../components/ui/AdminMarkEntryModal';
+import { DirectMarkEntryModal } from '../../../../components/ui/DirectMarkEntryModal';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -27,6 +28,11 @@ import { pointsService } from '../../../../services/pointsService';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RANKS = ['1st', '2nd', '3rd', '4th', '5th'] as const;
 const GRADES = ['A+', 'A', 'B', 'C', '-'] as const;
+
+type DirectMarkState = {
+  marks: Record<number, number>;
+  maxMark: number;
+};
 
 type ResultEntry = {
   registration_id: string;
@@ -82,6 +88,8 @@ export default function ResultsPage() {
 
   // ── Result state ──────────────────────────────────────────────────────────
   const [results, setResults] = useState<Record<string, ResultEntry>>({});
+  const [directMarks, setDirectMarks] = useState<Record<string, DirectMarkState>>({});
+  const [directEntryModal, setDirectEntryModal] = useState<{ visible: boolean, regId: string, judgeIndex: number, participantName: string, codeLetter: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [published, setPublished] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<any>(null);
@@ -200,9 +208,31 @@ export default function ResultsPage() {
     };
   }, [getJudgeMarks]);
 
+  const getDirectMarkSummary = React.useCallback((regId: string) => {
+    const entry = directMarks[regId];
+    if (!entry || !entry.marks) return null;
+    const values = Object.values(entry.marks);
+    if (values.length === 0) return null;
+    
+    const sum = values.reduce((a, b) => a + b, 0);
+    const rawAverage = sum / values.length;
+    const maxMark = entry.maxMark || 100;
+    const percentageAverage = (rawAverage / maxMark) * 100;
+    
+    return {
+      rawAverage: Math.round(rawAverage * 100) / 100,
+      percentageAverage: Math.round(percentageAverage * 100) / 100,
+      commonMaximum: maxMark,
+      count: values.length,
+    };
+  }, [directMarks]);
+
   const getAvgMark = React.useCallback(
-    (regId: string) => getMarkSummary(regId)?.rawAverage ?? null,
-    [getMarkSummary],
+    (regId: string) => {
+      if (mode === 'direct') return getDirectMarkSummary(regId)?.rawAverage ?? null;
+      return getMarkSummary(regId)?.rawAverage ?? null;
+    },
+    [getMarkSummary, getDirectMarkSummary, mode],
   );
 
   const getPointsPreview = (grade: string | null, rank: string | null) => {
@@ -238,9 +268,15 @@ export default function ResultsPage() {
     let anySubmissions = false;
 
     regs.forEach(reg => {
-      const marks = getJudgeMarks(reg.id).filter(m => m.is_final || m.total_mark != null);
-      if (marks.length > 0) anySubmissions = true;
-      if (marks.length >= expectedJudges) fullyReadyCount++;
+      if (mode === 'direct') {
+         const marksCount = directMarks[reg.id] ? Object.keys(directMarks[reg.id].marks).length : 0;
+         if (marksCount > 0) anySubmissions = true;
+         if (marksCount >= expectedJudges) fullyReadyCount++;
+      } else {
+         const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null);
+         if (marks.length > 0) anySubmissions = true;
+         if (marks.length >= expectedJudges) fullyReadyCount++;
+      }
     });
 
     if (fullyReadyCount === regs.length && regs.length > 0) {
@@ -250,7 +286,7 @@ export default function ResultsPage() {
       return { label: `🟠 ${fullyReadyCount}/${regs.length} participants ready`, color: 'bg-orange-50', textColor: 'text-orange-700' };
     }
     return { label: '🟡 Waiting for judge submissions', color: 'bg-yellow-50', textColor: 'text-yellow-700' };
-  }, [registrations, expectedJudges, published, getJudgeMarks]);
+  }, [registrations, expectedJudges, published, getJudgeMarks, mode, directMarks]);
 
   const hasAtLeastOneResult = React.useMemo(() => {
     return Object.values(results).some(
@@ -258,12 +294,12 @@ export default function ResultsPage() {
     );
   }, [results]);
 
-  const autoFillFromMarks = React.useCallback(() => {
-    if (!registrations || !markEntries) return;
+  const autoFill = React.useCallback(() => {
+    if (!registrations) return;
 
     // 1. Calculate avgs and grades
     const scores = (registrations as any[]).map(reg => {
-      const markSummary = getMarkSummary(reg.id);
+      const markSummary = mode === 'direct' ? getDirectMarkSummary(reg.id) : getMarkSummary(reg.id);
       const normalizedAverage = markSummary?.percentageAverage ?? null;
       let grade = normalizedAverage !== null
         ? calculateGradeFromConfig(normalizedAverage, 100, flexiblePointsConfig)
@@ -317,14 +353,14 @@ export default function ResultsPage() {
       });
       return next;
     });
-  }, [registrations, markEntries, getMarkSummary, flexiblePointsConfig]);
+  }, [registrations, markEntries, getMarkSummary, getDirectMarkSummary, flexiblePointsConfig, mode]);
 
-  // Run auto-calculation whenever in marks mode and data is available
+  // Run auto-calculation whenever in marks or direct mode and data is available
   React.useEffect(() => {
-    if (mode === 'marks') {
-      autoFillFromMarks();
+    if (mode === 'marks' || mode === 'direct') {
+      autoFill();
     }
-  }, [mode, autoFillFromMarks]);
+  }, [mode, autoFill, directMarks, markEntries]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handlePublish = async () => {
@@ -334,14 +370,20 @@ export default function ResultsPage() {
       return;
     }
 
-    if (mode === 'marks') {
+    if (mode === 'marks' || mode === 'direct') {
       const regs = (registrations as any[]) || [];
       let missingMarksCount = 0;
       let anySubmissions = false;
 
       regs.forEach(reg => {
-        const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null);
-        if (marks.length === 0) {
+        let count = 0;
+        if (mode === 'direct') {
+          count = directMarks[reg.id] ? Object.keys(directMarks[reg.id].marks).length : 0;
+        } else {
+          count = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null).length;
+        }
+        
+        if (count === 0) {
           missingMarksCount++;
         } else {
           anySubmissions = true;
@@ -349,7 +391,7 @@ export default function ResultsPage() {
       });
 
       if (anySubmissions && missingMarksCount > 0) {
-        const warnMsg = `⚠️ WARNING: ${missingMarksCount} participant(s) have NOT received any marks from the judges, while others have! Are you absolutely sure you want to publish the results now?`;
+        const warnMsg = `⚠️ WARNING: ${missingMarksCount} participant(s) have NOT received any marks! Are you absolutely sure you want to publish the results now?`;
         
         if (Platform.OS === 'web') {
           const confirmed = window.confirm(warnMsg);
@@ -630,9 +672,10 @@ export default function ResultsPage() {
         {(registrations as any[])?.map(reg => {
           const entry = results[reg.id];
           const judgeMarks = getJudgeMarks(reg.id);
-          const markSummary = getMarkSummary(reg.id);
+          const markSummary = mode === 'direct' ? getDirectMarkSummary(reg.id) : getMarkSummary(reg.id);
           const avg = markSummary?.rawAverage ?? null;
           const ptsPreview = getPointsPreview(entry?.grade ?? null, entry?.rank ?? null);
+          const directEntryMarksCount = directMarks[reg.id] ? Object.keys(directMarks[reg.id].marks).length : 0;
 
           return (
             <SsfCard key={reg.id} className="mb-2.5 border-emerald-100 p-3">
@@ -652,8 +695,8 @@ export default function ResultsPage() {
                   </View>
                 </View>
 
-                {/* Show avg only in marks mode */}
-                {mode === 'marks' && avg !== null && (
+                {/* Show avg for both marks and direct mode */}
+                {(mode === 'marks' || mode === 'direct') && avg !== null && (
                   <View className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
                     <Text className="font-poppins-bold text-emerald-700 text-[10px]">
                       {markSummary?.commonMaximum
@@ -692,9 +735,52 @@ export default function ResultsPage() {
                   )}
                   {judgeMarks.length > 0 && judgeMarks.length < expectedJudges && (
                     <Text className="font-poppins text-[10px] text-orange-600 mt-1">
-                      ⚠️ Only {judgeMarks.length}/{expectedJudges} judges submitted
+                      ?? Only {judgeMarks.length}/{expectedJudges} judges submitted
                     </Text>
                   )}
+                </View>
+              )}
+
+              {/* Direct Entry Marks breakdown */}
+              {mode === 'direct' && (
+                <View className="border-l-2 border-purple-200 pl-3 py-1 mb-3">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <Text className="font-poppins-bold text-[10px] text-ssf-text-muted">
+                      Enter Marks ({directEntryMarksCount}/{expectedJudges} Judges)
+                    </Text>
+                  </View>
+                  <View className="flex-row flex-wrap gap-2">
+                    {Array.from({ length: expectedJudges }).map((_, i) => {
+                      const judgeIndex = i + 1;
+                      const hasMark = directMarks[reg.id]?.marks?.[judgeIndex] !== undefined;
+                      const markValue = directMarks[reg.id]?.marks?.[judgeIndex];
+                      const maxVal = directMarks[reg.id]?.maxMark || 100;
+                      
+                      return (
+                        <TouchableOpacity
+                          key={judgeIndex}
+                          onPress={() => setDirectEntryModal({
+                            visible: true,
+                            regId: reg.id,
+                            judgeIndex,
+                            participantName: reg.participants?.name ?? 'Unknown',
+                            codeLetter: reg.code_letter,
+                          })}
+                          disabled={published}
+                          className={`flex-row items-center justify-between px-3 py-1.5 rounded-lg border ${hasMark ? 'bg-purple-50 border-purple-200' : 'bg-white border-dashed border-gray-300'} ${published ? 'opacity-70' : ''}`}
+                        >
+                          <Text className={`font-poppins text-[10px] ${hasMark ? 'text-purple-800' : 'text-gray-500'}`}>
+                            Judge {judgeIndex}
+                          </Text>
+                          {hasMark && (
+                            <Text className="font-poppins-bold text-[10px] text-purple-900 ml-2">
+                              {markValue}/{maxVal}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                 </View>
               )}
 
@@ -703,41 +789,15 @@ export default function ResultsPage() {
                 <Text className="font-poppins-bold text-ssf-text text-[11px] mb-1.5">
                   🏆 Final Rank
                 </Text>
-                {mode === 'marks' ? (
+                {(mode === 'marks' || mode === 'direct') ? (
                   <View className="h-9 flex-row items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3">
                     <Text className="font-poppins-bold text-[11px] text-emerald-800">
                       {entry?.rank && entry.rank !== '-' ? entry.rank : 'No rank'}
                     </Text>
-                    <Text className="font-poppins text-[9px] text-emerald-700">Calculated from judge marks</Text>
+                    <Text className="font-poppins text-[9px] text-emerald-700">Calculated from marks</Text>
                   </View>
                 ) : (
-                <View className="flex-row flex-wrap gap-1.5">
-                  {RANKS.map(rank => (
-                    <TouchableOpacity
-                      key={rank}
-                      onPress={() => setField(reg.id, 'rank', rank)}
-                      className={`h-8 min-w-[46px] px-3 rounded-lg border items-center justify-center ${
-                        entry?.rank === rank
-                          ? 'bg-ssf-primary border-ssf-primary'
-                          : 'bg-white border-gray-200'
-                      }`}
-                    >
-                      <Text className={`font-poppins-bold text-[10px] ${
-                        entry?.rank === rank ? 'text-white' : 'text-gray-600'
-                      }`}>
-                        {rank}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                  <TouchableOpacity
-                    onPress={() => setField(reg.id, 'rank', '-')}
-                    className={`h-8 px-3 rounded-lg border items-center justify-center ${
-                      (!entry?.rank || entry?.rank === '-') ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <Text className="font-poppins-bold text-[10px] text-gray-500">No Rank</Text>
-                  </TouchableOpacity>
-                </View>
+                  <View />
                 )}
               </View>
 
@@ -746,38 +806,15 @@ export default function ResultsPage() {
                 <Text className="font-poppins-bold text-ssf-text text-[11px] mb-1.5">
                   📊 Final Grade
                 </Text>
-                {mode === 'marks' ? (
+                {(mode === 'marks' || mode === 'direct') ? (
                   <View className="h-9 flex-row items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3">
                     <Text className="font-poppins-black text-[11px] text-blue-800">
                       {entry?.grade && entry.grade !== '-' ? entry.grade : 'No grade'}
                     </Text>
-                    <Text className="font-poppins text-[9px] text-blue-700">Calculated from judge marks</Text>
+                    <Text className="font-poppins text-[9px] text-blue-700">Calculated from marks</Text>
                   </View>
                 ) : (
-                <View className="flex-row flex-wrap gap-1.5">
-                  {GRADES.map(grade => (
-                    <TouchableOpacity
-                      key={grade}
-                      onPress={() => setField(reg.id, 'grade', grade)}
-                      className={`h-8 min-w-[42px] px-3 rounded-lg border items-center justify-center ${
-                        (entry?.grade === grade || (!entry?.grade && grade === '-'))
-                          ? grade === 'A+' ? 'bg-green-500 border-green-500'
-                          : grade === 'A' ? 'bg-blue-500 border-blue-500'
-                          : grade === 'B' ? 'bg-yellow-500 border-yellow-500'
-                          : grade === 'C' ? 'bg-orange-500 border-orange-500'
-                          : 'bg-gray-400 border-gray-400'
-                          : 'bg-white border-gray-200'
-                      }`}
-                    >
-                      <Text className={`font-poppins-black text-[10px] ${
-                        (entry?.grade === grade || (!entry?.grade && grade === '-'))
-                          ? 'text-white' : 'text-gray-600'
-                      }`}>
-                        {grade}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                  <View />
                 )}
               </View>
 
@@ -869,20 +906,53 @@ export default function ResultsPage() {
         </View>
       </View>
 
-      {editingRegistration && (
+      {/* Admin Re-Entry Modal */}
+      {editingRegistration && schedule && activeFestival && (
         <AdminMarkEntryModal
-          visible={!!editingRegistration}
+          visible={true}
           onClose={() => setEditingRegistration(null)}
-          scheduleId={id as string}
+          scheduleId={scheduleId as string}
           registrationId={editingRegistration.id}
-          participantName={editingRegistration.participants?.name || 'Unknown'}
+          participantName={editingRegistration.participants?.name ?? 'Unknown'}
           codeLetter={editingRegistration.code_letter}
-          tenantId={schedule?.tenant_id || ''}
-          itemNameEn={schedule?.items?.item_name_en || ''}
-          itemNameMl={schedule?.items?.item_name_ml || ''}
-          itemType={schedule?.items?.item_type || ''}
+          tenantId={schedule.tenant_id}
+          itemNameEn={schedule.items?.item_name_en}
+          itemNameMl={schedule.items?.item_name_ml}
+          itemType={schedule.items?.type}
           existingMarks={getJudgeMarks(editingRegistration.id)}
-          assignedJudges={(judgeSummary as any[]) || []}
+          assignedJudges={schedule.assigned_judges}
+        />
+      )}
+
+      {/* Direct Mark Entry Modal */}
+      {directEntryModal && schedule && activeFestival && (
+        <DirectMarkEntryModal
+          visible={true}
+          onClose={() => setDirectEntryModal(null)}
+          onSave={(totalMark, maxMark) => {
+             setDirectMarks(prev => {
+                const regState = prev[directEntryModal.regId] || { marks: {}, maxMark: 100 };
+                return {
+                   ...prev,
+                   [directEntryModal.regId]: {
+                      ...regState,
+                      marks: {
+                         ...regState.marks,
+                         [directEntryModal.judgeIndex]: totalMark
+                      },
+                      maxMark
+                   }
+                };
+             });
+          }}
+          participantName={directEntryModal.participantName}
+          codeLetter={directEntryModal.codeLetter}
+          tenantId={schedule.tenant_id}
+          itemNameEn={schedule.items?.item_name_en}
+          itemNameMl={schedule.items?.item_name_ml}
+          itemType={schedule.items?.type}
+          judgeIndex={directEntryModal.judgeIndex}
+          initialTotal={directMarks[directEntryModal.regId]?.marks?.[directEntryModal.judgeIndex]}
         />
       )}
     </View>
