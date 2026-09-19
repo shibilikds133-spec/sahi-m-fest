@@ -5,7 +5,7 @@ import { ToggleField } from './fields/SliderField';
 import Accordion from './Accordion';
 import { useTemplateStore, BackgroundTransform } from '../Stores/templateStore';
 import useImage from 'use-image';
-import { useResolvedImageUrl } from '../../../../../core/hooks/useResolvedImageUrl';
+import { useResolvedImageUrl } from '../../../../core/hooks/useResolvedImageUrl';
 import { uploadService } from '../../../../services/storage/uploadService';
 import { UploadCloud } from 'lucide-react';
 
