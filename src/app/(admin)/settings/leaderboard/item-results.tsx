@@ -334,6 +334,11 @@ export default function ItemResultsPage() {
                 <View style={styles.itemGroupHeader}>
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
+                    {itemCategoryCodes.get(group.item_id)?.map(code => (
+                      <View key={code} style={styles.itemTypeBadge}>
+                        <Text style={styles.itemTypeBadgeText}>{code.charAt(0).toUpperCase() + code.slice(1)}</Text>
+                      </View>
+                    ))}
                     <View style={styles.itemTypeBadge}>
                       {group.is_group ? <Users size={12} color={colors.navy} style={{ marginRight: 4 }} /> : <UserIcon size={12} color={colors.navy} style={{ marginRight: 4 }} />}
                       <Text style={styles.itemTypeBadgeText}>{group.is_group ? 'Group' : 'Individual'}</Text>
