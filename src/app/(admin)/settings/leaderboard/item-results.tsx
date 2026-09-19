@@ -125,6 +125,8 @@ export default function ItemResultsPage() {
     [festivalCategories],
   );
 
+  const itemDetailsMap = useMemo(() => new Map(festivalItems.map((item) => [item.id, item])), [festivalItems]);
+
   const itemCategoryCodes = useMemo(() => new Map(
     festivalItems.map((item: any) => [
       item.id,
@@ -334,15 +336,21 @@ export default function ItemResultsPage() {
                 <View style={styles.itemGroupHeader}>
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
-                    {itemCategoryCodes.get(group.item_id)?.map((code: string) => {
-                      const cat = festivalCategories.find(c => c.code.toLowerCase() === code.toLowerCase());
-                      const catName = cat ? cat.name_en : (code.charAt(0).toUpperCase() + code.slice(1));
-                      return (
-                        <View key={code} style={styles.itemTypeBadge}>
-                          <Text style={styles.itemTypeBadgeText}>{catName}</Text>
+                      {itemDetailsMap.get(group.item_id)?.item_code && (
+                        <View style={[styles.itemTypeBadge, { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 }]}>
+                          <Text style={[styles.itemTypeBadgeText, { color: '#4b5563' }]}>{itemDetailsMap.get(group.item_id).item_code}</Text>
                         </View>
-                      );
-                    })}
+                      )}
+                      {(itemDetailsMap.get(group.item_id)?.category_codes || []).map((code: string) => {
+                        const cat = festivalCategories.find(c => c.code.toLowerCase() === code.toLowerCase());
+                        const catName = cat ? cat.name_en : (code.charAt(0).toUpperCase() + code.slice(1));
+                        return (
+                          <View key={code} style={styles.itemTypeBadge}>
+                            <Text style={styles.itemTypeBadgeText}>{catName}</Text>
+                          </View>
+                        );
+                      })}
+                    
                     <View style={styles.itemTypeBadge}>
                       {group.is_group ? <Users size={12} color={colors.navy} style={{ marginRight: 4 }} /> : <UserIcon size={12} color={colors.navy} style={{ marginRight: 4 }} />}
                       <Text style={styles.itemTypeBadgeText}>{group.is_group ? 'Group' : 'Individual'}</Text>
@@ -446,6 +454,22 @@ export default function ItemResultsPage() {
 
                 <View style={styles.previewHeaderCard}>
                    <Text style={styles.previewItemName}>{previewGroup.item_name_ml || previewGroup.item_name}</Text>
+                   <View style={{ flexDirection: 'row', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                     {itemDetailsMap.get(previewGroup.item_id)?.item_code && (
+                        <View style={[styles.itemTypeBadge, { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 }]}>
+                          <Text style={[styles.itemTypeBadgeText, { color: '#4b5563' }]}>{itemDetailsMap.get(previewGroup.item_id).item_code}</Text>
+                        </View>
+                     )}
+                     {(itemDetailsMap.get(previewGroup.item_id)?.category_codes || []).map((code: string) => {
+                        const cat = festivalCategories.find(c => c.code.toLowerCase() === code.toLowerCase());
+                        const catName = cat ? cat.name_en : (code.charAt(0).toUpperCase() + code.slice(1));
+                        return (
+                          <View key={code} style={styles.itemTypeBadge}>
+                            <Text style={styles.itemTypeBadgeText}>{catName}</Text>
+                          </View>
+                        );
+                     })}
+                   </View>
                    <Text style={styles.previewItemMeta}>{previewGroup.is_group ? 'Group Item' : 'Individual Item'} • {previewGroup.results.length} Results</Text>
                 </View>
 
