@@ -1,12 +1,14 @@
 import { ui } from '@/constants/designSystem';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, TextInput } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { Download, RefreshCw, Share2, Archive } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, TextInput, Modal, Pressable } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Download, RefreshCw, Share2, Archive, Upload, Trash2, Plus } from 'lucide-react-native';
 import { supabase } from '@/core/config/supabase';
 import { useFestival } from '@/core/hooks/useFestival';
 import { useExportQueueStore } from '@/services/exportQueueService';
 import { storageService } from '@/services/storage/storageService';
+import { uploadService } from '@/services/storage/uploadService';
+import { useAuthStore } from '@/core/store/authStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const colors = {
@@ -31,6 +33,83 @@ export default function MediaCenterPage() {
   const { data: activeFestival } = useActiveFestival();
   const { jobs, isProcessing } = useExportQueueStore();
   const [filter, setFilter] = useState('all'); // 'all', 'poster', 'certificate'
+  const queryClient = useQueryClient();
+  const { tenant_id } = useAuthStore();
+
+  // Upload poster states
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadEventName, setUploadEventName] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileSelect = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be under 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    };
+    input.click();
+  };
+
+  const handleUploadPoster = async () => {
+    if (!selectedFile || !uploadEventName.trim() || !activeFestival?.id || !tenant_id) return;
+    setIsUploading(true);
+    setUploadProgress(0);
+    try {
+      const metadata = await uploadService.uploadPoster(selectedFile, activeFestival.id, tenant_id, (p) => setUploadProgress(p));
+      const renderHash = `manual_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const { error } = await supabase.from('generated_assets').insert({
+        tenant_id,
+        festival_id: activeFestival.id,
+        asset_type: 'poster',
+        render_hash: renderHash,
+        resolution: 'hd',
+        storage_path: metadata.object_key,
+        public_url: metadata.file_url,
+        event_name: uploadEventName.trim(),
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['generated-assets', activeFestival.id] });
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setUploadEventName('');
+      setUploadProgress(0);
+    } catch (err: any) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeletePoster = async (asset: any) => {
+    if (!activeFestival?.id) return;
+    const confirmed = confirm(`Delete poster "${asset.event_name}"?`);
+    if (!confirmed) return;
+    try {
+      const { error } = await supabase.from('generated_assets').delete().eq('render_hash', asset.render_hash);
+      if (error) throw error;
+      for (const res of Object.keys(asset.resolutions || {})) {
+        const url = asset.resolutions[res];
+        if (url && url.startsWith('r2://')) {
+          try { await uploadService.deleteObject(url.replace('r2://', '')); } catch (_) {}
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['generated-assets', activeFestival.id] });
+    } catch (err: any) {
+      alert('Delete failed: ' + err.message);
+    }
+  };
 
   const { data: assets = [], isLoading, refetch } = useQuery({
     queryKey: ['generated-assets', activeFestival?.id],
@@ -275,6 +354,10 @@ export default function MediaCenterPage() {
             <Archive size={16} color={ui.colors.surface} />
             <Text style={styles.btnPrimaryText}>Batch Export (ZIP)</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.btnPrimary, { backgroundColor: '#0F766E' }]} onPress={() => setShowUploadModal(true)}>
+            <Upload size={16} color={ui.colors.surface} />
+            <Text style={styles.btnPrimaryText}>Upload Poster</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -396,6 +479,14 @@ export default function MediaCenterPage() {
                       <Share2 size={14} color={ui.colors.surface} />
                       <Text style={styles.actionTextWhatsApp}>Share</Text>
                     </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, { backgroundColor: ui.colors.dangerSoft }]}
+                      onPress={() => handleDeletePoster(asset)}
+                    >
+                      <Trash2 size={14} color={ui.colors.danger} />
+                      <Text style={[styles.actionText, { color: ui.colors.danger }]}>Delete</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
@@ -404,6 +495,80 @@ export default function MediaCenterPage() {
           </>
         )}
       </ScrollView>
+
+      {/* Upload Poster Modal */}
+      <Modal
+        visible={showUploadModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => !isUploading && setShowUploadModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Upload Custom Poster</Text>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Event / Poster Title *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Malayalam Speech Result"
+                value={uploadEventName}
+                onChangeText={setUploadEventName}
+                editable={!isUploading}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Poster Image (JPG/PNG/WEBP) *</Text>
+              <TouchableOpacity 
+                style={styles.imagePickerBtn} 
+                onPress={handleFileSelect}
+                disabled={isUploading}
+              >
+                {previewUrl ? (
+                  <Image source={{ uri: previewUrl }} style={styles.previewImage} resizeMode="cover" />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Plus size={24} color={colors.muted} />
+                    <Text style={styles.imagePlaceholderText}>Click to select image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {isUploading && (
+              <View style={styles.progressContainer}>
+                <View style={[styles.progressBar, { width: `${uploadProgress}%` }]} />
+                <Text style={styles.progressText}>Uploading... {Math.round(uploadProgress)}%</Text>
+              </View>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.btnCancel} 
+                onPress={() => {
+                  setShowUploadModal(false);
+                  setSelectedFile(null);
+                  setPreviewUrl(null);
+                  setUploadEventName('');
+                }}
+                disabled={isUploading}
+              >
+                <Text style={styles.btnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.btnPrimary, { backgroundColor: '#0F766E' }, (!selectedFile || !uploadEventName.trim() || isUploading) && styles.btnDisabled]}
+                onPress={handleUploadPoster}
+                disabled={!selectedFile || !uploadEventName.trim() || isUploading}
+              >
+                {isUploading ? <ActivityIndicator size="small" color="#fff" /> : <Upload size={16} color="#fff" />}
+                <Text style={styles.btnPrimaryText}>{isUploading ? 'Uploading...' : 'Upload Poster'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -592,5 +757,106 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: ui.colors.surface,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 500,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.navy,
+    marginBottom: 20,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.navy,
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: colors.bg,
+  },
+  imagePickerBtn: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.bg,
+    overflow: 'hidden',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  imagePlaceholderText: {
+    color: colors.muted,
+    fontSize: 14,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  progressContainer: {
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: 3,
+    marginBottom: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#0F766E',
+  },
+  progressText: {
+    position: 'absolute',
+    top: -20,
+    right: 0,
+    fontSize: 12,
+    color: colors.muted,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 24,
+  },
+  btnCancel: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  btnCancelText: {
+    color: colors.muted,
+    fontWeight: '600',
+  },
+  btnDisabled: {
+    opacity: 0.5,
   }
 });
