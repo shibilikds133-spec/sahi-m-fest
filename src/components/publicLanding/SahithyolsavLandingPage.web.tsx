@@ -295,6 +295,8 @@ const PremiumScheduleCarousel = ({ schedules, onSelectSchedule }: any) => {
 
 export function SahithyolsavLandingPage({ page = 'landing', children }: { page?: 'landing' | 'schedule' | 'units' | 'items' | 'media', children?: React.ReactNode }) {
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   const { tenant_id: queryTenantId } = useLocalSearchParams<{ tenant_id?: string }>();
   const { tenant_id: authTenantId } = useAuthStore();
   const tenantId = (Array.isArray(queryTenantId) ? queryTenantId[0] : queryTenantId) || authTenantId || 'f87172d1-ed27-4db4-842c-cc00d3d56de2';
@@ -331,17 +333,20 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
     enabled: page === 'items' && !!festivalId
   });
 
-  const groupedItemResults = React.useMemo(() => {
-    if (!publishedResultsQuery.data) return [];
+  const { availableCategories, filteredItemResults: groupedItemResults } = React.useMemo(() => {
+    if (!publishedResultsQuery.data) return { availableCategories: [], filteredItemResults: [] };
     const grouped: Record<string, any> = {};
+    const categories = new Set<string>();
     publishedResultsQuery.data.forEach((r: any) => {
       const key = r.item_id || r.item_name;
+      const category = r.item_category_codes?.length ? r.item_category_codes[0] : r.participant_category_code;
+      if (category) categories.add(category);
       if (!grouped[key]) {
         grouped[key] = {
           item_id: r.item_id,
           result_id: r.result_id,
           item_name: r.item_name,
-          category: r.item_category_codes?.length ? r.item_category_codes[0] : r.participant_category_code,
+          category,
           participants: []
         };
       }
@@ -355,8 +360,19 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
         });
       }
     });
-    return Object.values(grouped).sort((a: any, b: any) => a.item_name.localeCompare(b.item_name));
-  }, [publishedResultsQuery.data]);
+    const allItems = Object.values(grouped).sort((a: any, b: any) => a.item_name.localeCompare(b.item_name));
+    
+    const filtered = allItems.filter(item => {
+      const matchesSearch = searchTerm ? item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+      const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
+      return matchesSearch && matchesCategory;
+    });
+
+    return {
+      availableCategories: Array.from(categories).sort(),
+      filteredItemResults: filtered
+    };
+  }, [publishedResultsQuery.data, searchTerm, selectedCategory]);
   
   // Initial Splash Screen Logic
   const [isAppReady, setIsAppReady] = React.useState(false);
@@ -1244,12 +1260,46 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
         {page === 'items' && (
         <section id="item-results" className="bg-transparent backdrop-blur-sm py-section-gap px-gutter border-alviora-border fade-in-up visible">
           <div className="max-w-container-max mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Published Results</h2>
-              <p className="font-body-lg text-body-lg text-alviora-body">Latest competition results.</p>
-            </div>
-            
-            <div className="space-y-6">
+              <div className="text-center mb-10">
+                <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-alviora-heading mb-4">Published Results</h2>
+                <p className="font-body-lg text-body-lg text-alviora-body">Latest competition results.</p>
+              </div>
+
+              {/* Search & Filter Controls */}
+              <div className="mb-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:max-w-md">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40">search</span>
+                  <input 
+                    type="text" 
+                    placeholder="Search by item name..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-11 pr-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-alviora-primary/50 transition-all"
+                  />
+                </div>
+                
+                {availableCategories.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className={`whitespace-nowrap px-4 py-2 rounded-full border transition-all text-sm font-bold tracking-wider ${!selectedCategory ? 'bg-alviora-primary text-black border-alviora-primary' : 'bg-transparent text-white/70 border-white/20 hover:border-white/40 hover:text-white'}`}
+                    >
+                      ALL
+                    </button>
+                    {availableCategories.map((cat: string) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`whitespace-nowrap px-4 py-2 rounded-full border transition-all text-sm font-bold tracking-wider uppercase ${selectedCategory === cat ? 'bg-alviora-primary text-black border-alviora-primary' : 'bg-transparent text-white/70 border-white/20 hover:border-white/40 hover:text-white'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-6">
               {groupedItemResults.length > 0 ? groupedItemResults.map((result: any, idx: number) => {
                 const poster = generatedPosters.find((p: any) => p.result_id === result.result_id || (p.item_id && p.item_id === result.item_id));
                 return (
