@@ -335,10 +335,6 @@ export default function PublicCandidateProfileScreen() {
                         {formatDate(result.published_at)}{result.grade ? ` · Grade ${result.grade}` : ''}
                       </Text>
                     </View>
-                    <View style={styles.pointsBox}>
-                      <Text style={styles.pointsValue}>{result.points_awarded}</Text>
-                      <Text style={styles.pointsLabel}>Pts</Text>
-                    </View>
                   </View>
                 ))
               )}
