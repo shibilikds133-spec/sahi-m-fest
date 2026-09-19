@@ -1,0 +1,13 @@
+const { Client } = require("pg");
+async function run() {
+  const client = new Client({ connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres" });
+  await client.connect();
+  try {
+    const res = await client.query("SELECT * FROM festivals LIMIT 1;");
+    console.log("Found festivals");
+  } catch (e) {
+    console.error("Error:", e.message);
+  }
+  await client.end();
+}
+run();

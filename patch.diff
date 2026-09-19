@@ -1,0 +1,74 @@
+--- a/src/app/(admin)/schedule/[id]/results.tsx
++++ b/src/app/(admin)/schedule/[id]/results.tsx
+@@ -86,7 +86,8 @@
+   
+   const [officialBracket, setOfficialBracket] = useState<string>('1');
+   const [bracketManuallyOverridden, setBracketManuallyOverridden] = useState(false);
+-  const [forceRepublishConfirmed, setForceRepublishConfirmed] = useState(false);
+-  
++  const [forceRepublishConfirmed, setForceRepublishConfirmed] = useState(false);
++  const [editingMarkRegId, setEditingMarkRegId] = useState<string | null>(null);
+   const hasInitialized = React.useRef(false);
+ 
+   // Init results from existing results or registrations
+@@ -649,19 +650,30 @@
+                   </View>
+                 </View>
+ 
+-                {/* Show avg only in marks mode */}
+-                {mode === 'marks' && avg !== null && (
+-                  <View className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
+-                    <Text className="font-poppins-bold text-emerald-700 text-[10px]">
+-                      {markSummary?.commonMaximum
+-                        ? `Avg: ${avg}/${markSummary.commonMaximum}`
+-                        : `Avg: ${markSummary?.percentageAverage}%`}
+-                    </Text>
+-                  </View>
+-                )}
+-              </View>
++                {/* Show avg only in marks mode */}
++                {mode === 'marks' && (
++                  <View className="items-end gap-y-1">
++                    {avg !== null && (
++                      <View className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
++                        <Text className="font-poppins-bold text-emerald-700 text-[10px]">
++                          {markSummary?.commonMaximum
++                            ? `Avg: ${avg}/${markSummary.commonMaximum}`
++                            : `Avg: ${markSummary?.percentageAverage}%`}
++                        </Text>
++                      </View>
++                    )}
++                    {!published && (
++                      <TouchableOpacity
++                        onPress={() => setEditingMarkRegId(reg.id)}
++                        className="bg-orange-50 border border-orange-200 px-2 py-1 rounded-md"
++                      >
++                        <Text className="font-poppins-bold text-orange-700 text-[10px]">📝 Edit Mark</Text>
++                      </TouchableOpacity>
++                    )}
++                  </View>
++                )}
++              </View>
+ 
+               {/* Judge marks breakdown — marks mode only */}
+               {false && mode === 'marks' && judgeMarks.length > 0 && (
+@@ -808,14 +820,21 @@
+       </ScrollView>
+ 
+       {/* Action buttons */}
++      <AdminMarkEntryModal
++        visible={editingMarkRegId !== null}
++        onClose={() => setEditingMarkRegId(null)}
++        scheduleId={scheduleId}
++        registrationId={editingMarkRegId ?? ''}
++        participantName={(registrations as any[]).find(r => r.id === editingMarkRegId)?.participants?.name || 'Participant'}
++        codeLetter={(registrations as any[]).find(r => r.id === editingMarkRegId)?.code_letter || ''}
++        tenantId={schedule?.tenant_id || ''}
++        itemNameEn={schedule?.items?.item_name_en || ''}
++        itemNameMl={schedule?.items?.item_name_ml || ''}
++        itemType={schedule?.items?.item_type || ''}
++        existingMarks={editingMarkRegId ? getJudgeMarks(editingMarkRegId) : []}
++      />
+       <View className="border-t border-ui-border bg-white px-3 py-3">
+         {published && forceRepublishConfirmed && (
+           <View className="bg-red-50 border border-red-200 p-2 rounded-t-xl -mb-2 z-0 flex-row items-center justify-center">

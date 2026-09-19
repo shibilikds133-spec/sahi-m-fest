@@ -1,14 +1,20 @@
-const { Client } = require('pg');
-require('dotenv').config({ path: '.env.staging' });
+const { Client } = require("pg");
 
-const STAGING_DB = 'postgresql://postgres:m1o2n3u4907273@db.qpuzxoohyzjwdkhbxnjy.supabase.co:5432/postgres';
+async function run() {
+  const client = new Client({
+    connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres"
+  });
 
-async function fetchConfig() {
-  const client = new Client({ connectionString: STAGING_DB });
   try {
     await client.connect();
-    const res = await client.query('SELECT * FROM points_config LIMIT 1');
-    console.log(JSON.stringify(res.rows[0], null, 2));
+    const res = await client.query(`
+      SELECT p.*
+      FROM public.points_config p
+      JOIN public.festivals f ON p.festival_id = f.id
+      JOIN public.tenants t ON f.tenant_id = t.id
+      WHERE t.slug = 'alviora-test';
+    `);
+    console.log(JSON.stringify(res.rows, null, 2));
   } catch (err) {
     console.error(err);
   } finally {
@@ -16,4 +22,4 @@ async function fetchConfig() {
   }
 }
 
-fetchConfig();
+run();

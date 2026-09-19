@@ -757,8 +757,11 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
                 </a>
                 <a href="#live-schedule" className="hover-lift w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-full font-title-md text-title-md hover:bg-[#333] transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
                   <span className="material-symbols-outlined">calendar_today</span>
-                  Today's Schedule
-                </a>
+                  Today's Schedule</a>
+                  <Link href={`/leaderboard/item-results?tenant_id=${tenantId}`} className="hover-lift w-full sm:w-auto border border-[#c69a53]/40 text-[#c69a53] px-8 py-4 rounded-full font-title-md text-title-md hover:bg-[#c69a53]/10 transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
+                    <span className="material-symbols-outlined">format_list_numbered</span>
+                    Item Results
+                  </Link>
               </div>
             </div>
           </div>
@@ -799,8 +802,11 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
                 </a>
                 <a href="#live-schedule" className="w-full border border-white/20 text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#333] transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
                   <span className="material-symbols-outlined text-lg">calendar_today</span>
-                  Live Schedule
-                </a>
+                  Live Schedule</a>
+                  <Link href={`/leaderboard/item-results?tenant_id=${tenantId}`} className="w-full border border-[#c69a53]/40 text-[#c69a53] py-4 rounded-2xl font-bold text-sm hover:bg-[#c69a53]/10 transition-all flex items-center justify-center gap-2 bg-black/30 backdrop-blur-sm shadow-sm">
+                    <span className="material-symbols-outlined text-lg">format_list_numbered</span>
+                    Item Results
+                  </Link>
               </div>
             </div>
           </div>

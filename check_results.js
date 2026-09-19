@@ -1,19 +1,23 @@
-const { Client } = require('pg');
+const { Client } = require("pg");
 
-async function checkRows() {
-  const mainClient = new Client({
-    connectionString: 'postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres'
+async function run() {
+  const client = new Client({
+    connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres"
   });
 
   try {
-    await mainClient.connect();
-    const res = await mainClient.query("SELECT tenant_id, COUNT(*) FROM results GROUP BY tenant_id ORDER BY COUNT(*) DESC");
-    console.table(res.rows);
+    await client.connect();
+    const res = await client.query(`
+      SELECT id, schedule_id, published, result_status
+      FROM public.results 
+      WHERE schedule_id = 'fdcd2441-d871-4610-96c8-50790415b553';
+    `);
+    console.log(JSON.stringify(res.rows, null, 2));
   } catch (err) {
     console.error(err);
   } finally {
-    await mainClient.end();
+    await client.end();
   }
 }
 
-checkRows();
+run();

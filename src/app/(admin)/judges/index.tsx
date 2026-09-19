@@ -1407,18 +1407,18 @@ export default function JudgesPage() {
         <View id="print-evaluation-sheet" style={{ display: 'none' }}>
           <View style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', padding: '10mm', position: 'relative' }}>
           {/* Header (Increased to ~7cm = 265px) */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: ui.shadow.shadowColor, paddingBottom: 24, marginBottom: 16, maxHeight: 265 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: '#000080', paddingBottom: 24, marginBottom: 16, maxHeight: 265 }}>
             {/* Left Side: Inviting Message & Event Details */}
             <View style={{ flex: 1, paddingRight: 16, justifyContent: 'flex-start' }}>
-              <Text style={{ fontSize: 26, fontFamily: 'Poppins_900Black', color: ui.shadow.shadowColor, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 2 }}>
+              <Text style={{ fontSize: 26, fontFamily: 'Poppins_900Black', color: '#000080', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 2 }}>
                 ALVIORA 2K26
               </Text>
               <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: ui.colors.text, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
                 OFFICIAL EVALUATION SHEET
               </Text>
               
-              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: ui.shadow.shadowColor, marginBottom: 16, lineHeight: 20, paddingRight: 20 }}>
-                Respected <Text style={{ fontFamily: 'Poppins_700Bold', color: ui.shadow.shadowColor }}>{selectedJudgeForToken?.name || 'Judge'}</Text>, we cordially invite you to evaluate the upcoming competition. Please scan the QR code to login digitally to the Judge Portal.
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#000080', marginBottom: 16, lineHeight: 20, paddingRight: 20 }}>
+                Respected <Text style={{ fontFamily: 'Poppins_700Bold', color: '#000080' }}>{selectedJudgeForToken?.name || 'Judge'}</Text>, we cordially invite you to evaluate the upcoming competition. Please scan the QR code to login digitally to the Judge Portal.
               </Text>
               
               {(() => {
@@ -1426,7 +1426,7 @@ export default function JudgesPage() {
                 return (
                   <View style={{ borderLeftWidth: 4, borderLeftColor: '#000080', paddingLeft: 12, marginTop: 4 }}>
                     <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#555', textTransform: 'uppercase', marginBottom: 2 }}>Event / Item</Text>
-                    <Text style={{ fontSize: 24, fontFamily: 'Poppins_900Black', color: ui.shadow.shadowColor }}>
+                    <Text style={{ fontSize: 24, fontFamily: 'Poppins_900Black', color: '#000080' }}>
                       {selectedS?.items?.item_name_ml || selectedS?.items?.item_name_en}
                     </Text>
                     <Text style={{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: ui.colors.text, marginTop: 2 }}>
@@ -1452,28 +1452,28 @@ export default function JudgesPage() {
           </View>
 
           {/* Grid for manual marking */}
-          <View style={{ width: '100%', borderWidth: 1, borderColor: ui.shadow.shadowColor, marginTop: 10 }}>
+          <View style={{ width: '100%', borderWidth: 1, borderColor: '#000080', marginTop: 10 }}>
             {/* Table Header */}
-            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: ui.shadow.shadowColor, backgroundColor: '#f0f0f0' }}>
-              <View style={{ width: 60, borderRightWidth: 1, borderColor: ui.shadow.shadowColor, padding: 8, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: ui.shadow.shadowColor }}>Sl No</Text>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000080', backgroundColor: '#f0f0f0' }}>
+              <View style={{ width: 60, borderRightWidth: 1, borderColor: '#000080', padding: 8, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000080' }}>Sl No</Text>
               </View>
-              <View style={{ flex: 1, borderRightWidth: 1, borderColor: ui.shadow.shadowColor, padding: 8, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: ui.shadow.shadowColor }}>Code Letter</Text>
+              <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000080', padding: 8, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000080' }}>Code Letter</Text>
               </View>
               <View style={{ flex: 2, padding: 8, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: ui.shadow.shadowColor }}>Marks</Text>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000080' }}>Marks</Text>
               </View>
             </View>
             
             {/* Table Rows */}
             {Array.from({ length: printRowCount }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === printRowCount - 1 ? 0 : 1, borderColor: ui.shadow.shadowColor, height: 35 }}>
-                <View style={{ width: 60, borderRightWidth: 1, borderColor: ui.shadow.shadowColor, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: ui.shadow.shadowColor }}>{i + 1}</Text>
+              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === printRowCount - 1 ? 0 : 1, borderColor: '#000080', height: 35 }}>
+                <View style={{ width: 60, borderRightWidth: 1, borderColor: '#000080', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#000080' }}>{i + 1}</Text>
                 </View>
-                <View style={{ flex: 1, borderRightWidth: 1, borderColor: ui.shadow.shadowColor, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: ui.shadow.shadowColor }}>
+                <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000080', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#000080' }}>
                     {String.fromCharCode(65 + i)}
                   </Text>
                 </View>

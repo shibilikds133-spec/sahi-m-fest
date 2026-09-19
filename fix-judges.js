@@ -1,0 +1,13 @@
+const fs=require('fs');
+let code=fs.readFileSync('src/app/(admin)/judges/index.tsx', 'utf8');
+code = code.replace(/bg-\[\#E8F5E9\]/g, 'bg-ui-success-soft border-ui-border');
+code = code.replace(/text-\[\#123B63\]/g, 'text-ui-primary');
+code = code.replace(/bg-\[\#123B63\]/g, 'bg-ui-primary');
+code = code.replace(/border-\[\#123B63\]/g, 'border-ui-primary');
+code = code.replace(/color=['"]#D1D5DB['"]/g, 'color={ui.colors.border}');
+code = code.replace(/color=['"]#FFF['"]/g, 'color={ui.colors.surface}');
+code = code.replace(/color=['"]#FFFFFF['"]/g, 'color={ui.colors.surface}');
+code = code.replace(/color=['"]#64748B['"]/g, 'color={ui.colors.textMuted}');
+code = code.replace(/backgroundColor=['"]#FFFFFF['"]/g, 'backgroundColor={ui.colors.surface}');
+fs.writeFileSync('src/app/(admin)/judges/index.tsx', code);
+console.log('Fixed judges index');
