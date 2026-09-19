@@ -478,41 +478,85 @@ function MobileMenuSheet({
             {navItems.map((item) => {
               const active = item.match(pathname);
               const Icon = item.icon;
+              const hasChildren = !!item.children;
+              // Expand automatically if active, but allow toggling in future if we had state. 
+              // Without state, we just show children if the parent is active.
+              const expanded = hasChildren && active;
+
+              if (!hasChildren) {
+                return (
+                  <TouchableOpacity
+                    key={item.label}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ selected: active }}
+                    onPress={() => navigate(item.path)}
+                    style={[styles.menuTile, active && styles.menuTileActive]}
+                  >
+                    <View style={[styles.menuIcon, active && styles.menuIconActive]}>
+                      <Icon size={22} color={active ? ui.colors.info : "#52647C"} strokeWidth={2} />
+                      {item.label === "Judge Management" && pendingCount > 0 && (
+                        <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
+                          <Text className="text-white text-[9px] font-bold">{pendingCount}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.menuTileLabel, active && styles.menuTileLabelActive]}>{item.label}</Text>
+                  </TouchableOpacity>
+                );
+              }
+
               return (
-                <TouchableOpacity
-                  key={item.label}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.label}
-                  accessibilityState={{ selected: active }}
-                  onPress={() => navigate(item.path)}
-                  style={[styles.menuTile, active && styles.menuTileActive]}
-                >
-                  <View
-                    style={[styles.menuIcon, active && styles.menuIconActive]}
+                <View key={item.label} style={{ width: '100%' }}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ selected: active }}
+                    onPress={() => navigate(item.path)}
+                    style={[styles.menuTile, active && styles.menuTileActive, { width: '100%', flexDirection: 'row', alignItems: 'center', minHeight: 70, justifyContent: 'flex-start', paddingHorizontal: 20 }]}
                   >
-                    <Icon
-                      size={22}
-                      color={active ? ui.colors.info : "#52647C"}
-                      strokeWidth={2}
-                    />
-                    {item.label === "Judge Management" && pendingCount > 0 && (
-                      <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
-                        <Text className="text-white text-[9px] font-bold">
-                          {pendingCount}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      styles.menuTileLabel,
-                      active && styles.menuTileLabelActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
+                    <View
+                      style={[styles.menuIcon, active && styles.menuIconActive, { marginBottom: 0, marginRight: 16 }]}
+                    >
+                      <Icon
+                        size={22}
+                        color={active ? ui.colors.info : "#52647C"}
+                        strokeWidth={2}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.menuTileLabel,
+                        active && styles.menuTileLabelActive,
+                        { flex: 1, textAlign: 'left' }
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                    <ChevronRight size={18} color={ui.colors.textMuted} />
+                  </TouchableOpacity>
+                  
+                  {expanded && (
+                    <View style={{ marginLeft: 56, marginTop: -8, marginBottom: 16 }}>
+                      {item.children!.map(child => {
+                        const childActive = child.match(pathname);
+                        return (
+                          <TouchableOpacity 
+                            key={child.label}
+                            onPress={() => navigate(child.path)}
+                            style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: childActive ? ui.colors.primarySoft : 'transparent', borderRadius: 12, marginBottom: 4 }}
+                          >
+                            <Text style={{ fontFamily: childActive ? 'Poppins_600SemiBold' : 'Poppins_500Medium', fontSize: 13, color: childActive ? ui.colors.primary : ui.colors.textMuted }}>
+                              {child.label}
+                            </Text>
+                          </TouchableOpacity>
+                        )
+                      })}
+                    </View>
+                  )}
+                </View>
               );
             })}
           </ScrollView>

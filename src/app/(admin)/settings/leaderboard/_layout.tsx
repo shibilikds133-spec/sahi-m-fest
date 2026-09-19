@@ -354,6 +354,25 @@ export default function LeaderboardLayout() {
             />
           </ScrollView>
 
+          {isMobile && (
+            <View style={{ marginBottom: 20 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 20 }}>
+                <TouchableOpacity onPress={() => router.push('/(admin)/settings/leaderboard/unit-rankings')} style={[styles.mobileNavTab, activeItem === 'unit' && styles.mobileNavTabActive]}>
+                  <Text style={[styles.mobileNavText, activeItem === 'unit' && styles.mobileNavTextActive]}>Unit Rankings</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/(admin)/settings/leaderboard/controls')} style={[styles.mobileNavTab, activeItem === 'controls' && styles.mobileNavTabActive]}>
+                  <Text style={[styles.mobileNavText, activeItem === 'controls' && styles.mobileNavTextActive]}>Controls</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/(admin)/settings/leaderboard/item-results')} style={[styles.mobileNavTab, activeItem === 'item' && styles.mobileNavTabActive]}>
+                  <Text style={[styles.mobileNavText, activeItem === 'item' && styles.mobileNavTextActive]}>Item Results</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/(admin)/settings/leaderboard/individual-rankings')} style={[styles.mobileNavTab, activeItem === 'individual' && styles.mobileNavTabActive]}>
+                  <Text style={[styles.mobileNavText, activeItem === 'individual' && styles.mobileNavTextActive]}>Individual Rankings</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          )}
+
             {/* Renders unit-rankings, item-results, individual-rankings */}
             <Slot />
           </ScrollView>
@@ -629,5 +648,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
     fontSize: 12,
     marginTop: 4,
+  },
+  mobileNavTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mobileNavTabActive: {
+    backgroundColor: colors.teal,
+    borderColor: colors.teal,
+  },
+  mobileNavText: {
+    color: colors.muted,
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+  },
+  mobileNavTextActive: {
+    color: ui.colors.surface,
   },
 });

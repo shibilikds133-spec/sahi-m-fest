@@ -332,7 +332,7 @@ export default function ItemResultsPage() {
               <View key={group.item_id} style={styles.itemGroupCard}>
                 {/* Item Group Header */}
                 <View style={styles.itemGroupHeader}>
-                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
                     <View style={styles.itemTypeBadge}>
                       {group.is_group ? <Users size={12} color={colors.navy} style={{ marginRight: 4 }} /> : <UserIcon size={12} color={colors.navy} style={{ marginRight: 4 }} />}
@@ -634,6 +634,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 16,
