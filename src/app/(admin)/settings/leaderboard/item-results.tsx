@@ -209,13 +209,22 @@ export default function ItemResultsPage() {
       g.status_summary.total++;
     });
     
-    // Sort groups by item name
+    // Sort groups: items with public order numbers first, then alphabetically
     return Array.from(groups.values()).sort((a, b) => {
+      const orderA = publicOrderMap.get(a.item_id);
+      const orderB = publicOrderMap.get(b.item_id);
+
+      if (orderA !== undefined && orderB !== undefined) {
+        return orderA - orderB;
+      }
+      if (orderA !== undefined) return -1;
+      if (orderB !== undefined) return 1;
+
       const nameA = a.item_name_ml || a.item_name;
       const nameB = b.item_name_ml || b.item_name;
       return nameA.localeCompare(nameB);
     });
-  }, [filteredResults]);
+  }, [filteredResults, publicOrderMap]);
 
   const handleItemBulkAction = async (group: ItemGroup, status: ResultStatus) => {
     const ids = group.results.map(r => r.result_id);
