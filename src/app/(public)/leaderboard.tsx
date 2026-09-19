@@ -163,19 +163,62 @@ const accentByRank = (rank: number) => {
   return [palette.green, palette.blue, palette.cyan, palette.magenta][rank % 4];
 };
 
-const toOrganisationRows = (rows: LeaderboardRow[], label: string): RankingViewRow[] =>
-  rows.map((row, rowIndex) => {
+const toOrganisationRows = (
+  rows: LeaderboardRow[],
+  publishedResults: PublicPublishedResultRow[],
+  label: string
+): RankingViewRow[] => {
+  const orgStats = new Map<string, { points: number; results: number; firstPlaces: number }>();
+  const seenGroupItems = new Set<string>();
+
+  publishedResults.forEach((result) => {
+    const orgId = result.organisation_id ?? `organisation:${result.organisation_name}`;
+    
+    if (result.is_group) {
+      const groupKey = `${result.item_id}-${orgId}`;
+      if (seenGroupItems.has(groupKey)) return;
+      seenGroupItems.add(groupKey);
+    }
+
+    const current = orgStats.get(orgId) || { points: 0, results: 0, firstPlaces: 0 };
+    orgStats.set(orgId, {
+      points: current.points + result.points_awarded,
+      results: current.results + 1,
+      firstPlaces: current.firstPlaces + (result.rank === 1 ? 1 : 0)
+    });
+  });
+
+  return rows.map((row) => {
+    const orgId = row.organisation_id ?? `organisation:${row.organisation_name}`;
+    const stats = orgStats.get(orgId) || { points: 0, results: 0, firstPlaces: 0 };
+    const totalPoints = stats.points + (row.grace_marks_awarded || 0);
+
+    return {
+      id: orgId,
+      name: row.organisation_name,
+      subtitle: `${stats.results} results - ${stats.firstPlaces} first places`,
+      points: totalPoints,
+      rank: 0, 
+      badgeLabel: label,
+      accent: '',
+      calculatedPoints: totalPoints,
+      calculatedFirstPlaces: stats.firstPlaces,
+    };
+  })
+  .sort((a, b) => b.calculatedPoints - a.calculatedPoints || b.calculatedFirstPlaces - a.calculatedFirstPlaces || a.name.localeCompare(b.name))
+  .map((row, rowIndex) => {
     const rank = rowIndex + 1;
     return {
-      id: row.organisation_id ?? `organisation:${row.organisation_name}`,
-      name: row.organisation_name,
-      subtitle: `${row.result_count} results - ${row.first_place_count} first places`,
-      points: row.total_points,
+      id: row.id,
+      name: row.name,
+      subtitle: row.subtitle,
+      points: row.points,
       rank,
-      badgeLabel: label,
+      badgeLabel: row.badgeLabel,
       accent: accentByRank(rank),
     };
   });
+};
 
 const toIndividualRows = (results: PublicPublishedResultRow[]): RankingViewRow[] => {
   const grouped = new Map<string, {
@@ -494,9 +537,12 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
     return result.participant_category_code === categoryFilter || result.item_category_codes.includes(categoryFilter);
   }, [categoryFilter]);
 
+  const categoryFilteredResults = useMemo(() => {
+    return publishedResults.filter(categoryMatches);
+  }, [publishedResults, categoryMatches]);
+
   const filteredPublishedResults = useMemo(() => {
-    return publishedResults.filter((result) =>
-      categoryMatches(result) &&
+    return categoryFilteredResults.filter((result) =>
       includesQuery([
         result.participant_name,
         result.chest_number,
@@ -505,9 +551,9 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
         result.item_name_ml,
       ], searchQuery)
     );
-  }, [publishedResults, searchQuery, categoryMatches]);
+  }, [categoryFilteredResults, searchQuery]);
 
-  const organisationRows = useMemo(() => toOrganisationRows(organisationData, hierarchyLabel), [organisationData, hierarchyLabel]);
+  const organisationRows = useMemo(() => toOrganisationRows(organisationData, categoryFilteredResults, hierarchyLabel), [organisationData, categoryFilteredResults, hierarchyLabel]);
   const filteredOrganisationRows = useMemo(() => {
     return organisationRows.filter((row) => includesQuery([row.name, row.subtitle], searchQuery));
   }, [organisationRows, searchQuery]);
