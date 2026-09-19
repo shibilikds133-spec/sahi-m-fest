@@ -1323,6 +1323,23 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: undefined, error: normalizeError(error) };
   }
 
+  async getLeaderboardPreview<T>(
+    tenantId?: string | null,
+    festivalId?: string | null,
+    rankingMode?: string,
+    itemLimit?: number | null,
+    usePublicOnly: boolean = false,
+  ): Promise<ListResult<T>> {
+    const { data, error } = await supabase.rpc('get_leaderboard_preview', {
+      p_tenant_id: tenantId ?? null,
+      p_festival_id: festivalId ?? null,
+      p_ranking_mode: rankingMode ?? 'ALL',
+      p_item_limit: itemLimit ?? null,
+      p_use_public_only: usePublicOnly,
+    });
+    return { data: data as T[], error: normalizeError(error) };
+  }
+
   async listPublicLeaderboard<T>(
     tenantId?: string | null,
     festivalId?: string | null,

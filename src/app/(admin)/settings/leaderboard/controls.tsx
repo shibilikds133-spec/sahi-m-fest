@@ -20,7 +20,7 @@ import {
   ShieldCheck,
 } from 'lucide-react-native';
 import { useAdminLeaderboard } from '../../../../core/hooks/useAdminLeaderboard';
-import { usePublicLeaderboard } from '../../../../core/hooks/useLeaderboard';
+import { useLeaderboardPreview } from '../../../../core/hooks/useLeaderboard';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import {
   useGetLeaderboardSettings,
@@ -65,7 +65,6 @@ export default function LeaderboardControlsPage() {
 
   // Load database settings
   const { data: settings } = useGetLeaderboardSettings(festivalId);
-  const { data: publicPreview, isFetching: isPreviewFetching } = usePublicLeaderboard(tenant_id, festivalId);
   const updateSettingsMutation = useUpdateLeaderboardSettings(tenant_id ?? '', festivalId ?? '');
 
   // Local settings states (Applied on clicking "Apply Settings")
@@ -86,6 +85,13 @@ export default function LeaderboardControlsPage() {
   const [publicLinkCopied, setPublicLinkCopied] = useState(false);
   const [rankingMode, setRankingMode] = useState<string>('ALL');
   const [itemLimit, setItemLimit] = useState<string>('');
+
+  const { data: publicPreview, isFetching: isPreviewFetching } = useLeaderboardPreview(
+    tenant_id, 
+    festivalId, 
+    rankingMode, 
+    itemLimit && !isNaN(parseInt(itemLimit, 10)) ? parseInt(itemLimit, 10) : null
+  );
 
   const publicLeaderboardUrl = tenant_id && typeof window !== 'undefined'
     ? window.location.origin + '/leaderboard?tenant_id=' + tenant_id

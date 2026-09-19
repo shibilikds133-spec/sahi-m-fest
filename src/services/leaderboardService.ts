@@ -71,6 +71,38 @@ export const leaderboardService = {
       grade_b_count: toNumber(row.grade_b_count),
       grade_c_count: toNumber(row.grade_c_count),
       result_count: toNumber(row.result_count),
+      grace_marks_awarded: toNumber(row.grace_marks_awarded),
+    }));
+  },
+
+  async getLeaderboardPreview(
+    tenantId?: string | null,
+    festivalId?: string | null,
+    rankingMode?: string,
+    itemLimit?: number | null,
+    usePublicOnly = false
+  ): Promise<LeaderboardRow[]> {
+    const { data, error } = await leaderboardRepository.getLeaderboardPreview<LeaderboardRow>(
+      tenantId,
+      festivalId,
+      rankingMode,
+      itemLimit,
+      usePublicOnly
+    );
+    if (error) throw error;
+    
+    return data.map((row) => ({
+      ...row,
+      total_points: toNumber(row.total_points),
+      first_place_count: toNumber(row.first_place_count),
+      second_place_count: toNumber(row.second_place_count),
+      third_place_count: toNumber(row.third_place_count),
+      grade_a_plus_count: toNumber(row.grade_a_plus_count),
+      grade_a_count: toNumber(row.grade_a_count),
+      grade_b_count: toNumber(row.grade_b_count),
+      grade_c_count: toNumber(row.grade_c_count),
+      result_count: toNumber(row.result_count),
+      grace_marks_awarded: toNumber(row.grace_marks_awarded),
     }));
   },
 

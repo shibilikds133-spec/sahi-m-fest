@@ -16,6 +16,20 @@ export const usePublicLeaderboard = (
   });
 };
 
+export const useLeaderboardPreview = (
+  tenantId?: string | null,
+  festivalId?: string | null,
+  rankingMode?: string,
+  itemLimit?: number | null,
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: ['leaderboard-preview', tenantId, festivalId, rankingMode, itemLimit],
+    queryFn: () => leaderboardService.getLeaderboardPreview(tenantId, festivalId, rankingMode, itemLimit, false),
+    enabled: enabled && !!tenantId && !!festivalId,
+  });
+};
+
 export const usePublicPublishedResults = (
   tenantId?: string | null,
   festivalId?: string | null,

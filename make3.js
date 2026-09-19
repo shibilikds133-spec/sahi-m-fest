@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('supabase/migrations/173_leaderboard_preview_rpc.sql', 'utf8'); c = c.split('\\\\').join(''); fs.writeFileSync('supabase/migrations/173_leaderboard_preview_rpc.sql', c);
