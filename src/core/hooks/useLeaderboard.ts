@@ -25,7 +25,7 @@ export const useLeaderboardPreview = (
 ) => {
   return useQuery({
     queryKey: ['leaderboard-preview', tenantId, festivalId, rankingMode, itemLimit],
-    queryFn: () => leaderboardService.getLeaderboardPreview(tenantId, festivalId, rankingMode, itemLimit, false),
+    queryFn: () => leaderboardService.getLeaderboardPreview(tenantId, festivalId, rankingMode, itemLimit, true),
     enabled: enabled && !!tenantId && !!festivalId,
   });
 };

@@ -134,6 +134,24 @@ export default function ItemResultsPage() {
     ]),
   ), [festivalItems]);
 
+  // Compute public publish order: item_id → sequence number (#1, #2, ...)
+  const publicOrderMap = useMemo(() => {
+    const itemEarliestPublic = new Map<string, string>();
+    festivalResults.forEach(r => {
+      if (r.public_visible === true && r.published_at) {
+        const itemId = r.item_id ?? '';
+        const existing = itemEarliestPublic.get(itemId);
+        if (!existing || r.published_at < existing) {
+          itemEarliestPublic.set(itemId, r.published_at);
+        }
+      }
+    });
+    const sorted = Array.from(itemEarliestPublic.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+    const orderMap = new Map<string, number>();
+    sorted.forEach(([itemId], idx) => orderMap.set(itemId, idx + 1));
+    return orderMap;
+  }, [festivalResults]);
+
   React.useEffect(() => {
     if (!categoryOptions.includes(selectedCategory)) setSelectedCategory('all');
   }, [categoryOptions, selectedCategory]);
@@ -146,10 +164,11 @@ export default function ItemResultsPage() {
         || (resultTypeFilter === 'individual' && !r.is_group)
         || (resultTypeFilter === 'group' && r.is_group);
 
-      // 2. Status filter
+      // 2. Status filter — Published/Unpublished means public_visible
       const statusMatch = resultStatusFilter === 'all'
-        || (resultStatusFilter === 'unpublished' && r.result_status !== 'published')
-        || r.result_status === resultStatusFilter;
+        || (resultStatusFilter === 'published' && r.public_visible === true)
+        || (resultStatusFilter === 'unpublished' && r.public_visible !== true)
+        || (resultStatusFilter !== 'published' && resultStatusFilter !== 'unpublished' && r.result_status === resultStatusFilter);
 
       // 3. Category filter
       const categoryMatch = selectedCategory === 'all'
@@ -291,7 +310,7 @@ export default function ItemResultsPage() {
                 style={[styles.filterChip, resultStatusFilter === s && styles.filterChipActive]}
               >
                 <Text style={[styles.filterChipText, resultStatusFilter === s && styles.filterChipTextActive]}>
-                  {s === 'all' ? 'All Status' : s === 'unpublished' ? 'Unpublished' : STATUS_CONFIG[s as ResultStatus]?.label ?? s}
+                  {s === 'all' ? 'All Status' : s === 'unpublished' ? '🔒 Not Public' : s === 'published' ? '🌐 Public' : STATUS_CONFIG[s as ResultStatus]?.label ?? s}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -336,6 +355,11 @@ export default function ItemResultsPage() {
                 {/* Item Group Header */}
                 <View style={styles.itemGroupHeader}>
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    {publicOrderMap.has(group.item_id) && (
+                      <View style={{ backgroundColor: '#0F766E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, minWidth: 32, alignItems: 'center' }}>
+                        <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins_900Black', fontSize: 12 }}>#{publicOrderMap.get(group.item_id)}</Text>
+                      </View>
+                    )}
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
                       {itemDetailsMap.get(group.item_id)?.item_code && (
                         <View style={[styles.itemTypeBadge, { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 }]}>
