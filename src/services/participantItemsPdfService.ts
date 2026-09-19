@@ -210,7 +210,7 @@ export async function downloadParticipantItemsPdf(scope: ParticipantItemPdfScope
       styles: {
         font: 'helvetica',
         fontSize: 8.5,
-        textColor: DARK_BLUE,
+        textColor: [18, 59, 99],
         lineColor: [210, 220, 230],
         lineWidth: 0.25,
         cellPadding: 2.2,
