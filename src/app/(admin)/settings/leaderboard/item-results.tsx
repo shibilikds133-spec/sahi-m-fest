@@ -334,11 +334,15 @@ export default function ItemResultsPage() {
                 <View style={styles.itemGroupHeader}>
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
-                    {itemCategoryCodes.get(group.item_id)?.map((code: string) => (
-                      <View key={code} style={styles.itemTypeBadge}>
-                        <Text style={styles.itemTypeBadgeText}>{code.charAt(0).toUpperCase() + code.slice(1)}</Text>
-                      </View>
-                    ))}
+                    {itemCategoryCodes.get(group.item_id)?.map((code: string) => {
+                      const cat = festivalCategories.find(c => c.code.toLowerCase() === code.toLowerCase());
+                      const catName = cat ? cat.name_en : (code.charAt(0).toUpperCase() + code.slice(1));
+                      return (
+                        <View key={code} style={styles.itemTypeBadge}>
+                          <Text style={styles.itemTypeBadgeText}>{catName}</Text>
+                        </View>
+                      );
+                    })}
                     <View style={styles.itemTypeBadge}>
                       {group.is_group ? <Users size={12} color={colors.navy} style={{ marginRight: 4 }} /> : <UserIcon size={12} color={colors.navy} style={{ marginRight: 4 }} />}
                       <Text style={styles.itemTypeBadgeText}>{group.is_group ? 'Group' : 'Individual'}</Text>
@@ -376,26 +380,28 @@ export default function ItemResultsPage() {
                     const status = (r.result_status ?? 'draft') as ResultStatus;
                     const isLast = i === group.results.length - 1;
                     return (
-                      <View key={r.result_id} style={[styles.nestedResultRow, !isLast && { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }]}>
-                        <View style={{ width: 24, alignItems: 'center' }}>
-                          {r.rank ? <Text style={styles.nestedRankText}>#{r.rank}</Text> : <Text style={styles.nestedRankText}>-</Text>}
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            <Text style={styles.nestedParticipantName} numberOfLines={1}>
-                              {status === 'published' && r.participant_name ? r.participant_name : r.chest_number ? `Chest #${r.chest_number}` : '—'}
-                            </Text>
-                            <ResultStatusBadge status={status} />
-                            <PublicVisibilityBadge visible={r.public_visible === true} />
+                        <View key={r.result_id} style={[styles.nestedResultRow, !isLast && { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }]}>
+                          <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                            <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
+                              {r.rank ? <Text style={styles.nestedRankText}>#{r.rank}</Text> : <Text style={styles.nestedRankText}>-</Text>}
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                <Text style={styles.nestedParticipantName}>
+                                  {status === 'published' && r.participant_name ? r.participant_name : r.chest_number ? `Chest #${r.chest_number}` : '?' }
+                                </Text>
+                                <ResultStatusBadge status={status} />
+                                <PublicVisibilityBadge visible={r.public_visible === true} />
+                              </View>
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                                <Text style={styles.nestedMeta}>{r.organisation_name}</Text>
+                                {r.grade && <Text style={[styles.nestedMeta, { color: '#0F172A', fontWeight: '700' }]}>• Grade {r.grade}</Text>}
+                                <Text style={[styles.nestedMeta, { color: '#0F766E', fontWeight: '700' }]}>• {r.points_awarded} pts</Text>
+                              </View>
+                            </View>
                           </View>
-                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
-                            <Text style={styles.nestedMeta}>{r.organisation_name}</Text>
-                            {r.grade && <Text style={styles.nestedMeta}>• {r.grade}</Text>}
-                            <Text style={styles.nestedMeta}>• {r.points_awarded} pts</Text>
-                          </View>
-                        </View>
-                        {/* Individual Overrides */}
-                        <View style={styles.nestedActions}>
+                          {/* Individual Overrides */}
+                          <View style={[styles.nestedActions, { flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 4 }]}>
                            {r.public_visible !== true && (
                               <TouchableOpacity onPress={() => handleSingleVisibility(r.result_id, 'published')} style={[styles.nestedActionBtn, { backgroundColor: ui.colors.successSoft }]}>
                                 <CheckCircle2 size={14} color="#15803D" />
@@ -445,23 +451,23 @@ export default function ItemResultsPage() {
 
                 <ScrollView style={{ maxHeight: 300, marginVertical: 16 }}>
                   {previewGroup.results.sort((a,b) => (a.rank||99) - (b.rank||99)).map(r => (
-                    <View key={r.result_id} style={styles.previewResultRow}>
-                       <View style={{ width: 28, alignItems: 'center', justifyContent: 'center' }}>
+                    <View key={r.result_id} style={[styles.previewResultRow, { flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }]}>
+                       <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
                          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 13, color: colors.navy }}>
                            {r.rank ? `#${r.rank}` : '-'}
                          </Text>
                        </View>
-                       <View style={{ flex: 1 }}>
+                       <View style={{ flex: 1, minWidth: 150 }}>
                          <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: colors.text }}>
-                           {r.result_status === 'published' && r.participant_name ? r.participant_name : r.chest_number ? `Chest #${r.chest_number}` : '—'}
+                           {r.result_status === 'published' && r.participant_name ? r.participant_name : r.chest_number ? `Chest #${r.chest_number}` : '?' }
                          </Text>
                          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 11, color: colors.muted }}>
                            {r.organisation_name}
                          </Text>
                        </View>
-                       <View style={{ alignItems: 'flex-end' }}>
-                         <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 13, color: colors.teal }}>{r.points_awarded} pts</Text>
-                         {r.grade && <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 11, color: colors.muted }}>Grade {r.grade}</Text>}
+                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                         {r.grade && <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.navy }}>Grade {r.grade}</Text>}
+                         <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 13, color: colors.teal }}>• {r.points_awarded} pts</Text>
                        </View>
                     </View>
                   ))}
@@ -700,8 +706,11 @@ const styles = StyleSheet.create({
   },
   nestedResultRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     gap: 12,
   },
   nestedRankText: {
