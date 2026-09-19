@@ -1,6 +1,8 @@
--- Migration 172: Restrict public leaderboard to item_limit
-
-CREATE OR REPLACE FUNCTION public.get_public_leaderboard(
+const { Client } = require('pg');
+async function run() {
+  const c = new Client({ connectionString: 'postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres' });
+  await c.connect();
+  const sql = `CREATE OR REPLACE FUNCTION public.get_public_leaderboard(
   p_tenant_id uuid DEFAULT NULL,
   p_festival_id uuid DEFAULT NULL
 )
@@ -87,7 +89,7 @@ BEGIN
     FROM results
     WHERE festival_id = v_festival_id
       AND published IS TRUE
-      AND COALESCE(result_status, 'published') = 'published'
+      AND COALESCE(result_status, 'draft') IN ('published', 'ready')
       AND COALESCE(public_visible, false) IS TRUE
     GROUP BY item_id
     ORDER BY MIN(published_at) ASC, item_id ASC
@@ -106,7 +108,7 @@ BEGIN
     LEFT JOIN registrations reg ON reg.id = res.registration_id
     WHERE res.festival_id = v_festival_id
       AND res.published IS TRUE
-      AND COALESCE(res.result_status, 'published') = 'published'
+      AND COALESCE(res.result_status, 'draft') IN ('published', 'ready')
       AND COALESCE(res.public_visible, false) IS TRUE
       AND reg.status IS DISTINCT FROM 'rejected'
       AND res.item_id IN (SELECT item_id FROM limited_items)
@@ -152,4 +154,9 @@ BEGIN
   HAVING COALESCE(SUM(COALESCE(res.points_awarded, 0)), 0) > 0 OR COUNT(*) > 0
   ORDER BY total_points DESC, first_place_count DESC, second_place_count DESC, third_place_count DESC, grade_a_count DESC;
 END;
-$$;
+$$;`;
+  await c.query(sql);
+  console.log('SUCCESS PUBLIC');
+  process.exit(0);
+}
+run().catch(e => { console.error(e); process.exit(1); });
