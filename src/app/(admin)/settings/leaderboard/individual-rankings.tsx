@@ -108,7 +108,8 @@ export default function IndividualRankingsPage() {
       if (r.is_group) return false;
 
       // 2. Status check (Published vs All)
-      if (statusFilter === 'published' && r.result_status !== 'published') return false;
+      // Ensure "published" means it is visible on the public leaderboard
+      if (statusFilter === 'published' && r.public_visible !== true) return false;
 
       // 3. Category match based on item name/ml prefix
       const categoryMatch = selectedCategory === 'all'

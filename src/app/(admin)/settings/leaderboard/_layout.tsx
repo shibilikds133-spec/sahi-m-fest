@@ -193,19 +193,21 @@ const MetricCard = ({
   tone,
   icon,
   sub,
+  valueColor,
 }: {
   label: string;
   value: string;
   tone: string;
   icon: React.ReactNode;
   sub?: string;
+  valueColor?: string;
 }) => (
   <View style={styles.metricCard}>
     <View style={styles.metricTop}>
       <View style={[styles.metricIcon, { backgroundColor: `${tone}14` }]}>{icon}</View>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
-    <Text style={styles.metricValue} numberOfLines={1}>{value}</Text>
+    <Text style={[styles.metricValue, valueColor ? { color: valueColor } : null]} numberOfLines={1}>{value}</Text>
     {sub && <Text style={styles.metricSub}>{sub}</Text>}
   </View>
 );
@@ -258,6 +260,17 @@ export default function LeaderboardLayout() {
   const totalPoints = rows.reduce((sum, row) => sum + row.total_points, 0);
   const eventsCounted = rows.reduce((sum, row) => sum + row.result_count, 0);
   const totalWins = rows.reduce((sum, row) => sum + row.first_place_count, 0);
+
+  const publicItemsCount = useMemo(() => {
+    const publicItems = new Set<string>();
+    festivalResults.forEach(r => {
+      if (r.public_visible === true && r.item_id) {
+        publicItems.add(r.item_id);
+      }
+    });
+    return publicItems.size;
+  }, [festivalResults]);
+
 
   const pageTitle = useMemo(() => {
     if (activeItem === 'individual') return 'Individual Rankings';
@@ -332,11 +345,12 @@ export default function LeaderboardLayout() {
               icon={<Zap size={19} color={colors.teal} />}
             />
             <MetricCard
-              label="Events Counted"
-              value={formatNumber(eventsCounted)}
-              sub={`${formatNumber(totalWins)} winning entries`}
-              tone={colors.blue}
-              icon={<Trophy size={19} color={colors.blue} />}
+              label="Publicly Published"
+              value={formatNumber(publicItemsCount)}
+              sub="Items on public page"
+              tone={ui.colors.danger}
+              icon={<Trophy size={19} color={ui.colors.danger} />}
+              valueColor={ui.colors.danger}
             />
             <MetricCard
               label="Leaderboard Status"
