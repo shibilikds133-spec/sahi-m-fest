@@ -334,7 +334,7 @@ export default function ItemResultsPage() {
                 <View style={styles.itemGroupHeader}>
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
-                    {itemCategoryCodes.get(group.item_id)?.map(code => (
+                    {itemCategoryCodes.get(group.item_id)?.map((code: string) => (
                       <View key={code} style={styles.itemTypeBadge}>
                         <Text style={styles.itemTypeBadgeText}>{code.charAt(0).toUpperCase() + code.slice(1)}</Text>
                       </View>
