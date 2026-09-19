@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from 'lucide-react-native';
 import { useAdminLeaderboard } from '../../../../core/hooks/useAdminLeaderboard';
+import { usePublicLeaderboard } from '../../../../core/hooks/useLeaderboard';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import {
   useGetLeaderboardSettings,
@@ -64,6 +65,7 @@ export default function LeaderboardControlsPage() {
 
   // Load database settings
   const { data: settings } = useGetLeaderboardSettings(festivalId);
+  const { data: publicPreview, isFetching: isPreviewFetching } = usePublicLeaderboard(tenant_id, festivalId);
   const updateSettingsMutation = useUpdateLeaderboardSettings(tenant_id ?? '', festivalId ?? '');
 
   // Local settings states (Applied on clicking "Apply Settings")
@@ -276,9 +278,16 @@ export default function LeaderboardControlsPage() {
               </View>
               
               <TouchableOpacity 
-                onPress={() => {
+                onPress={async () => {
+                  const prevMode = rankingMode;
+                  const prevLimit = itemLimit;
                   setRankingMode('ALL');
                   setItemLimit('');
+                  const saved = await persistSetting({ ranking_mode: 'ALL', item_limit: null });
+                  if (!saved) {
+                    setRankingMode(prevMode);
+                    setItemLimit(prevLimit);
+                  }
                 }}
                 style={[styles.dropdown, rankingMode === 'ALL' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
@@ -286,9 +295,16 @@ export default function LeaderboardControlsPage() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                onPress={() => {
+                onPress={async () => {
+                  const prevMode = rankingMode;
+                  const prevLimit = itemLimit;
                   setRankingMode('LIMITED');
                   setItemLimit('5');
+                  const saved = await persistSetting({ ranking_mode: 'LIMITED', item_limit: 5 });
+                  if (!saved) {
+                    setRankingMode(prevMode);
+                    setItemLimit(prevLimit);
+                  }
                 }}
                 style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '5' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
@@ -296,9 +312,16 @@ export default function LeaderboardControlsPage() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                onPress={() => {
+                onPress={async () => {
+                  const prevMode = rankingMode;
+                  const prevLimit = itemLimit;
                   setRankingMode('LIMITED');
                   setItemLimit('10');
+                  const saved = await persistSetting({ ranking_mode: 'LIMITED', item_limit: 10 });
+                  if (!saved) {
+                    setRankingMode(prevMode);
+                    setItemLimit(prevLimit);
+                  }
                 }}
                 style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '10' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
@@ -306,9 +329,16 @@ export default function LeaderboardControlsPage() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                onPress={() => {
+                onPress={async () => {
+                  const prevMode = rankingMode;
+                  const prevLimit = itemLimit;
                   setRankingMode('LIMITED');
                   setItemLimit('15');
+                  const saved = await persistSetting({ ranking_mode: 'LIMITED', item_limit: 15 });
+                  if (!saved) {
+                    setRankingMode(prevMode);
+                    setItemLimit(prevLimit);
+                  }
                 }}
                 style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '15' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
@@ -316,9 +346,16 @@ export default function LeaderboardControlsPage() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                onPress={() => {
+                onPress={async () => {
+                  const prevMode = rankingMode;
+                  const prevLimit = itemLimit;
                   setRankingMode('LIMITED');
                   setItemLimit('20');
+                  const saved = await persistSetting({ ranking_mode: 'LIMITED', item_limit: 20 });
+                  if (!saved) {
+                    setRankingMode(prevMode);
+                    setItemLimit(prevLimit);
+                  }
                 }}
                 style={[styles.dropdown, rankingMode === 'LIMITED' && itemLimit === '20' && { borderColor: colors.teal, backgroundColor: ui.colors.infoSoft }]}
               >
@@ -337,6 +374,11 @@ export default function LeaderboardControlsPage() {
                     if (['5','10','15','20'].includes(itemLimit)) setItemLimit('');
                   }}
                   onChangeText={setItemLimit}
+                  onBlur={async () => {
+                    if (rankingMode === 'LIMITED' && itemLimit && !isNaN(parseInt(itemLimit, 10))) {
+                      await persistSetting({ ranking_mode: 'LIMITED', item_limit: parseInt(itemLimit, 10) });
+                    }
+                  }}
                 />
               </View>
             </View>
@@ -545,20 +587,49 @@ export default function LeaderboardControlsPage() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.summaryBlock}>
-            <Text style={styles.blockTitle}>Data Summary</Text>
-            <View style={styles.summaryLine}>
-              <Text style={styles.summaryLabel}>Source</Text>
-              <Text style={styles.summaryValue}>Published results</Text>
+            <View style={styles.summaryBlock}>
+              <Text style={styles.blockTitle}>Data Summary</Text>
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>Source</Text>
+                <Text style={styles.summaryValue}>Published results</Text>
+              </View>
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>Visibility</Text>
+                <Text style={styles.summaryValue}>{isPublicVisible ? 'Live' : 'Paused'}</Text>
+              </View>
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>Last update</Text>
+                <Text style={styles.summaryValue}>{formatDateTime(latestUpdate)}</Text>
+              </View>
             </View>
-            <View style={styles.summaryLine}>
-              <Text style={styles.summaryLabel}>Visibility</Text>
-              <Text style={styles.summaryValue}>{isPublicVisible ? 'Live' : 'Paused'}</Text>
-            </View>
-            <View style={styles.summaryLine}>
-              <Text style={styles.summaryLabel}>Last update</Text>
-              <Text style={styles.summaryValue}>{formatDateTime(latestUpdate)}</Text>
-            </View>
+          </View>
+
+        <View style={[styles.controlPanel, { flex: 1, minWidth: 300 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.controlTitle}>Live Points Preview</Text>
+            {isPreviewFetching && <RefreshCw size={16} color={colors.teal} />}
+          </View>
+          <Text style={styles.controlSub}>
+            Current {rankingMode === 'LIMITED' ? `(Limited to ${itemLimit || '0'} items)` : '(All Items)'} standings.
+          </Text>
+
+          <View style={styles.previewContainer}>
+            {publicPreview?.map((row: any, i: number) => (
+              <View key={row.organisation_id} style={styles.previewRow}>
+                <View style={styles.previewRank}>
+                  <Text style={styles.previewRankText}>#{i + 1}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.previewOrgName}>{row.organisation_name}</Text>
+                </View>
+                <Text style={styles.previewPoints}>{row.total_points} pts</Text>
+              </View>
+            ))}
+            {(!publicPreview || publicPreview.length === 0) && (
+              <Text style={{ textAlign: 'center', marginTop: 20, color: colors.muted, fontFamily: 'Poppins_400Regular', fontSize: 13 }}>
+                No public items match this logic.
+              </Text>
+            )}
           </View>
         </View>
       </View>
