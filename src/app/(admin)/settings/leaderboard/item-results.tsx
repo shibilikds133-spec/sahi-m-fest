@@ -117,7 +117,7 @@ export default function ItemResultsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'individual' | 'group'>('all');
-  const [resultStatusFilter, setResultStatusFilter] = useState<'all' | ResultStatus>('all');
+  const [resultStatusFilter, setResultStatusFilter] = useState<'all' | 'unpublished' | ResultStatus>('all');
   const [previewGroup, setPreviewGroup] = useState<ItemGroup | null>(null);
 
   const categoryOptions = useMemo(
@@ -148,6 +148,7 @@ export default function ItemResultsPage() {
 
       // 2. Status filter
       const statusMatch = resultStatusFilter === 'all'
+        || (resultStatusFilter === 'unpublished' && r.result_status !== 'published')
         || r.result_status === resultStatusFilter;
 
       // 3. Category filter
@@ -283,14 +284,14 @@ export default function ItemResultsPage() {
             <View style={styles.filterDivider} />
 
             {/* Status filter */}
-            {(['all', 'published', 'ready', 'draft', 'hidden'] as const).map(s => (
+            {(['all', 'published', 'unpublished', 'ready', 'draft', 'hidden'] as const).map(s => (
               <TouchableOpacity
                 key={s}
                 onPress={() => setResultStatusFilter(s)}
                 style={[styles.filterChip, resultStatusFilter === s && styles.filterChipActive]}
               >
                 <Text style={[styles.filterChipText, resultStatusFilter === s && styles.filterChipTextActive]}>
-                  {s === 'all' ? 'All Status' : STATUS_CONFIG[s as ResultStatus]?.label ?? s}
+                  {s === 'all' ? 'All Status' : s === 'unpublished' ? 'Unpublished' : STATUS_CONFIG[s as ResultStatus]?.label ?? s}
                 </Text>
               </TouchableOpacity>
             ))}
