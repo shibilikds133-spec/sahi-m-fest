@@ -5,6 +5,7 @@ import { ToggleField } from './fields/SliderField';
 import Accordion from './Accordion';
 import { useTemplateStore, BackgroundTransform } from '../Stores/templateStore';
 import useImage from 'use-image';
+import { useResolvedImageUrl } from '../../../../../core/hooks/useResolvedImageUrl';
 import { uploadService } from '../../../../services/storage/uploadService';
 import { UploadCloud } from 'lucide-react';
 
@@ -18,7 +19,8 @@ export default function BackgroundBlock({ festivalId, tenantId }: BackgroundBloc
   const [isUploading, setIsUploading] = useState(false);
   
   const bgTransform = activeTemplate?.background_transform || { scale: 1, x: 0, y: 0, isDraggable: false };
-  const [image] = useImage(activeTemplate?.background_url || '', 'anonymous');
+  const resolvedBgUrl = useResolvedImageUrl(activeTemplate?.background_url);
+  const [image] = useImage(resolvedBgUrl || '', 'anonymous');
 
   const commit = useCallback(
     (patch: Partial<BackgroundTransform>) => {

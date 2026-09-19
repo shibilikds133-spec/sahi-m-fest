@@ -111,7 +111,10 @@ export class R2StorageProvider implements StorageProvider {
       publicUrl: verification.publicUrl || publicUrl || null,
     });
 
-    const fileUrl = verification.publicUrl || publicUrl || await this.getUrl(input.objectKey, input.visibility, input.contentType);
+    let fileUrl = verification.publicUrl || publicUrl;
+    if (!fileUrl) {
+      fileUrl = (input.visibility === 'public' && R2_PUBLIC_DOMAIN) ? `https://${R2_PUBLIC_DOMAIN}/${input.objectKey}` : `r2://${input.objectKey}`;
+    }
     return { fileUrl, objectKey: input.objectKey };
   }
 
