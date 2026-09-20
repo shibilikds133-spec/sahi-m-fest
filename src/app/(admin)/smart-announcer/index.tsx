@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
-import { RefreshCcw, Radio, Trophy, CheckCircle, QrCode, Copy, Share, ExternalLink } from 'lucide-react-native';
+import { RefreshCcw, Radio, Trophy, CheckCircle, QrCode, Copy, Share, ExternalLink, X, Users, Award } from 'lucide-react-native';
 import { Modal, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SsfButton } from '@/components/ui/SsfButton';
@@ -34,6 +34,39 @@ export default function SmartAnnouncerPage() {
   const [announcerToken, setAnnouncerToken] = useState<string | null>(null);
   const [generatingToken, setGeneratingToken] = useState(false);
 
+  // Detail Modal State
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailedResults, setDetailedResults] = useState<any[]>([]);
+  const [selectedItemName, setSelectedItemName] = useState('');
+
+  const fetchDetailedResults = async (itemId: string, itemName: string) => {
+    setIsDetailsModalOpen(true);
+    setLoadingDetails(true);
+    setSelectedItemName(itemName);
+    try {
+      const { data, error } = await supabase
+        .from('results')
+        .select(`
+          rank, 
+          grade, 
+          points_awarded, 
+          items!inner(item_name_ml, category_codes), 
+          registrations!inner(code_letter, participants(name), organisations(name))
+        `)
+        .eq('item_id', itemId)
+        .order('rank', { ascending: true, nullsFirst: false })
+        .order('total_score', { ascending: false });
+      
+      if (error) throw error;
+      setDetailedResults(data || []);
+    } catch (err) {
+      console.error('Error fetching details:', err);
+      Alert.alert('Error', 'Could not fetch detailed results.');
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   
   const handleGenerateToken = async () => {
@@ -202,7 +235,7 @@ export default function SmartAnnouncerPage() {
             {results.map((res, index) => { if (res.is_public) return null;
                 const isTop = index === 0;
                 return (
-                  <View key={res.result_id} style={[styles.row, isTop && styles.topRow]}>
+                  <TouchableOpacity key={res.result_id} style={[styles.row, isTop && styles.topRow]} onPress={() => fetchDetailedResults(res.result_id, res.item_name)}>
                     <View style={styles.rowLeft}>
                       {isTop && (
                         <View style={styles.badgeSmall}>
@@ -241,12 +274,91 @@ export default function SmartAnnouncerPage() {
                         )}
                       </TouchableOpacity>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
           </View>
         )}
       
+      {/* Result Details Modal */}
+      <Modal visible={isDetailsModalOpen} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <View style={{ width: '100%', maxWidth: 500, backgroundColor: 'white', borderRadius: 16, padding: 0, maxHeight: '80%' }}>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+              <View>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: '#1e293b' }}>{selectedItemName}</Text>
+                <Text style={{ fontSize: 13, color: '#64748b' }}>Detailed Results Preview</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsDetailsModalOpen(false)}>
+                <X size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {loadingDetails ? (
+              <View style={{ padding: 48, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0f766e" />
+                <Text style={{ marginTop: 16, color: '#64748b' }}>Loading details...</Text>
+              </View>
+            ) : (
+              <ScrollView style={{ padding: 20 }}>
+                {detailedResults.map((r, i) => (
+                  <View key={i} style={{ 
+                    flexDirection: 'row', 
+                    padding: 16, 
+                    backgroundColor: i === 0 ? '#f0fdf4' : i === 1 ? '#f8fafc' : i === 2 ? '#fffbeb' : '#ffffff',
+                    borderWidth: 1,
+                    borderColor: i === 0 ? '#bbf7d0' : '#e2e8f0',
+                    borderRadius: 12,
+                    marginBottom: 12
+                  }}>
+                    <View style={{ marginRight: 16, alignItems: 'center', justifyContent: 'center', width: 40 }}>
+                      {r.rank ? (
+                        <>
+                          <Award size={24} color={r.rank === 1 ? '#eab308' : r.rank === 2 ? '#94a3b8' : '#cd7f32'} />
+                          <Text style={{ fontWeight: '800', fontSize: 16, color: '#1e293b' }}>{r.rank}</Text>
+                        </>
+                      ) : (
+                        <Text style={{ fontWeight: '600', fontSize: 14, color: '#94a3b8' }}>-</Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: '700', fontSize: 16, color: '#1e293b', marginBottom: 4 }}>
+                        {r.registrations?.participants?.map((p: any) => p.name).join(', ') || 'Unknown'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: '#64748b', fontWeight: '500' }}>
+                          Code: {r.registrations?.code_letter || 'N/A'}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#64748b' }}>•</Text>
+                        <Text style={{ fontSize: 13, color: '#0f766e', fontWeight: '600' }}>
+                          {r.registrations?.organisations?.name || 'Unknown Team'}
+                        </Text>
+                        {r.grade && (
+                          <>
+                            <Text style={{ fontSize: 13, color: '#64748b' }}>•</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>Grade {r.grade}</Text>
+                          </>
+                        )}
+                        {r.items?.category_codes && (
+                          <>
+                            <Text style={{ fontSize: 13, color: '#64748b' }}>•</Text>
+                            <Text style={{ fontSize: 13, color: '#64748b' }}>{r.items.category_codes.join(', ')}</Text>
+                          </>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                ))}
+                {detailedResults.length === 0 && (
+                  <Text style={{ textAlign: 'center', color: '#64748b', padding: 20 }}>No result records found.</Text>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       {/* QR Code Modal */}
       <Modal visible={isTokenModalOpen} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
