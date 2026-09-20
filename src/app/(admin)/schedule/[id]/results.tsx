@@ -82,9 +82,15 @@ export default function ResultsPage() {
     [pointsConfig],
   );
 
+  const isGeneralItem = React.useMemo(() => {
+    const codes = (schedule?.items?.category_codes as string[]) || [];
+    return codes.includes('GN') || codes.includes('GENERAL');
+  }, [schedule?.items?.category_codes]);
+
   // ── Mode selection ────────────────────────────────────────────────────────
   // 'none' = not chosen, 'marks' = judges used system, 'direct' = direct entry
   const [mode, setMode] = useState<'none' | 'marks' | 'direct'>('none');
+  const [manualGeneralSize, setManualGeneralSize] = useState<number | null>(null);
 
   // ── Result state ──────────────────────────────────────────────────────────
   const [results, setResults] = useState<Record<string, ResultEntry>>({});
@@ -169,9 +175,14 @@ export default function ResultsPage() {
     return Math.max(...sizes); // Safe assumption: all entries in a group event have the same size.
   }, [entrySizes]);
 
+  const effectiveGroupSize = React.useMemo(() => {
+    if (isGeneralItem && manualGeneralSize !== null) return manualGeneralSize;
+    return defaultGroupSize;
+  }, [isGeneralItem, manualGeneralSize, defaultGroupSize]);
+
   const automaticBracket = resolvePointBracket(
     flexiblePointsConfig,
-    defaultGroupSize,
+    effectiveGroupSize,
     isGroupEvent,
   );
   const resolvedBracketKey =
@@ -241,7 +252,7 @@ export default function ResultsPage() {
     const calculation = calculateFlexiblePoints({
       grade,
       rank: Number.isFinite(rankNum) ? rankNum : null,
-      groupSize: defaultGroupSize,
+      groupSize: effectiveGroupSize,
       competingTeamsCount: (registrations as any[]).length,
       isGroup: isGroupEvent,
       config: flexiblePointsConfig,
@@ -442,7 +453,7 @@ export default function ResultsPage() {
           festivalId: resolvedFestivalId,
           grade: normalizedGrade,
           rank: rankNum,
-          groupSize: defaultGroupSize,                        // members per team entry → picks bracket
+          groupSize: effectiveGroupSize,                        // members per team entry → picks bracket
           competingTeamsCount: (registrations as any[]).length, // total teams competing → Rule 12 check
           isGroup: isGroupEvent,
           bracketOverride: resolvedBracketKey,
@@ -622,6 +633,43 @@ export default function ResultsPage() {
             )}
           </View>
         )}
+
+          {/* General Item Member Slot & Warning */}
+          {isGeneralItem && (
+            <SsfCard className={`mb-3 p-3 ${!isGroupEvent ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}>
+              {!isGroupEvent && (
+                <View className="mb-3">
+                  <Text className="font-poppins-bold text-amber-900 text-[12px] mb-1">
+                    Warning: General Item Registered as Individual
+                  </Text>
+                  <Text className="font-poppins text-[10px] text-amber-800 leading-4">
+                    ശ്രദ്ധിക്കുക: ഇതൊരു ജനറൽ ഐറ്റം ആണ്, എന്നാൽ സെറ്റിംഗ്സിൽ 'Individual' എന്നാണ് കൊടുത്തിരിക്കുന്നത്. ശരിയായ ഗ്രേഡ് പോയിൻ്റ് ലഭിക്കുന്നതിന് ദയവായി Settings -&gt; Items പോയി ഇതിനെ 'Group' ആക്കി മാറ്റുക.
+                  </Text>
+                </View>
+              )}
+              
+              <View>
+                <Text className="font-poppins-bold text-blue-900 text-[12px] mb-1">
+                  General Item Members Count
+                </Text>
+                <Text className="font-poppins text-[10px] text-blue-800 mb-2 leading-4">
+                  ഈ ജനറൽ ഐറ്റത്തിൽ എത്ര പേർ പങ്കെടുത്തു എന്ന് താഴെ നിന്ന് സെലക്ട് ചെയ്യുക. ഇതിനനുസരിച്ചായിരിക്കും ഗ്രേഡ് പോയിൻ്റ് കണക്കാക്കുക.
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <TouchableOpacity
+                      key={num}
+                      onPress={() => setManualGeneralSize(num)}
+                      disabled={!isGroupEvent}
+                      className={`px-3 py-1.5 rounded-md border ${manualGeneralSize === num ? 'bg-ssf-primary border-ssf-primary' : 'bg-white border-ui-border'} ${!isGroupEvent ? 'opacity-50' : ''}`}
+                    >
+                      <Text className={`font-poppins-bold text-xs ${manualGeneralSize === num ? 'text-white' : 'text-ui-text'}`}>{num}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </SsfCard>
+          )}
 
         {/* Official Participant Bracket Configuration */}
         {isGroupEvent && (
