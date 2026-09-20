@@ -53,7 +53,7 @@ const ResultStatusBadge = ({ status }: { status: ResultStatus }) => {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
   return (
     <View style={{ backgroundColor: cfg.bg, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' }}>
-      <Text style={{ color: cfg.text, fontFamily: 'Poppins_700Bold', fontSize: 11 }}>{cfg.label}</Text>
+      <Text style={{ color: cfg.text, fontFamily: 'Montserrat_700Bold', fontSize: 11 }}>{cfg.label}</Text>
     </View>
   );
 };
@@ -68,7 +68,7 @@ const PublicVisibilityBadge = ({ visible }: { visible: boolean }) => (
   }}>
     <Text style={{
       color: visible ? '#15803D' : ui.colors.textMuted,
-      fontFamily: 'Poppins_700Bold',
+      fontFamily: 'Montserrat_700Bold',
       fontSize: 11,
     }}>
       {visible ? 'Public' : 'Public Hidden'}
@@ -366,7 +366,7 @@ export default function ItemResultsPage() {
                   <View style={{ flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     {publicOrderMap.has(group.item_id) && (
                       <View style={{ backgroundColor: '#0F766E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, minWidth: 32, alignItems: 'center' }}>
-                        <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins_900Black', fontSize: 12 }}>#{publicOrderMap.get(group.item_id)}</Text>
+                        <Text style={{ color: '#FFFFFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>#{publicOrderMap.get(group.item_id)}</Text>
                       </View>
                     )}
                     <Text style={styles.itemGroupTitle}>{group.item_name_ml || group.item_name}</Text>
@@ -511,21 +511,21 @@ export default function ItemResultsPage() {
                   {previewGroup.results.sort((a,b) => (a.rank||99) - (b.rank||99)).map(r => (
                     <View key={r.result_id} style={[styles.previewResultRow, { flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }]}>
                        <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
-                         <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 13, color: colors.navy }}>
+                         <Text style={{ fontFamily: 'Montserrat_700Bold', fontSize: 13, color: colors.navy }}>
                            {r.rank ? `#${r.rank}` : '-'}
                          </Text>
                        </View>
                        <View style={{ flex: 1, minWidth: 150 }}>
-                         <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: colors.text }}>
+                         <Text style={{ fontFamily: 'Montserrat_600SemiBold', fontSize: 13, color: colors.text }}>
                            {r.result_status === 'published' && r.participant_name ? r.participant_name : r.chest_number ? `Chest #${r.chest_number}` : '?' }
                          </Text>
-                         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 11, color: colors.muted }}>
+                         <Text style={{ fontFamily: 'Montserrat_400Regular', fontSize: 11, color: colors.muted }}>
                            {r.organisation_name}
                          </Text>
                        </View>
                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-                         {r.grade && <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.navy }}>Grade {r.grade}</Text>}
-                         <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 13, color: colors.teal }}>• {r.points_awarded} pts</Text>
+                         {r.grade && <Text style={{ fontFamily: 'Montserrat_700Bold', fontSize: 12, color: colors.navy }}>Grade {r.grade}</Text>}
+                         <Text style={{ fontFamily: 'Montserrat_700Bold', fontSize: 13, color: colors.teal }}>• {r.points_awarded} pts</Text>
                        </View>
                     </View>
                   ))}
@@ -581,12 +581,12 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: colors.text,
-    fontFamily: 'Poppins_900Black',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 20,
   },
   cardSubTitle: {
     color: colors.muted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Montserrat_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   },
   secondaryActionText: {
     color: colors.teal,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 12,
   },
   searchBarContainer: {
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: colors.text,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Montserrat_500Medium',
     fontSize: 13,
     padding: 0,
   },
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     color: colors.muted,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 11,
   },
   filterChipTextActive: {
@@ -676,13 +676,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: colors.muted,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Montserrat_400Regular',
     fontSize: 13,
     marginTop: 10,
   },
   errorText: {
     color: ui.colors.danger,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 13,
   },
   rowsScrollContainer: {
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
   },
   itemGroupTitle: {
     color: colors.navy,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 16,
   },
   itemTypeBadge: {
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
   },
   itemTypeBadgeText: {
     color: colors.navy,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 11,
   },
   itemGroupStatusBadge: {
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   itemGroupStatusText: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 11,
   },
   itemGroupActions: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   },
   bulkActionBtnText: {
     color: colors.navy,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 12,
   },
   itemGroupParticipants: {
@@ -773,17 +773,17 @@ const styles = StyleSheet.create({
   },
   nestedRankText: {
     color: colors.muted,
-    fontFamily: 'Poppins_900Black',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 14,
   },
   nestedParticipantName: {
     color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Montserrat_600SemiBold',
     fontSize: 13,
   },
   nestedMeta: {
     color: colors.muted,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Montserrat_500Medium',
     fontSize: 11,
   },
   nestedActions: {
@@ -826,12 +826,12 @@ const styles = StyleSheet.create({
   },
   previewItemName: {
     color: colors.navy,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 16,
   },
   previewItemMeta: {
     color: colors.muted,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Montserrat_500Medium',
     fontSize: 12,
     marginTop: 2,
   },
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     color: ui.colors.surface,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 13,
   },
   outlineAction: {
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   outlineActionText: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'Montserrat_700Bold',
     fontSize: 13,
   },
 });
