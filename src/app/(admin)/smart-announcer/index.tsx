@@ -235,8 +235,12 @@ export default function SmartAnnouncerPage() {
             {results.map((res, index) => { if (res.is_public) return null;
                 const isTop = index === 0;
                 return (
-                  <TouchableOpacity key={res.result_id} style={[styles.row, isTop && styles.topRow]} onPress={() => fetchDetailedResults(res.result_id, res.item_name)}>
-                    <View style={styles.rowLeft}>
+                  <View key={res.result_id} style={[styles.row, isTop && styles.topRow]}>
+                    <TouchableOpacity 
+                      style={{ flex: 1, flexDirection: 'row', gap: 16, flexWrap: 'wrap' }} 
+                      onPress={() => fetchDetailedResults(res.result_id, res.item_name)}
+                    >
+                      <View style={styles.rowLeft}>
                       {isTop && (
                         <View style={styles.badgeSmall}>
                           <Text style={styles.badgeTextSmall}>? Recommended Next</Text>
@@ -258,6 +262,8 @@ export default function SmartAnnouncerPage() {
                       </Text>
                     </View>
 
+                    </TouchableOpacity>
+
                     <View style={styles.rowRight}>
                       <TouchableOpacity 
                         style={[styles.publishBtnSmall, publishing === res.result_id && styles.disabledBtn]}
@@ -274,7 +280,7 @@ export default function SmartAnnouncerPage() {
                         )}
                       </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
           </View>
