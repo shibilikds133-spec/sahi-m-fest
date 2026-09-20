@@ -1206,7 +1206,7 @@ export default function ParticipantDetails() {
                       const pCatShort = pCat === 'SENIOR' ? 'SR' : (pCat === 'JUNIOR' ? 'JR' : (pCat === 'CAMPUS' ? 'CA' : pCat));
                       const pCatLong = pCat === 'SR' ? 'SENIOR' : (pCat === 'JR' ? 'JUNIOR' : (pCat === 'CA' ? 'CAMPUS' : pCat));
 
-                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN');
+                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN') || normalizedCodes.includes('GENERAL');
                       const matchesGender = !i.gender || i.gender === 'both' || i.gender === participant.gender;
                       
                       if (!itemSearchText) return matchesCategory && matchesGender;
@@ -1240,7 +1240,7 @@ export default function ParticipantDetails() {
                       const pCat = String(participant.category_code ?? '').trim().toUpperCase();
                       const pCatShort = pCat === 'SENIOR' ? 'SR' : (pCat === 'JUNIOR' ? 'JR' : (pCat === 'CAMPUS' ? 'CA' : pCat));
                       const pCatLong = pCat === 'SR' ? 'SENIOR' : (pCat === 'JR' ? 'JUNIOR' : (pCat === 'CA' ? 'CAMPUS' : pCat));
-                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN');
+                      const matchesCategory = normalizedCodes.includes(pCat) || normalizedCodes.includes(pCatShort) || normalizedCodes.includes(pCatLong) || normalizedCodes.includes('GN') || normalizedCodes.includes('GENERAL');
                       const matchesGender = !i.gender || i.gender === 'both' || i.gender === participant.gender;
                       if (!itemSearchText) return matchesCategory && matchesGender;
                       const search = itemSearchText.toLowerCase();
