@@ -24,7 +24,10 @@ const getItemCategoryCodes = (schedule: any): string[] => {
   return codes.map((code) => String(code).trim()).filter(Boolean);
 };
 
-const normalizeCategory = (value: string) => value.trim().toUpperCase();
+const normalizeCategory = (value: string) => {
+  const norm = value.trim().toUpperCase();
+  return norm === 'GN' ? 'GENERAL' : norm;
+};
 
 const categoryAliases: Record<string, string[]> = {
   LP: ['LP'],

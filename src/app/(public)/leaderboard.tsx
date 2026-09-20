@@ -234,6 +234,12 @@ const toIndividualRows = (results: PublicPublishedResultRow[]): RankingViewRow[]
 
   results.forEach((result) => {
     if (!result.participant_id) return;
+
+    // Exclude General categories from individual rankings
+    const catCodes = result.item_category_codes || [];
+    const isGeneral = catCodes.includes('GN') || catCodes.includes('GENERAL');
+    if (isGeneral) return;
+
     const existing = grouped.get(result.participant_id);
     if (existing) {
       existing.points += result.points_awarded;

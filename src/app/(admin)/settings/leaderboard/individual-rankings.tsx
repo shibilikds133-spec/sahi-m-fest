@@ -114,6 +114,11 @@ export default function IndividualRankingsPage() {
       // 3. Category match based on item name/ml prefix
       const categoryMatch = selectedCategory === 'all'
         || itemCategoryCodes.get(r.item_id ?? '')?.includes(selectedCategory) === true;
+        
+      // 4. Exclude General items from individual rankings
+      const itemCodes = itemCategoryCodes.get(r.item_id ?? '') || [];
+      const isGeneral = itemCodes.includes('GN') || itemCodes.includes('GENERAL');
+      if (isGeneral) return false;
 
       return categoryMatch;
     });
