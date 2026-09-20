@@ -9,10 +9,17 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- 1. Unlock ALL mark entries for the specified schedule
-  UPDATE public.mark_entries
+  -- 1. Unlock ONLY mark entries for active judges
+  UPDATE public.mark_entries m
   SET is_final = false
-  WHERE schedule_id = p_schedule_id;
+  WHERE m.schedule_id = p_schedule_id
+    AND EXISTS (
+      SELECT 1 FROM public.schedule_judge_assignments a
+      WHERE a.schedule_id = m.schedule_id
+        AND a.judge_id = m.judge_id
+        AND a.tenant_id = m.tenant_id
+        AND a.status = 'active'
+    );
 
   -- 2. Revert results status to draft if it's already published or ready
   UPDATE public.results
