@@ -324,7 +324,9 @@ export default function SmartAnnouncerPage() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontWeight: '700', fontSize: 16, color: '#1e293b', marginBottom: 4 }}>
-                        {r.registrations?.participants?.map((p: any) => p.name).join(', ') || 'Unknown'}
+                        {Array.isArray(r.registrations?.participants) 
+                          ? r.registrations.participants.map((p: any) => p.name).join(', ') 
+                          : r.registrations?.participants?.name || 'Unknown'}
                       </Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                         <Text style={{ fontSize: 13, color: '#64748b', fontWeight: '500' }}>
@@ -343,7 +345,9 @@ export default function SmartAnnouncerPage() {
                         {r.items?.category_codes && (
                           <>
                             <Text style={{ fontSize: 13, color: '#64748b' }}>•</Text>
-                            <Text style={{ fontSize: 13, color: '#64748b' }}>{r.items.category_codes.join(', ')}</Text>
+                            <Text style={{ fontSize: 13, color: '#64748b' }}>
+                              {Array.isArray(r.items.category_codes) ? r.items.category_codes.join(', ') : String(r.items.category_codes)}
+                            </Text>
                           </>
                         )}
                       </View>
