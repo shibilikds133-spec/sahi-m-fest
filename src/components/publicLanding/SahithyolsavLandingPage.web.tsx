@@ -11,6 +11,7 @@ import { usePublicSchedule } from '../../core/hooks/useSchedule';
 import { Swirling } from '../loading-ui/swirling';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../core/config/supabase';
+import { getCategoryLabel } from '../../constants/categories';
 
 const InitialLoader = ({ isReady }: { isReady: boolean }) => {
   const [shouldRender, setShouldRender] = React.useState(true);
@@ -339,7 +340,8 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
     const categories = new Set<string>();
     publishedResultsQuery.data.forEach((r: any) => {
       const key = r.item_id || r.item_name;
-      const category = r.item_category_codes?.length ? r.item_category_codes[0] : r.participant_category_code;
+      const rawCategory = r.item_category_codes?.length ? r.item_category_codes[0] : r.participant_category_code;
+      const category = rawCategory ? getCategoryLabel(rawCategory) : null;
       if (category) categories.add(category);
       if (!grouped[key]) {
         grouped[key] = {
