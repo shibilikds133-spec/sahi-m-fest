@@ -40,6 +40,10 @@ export default function SmartAnnouncerPage() {
   const [detailedResults, setDetailedResults] = useState<any[]>([]);
   const [selectedItemName, setSelectedItemName] = useState('');
 
+  // Team Filter State
+  const [teams, setTeams] = useState<string[]>([]);
+  const [selectedFilterTeam, setSelectedFilterTeam] = useState<string>('All');
+
   const fetchDetailedResults = async (itemId: string, itemName: string) => {
     setIsDetailsModalOpen(true);
     setLoadingDetails(true);
@@ -128,9 +132,24 @@ export default function SmartAnnouncerPage() {
     }
   };
 
+  const fetchTeams = async () => {
+    if (!tenant_id) return;
+    try {
+      const { data, error } = await supabase.from('organisations').select('name').eq('tenant_id', tenant_id).order('name');
+      if (data) setTeams(data.map(t => t.name));
+    } catch (e) {
+      console.error('Error fetching teams:', e);
+    }
+  };
+
   useEffect(() => {
     fetchQueue();
+    fetchTeams();
   }, [currentFestival]);
+
+  const displayedResults = selectedFilterTeam === 'All' 
+    ? results 
+    : results.filter(r => r.leader_name === selectedFilterTeam);
 
   
   const handlePublish = async (resultId: string, itemName: string) => {
@@ -219,6 +238,29 @@ export default function SmartAnnouncerPage() {
           </TouchableOpacity>
         </View>
 
+        {/* Team Filter */}
+        {teams.length > 0 && (
+          <View style={{ marginVertical: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
+              <TouchableOpacity 
+                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFilterTeam === 'All' ? ui.colors.primary : '#f1f5f9' }} 
+                onPress={() => setSelectedFilterTeam('All')}
+              >
+                <Text style={{ fontWeight: '600', color: selectedFilterTeam === 'All' ? 'white' : '#475569' }}>All Teams</Text>
+              </TouchableOpacity>
+              {teams.map(team => (
+                <TouchableOpacity 
+                  key={team} 
+                  style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: selectedFilterTeam === team ? ui.colors.primary : '#f1f5f9' }} 
+                  onPress={() => setSelectedFilterTeam(team)}
+                >
+                  <Text style={{ fontWeight: '600', color: selectedFilterTeam === team ? 'white' : '#475569' }}>{team}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {loading ? (
           <View style={styles.loader}>
             <ActivityIndicator size="large" color={ui.colors.primary} />
@@ -230,9 +272,15 @@ export default function SmartAnnouncerPage() {
             <Text style={[styles.title, { marginTop: 16 }]}>Queue Empty</Text>
             <Text style={styles.subtitle}>No pending results to announce. All approved results have been published.</Text>
           </View>
+        ) : displayedResults.length === 0 ? (
+          <View style={styles.loader}>
+            <Radio size={48} color={ui.colors.textSubtle} />
+            <Text style={[styles.title, { marginTop: 16, color: '#b45309' }]}>No Matches Found</Text>
+            <Text style={styles.subtitle}>നിലവിൽ {selectedFilterTeam}-നെ ഒന്നാം സ്ഥാനത്ത് എത്തിക്കാൻ കഴിയുന്ന പബ്ലിഷ് ചെയ്യാത്ത മത്സര ഫലങ്ങൾ ലഭ്യമല്ല.</Text>
+          </View>
         ) : (
           <View style={styles.list}>
-            {results.map((res, index) => { if (res.is_public) return null;
+            {displayedResults.map((res, index) => { if (res.is_public) return null;
                 const isTop = index === 0;
                 return (
                   <View key={res.result_id} style={[styles.row, isTop && styles.topRow]}>
