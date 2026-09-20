@@ -27,7 +27,8 @@ export const CategoryMatchRule: RegistrationRule = {
     const matchesCategory = itemCodes.includes(pCat) || 
                             itemCodes.includes(pCatShort) || 
                             itemCodes.includes(pCatLong) || 
-                            itemCodes.includes('GN');
+                            itemCodes.includes('GN') ||
+                            itemCodes.includes('GENERAL');
     
     if (!matchesCategory) {
       if (participant.is_post_hs_religious && (
