@@ -790,6 +790,21 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
 
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={() => router.push('/(public)/leaderboard/individual-rankings' as never)}
+            style={[styles.quickNavCardGlass, styles.cardGlowBlue, isMobile && styles.quickNavCardGlassMobile]}
+          >
+            <View style={[
+              styles.quickNavIconBox,
+              { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.25)' },
+              isMobile && styles.quickNavIconBoxMobile
+            ]}>
+              <UserRound size={isMobile ? 18 : 22} color="#3B82F6" />
+            </View>
+            <Text style={[styles.quickNavTitleText, isMobile && styles.quickNavTitleTextMobile]}>Individual{'\n'}Rankings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
             onPress={() => router.push('/(public)/leaderboard/schedule' as never)}
             style={[styles.quickNavCardGlass, styles.cardGlowPurple, isMobile && styles.quickNavCardGlassMobile]}
           >
@@ -1858,6 +1873,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     shadowOpacity: 0.4,
+  },
+  cardGlowPurple: {
+    shadowColor: '#A78BFA',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    shadowOpacity: 0.15,
+  },
+  cardGlowBlue: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    shadowOpacity: 0.15,
   },
   badge3DMobile: {
     width: 30,

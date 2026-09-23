@@ -654,6 +654,7 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'landing' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard?tenant_id=${tenantId}&bypass_html=true`}>Home</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'schedule' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/schedule?tenant_id=${tenantId}`}>Schedule</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'units' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/unit-rankings?tenant_id=${tenantId}`}>Teams</Link>
+            <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'individuals' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/individual-rankings?tenant_id=${tenantId}`}>Individuals</Link>
             <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'items' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/item-results?tenant_id=${tenantId}`}>Results</Link>
               <Link className={`transition-colors duration-200 font-bold text-lg uppercase tracking-widest ${page === 'media' ? 'text-[#c69a53]' : 'text-white hover:text-gray-200'}`} href={`/leaderboard/media?tenant_id=${tenantId}`}>Posters</Link>
           </div>
@@ -699,6 +700,13 @@ export function SahithyolsavLandingPage({ page = 'landing', children }: { page?:
               onPress={() => setIsMobileMenuOpen(false)}
             >
               Teams
+            </Link>
+            <Link 
+              className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'individuals' ? 'text-[#c69a53]' : 'text-white'}`} 
+              href={`/leaderboard/individual-rankings?tenant_id=${tenantId}`}
+              onPress={() => setIsMobileMenuOpen(false)}
+            >
+              Individuals
             </Link>
             <Link 
               className={`transition-colors duration-200 border-b border-white/10 pb-4 ${page === 'items' ? 'text-[#c69a53]' : 'text-white'}`} 
