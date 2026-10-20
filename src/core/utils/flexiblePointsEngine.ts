@@ -4,6 +4,8 @@ export type GradeThresholds = { aPlus: number; a: number; b: number; c: number }
 export type GradePoints = [number, number, number, number];
 export type PointBracket = { key: string; label: string; min: number; max: number | null; points: GradePoints; enabled: boolean };
 export type GraceField = { id: string; name: string; maxMarks: number };
+export type GradeBoostSection = { id: string; itemIds: string[]; points: Record<string, GradePoints>; groupPoints: Record<string, GradePoints> };
+export type RankBoostSection = { id: string; itemIds: string[]; points: [number, number, number] };
 export type PointsProfile = 'baseline' | 'grade_boost' | 'rank_boost' | 'both';
 export type FlexiblePointsConfig = {
   mode: PointsMode; rankPoints: [number, number, number]; thresholds: GradeThresholds;
@@ -13,6 +15,7 @@ export type FlexiblePointsConfig = {
   rule12MinTeams: number; rule12Behavior: Rule12Behavior; enableGraceMarks: boolean; version: number;
   gradeBoostPoints: Record<string, GradePoints>; groupGradeBoostPoints: Record<string, GradePoints>;
   rankBoostPoints: [number, number, number]; gradeBoostItemIds: string[]; rankBoostItemIds: string[];
+  gradeBoostSections: GradeBoostSection[]; rankBoostSections: RankBoostSection[];
   graceFields: GraceField[];
 };
 // NaN represents a missing editor input, never an award. Validation must succeed before save/calculation.
@@ -54,6 +57,12 @@ export const normalizePointsConfig = (record?: any): FlexiblePointsConfig => ({
   gradeBoostPoints: boostMap(record?.grade_boost_points), groupGradeBoostPoints: boostMap(record?.group_grade_boost_points),
   rankBoostPoints: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number],
   gradeBoostItemIds: array(record?.grade_boost_item_ids), rankBoostItemIds: array(record?.rank_boost_item_ids),
+  gradeBoostSections: array(record?.grade_boost_sections).length ? array(record.grade_boost_sections).map((s: any) => ({
+    id: String(s.id ?? ''), itemIds: array(s.item_ids), points: boostMap(s.points), groupPoints: boostMap(s.group_points),
+  })) : [{ id: 'legacy-grade-section', itemIds: array(record?.grade_boost_item_ids), points: boostMap(record?.grade_boost_points), groupPoints: boostMap(record?.group_grade_boost_points) }],
+  rankBoostSections: array(record?.rank_boost_sections).length ? array(record.rank_boost_sections).map((s: any) => ({
+    id: String(s.id ?? ''), itemIds: array(s.item_ids), points: [0, 1, 2].map(i => configurationNumber(s.points?.[i])) as [number, number, number],
+  })) : [{ id: 'legacy-rank-section', itemIds: array(record?.rank_boost_item_ids), points: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number] }],
   graceFields: array(record?.grace_fields).map(f => ({ id: String(f.id ?? ''), name: String(f.name ?? ''), maxMarks: configurationNumber(f.max_marks) })),
 });
 export const setDefaultGradePoint = (
@@ -86,9 +95,15 @@ export const serializePointsConfig = (c: FlexiblePointsConfig) => ({
   member_brackets_enabled: c.memberBracketsEnabled,
   allow_bracket_override: c.allowBracketOverride, less_than_3_teams_rule: c.rule12Enabled,
   rule12_min_teams: Number.isFinite(c.rule12MinTeams) ? c.rule12MinTeams : null, rule12_behavior: c.rule12Behavior ?? null,
-  enable_grace_marks: c.enableGraceMarks, grade_boost_points: c.gradeBoostPoints, group_grade_boost_points: c.groupGradeBoostPoints,
-  rank_boost_points: c.rankBoostPoints.every(Number.isFinite) ? c.rankBoostPoints : [],
-  grade_boost_item_ids: c.gradeBoostItemIds, rank_boost_item_ids: c.rankBoostItemIds,
+  enable_grace_marks: c.enableGraceMarks,
+  grade_boost_sections: c.gradeBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points, group_points: s.groupPoints })),
+  rank_boost_sections: c.rankBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points.every(Number.isFinite) ? s.points : [] })),
+  // Keep legacy columns as a compatibility projection; new scoring reads section arrays.
+  grade_boost_points: Object.assign({}, ...c.gradeBoostSections.map(s => s.points)),
+  group_grade_boost_points: Object.assign({}, ...c.gradeBoostSections.map(s => s.groupPoints)),
+  rank_boost_points: c.rankBoostSections[0]?.points.every(Number.isFinite) ? c.rankBoostSections[0].points : [],
+  grade_boost_item_ids: [...new Set(c.gradeBoostSections.flatMap(s => s.itemIds))],
+  rank_boost_item_ids: [...new Set(c.rankBoostSections.flatMap(s => s.itemIds))],
   grace_fields: c.graceFields.map(f => ({ id: f.id, name: f.name.trim(), max_marks: f.maxMarks })),
 });
 export const calculateGradeFromConfig = (total: number, maximum: number, config: Pick<FlexiblePointsConfig, 'thresholds'>): string | null => {
@@ -109,7 +124,7 @@ export const resolvePointBracket = (config: FlexiblePointsConfig, size: number, 
   return enabled.find(b => size >= b.min && (b.max === null || size <= b.max)) ?? null;
 };
 export const getPointsProfile = (config: FlexiblePointsConfig, itemId: string): PointsProfile => {
-  const g = config.gradeBoostItemIds.includes(itemId), r = config.rankBoostItemIds.includes(itemId);
+  const g = config.gradeBoostSections.some(section => section.itemIds.includes(itemId)), r = config.rankBoostSections.some(section => section.itemIds.includes(itemId));
   return g && r ? 'both' : g ? 'grade_boost' : r ? 'rank_boost' : 'baseline';
 };
 export const calculateFlexiblePoints = ({ grade, rank, groupSize, competingTeamsCount, isGroup, config, bracketOverride, itemId }: {
@@ -125,11 +140,14 @@ export const calculateFlexiblePoints = ({ grade, rank, groupSize, competingTeams
   if (grade !== null && grade !== '-' && !['A+', 'A', 'B', 'C'].includes(grade)) throw new Error('Unknown grade.');
   if (rank !== null && (!Number.isInteger(rank) || rank < 1)) throw new Error('Invalid rank.');
   const profile = getPointsProfile(config, itemId ?? '');
-  const boosted = isGroup && config.separateGroupBrackets ? config.groupGradeBoostPoints : config.gradeBoostPoints;
-  const values = profile === 'grade_boost' || profile === 'both' ? boosted[bracket.key] : bracket.points;
+  const gradeSection = config.gradeBoostSections.find(section => section.itemIds.includes(itemId ?? ''));
+  const rankSection = config.rankBoostSections.find(section => section.itemIds.includes(itemId ?? ''));
+  const boosted = isGroup && config.separateGroupBrackets ? gradeSection?.groupPoints : gradeSection?.points;
+  const values = gradeSection ? boosted?.[bracket.key] : bracket.points;
   const gi = ['A+', 'A', 'B', 'C'].indexOf(grade ?? '');
-  let gradeAward = gi < 0 ? 0 : values[gi];
-  const ranks = profile === 'rank_boost' || profile === 'both' ? config.rankBoostPoints : config.rankPoints;
+  if (gi >= 0 && !values) throw new Error('Boosted grade points are missing for the selected section and bracket.');
+  let gradeAward = gi < 0 ? 0 : values![gi];
+  const ranks = rankSection ? rankSection.points : config.rankPoints;
   let rankAward = rank !== null && rank <= ranks.length ? ranks[rank - 1] : 0;
   const rule12Applies = config.rule12Enabled && competingTeamsCount < config.rule12MinTeams;
   if (rule12Applies && config.rule12Behavior !== 'rank_and_grade') rankAward = 0;
@@ -140,8 +158,17 @@ export const calculateFlexiblePoints = ({ grade, rank, groupSize, competingTeams
 };
 export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] => {
   const errors: string[] = [];
-  if (!c.gradeBoostEnabled && c.gradeBoostItemIds.length) errors.push('Remove Grade Boost competitions before turning it off.');
-  if (!c.rankBoostEnabled && c.rankBoostItemIds.length) errors.push('Remove Rank Boost competitions before turning it off.');
+  const gradeIds = c.gradeBoostSections.flatMap(section => section.itemIds), rankIds = c.rankBoostSections.flatMap(section => section.itemIds);
+  if (!c.gradeBoostEnabled && gradeIds.length) errors.push('Remove Grade Boost competitions before turning it off.');
+  if (!c.rankBoostEnabled && rankIds.length) errors.push('Remove Rank Boost competitions before turning it off.');
+  const duplicateSectionItems = (sections: {id:string; itemIds:string[]}[], label:string) => {
+    const seen = new Set<string>();
+    sections.forEach((section, index) => {
+      if (!section.id || sections.findIndex(other => other.id === section.id) !== index) errors.push(`${label} section IDs must be unique.`);
+      section.itemIds.forEach(id => { if (seen.has(id)) errors.push(`A competition can belong to only one ${label} section.`); seen.add(id); });
+    });
+  };
+  duplicateSectionItems(c.gradeBoostSections, 'Grade Boost'); duplicateSectionItems(c.rankBoostSections, 'Rank Boost');
   const validPoints = (v: number[], n: number) => v.length === n && v.every(x => Number.isSafeInteger(x) && x >= 0 && x <= 2147483647);
   const { aPlus, a, b, c: low } = c.thresholds;
   if (![aPlus, a, b, low].every(x => Number.isFinite(x) && x >= 0 && x <= 100) || !(aPlus > a && a > b && b > low))
@@ -149,7 +176,7 @@ export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] 
   if (!validPoints(c.rankPoints, 3)) errors.push('Enter all baseline rank points as non-negative whole numbers.');
   if (!Number.isSafeInteger(c.rule12MinTeams) || c.rule12MinTeams < 1 || !['grade_only', 'rank_and_grade', 'no_points'].includes(c.rule12Behavior))
     errors.push('Complete the minimum-team rule.');
-  const check = (rows: PointBracket[], label: string, boosts: Record<string, GradePoints>) => {
+  const check = (rows: PointBracket[], label: string, group = false) => {
     const enabled = rows.filter(b => b.enabled).sort((a, b) => a.min - b.min), keys = new Set<string>();
     if (!enabled.length) errors.push(label + ': add an enabled bracket.');
     rows.forEach(b => {
@@ -157,13 +184,13 @@ export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] 
       keys.add(b.key);
       if (!Number.isSafeInteger(b.min) || b.min < 1 || (b.max !== null && (!Number.isSafeInteger(b.max) || b.max < b.min))) errors.push(label + ': complete bracket ranges.');
       if (!validPoints(b.points, 4)) errors.push(label + ': enter all grade points.');
-      if (b.enabled && c.gradeBoostItemIds.length && !validPoints(boosts[b.key] ?? [], 4)) errors.push(label + ': complete boosted grade points for ' + (b.label || b.key) + '.');
+      if (b.enabled && gradeIds.length && c.gradeBoostSections.some(section => section.itemIds.length && !validPoints((group ? section.groupPoints : section.points)[b.key] ?? [], 4))) errors.push(label + ': complete boosted grade points for ' + (b.label || b.key) + '.');
     });
     enabled.forEach((b, i) => { const p = enabled[i - 1]; if (p && (p.max === null || p.max >= b.min)) errors.push(label + ': enabled ranges overlap.'); });
   };
-  check(c.brackets, 'Participant', c.gradeBoostPoints);
-  if (c.separateGroupBrackets) check(c.groupBrackets, 'Group', c.groupGradeBoostPoints);
-  if (c.rankBoostItemIds.length && !validPoints(c.rankBoostPoints, 3)) errors.push('Complete all boosted rank points.');
+  check(c.brackets, 'Participant');
+  if (c.separateGroupBrackets) check(c.groupBrackets, 'Group', true);
+  if (rankIds.length && c.rankBoostSections.some(section => section.itemIds.length && !validPoints(section.points, 3))) errors.push('Complete all boosted rank points in each assigned section.');
   const ids = new Set<string>(), names = new Set<string>();
   c.graceFields.forEach(f => {
     const name = f.name.trim().toLowerCase();

@@ -14,7 +14,7 @@ import { supabase } from '../../../core/config/supabase';
 import { createRequestId } from '../../../core/utils/requestId';
 import {
   configurationNumber as numberValue, displayConfigurationNumber as numberText,
-  FlexiblePointsConfig, GradePoints, PointBracket, normalizePointsConfig, serializePointsConfig,
+  FlexiblePointsConfig, GradePoints, PointBracket, GradeBoostSection, normalizePointsConfig, serializePointsConfig,
   setDefaultGradePoint, validateFlexiblePointsConfig,
 } from '../../../core/utils/flexiblePointsEngine';
 
@@ -49,6 +49,7 @@ export default function PointsSettings() {
   const [competitionPanel, setCompetitionPanel] = useState<{
     mode: 'select' | 'preview' | 'both';
     boost?: 'gradeBoostItemIds' | 'rankBoostItemIds';
+    sectionId?: string;
   } | null>(null);
   useEffect(() => {
     if (!festival?.id || isLoading || isFetching || error || hydratedFestivalId === festival.id) return;
@@ -74,7 +75,9 @@ export default function PointsSettings() {
   const selectableItems = (items as any[]).filter(isEnabledCompetition);
   const visibleItems = selectableItems.filter(item => [item.item_code, item.item_name_en, item.item_name_ml, ...(item.category_codes ?? [])]
     .join(' ').toLowerCase().includes(search.trim().toLowerCase()));
-  const bothBoostIds = form.gradeBoostItemIds.filter(id => form.rankBoostItemIds.includes(id));
+  const allGradeBoostIds = form.gradeBoostSections.flatMap(section => section.itemIds);
+  const allRankBoostIds = form.rankBoostSections.flatMap(section => section.itemIds);
+  const bothBoostIds = [...new Set(allGradeBoostIds.filter(id => allRankBoostIds.includes(id)))];
   const bothBoostItems = (items as any[]).filter(item => bothBoostIds.includes(item.id));
   const patch = (changes: Partial<FlexiblePointsConfig>) => setForm(current => ({ ...current, ...changes }));
   const editBracket = (group: boolean, index: number, change: Partial<PointBracket>) => {
@@ -145,15 +148,32 @@ export default function PointsSettings() {
       {form.memberBracketsEnabled && <SsfButton label="Add bracket" size="sm" variant="outline" icon={<Plus size={15} color={ui.colors.primary} />} onPress={() => addBracket(group)} />}
     </View>;
   };
-  const toggleItem = (id: string, kind: 'gradeBoostItemIds' | 'rankBoostItemIds') =>
-    patch({ [kind]: form[kind].includes(id) ? form[kind].filter(value => value !== id)
-      : (kind === 'gradeBoostItemIds' ? form.gradeBoostEnabled : form.rankBoostEnabled) ? [...form[kind], id] : form[kind] });
+  const addGradeSection = () => patch({ gradeBoostSections: [...form.gradeBoostSections,
+    { id: createRequestId(), itemIds: [], points: {}, groupPoints: {} }] });
+  const addRankSection = () => patch({ rankBoostSections: [...form.rankBoostSections,
+    { id: createRequestId(), itemIds: [], points: [NaN, NaN, NaN] }] });
+  const toggleSectionItem = (id: string, kind: 'gradeBoostItemIds' | 'rankBoostItemIds', sectionId: string) => {
+    if (kind === 'gradeBoostItemIds') patch({ gradeBoostSections: form.gradeBoostSections.map(section => section.id !== sectionId ? section : {
+      ...section, itemIds: section.itemIds.includes(id) ? section.itemIds.filter(value => value !== id) : [...section.itemIds, id],
+    }) });
+    else patch({ rankBoostSections: form.rankBoostSections.map(section => section.id !== sectionId ? section : {
+      ...section, itemIds: section.itemIds.includes(id) ? section.itemIds.filter(value => value !== id) : [...section.itemIds, id],
+    }) });
+  };
+  const assignments = (kind: 'gradeBoostItemIds' | 'rankBoostItemIds') => kind === 'gradeBoostItemIds' ? form.gradeBoostSections : form.rankBoostSections;
+  const assignedInOtherSection = (id: string, kind: 'gradeBoostItemIds' | 'rankBoostItemIds', sectionId: string) =>
+    assignments(kind).findIndex(section => section.id !== sectionId && section.itemIds.includes(id));
   const panelItems = competitionPanel?.mode === 'both'
     ? bothBoostItems
     : competitionPanel?.mode === 'preview'
-      ? (items as any[]).filter(item => form[competitionPanel.boost!].includes(item.id))
+      ? (items as any[]).filter(item => competitionPanel.boost === 'gradeBoostItemIds'
+        ? form.gradeBoostSections.find(section => section.id === competitionPanel.sectionId)?.itemIds.includes(item.id)
+        : form.rankBoostSections.find(section => section.id === competitionPanel.sectionId)?.itemIds.includes(item.id))
       : visibleItems;
-  const panelSelectedIds = competitionPanel?.boost ? form[competitionPanel.boost] : [];
+  const panelSection = competitionPanel?.boost === 'gradeBoostItemIds'
+    ? form.gradeBoostSections.find(section => section.id === competitionPanel.sectionId)
+    : form.rankBoostSections.find(section => section.id === competitionPanel?.sectionId);
+  const panelSelectedIds = panelSection?.itemIds ?? [];
   const competitionOptionsLoading = itemsLoading || (isCollegeFest && categoriesLoading);
   const competitionOptionsError = itemsError || (isCollegeFest && categoriesError);
   const panelTitle = competitionPanel?.mode === 'both'
@@ -164,25 +184,25 @@ export default function PointsSettings() {
   const panelDescription = competitionPanel?.mode === 'both'
     ? 'These competitions are selected in both Grade Boost and Rank Boost.'
     : competitionPanel?.mode === 'preview'
-      ? `${panelSelectedIds.length} competitions selected for ${competitionPanel.boost === 'gradeBoostItemIds' ? 'Grade Boost' : 'Rank Boost'}.`
+      ? `${panelSelectedIds.length} competitions selected for ${competitionPanel.boost === 'gradeBoostItemIds' ? 'Grade Boost' : 'Rank Boost'} · Section ${(assignments(competitionPanel.boost!).findIndex(section => section.id === competitionPanel.sectionId) + 1) || ''}.`
       : 'Choose enabled, single-category competitions that receive this boost.';
-  const renderItems = (kind: 'gradeBoostItemIds' | 'rankBoostItemIds') => <View className="mt-3">
+  const renderItems = (kind: 'gradeBoostItemIds' | 'rankBoostItemIds', sectionId: string) => <View className="mt-3">
     {competitionOptionsError ? <Text className="font-poppins text-xs text-red-700 mb-2">Could not load enabled competitions or categories. Reload before editing assignments.</Text> : <>
       <View className="flex-row flex-wrap items-end gap-2">
         <SsfButton size="sm" variant="outline" label="Select Competitions" icon={<ListChecks size={16} color={ui.colors.primary} />}
           disabled={competitionOptionsLoading || !(kind === 'gradeBoostItemIds' ? form.gradeBoostEnabled : form.rankBoostEnabled)}
-          onPress={() => { setSearch(''); setCompetitionPanel({ mode: 'select', boost: kind }); }} />
+          onPress={() => { setSearch(''); setCompetitionPanel({ mode: 'select', boost: kind, sectionId }); }} />
         <View className="items-start">
-          <Text className="font-poppins-bold text-[10px] text-ui-text-muted mb-1">{form[kind].length} selected</Text>
+          <Text className="font-poppins-bold text-[10px] text-ui-text-muted mb-1">{assignments(kind).find(section => section.id === sectionId)?.itemIds.length ?? 0} selected</Text>
           <SsfButton size="sm" variant="ghost" label="Selected Competitions" icon={<Eye size={15} color={ui.colors.primary} />}
-            onPress={() => setCompetitionPanel({ mode: 'preview', boost: kind })} />
+            onPress={() => setCompetitionPanel({ mode: 'preview', boost: kind, sectionId })} />
         </View>
       </View>
       {competitionOptionsLoading && <ActivityIndicator className="self-start mt-2" />}
     </>}
   </View>;
-  const renderBoostValues = (group: boolean) => {
-    const mapKey = group ? 'groupGradeBoostPoints' : 'gradeBoostPoints';
+  const renderBoostValues = (section: GradeBoostSection, group: boolean) => {
+    const pointsMap = group ? section.groupPoints : section.points;
     const rows = (group ? form.groupBrackets : form.brackets).filter(b => b.enabled);
     const visibleRows = form.memberBracketsEnabled ? rows : [defaultBracket(group)].filter((row): row is PointBracket => row !== null);
     if (!visibleRows.length) return <View className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -200,9 +220,11 @@ export default function PointsSettings() {
         ? `${group ? 'Group' : 'Participant'}: ${numberText(b.min)}–${b.max === null ? '∞' : numberText(b.max)} members`
         : `Default ${group ? 'group' : 'participant'} grade boost points · ${numberText(b.min)}–${b.max === null ? '∞' : numberText(b.max)} members`}</Text>
       <View className="flex-row flex-wrap gap-2">{grades.map((label, gi) =>
-        <Numeric key={label} label={label} value={form[mapKey][b.key]?.[gi] ?? NaN} onChange={value => {
-          const values = [...(form[mapKey][b.key] ?? emptyGrades())] as GradePoints; values[gi] = value;
-          patch({ [mapKey]: { ...form[mapKey], [b.key]: values } });
+        <Numeric key={label} label={label} value={pointsMap[b.key]?.[gi] ?? NaN} onChange={value => {
+          const values = [...(pointsMap[b.key] ?? emptyGrades())] as GradePoints; values[gi] = value;
+          patch({ gradeBoostSections: form.gradeBoostSections.map(candidate => candidate.id !== section.id ? candidate : group
+            ? { ...candidate, groupPoints: { ...candidate.groupPoints, [b.key]: values } }
+            : { ...candidate, points: { ...candidate.points, [b.key]: values } }) });
         }} />)}</View>
     </View>);
   };
@@ -259,12 +281,40 @@ export default function PointsSettings() {
     <SsfCard className="mb-4"><View className="flex-row items-center justify-between mb-2"><Text className="font-poppins-bold text-lg text-ui-text">Grade boost</Text>
       <Switch accessibilityLabel="Grade boost enabled" value={form.gradeBoostEnabled} disabled /></View>
       <Text className="font-poppins text-xs text-ui-text-muted mb-3">Uses the baseline ranges when member-count scoring is on. When off, it uses the default bracket values.</Text>
-      {renderBoostValues(false)}{form.separateGroupBrackets && renderBoostValues(true)}{renderItems('gradeBoostItemIds')}</SsfCard>
+      {form.gradeBoostSections.map((section, index) => <View key={section.id} className="border border-ui-border rounded-xl p-3 mb-3">
+        <View className="flex-row items-center justify-between"><Text className="font-poppins-bold text-sm text-ui-text">Section {index + 1}</Text>
+          {section.itemIds.length === 0 && form.gradeBoostSections.length > 1 && <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove Grade Boost Section ${index + 1}`}
+            onPress={() => patch({ gradeBoostSections: form.gradeBoostSections.filter(row => row.id !== section.id) })} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity>}</View>
+        {renderBoostValues(section, false)}{form.separateGroupBrackets && renderBoostValues(section, true)}{renderItems('gradeBoostItemIds', section.id)}
+        {!!section.itemIds.length && <View className="mt-2">{(items as any[]).filter(item => section.itemIds.includes(item.id)).map(item =>
+          <View key={item.id} className="flex-row items-center justify-between py-2 border-b border-ui-border"><Text className="font-poppins text-xs text-ui-text flex-1">{item.item_name_en || item.item_name_ml}</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove ${item.item_name_en || item.item_name_ml} from Section ${index + 1}`} onPress={() => toggleSectionItem(item.id, 'gradeBoostItemIds', section.id)} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity></View>)}
+          {section.itemIds.filter(id => !(items as any[]).some(item => item.id === id)).map(id => <View key={id} className="flex-row items-center justify-between py-2 border-b border-ui-border">
+            <Text className="font-poppins text-xs text-ui-text-muted flex-1">Unavailable competition</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove unavailable competition from Section ${index + 1}`} onPress={() => toggleSectionItem(id, 'gradeBoostItemIds', section.id)} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity>
+          </View>)}</View>}
+      </View>)}
+      <SsfButton size="sm" variant="outline" label="Add Grade Boost section" icon={<Plus size={15} color={ui.colors.primary} />} onPress={addGradeSection} />
+    </SsfCard>
     <SsfCard className="mb-4"><View className="flex-row items-center justify-between mb-3"><Text className="font-poppins-bold text-lg text-ui-text">Rank boost</Text>
       <Switch accessibilityLabel="Rank boost enabled" value={form.rankBoostEnabled} disabled /></View>
-      <View className="flex-row gap-3">{ranks.map((label, i) => <Numeric key={label} label={label} value={form.rankBoostPoints[i]} onChange={value => {
-        const values = [...form.rankBoostPoints] as typeof form.rankBoostPoints; values[i] = value; patch({ rankBoostPoints: values });
-      }} />)}</View>{renderItems('rankBoostItemIds')}
+      {form.rankBoostSections.map((section, index) => <View key={section.id} className="border border-ui-border rounded-xl p-3 mb-3">
+        <View className="flex-row items-center justify-between"><Text className="font-poppins-bold text-sm text-ui-text">Section {index + 1}</Text>
+          {section.itemIds.length === 0 && form.rankBoostSections.length > 1 && <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove Rank Boost Section ${index + 1}`}
+            onPress={() => patch({ rankBoostSections: form.rankBoostSections.filter(row => row.id !== section.id) })} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity>}</View>
+        <View className="flex-row gap-3">{ranks.map((label, i) => <Numeric key={label} label={label} value={section.points[i]} onChange={value => {
+          const values = [...section.points] as typeof section.points; values[i] = value;
+          patch({ rankBoostSections: form.rankBoostSections.map(row => row.id === section.id ? { ...row, points: values } : row) });
+        }} />)}</View>{renderItems('rankBoostItemIds', section.id)}
+        {!!section.itemIds.length && <View className="mt-2">{(items as any[]).filter(item => section.itemIds.includes(item.id)).map(item =>
+          <View key={item.id} className="flex-row items-center justify-between py-2 border-b border-ui-border"><Text className="font-poppins text-xs text-ui-text flex-1">{item.item_name_en || item.item_name_ml}</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove ${item.item_name_en || item.item_name_ml} from Section ${index + 1}`} onPress={() => toggleSectionItem(item.id, 'rankBoostItemIds', section.id)} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity></View>)}
+          {section.itemIds.filter(id => !(items as any[]).some(item => item.id === id)).map(id => <View key={id} className="flex-row items-center justify-between py-2 border-b border-ui-border">
+            <Text className="font-poppins text-xs text-ui-text-muted flex-1">Unavailable competition</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Remove unavailable competition from Section ${index + 1}`} onPress={() => toggleSectionItem(id, 'rankBoostItemIds', section.id)} className="p-2"><Trash2 size={16} color={ui.colors.textMuted} /></TouchableOpacity>
+          </View>)}</View>}
+      </View>)}
+      <SsfButton size="sm" variant="outline" label="Add Rank Boost section" icon={<Plus size={15} color={ui.colors.primary} />} onPress={addRankSection} />
       <Text className="font-poppins text-xs text-ui-text-muted mt-3">Neither list: baseline. Both lists: boosted grade and rank components.</Text></SsfCard>
     <SsfCard className="mb-4"><Text className="font-poppins-bold text-lg text-ui-text mb-2">Both Boosting</Text>
       <Text className="font-poppins text-xs text-ui-text-muted mb-3">Competitions selected in both enabled lists receive both configured boost components. There is no separate switch or point value.</Text>
@@ -307,6 +357,8 @@ export default function PointsSettings() {
           {competitionPanel?.mode === 'select' && <Text className="font-poppins-bold text-xs text-ui-text mb-2">{panelSelectedIds.length} competitions selected</Text>}
           {panelItems.map((item: any) => {
             const selected = panelSelectedIds.includes(item.id), valid = isEnabledCompetition(item);
+            const otherSectionIndex = competitionPanel?.mode === 'select' && competitionPanel.boost
+              ? assignedInOtherSection(item.id, competitionPanel.boost, competitionPanel.sectionId!) : -1;
             const unavailableCategory = isCollegeFest && !enabledCategoryCodes.has(String(item.category_codes?.[0] ?? '').trim().toUpperCase());
             const row = <>
               {selected || competitionPanel?.mode !== 'select'
@@ -314,12 +366,12 @@ export default function PointsSettings() {
                 : <Circle size={18} color={ui.colors.textMuted} />}
               <View className="flex-1">
                 <Text className="font-poppins text-sm text-ui-text">{item.item_name_en || item.item_name_ml}</Text>
-                <Text className="font-poppins text-xs text-ui-text-muted">{item.item_code} · {(item.category_codes ?? []).join(' / ')}{!valid ? ` · ${unavailableCategory ? 'category disabled' : 'category review required'}` : ''}</Text>
+                <Text className="font-poppins text-xs text-ui-text-muted">{item.item_code} · {(item.category_codes ?? []).join(' / ')}{!valid ? ` · ${unavailableCategory ? 'category disabled' : 'category review required'}` : ''}{otherSectionIndex >= 0 ? ` · Already in Section ${otherSectionIndex + 1}` : ''}</Text>
               </View>
             </>;
             return competitionPanel?.mode === 'select'
-              ? <TouchableOpacity key={item.id} disabled={!valid && !selected} onPress={() => toggleItem(item.id, competitionPanel.boost!)}
-                accessibilityRole="checkbox" accessibilityState={{ checked: selected, disabled: !valid && !selected }}
+              ? <TouchableOpacity key={item.id} disabled={(!valid && !selected) || otherSectionIndex >= 0} onPress={() => toggleSectionItem(item.id, competitionPanel.boost!, competitionPanel.sectionId!)}
+                accessibilityRole="checkbox" accessibilityState={{ checked: selected, disabled: (!valid && !selected) || otherSectionIndex >= 0 }}
                 className="flex-row items-center gap-3 py-3 border-b border-ui-border">{row}</TouchableOpacity>
               : <View key={item.id} className="flex-row items-center gap-3 py-3 border-b border-ui-border">{row}</View>;
           })}

@@ -65,7 +65,7 @@ test('boosted grades share baseline bracket identity/ranges, and incomplete boos
   const config = normalizePointsConfig(stored());
   config.brackets[0].max = 30;
   assert.equal(award(config, 'both', { groupSize: 25 }).total, 30);
-  delete config.gradeBoostPoints.shared;
+  delete config.gradeBoostSections[0].points.shared;
   assert.throws(() => award(config, 'grade'));
 });
 test('grace field definitions have no default names/marks and validate explicit maxima', () => {
@@ -79,7 +79,7 @@ test('separate group boosts reuse the exact configured group ranges and explicit
   const config = normalizePointsConfig(stored());
   config.separateGroupBrackets = true;
   config.groupBrackets = [{ key: 'g', label: 'Group range', min: 2, max: 8, enabled: true, points: [15,12,8,3] }];
-  config.groupGradeBoostPoints = { g: [25,21,16,10] };
+  config.gradeBoostSections[0].groupPoints = { g: [25,21,16,10] };
   assert.equal(award(config, 'both', { isGroup: true, groupSize: 8 }).total,38);
   assert.throws(()=>award(config,'both',{isGroup:true,groupSize:9}));
   assert.equal(award(config,'both',{isGroup:true,groupSize:9,bracketOverride:'g'}).total,38);
@@ -94,7 +94,7 @@ test('member-count OFF uses the smallest configured range, without a fixed membe
   const config = normalizePointsConfig(stored());
   config.brackets[0].min = 4;
   config.brackets.push({ key: 'large', label: '21–40', min: 21, max: 40, enabled: true, points: [5, 4, 3, 2] });
-  config.gradeBoostPoints.large = [12, 10, 8, 6];
+  config.gradeBoostSections[0].points.large = [12, 10, 8, 6];
   config.brackets.reverse();
   config.memberBracketsEnabled = false;
   assert.deepEqual(validateFlexiblePointsConfig(config), []);
@@ -112,8 +112,8 @@ test('baseline grade input creates a configurable default when no bracket exists
   let config = normalizePointsConfig(stored());
   config.brackets = [];
   config.memberBracketsEnabled = false;
-  config.gradeBoostItemIds = [];
-  config.rankBoostItemIds = [];
+  config.gradeBoostSections[0].itemIds = [];
+  config.rankBoostSections[0].itemIds = [];
   for (const [index, points] of [10, 7, 4, 2].entries())
     config = setDefaultGradePoint(config, false, index, points, `generated-${index}`);
   assert.equal(config.brackets.length, 1);
@@ -127,8 +127,8 @@ test('baseline grade input creates a configurable default when no bracket exists
 
 test('baseline grade edit uses the smallest enabled bracket without overwriting other ranges', () => {
   let config = normalizePointsConfig(stored());
-  config.gradeBoostItemIds = [];
-  config.rankBoostItemIds = [];
+  config.gradeBoostSections[0].itemIds = [];
+  config.rankBoostSections[0].itemIds = [];
   config.brackets.push({ key: 'earlier', label: 'Earlier', min: 2, max: 3, points: [6, 5, 4, 3], enabled: true });
   config.brackets[0].min = 4;
   config.memberBracketsEnabled = false;
@@ -144,8 +144,8 @@ test('separate group baseline grades remain configurable when member ranges are 
   config.memberBracketsEnabled = false;
   config.separateGroupBrackets = true;
   config.groupBrackets = [];
-  config.gradeBoostItemIds = [];
-  config.rankBoostItemIds = [];
+  config.gradeBoostSections[0].itemIds = [];
+  config.rankBoostSections[0].itemIds = [];
   for (const [index, points] of [12, 9, 5, 3].entries())
     config = setDefaultGradePoint(config, true, index, points, `group-${index}`);
   assert.equal(config.groupBrackets.length, 1);
@@ -159,10 +159,31 @@ test('a disabled boost cannot retain assigned competitions or award its points',
   config.gradeBoostEnabled = false;
   assert.ok(validateFlexiblePointsConfig(config).some(message => message.includes('Grade Boost competitions')));
   assert.throws(() => award(config, 'grade'));
-  config.gradeBoostItemIds = [];
+  config.gradeBoostSections[0].itemIds = [];
   assert.equal(award(config, 'grade').total, 16);
   config.rankBoostEnabled = false;
   assert.ok(validateFlexiblePointsConfig(config).some(message => message.includes('Rank Boost competitions')));
-  config.rankBoostItemIds = [];
+  config.rankBoostSections[0].itemIds = [];
   assert.equal(award(config, 'rank').total, 16);
+});
+
+test('a competition belongs to one section per boost, while Grade and Rank may overlap', () => {
+  const config = normalizePointsConfig(stored());
+  config.gradeBoostSections.push({ id: 'g2', itemIds: ['grade'], points: { shared: [20, 17, 13, 9] }, groupPoints: {} });
+  assert.ok(validateFlexiblePointsConfig(config).some(message => message.includes('only one Grade Boost section')));
+  config.gradeBoostSections[0].itemIds = ['grade'];
+  config.gradeBoostSections[1].itemIds = ['other'];
+  config.rankBoostSections[0].itemIds = ['grade'];
+  assert.deepEqual(validateFlexiblePointsConfig(config), []);
+  assert.equal(award(config, 'grade').total, 30);
+  assert.equal(award(config, 'other').total, 27);
+});
+
+test('sections round-trip with their own competition assignments and values', () => {
+  const config = normalizePointsConfig(stored());
+  config.gradeBoostSections.push({ id: 'g2', itemIds: ['new-grade'], points: { shared: [21, 18, 14, 9] }, groupPoints: {} });
+  config.rankBoostSections.push({ id: 'r2', itemIds: ['new-rank'], points: [16, 12, 6] });
+  const restored = normalizePointsConfig(serializePointsConfig(config));
+  assert.deepEqual(restored.gradeBoostSections, config.gradeBoostSections);
+  assert.deepEqual(restored.rankBoostSections, config.rankBoostSections);
 });

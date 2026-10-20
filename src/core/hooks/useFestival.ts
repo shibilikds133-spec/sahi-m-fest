@@ -59,6 +59,8 @@ type PointsConfigRecord = {
   rank_boost_points?: number[];
   grade_boost_item_ids?: string[];
   rank_boost_item_ids?: string[];
+  grade_boost_sections?: { id: string; item_ids: string[]; points: Record<string, number[]>; group_points: Record<string, number[]> }[];
+  rank_boost_sections?: { id: string; item_ids: string[]; points: number[] }[];
   grace_fields?: { id: string; name: string; max_marks: number }[];
 };
 
