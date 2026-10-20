@@ -156,7 +156,9 @@ export interface DatabaseProvider {
   getSuperAdminStats(): Promise<QueryResult<{ orgs: number; tenants: number }>>;
   listGlobalOrganisations<T>(): Promise<ListResult<T>>;
   createGlobalOrganisation<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
-  deleteGlobalOrganisation(id: string): Promise<QueryResult<void>>;
+  archiveGlobalOrganisation(id: string): Promise<QueryResult<void>>;
+  restoreGlobalOrganisation(id: string): Promise<QueryResult<void>>;
+  permanentlyDeleteArchivedOrganisation(id: string): Promise<QueryResult<void>>;
   listTenantAccounts<T>(): Promise<ListResult<T>>;
   revokeTenantAccess(orgId: string): Promise<QueryResult<void>>;
   disableTenantAccess(orgId: string, reason?: string): Promise<QueryResult<void>>;

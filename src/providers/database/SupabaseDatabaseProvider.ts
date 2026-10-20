@@ -897,8 +897,26 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T) ?? null, error: normalizeError(error) };
   }
 
-  async deleteGlobalOrganisation(id: string): Promise<QueryResult<void>> {
-    const { error } = await supabase.from('organisations').delete().eq('id', id);
+  async archiveGlobalOrganisation(id: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('archive_child_organisation', {
+      p_org_id: id,
+      p_reason: 'Archived from global organisation management',
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async restoreGlobalOrganisation(id: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('restore_child_organisation', {
+      p_org_id: id,
+      p_reason: 'Restored from global organisation management',
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async permanentlyDeleteArchivedOrganisation(id: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('delete_archived_organisation', {
+      p_org_id: id,
+    });
     return { data: undefined, error: normalizeError(error) };
   }
 
