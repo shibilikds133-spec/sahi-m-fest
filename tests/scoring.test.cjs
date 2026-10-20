@@ -6,7 +6,7 @@ test('downward corrections select latest publication rather than highest histori
   assert.ok(isNewerResult({ published_at: '2026-10-19T10:00:00Z', points_awarded: 2 }, { published_at: '2026-10-18T10:00:00Z', points_awarded: 25 }));
   assert.equal(isNewerResult({ published_at: null }, { published_at: '2026-10-18T10:00:00Z' }), false);
 });
-const { normalizePointsConfig, calculateFlexiblePoints, calculateGradeFromConfig, resolvePointBracket, validateFlexiblePointsConfig, serializePointsConfig } = require('../src/core/utils/flexiblePointsEngine.ts');
+const { normalizePointsConfig, calculateFlexiblePoints, calculateGradeFromConfig, resolvePointBracket, setDefaultGradePoint, validateFlexiblePointsConfig, serializePointsConfig } = require('../src/core/utils/flexiblePointsEngine.ts');
 
 function stored() {
   return {
@@ -106,6 +106,52 @@ test('member-count OFF uses the smallest configured range, without a fixed membe
   assert.throws(() => award(config, 'both', { bracketOverride: 'large' }));
   config.memberBracketsEnabled = true;
   assert.equal(award(config, 'baseline', { groupSize: 25 }).bracketKey, 'large');
+});
+
+test('baseline grade input creates a configurable default when no bracket exists', () => {
+  let config = normalizePointsConfig(stored());
+  config.brackets = [];
+  config.memberBracketsEnabled = false;
+  config.gradeBoostItemIds = [];
+  config.rankBoostItemIds = [];
+  for (const [index, points] of [10, 7, 4, 2].entries())
+    config = setDefaultGradePoint(config, false, index, points, `generated-${index}`);
+  assert.equal(config.brackets.length, 1);
+  assert.deepEqual(config.brackets[0].points, [10, 7, 4, 2]);
+  assert.equal(config.brackets[0].enabled, true);
+  assert.deepEqual(validateFlexiblePointsConfig(config), []);
+  assert.equal(award(config, 'baseline', { groupSize: 10 }).total, 17);
+  const restored = normalizePointsConfig({ ...serializePointsConfig(config), config_version: config.version });
+  assert.deepEqual(restored.brackets, config.brackets);
+});
+
+test('baseline grade edit uses the smallest enabled bracket without overwriting other ranges', () => {
+  let config = normalizePointsConfig(stored());
+  config.gradeBoostItemIds = [];
+  config.rankBoostItemIds = [];
+  config.brackets.push({ key: 'earlier', label: 'Earlier', min: 2, max: 3, points: [6, 5, 4, 3], enabled: true });
+  config.brackets[0].min = 4;
+  config.memberBracketsEnabled = false;
+  config = setDefaultGradePoint(config, false, 0, 11, 'unused');
+  assert.equal(config.brackets.length, 2);
+  assert.equal(config.brackets[0].points[0], 9);
+  assert.equal(config.brackets[1].points[0], 11);
+  assert.equal(award(config, 'baseline').total, 18);
+});
+
+test('separate group baseline grades remain configurable when member ranges are off', () => {
+  let config = normalizePointsConfig(stored());
+  config.memberBracketsEnabled = false;
+  config.separateGroupBrackets = true;
+  config.groupBrackets = [];
+  config.gradeBoostItemIds = [];
+  config.rankBoostItemIds = [];
+  for (const [index, points] of [12, 9, 5, 3].entries())
+    config = setDefaultGradePoint(config, true, index, points, `group-${index}`);
+  assert.equal(config.groupBrackets.length, 1);
+  assert.deepEqual(validateFlexiblePointsConfig(config), []);
+  assert.equal(award(config, 'baseline', { isGroup: true, groupSize: 30 }).total, 19);
+  assert.equal(award(config, 'baseline', { isGroup: false }).total, 16);
 });
 
 test('a disabled boost cannot retain assigned competitions or award its points', () => {

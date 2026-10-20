@@ -15,7 +15,7 @@ import { createRequestId } from '../../../core/utils/requestId';
 import {
   configurationNumber as numberValue, displayConfigurationNumber as numberText,
   FlexiblePointsConfig, GradePoints, PointBracket, normalizePointsConfig, serializePointsConfig,
-  validateFlexiblePointsConfig,
+  setDefaultGradePoint, validateFlexiblePointsConfig,
 } from '../../../core/utils/flexiblePointsEngine';
 
 const grades = ['A+', 'A', 'B', 'C'];
@@ -89,13 +89,27 @@ export default function PointsSettings() {
     .filter(bracket => bracket.enabled)
     .slice()
     .sort((left, right) => left.min - right.min)[0] ?? null;
+  const renderDefaultGradePoints = (group: boolean) => {
+    const bracket = defaultBracket(group);
+    return <View className="mb-3">
+      <Text className="font-poppins-bold text-xs text-ui-text mb-2">
+        {group ? 'Default group grade points' : 'Default participant grade points'}
+      </Text>
+      <View className="flex-row flex-wrap gap-2">{grades.map((label, gradeIndex) =>
+        <Numeric key={label} label={label} value={bracket?.points[gradeIndex] ?? NaN}
+          onChange={value => setForm(current => setDefaultGradePoint(current, group, gradeIndex, value, createRequestId()))} />
+      )}</View>
+    </View>;
+  };
   const renderBrackets = (group: boolean) => {
     const key = group ? 'groupBrackets' : 'brackets';
     const allRows = form[key];
     const rows = form.memberBracketsEnabled ? allRows : [defaultBracket(group)].filter((row): row is PointBracket => row !== null);
-    if (!rows.length) return <Text className="font-poppins text-xs text-ui-text-muted mb-3">
-      No enabled bracket is configured. Turn member-count scoring on to edit bracket ranges.
-    </Text>;
+    if (!rows.length) return <View>
+      <Text className="font-poppins text-xs text-ui-text-muted mb-3">No member range is configured yet.</Text>
+      {form.memberBracketsEnabled && <SsfButton label="Add bracket" size="sm" variant="outline"
+        icon={<Plus size={15} color={ui.colors.primary} />} onPress={() => addBracket(group)} />}
+    </View>;
     return <View>
       {rows.map(b => {
         const index = allRows.findIndex(row => row.key === b.key);
@@ -134,14 +148,6 @@ export default function PointsSettings() {
   const toggleItem = (id: string, kind: 'gradeBoostItemIds' | 'rankBoostItemIds') =>
     patch({ [kind]: form[kind].includes(id) ? form[kind].filter(value => value !== id)
       : (kind === 'gradeBoostItemIds' ? form.gradeBoostEnabled : form.rankBoostEnabled) ? [...form[kind], id] : form[kind] });
-  const setBoostEnabled = (kind: 'gradeBoost' | 'rankBoost', enabled: boolean) => {
-    const ids = kind === 'gradeBoost' ? form.gradeBoostItemIds : form.rankBoostItemIds;
-    if (!enabled && ids.length) {
-      Alert.alert('Competitions still assigned', 'Remove all competitions from this boost before turning it off.');
-      return;
-    }
-    patch(kind === 'gradeBoost' ? { gradeBoostEnabled: enabled } : { rankBoostEnabled: enabled });
-  };
   const panelItems = competitionPanel?.mode === 'both'
     ? bothBoostItems
     : competitionPanel?.mode === 'preview'
@@ -179,10 +185,20 @@ export default function PointsSettings() {
     const mapKey = group ? 'groupGradeBoostPoints' : 'gradeBoostPoints';
     const rows = (group ? form.groupBrackets : form.brackets).filter(b => b.enabled);
     const visibleRows = form.memberBracketsEnabled ? rows : [defaultBracket(group)].filter((row): row is PointBracket => row !== null);
+    if (!visibleRows.length) return <View className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+      <Text className="font-poppins-bold text-xs text-amber-900">
+        {group ? 'Group' : 'Participant'} Grade Boost points need a baseline bracket.
+      </Text>
+      <Text className="font-poppins text-xs text-amber-800 mt-1 mb-2">
+        No enabled bracket is configured. Add a bracket here, then enter its range and points in Baseline grade points. Nothing is prefilled.
+      </Text>
+      <SsfButton size="sm" variant="outline" label={`Add ${group ? 'group' : 'participant'} bracket`}
+        icon={<Plus size={15} color={ui.colors.primary} />} onPress={() => addBracket(group)} />
+    </View>;
     return visibleRows.map(b => <View key={b.key} className="mb-3">
       <Text className="font-poppins-bold text-xs text-ui-text mb-2">{form.memberBracketsEnabled
         ? `${group ? 'Group' : 'Participant'}: ${numberText(b.min)}–${b.max === null ? '∞' : numberText(b.max)} members`
-        : group ? 'Default group grade boost points' : 'Default participant grade boost points'}</Text>
+        : `Default ${group ? 'group' : 'participant'} grade boost points · ${numberText(b.min)}–${b.max === null ? '∞' : numberText(b.max)} members`}</Text>
       <View className="flex-row flex-wrap gap-2">{grades.map((label, gi) =>
         <Numeric key={label} label={label} value={form[mapKey][b.key]?.[gi] ?? NaN} onChange={value => {
           const values = [...(form[mapKey][b.key] ?? emptyGrades())] as GradePoints; values[gi] = value;
@@ -218,16 +234,15 @@ export default function PointsSettings() {
       <View className="flex-row flex-wrap gap-3">{(['aPlus', 'a', 'b', 'c'] as const).map((key, i) =>
         <Numeric key={key} label={grades[i] + ' minimum %'} value={form.thresholds[key]} onChange={value => patch({ thresholds: { ...form.thresholds, [key]: value } })} />)}</View>
     </SsfCard>
-    <SsfCard className="mb-4"><Text className="font-poppins-bold text-lg text-ui-text mb-3">Baseline grade points</Text>
+    <SsfCard className="mb-4"><Text className="font-poppins-bold text-lg text-ui-text mb-1">Baseline grade points</Text>
+      <Text className="font-poppins text-xs text-ui-text-muted mb-3">These rules are locked for now.</Text>
       <View className="flex-row justify-between items-center rounded-xl bg-ui-muted/40 px-3 py-2 mb-3">
         <Text className="font-poppins text-sm text-ui-text flex-1 mr-3">Member count changes grade points</Text>
-        <Switch accessibilityLabel="Member count changes grade points" value={form.memberBracketsEnabled}
-          onValueChange={value => patch({ memberBracketsEnabled: value })} />
+        <Switch accessibilityLabel="Member count changes grade points" value={form.memberBracketsEnabled} disabled />
       </View>
       {form.memberBracketsEnabled && <>{renderBrackets(false)}
         <View className="flex-row justify-between items-center mt-2"><Text className="font-poppins text-sm text-ui-text flex-1 mr-3">Separate group member ranges</Text>
-          <Switch accessibilityLabel="Use separate group member ranges" value={form.separateGroupBrackets}
-            onValueChange={value => patch({ separateGroupBrackets: value })} /></View>
+          <Switch accessibilityLabel="Use separate group member ranges" value={form.separateGroupBrackets} disabled /></View>
         {form.separateGroupBrackets && <View className="mt-3">{renderBrackets(true)}</View>}
         {(['autoBracketSelection', 'allowBracketOverride'] as const).map((key, i) => <View key={key} className="flex-row justify-between items-center mt-3">
           <Text className="font-poppins text-xs text-ui-text">{i === 0 ? 'Automatically choose range from member count' : 'Allow administrator to override the range'}</Text>
@@ -235,19 +250,18 @@ export default function PointsSettings() {
             value={form[key]} onValueChange={value => patch({ [key]: value })} /></View>)}
       </>}
       {!form.memberBracketsEnabled && <>
-        {renderBrackets(false)}
+        {renderDefaultGradePoints(false)}
         <View className="flex-row justify-between items-center mt-2"><Text className="font-poppins text-sm text-ui-text flex-1 mr-3">Use separate group grade points</Text>
-          <Switch accessibilityLabel="Use separate group grade points" value={form.separateGroupBrackets}
-            onValueChange={value => patch({ separateGroupBrackets: value })} /></View>
-        {form.separateGroupBrackets && <View className="mt-3">{renderBrackets(true)}</View>}
+          <Switch accessibilityLabel="Use separate group grade points" value={form.separateGroupBrackets} disabled /></View>
+        {form.separateGroupBrackets && <View className="mt-3">{renderDefaultGradePoints(true)}</View>}
       </>}
     </SsfCard>
     <SsfCard className="mb-4"><View className="flex-row items-center justify-between mb-2"><Text className="font-poppins-bold text-lg text-ui-text">Grade boost</Text>
-      <Switch accessibilityLabel="Grade boost enabled" value={form.gradeBoostEnabled} onValueChange={enabled => setBoostEnabled('gradeBoost', enabled)} /></View>
+      <Switch accessibilityLabel="Grade boost enabled" value={form.gradeBoostEnabled} disabled /></View>
       <Text className="font-poppins text-xs text-ui-text-muted mb-3">Uses the baseline ranges when member-count scoring is on. When off, it uses the default bracket values.</Text>
       {renderBoostValues(false)}{form.separateGroupBrackets && renderBoostValues(true)}{renderItems('gradeBoostItemIds')}</SsfCard>
     <SsfCard className="mb-4"><View className="flex-row items-center justify-between mb-3"><Text className="font-poppins-bold text-lg text-ui-text">Rank boost</Text>
-      <Switch accessibilityLabel="Rank boost enabled" value={form.rankBoostEnabled} onValueChange={enabled => setBoostEnabled('rankBoost', enabled)} /></View>
+      <Switch accessibilityLabel="Rank boost enabled" value={form.rankBoostEnabled} disabled /></View>
       <View className="flex-row gap-3">{ranks.map((label, i) => <Numeric key={label} label={label} value={form.rankBoostPoints[i]} onChange={value => {
         const values = [...form.rankBoostPoints] as typeof form.rankBoostPoints; values[i] = value; patch({ rankBoostPoints: values });
       }} />)}</View>{renderItems('rankBoostItemIds')}

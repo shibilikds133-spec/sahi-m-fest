@@ -56,6 +56,27 @@ export const normalizePointsConfig = (record?: any): FlexiblePointsConfig => ({
   gradeBoostItemIds: array(record?.grade_boost_item_ids), rankBoostItemIds: array(record?.rank_boost_item_ids),
   graceFields: array(record?.grace_fields).map(f => ({ id: String(f.id ?? ''), name: String(f.name ?? ''), maxMarks: configurationNumber(f.max_marks) })),
 });
+export const setDefaultGradePoint = (
+  config: FlexiblePointsConfig, group: boolean, gradeIndex: number, value: number, newBracketKey: string,
+): FlexiblePointsConfig => {
+  const field = group ? 'groupBrackets' : 'brackets';
+  const brackets = config[field];
+  const defaultIndex = brackets.reduce((selected, bracket, index) =>
+    bracket.enabled && (selected < 0 || bracket.min < brackets[selected].min) ? index : selected, -1);
+  if (defaultIndex < 0) {
+    const points = [NaN, NaN, NaN, NaN] as GradePoints;
+    points[gradeIndex] = value;
+    return { ...config, [field]: [...brackets, {
+      key: newBracketKey, label: 'Default grade points', min: 1, max: null, points, enabled: true,
+    }] };
+  }
+  return { ...config, [field]: brackets.map((bracket, index) => {
+    if (index !== defaultIndex) return bracket;
+    const points = [...bracket.points] as GradePoints;
+    points[gradeIndex] = value;
+    return { ...bracket, points };
+  }) };
+};
 export const serializePointsConfig = (c: FlexiblePointsConfig) => ({
   points_mode: c.mode, rank_1_points: c.rankPoints[0], rank_2_points: c.rankPoints[1], rank_3_points: c.rankPoints[2],
   grade_thresholds: { a_plus: c.thresholds.aPlus, a: c.thresholds.a, b: c.thresholds.b, c: c.thresholds.c },
