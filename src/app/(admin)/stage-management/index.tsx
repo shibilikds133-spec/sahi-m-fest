@@ -81,6 +81,16 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
   const [selectedVenue, setSelectedVenue] = React.useState(venueIdOverride || 'All');
   const [selectedStatus, setSelectedStatus] = React.useState('All');
   const [copiedVenueId, setCopiedVenueId] = React.useState<string | null>(null);
+  const [copiedPinVenueId, setCopiedPinVenueId] = React.useState<string | null>(null);
+
+  const openStagePortal = (venueId: string) => {
+    const path = `/stage-management/venue/${venueId}`;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.open(path, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    router.push(path as any);
+  };
 
   const copyStageLink = async (venueId: string) => {
     const path = `/stage-management/venue/${venueId}`;
@@ -97,6 +107,21 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
       setTimeout(() => setCopiedVenueId((current) => current === venueId ? null : current), 1800);
     } catch (error: any) {
       Alert.alert('Copy failed', error.message || 'Unable to copy the stage link.');
+    }
+  };
+
+  const copyStagePin = async (venueId: string, pin?: string) => {
+    if (!pin) {
+      Alert.alert('PIN unavailable', 'Refresh Stage Management after applying the stage portal migration.');
+      return;
+    }
+    try {
+      if (Platform.OS !== 'web' || !navigator?.clipboard?.writeText) throw new Error('Clipboard is unavailable on this device.');
+      await navigator.clipboard.writeText(pin);
+      setCopiedPinVenueId(venueId);
+      setTimeout(() => setCopiedPinVenueId((current) => current === venueId ? null : current), 1800);
+    } catch (error: any) {
+      Alert.alert('Copy failed', error.message || 'Unable to copy the stage PIN.');
     }
   };
 
@@ -280,7 +305,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
                 <Text style={{ flex: 1.2 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Stage</Text>
                 <Text style={{ flex: 1.8 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Workspace</Text>
                 <Text style={{ width: 120 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Events</Text>
-                <Text style={{ width: 245 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted text-right">Actions</Text>
+                <Text style={{ width: 385 }} className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted text-right">Stage link & PIN</Text>
               </View>
               {venues.map((venue: any) => {
                 const stageSchedules = schedules.filter((schedule: any) =>
@@ -303,9 +328,18 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
                         <Text className="font-poppins-bold text-[9px] text-slate-600">{stageSchedules.length} events</Text>
                       </View>
                     </View>
-                    <View style={{ width: 245 }} className="flex-row justify-end gap-x-2">
+                    <View style={{ width: 385 }} className="flex-row items-center justify-end gap-x-2">
                       <TouchableOpacity
-                        onPress={() => router.push(`/stage-management/venue/${venue.id}` as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Copy PIN for ${venue.name}`}
+                        onPress={() => copyStagePin(venue.id, venue.pin)}
+                        className={`h-8 px-3 rounded-lg border flex-row items-center justify-center ${copiedPinVenueId === venue.id ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}
+                      >
+                        <Text className="font-poppins-bold text-[10px] text-amber-800 mr-1.5">PIN {venue.pin || '—'}</Text>
+                        {copiedPinVenueId === venue.id ? <Check size={13} color="#047857" /> : <Copy size={13} color="#92400E" />}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => openStagePortal(venue.id)}
                         className="h-8 px-3 rounded-lg bg-teal-700 flex-row items-center justify-center"
                       >
                         <ExternalLink size={13} color="#FFFFFF" />

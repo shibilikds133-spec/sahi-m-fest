@@ -23,6 +23,7 @@ export type StageScheduleRow = {
   item_name_ml: string | null;
   category_codes: string[] | null;
   venue_name: string | null;
+  registration_scope_ambiguous?: boolean;
 };
 
 export type StageVenueRow = {
@@ -32,6 +33,7 @@ export type StageVenueRow = {
   name: string;
   location: string | null;
   capacity: number | null;
+  pin?: string;
 };
 
 export type StageRegistrationRow = {
@@ -52,6 +54,12 @@ export type StageRegistrationRow = {
 
 const throwIfError = (error: { message: string } | null) => {
   if (error) throw new Error(error.message);
+};
+
+const throwIfPortalError = (data: unknown) => {
+  if (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') {
+    throw new Error(data.error);
+  }
 };
 
 export const stageManagementService = {
@@ -104,11 +112,58 @@ export const stageManagementService = {
   },
 
   async getVenues(festivalId: string): Promise<StageVenueRow[]> {
-    const { data, error } = await supabase.rpc('get_stage_management_venues', {
-      p_festival_id: festivalId,
+    const [{ data: venues, error: venuesError }, { data: codes, error: codesError }] = await Promise.all([
+      supabase.rpc('get_stage_management_venues', { p_festival_id: festivalId }),
+      supabase.rpc('get_stage_management_venue_codes', { p_festival_id: festivalId }),
+    ]);
+    throwIfError(venuesError);
+    const codesUnavailable = codesError && ['42883', 'PGRST202'].includes((codesError as any).code);
+    if (codesError && !codesUnavailable) throwIfError(codesError);
+    const pinByVenue = new Map((codes ?? []).map((row: any) => [row.venue_id, row.pin]));
+    return ((venues as StageVenueRow[] | null) ?? []).map((venue) => ({ ...venue, pin: pinByVenue.get(venue.id) as string | undefined }));
+  },
+
+  async getVenuePortalData(venueId: string, pin: string) {
+    const { data, error } = await supabase.rpc('stage_venue_portal_data', { p_venue_id: venueId, p_pin: pin });
+    throwIfError(error);
+    throwIfPortalError(data);
+    return data as { venue: { id: string; name: string; location: string | null }; schedules: StageScheduleRow[]; registrations: (StageRegistrationRow & { entry_kind?: string; members?: { name: string; chest_number: string | null }[] })[] };
+  },
+
+  async venuePortalUpdateRegistration(venueId: string, pin: string, scheduleId: string, registrationId: string, action: 'verify' | 'unverify' | 'reject' | 'restore') {
+    const { data, error } = await supabase.rpc('stage_venue_portal_update_registration', {
+      p_venue_id: venueId, p_pin: pin, p_schedule_id: scheduleId, p_registration_id: registrationId, p_action: action,
     });
     throwIfError(error);
-    return (data as StageVenueRow[] | null) ?? [];
+    throwIfPortalError(data);
+    return data;
+  },
+
+  async venuePortalUpdateCodeLetter(venueId: string, pin: string, scheduleId: string, registrationId: string, codeLetter: string) {
+    const { data, error } = await supabase.rpc('stage_venue_portal_update_code_letter', {
+      p_venue_id: venueId, p_pin: pin, p_schedule_id: scheduleId, p_registration_id: registrationId, p_code_letter: codeLetter,
+    });
+    throwIfError(error);
+    throwIfPortalError(data);
+    return data;
+  },
+
+  async venuePortalDrawLetters(venueId: string, pin: string, scheduleId: string, overwrite: boolean) {
+    const { data, error } = await supabase.rpc('stage_venue_portal_draw_letters', {
+      p_venue_id: venueId, p_pin: pin, p_schedule_id: scheduleId, p_overwrite: overwrite,
+    });
+    throwIfError(error);
+    throwIfPortalError(data);
+    return data;
+  },
+
+  async venuePortalLockSchedule(venueId: string, pin: string, scheduleId: string) {
+    const { data, error } = await supabase.rpc('stage_venue_portal_lock_schedule', {
+      p_venue_id: venueId, p_pin: pin, p_schedule_id: scheduleId,
+    });
+    throwIfError(error);
+    throwIfPortalError(data);
+    return data;
   },
 
   async getRegistrations(options: { scheduleId?: string; festivalId?: string }): Promise<StageRegistrationRow[]> {

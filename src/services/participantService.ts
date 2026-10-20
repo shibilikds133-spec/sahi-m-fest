@@ -61,6 +61,21 @@ const throwIfError = (error: { message: string; code?: string; details?: string 
   }
 };
 
+const throwIfParticipantDeleteError = (
+  error: { message: string; code?: string; details?: string | null; hint?: string | null } | null,
+) => {
+  if (
+    error?.code === '23503' &&
+    error.message.includes('registrations_participant_id_fkey')
+  ) {
+    throw new Error(
+      'This participant has competition registrations and cannot be permanently deleted without removing competition history. Use “Terminate Participant” to retain registrations and results while excluding the participant from active/public views.',
+    );
+  }
+
+  throwIfError(error);
+};
+
 const resolveExistingPhotoKey = (participant: any): string | null => {
   if (participant?.profile_photo_object_key) return participant.profile_photo_object_key;
   const photoUrl = participant?.photo_url;
@@ -379,7 +394,7 @@ export const participantService = {
 
   async deleteParticipant(participantId: string): Promise<void> {
     const { error } = await participantRepository.deleteParticipant(participantId);
-    throwIfError(error);
+    throwIfParticipantDeleteError(error);
   },
 
   async terminateParticipant(participantId: string, reason: string): Promise<void> {
@@ -394,7 +409,7 @@ export const participantService = {
 
   async deleteParticipants(participantIds: string[]): Promise<void> {
     const { error } = await participantRepository.deleteParticipants(participantIds);
-    throwIfError(error);
+    throwIfParticipantDeleteError(error);
   },
 
   async approveParticipants(participantIds: string[]): Promise<void> {
