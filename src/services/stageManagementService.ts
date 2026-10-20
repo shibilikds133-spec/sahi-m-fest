@@ -38,7 +38,7 @@ export type StageRegistrationRow = {
   id: string;
   schedule_id?: string | null;
   item_id: string;
-  participant_id: string;
+  participant_id: string | null;
   organisation_id: string | null;
   status: string | null;
   is_verified: boolean | null;

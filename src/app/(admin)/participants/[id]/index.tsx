@@ -119,6 +119,8 @@ export default function ParticipantDetails() {
     participant,
     isLoadingDetail,
     registrations: events,
+    generalTeamResults,
+    isLoadingGeneralTeamResults,
     updateStatus,
     updateParticipant,
     deleteParticipant,
@@ -962,6 +964,39 @@ export default function ParticipantDetails() {
         <View
           className={isDesktopProfile ? 'flex-row items-start gap-2' : 'gap-y-3'}
         >
+      {(isLoadingGeneralTeamResults || generalTeamResults.length > 0) && (
+        <SsfCard className="mb-3 w-full p-3" style={{ borderRadius: 10 }}>
+          <View className="mb-3 flex-row items-center">
+            <View className="h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+              <Trophy size={17} color={ui.colors.success} />
+            </View>
+            <View className="ml-2.5">
+              <Text className="font-poppins-bold text-base">General Team Results</Text>
+              <Text className="font-poppins text-[10px] text-ssf-text-muted">
+                Team competition and placement only
+              </Text>
+            </View>
+          </View>
+          {isLoadingGeneralTeamResults ? (
+            <Text className="font-poppins text-xs text-ssf-text-muted">Loading team results…</Text>
+          ) : generalTeamResults.map((result: any) => (
+            <View key={result.registration_id} className="flex-row items-center border-b border-slate-100 py-2 last:border-b-0">
+              <View className="flex-1">
+                <Text className="font-poppins-bold text-[13px]">{result.item_name_en || result.item_code || 'General competition'}</Text>
+                <Text className="font-poppins text-[10px] uppercase text-ssf-text-muted">
+                  {result.item_code || 'GN'} · Team entry {result.entry_chest_number || '—'}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="font-poppins-bold text-xs text-emerald-700">
+                  {result.rank ? `Rank ${result.rank}` : 'Not ranked'}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </SsfCard>
+      )}
+
           <View style={isDesktopProfile ? { flex: 1 } : undefined}>
       <SsfCard
         className="mb-0 w-full p-3"

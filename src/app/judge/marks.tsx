@@ -9,6 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { databaseProvider } from '../../providers/database';
 import { judgeTokenService } from '../../services/judgeTokenService';
+import { pointsService } from '../../services/pointsService';
+import { GradeThresholds } from '../../core/utils/flexiblePointsEngine';
 import { calculateGrade } from '../../services/judgeService';
 import {
   getScoringRulesForItem,
@@ -21,6 +23,8 @@ export default function JudgeMarksPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
 
+  const [gradeContext, setGradeContext] = useState<{ thresholds: GradeThresholds } | null>(null);
+  const [gradingNotice, setGradingNotice] = useState('');
   const [session, setSession] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [marks, setMarks] = useState<Record<string, Record<string, number>>>({});
@@ -30,7 +34,7 @@ export default function JudgeMarksPage() {
   const [submitting, setSubmitting] = useState(false);
   const [eventCriteria, setEventCriteria] = useState<any[]>([]);
   const [entryMode, setEntryMode] = useState<ScoringEntryMode>('criteria');
-  const [eventTotalMarks, setEventTotalMarks] = useState(100);
+  const [eventTotalMarks, setEventTotalMarks] = useState(NaN);
   const [scoringRuleId, setScoringRuleId] = useState<string | null>(null);
   const [eventGuidelines, setEventGuidelines] = useState<string | null>(null);
   const [eventTimeLimit, setEventTimeLimit] = useState<string | null>(null);
@@ -154,6 +158,16 @@ export default function JudgeMarksPage() {
       const regs = data ?? [];
       setRegistrations(regs);
 
+      try {
+        const context = await pointsService.getJudgeContext(token);
+        const t = context?.grade_thresholds;
+        setGradeContext(t ? { thresholds: { aPlus: t.a_plus, a: t.a, b: t.b, c: t.c } } : null);
+        if (!t) setGradingNotice('Grade preview is unavailable until the administrator configures points.');
+      } catch {
+        setGradeContext(null);
+        setGradingNotice('Grade configuration could not be loaded. Raw marks can still be saved.');
+      }
+
       // Load criteria for this item
       const itemNameEn = sessionData.schedules?.items?.item_name_en || '';
       const itemNameMl = sessionData.schedules?.items?.item_name_ml || '';
@@ -162,7 +176,7 @@ export default function JudgeMarksPage() {
       const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenantId);
       setEventCriteria(formatCriteriaForUI(rules.criteria));
       setEntryMode(rules.entry_mode);
-      setEventTotalMarks(rules.entry_mode === 'total_only' ? 100 : rules.total_marks);
+      setEventTotalMarks(rules.total_marks);
       setScoringRuleId(rules.id ?? null);
       setEventTimeLimit(rules.time_limit ?? null);
       if (rules.guidelines || rules.time_limit || rules.criteria?.length > 0) {
@@ -487,7 +501,7 @@ export default function JudgeMarksPage() {
   const renderMobileLayout = () => {
     const activeReg = registrations[activeRegIndex];
     const total = activeReg ? getTotal(activeReg.id) : 0;
-    const grade = activeReg ? calculateGrade(total, eventTotalMarks) : '—';
+    const grade = activeReg ? calculateGrade(total, eventTotalMarks, gradeContext) : '—';
     const allDone = activeReg ? isRegistrationComplete(activeReg.id) : false;
     const allMarked = registrations.length > 0
       && registrations.every(reg => isRegistrationComplete(reg.id));
@@ -636,9 +650,9 @@ export default function JudgeMarksPage() {
                 {/* Score / Grade summary */}
                 <View className="items-end">
                   <Text className="font-poppins-black text-slate-900 text-xl">{total} <Text className="text-slate-400 text-sm">/ {eventTotalMarks}</Text></Text>
-                  {total > 0 ? (
+                  {activeReg && isRegistrationComplete(activeReg.id) ? (
                     <View className="mt-1 bg-slate-100 px-2 py-0.5 rounded text-center">
-                      <Text className="font-poppins-bold text-[10px] text-slate-600">Grade: {grade}</Text>
+                      <Text className="font-poppins-bold text-[10px] text-slate-600">Grade: {grade}{gradingNotice ? ' · configuration unavailable' : ''}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -663,9 +677,9 @@ export default function JudgeMarksPage() {
                       placeholder="0"
                       placeholderTextColor="#94A3B8"
                       value={activeReg && marks[activeReg.id]?.total !== undefined ? String(marks[activeReg.id].total) : ''}
-                      onChangeText={(text) => activeReg && handleScoreChange(activeReg.id, 'total', text, 100)}
+                      onChangeText={(text) => activeReg && handleScoreChange(activeReg.id, 'total', text, eventTotalMarks)}
                     />
-                    <Text className="font-poppins-bold text-slate-400 text-xl ml-4">/ 100</Text>
+                    <Text className="font-poppins-bold text-slate-400 text-xl ml-4">/ {eventTotalMarks}</Text>
                   </View>
                 </View>
               ) : eventCriteria.map(c => {
@@ -854,7 +868,7 @@ export default function JudgeMarksPage() {
         ) : (
           registrations.map(reg => {
             const total = getTotal(reg.id);
-            const grade = calculateGrade(total, eventTotalMarks);
+            const grade = calculateGrade(total, eventTotalMarks, gradeContext);
             const allDone = isRegistrationComplete(reg.id);
 
             return (
@@ -891,7 +905,7 @@ export default function JudgeMarksPage() {
                       grade === 'A' ? 'text-blue-400' :
                       grade === 'B' ? 'text-yellow-400' :
                       grade === 'C' ? 'text-orange-400' : 'text-white/30'
-                    }`}>{total > 0 ? grade : '—'}</Text>
+                    }`}>{isRegistrationComplete(reg.id) ? grade : '—'}</Text>
                   </View>
                 </View>
 
@@ -914,9 +928,9 @@ export default function JudgeMarksPage() {
                           placeholder="0"
                           placeholderTextColor="#94A3B8"
                           value={marks[reg.id]?.total !== undefined ? String(marks[reg.id].total) : ''}
-                          onChangeText={(text) => handleScoreChange(reg.id, 'total', text, 100)}
+                          onChangeText={(text) => handleScoreChange(reg.id, 'total', text, eventTotalMarks)}
                         />
-                        <Text className="font-poppins-bold text-ui-text-muted text-sm ml-3">/ 100</Text>
+                        <Text className="font-poppins-bold text-ui-text-muted text-sm ml-3">/ {eventTotalMarks}</Text>
                       </View>
                     </View>
                   </View>

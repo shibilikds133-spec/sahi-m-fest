@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/shadcn/button';
 import { Input } from '../../../components/ui/shadcn/input';
 import { Label } from '../../../components/ui/shadcn/label';
+import { createRequestId } from '../../../core/utils/requestId';
 
 export default function ItemActivationSettings() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function ItemActivationSettings() {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual' });
+  const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual', groupSize: '' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
   const [showTenantItemsOnly, setShowTenantItemsOnly] = useState(() => {
@@ -77,7 +78,7 @@ export default function ItemActivationSettings() {
 
   useEffect(() => {
     if (isCollegeFest && itemCategoryOptions.length > 0) {
-      setCustomForm(current => ({ ...current, cat: current.cat && itemCategoryOptions.some(category => category.code === current.cat)
+      setCustomForm(current => ({ ...current, cat: current.cat && current.cat.split(',').every(code => itemCategoryOptions.some(category => category.code === code))
         ? current.cat
         : itemCategoryOptions[0].code }));
     } else if (!isCollegeFest) {
@@ -142,20 +143,26 @@ export default function ItemActivationSettings() {
       Alert.alert('Error', 'Please fill in Name and Category');
       return;
     }
-    const autoCode = `${customForm.cat.toUpperCase()}-C${Math.floor(100 + Math.random() * 900)}`;
-    const newItem = {
-      id: `custom-${Date.now()}`,
-      item_code: autoCode,
-      item_name_ml: customForm.name,
-      category_codes: [customForm.cat],
-      participation_type: customForm.type,
-      source: 'custom'
-    };
-    setCustomItems([...customItems, newItem]);
-    setSelectedCodes([...selectedCodes, newItem.item_code]);
+    const categories = [...new Set(customForm.cat.split(',').map(value => value.trim()).filter(Boolean))];
+    if (!categories.length || (isCollegeFest && categories.some(code => !itemCategoryOptions.some(category => category.code === code)))) {
+      Alert.alert('Error', 'Select valid categories.'); return;
+    }
+    const groupSize = Number(customForm.groupSize);
+    if (customForm.type === 'group' && (!/^\d+$/.test(customForm.groupSize.trim()) || !Number.isSafeInteger(groupSize) || groupSize < 1 || groupSize > 2147483647)) {
+      Alert.alert('Error', 'Enter the number of members for this group competition.');
+      return;
+    }
+    const newItems = categories.map(category => {
+      const id = createRequestId();
+      return { id, item_code: `${category.toUpperCase()}-C${id.slice(0, 8).toUpperCase()}`,
+        item_name_ml: customForm.name.trim(), category_codes: [category], participation_type: customForm.type, source: 'custom',
+        ...(customForm.type === 'group' ? { group_min_members: groupSize, group_max_members: groupSize } : {}) };
+    });
+    setCustomItems([...customItems, ...newItems]);
+    setSelectedCodes([...selectedCodes, ...newItems.map(item => item.item_code)]);
     setIsAddModalOpen(false);
     setCategoryMenuOpen(false);
-    setCustomForm({ code: '', name: '', cat: isCollegeFest ? (itemCategoryOptions[0]?.code || '') : 'GN', type: 'individual' });
+    setCustomForm({ code: '', name: '', cat: isCollegeFest ? (itemCategoryOptions[0]?.code || '') : 'GN', type: 'individual', groupSize: '' });
   };
 
   const handleSave = async () => {
@@ -369,7 +376,7 @@ export default function ItemActivationSettings() {
                     accessibilityLabel="Select item category"
                   >
                     <Text className="font-poppins text-sm text-ui-text">
-                      {itemCategoryOptions.find(category => category.code === customForm.cat)?.name || 'Select a category'}
+                      {customForm.cat || 'Select categories'}
                     </Text>
                   </TouchableOpacity>
                   {categoryMenuOpen && (
@@ -379,11 +386,13 @@ export default function ItemActivationSettings() {
                           key={category.id}
                           className="border-b border-ui-border px-3 py-2.5 last:border-b-0"
                           onPress={() => {
-                            setCustomForm(current => ({ ...current, cat: category.code }));
-                            setCategoryMenuOpen(false);
+                            setCustomForm(current => {
+                              const selected = current.cat.split(',').filter(Boolean);
+                              return { ...current, cat: (selected.includes(category.code) ? selected.filter(code => code !== category.code) : [...selected, category.code]).join(',') };
+                            });
                           }}
                         >
-                          <Text className="font-poppins text-sm text-ui-text">{category.name} ({category.code})</Text>
+                          <Text className="font-poppins text-sm text-ui-text">{customForm.cat.split(',').includes(category.code) ? '✓ ' : ''}{category.name} ({category.code})</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -393,7 +402,7 @@ export default function ItemActivationSettings() {
                 <Input
                   value={customForm.cat}
                   onChangeText={t => setCustomForm({...customForm, cat: t})}
-                  placeholder="GN"
+                  placeholder="Category codes, separated by commas"
                 />
               )}
             </View>
@@ -417,6 +426,13 @@ export default function ItemActivationSettings() {
                 </Button>
               </View>
             </View>
+
+            {customForm.type === 'group' && <View className="mb-6">
+              <Label>Members per group *</Label>
+              <Input keyboardType="numeric" value={customForm.groupSize}
+                onChangeText={groupSize => setCustomForm(current => ({ ...current, groupSize }))}
+                placeholder="Enter the number of members" />
+            </View>}
 
             <View className="gap-3">
               <Button onPress={handleAddCustom}>Add to List</Button>

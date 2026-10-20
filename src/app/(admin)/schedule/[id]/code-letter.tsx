@@ -138,8 +138,8 @@ export default function CodeLetterGeneration() {
     // Check for duplicate in current event
     const isDuplicate = activeRegistrations.some((r:any) => r.id !== editingReg.id && r.code_letter === letter);
     if (isDuplicate) {
-      setEditError('This letter is already assigned in this event.');
-      return;
+      // Allow saving even if duplicate to facilitate swapping.
+      // We no longer block here.
     }
 
     // Check for conflict

@@ -51,6 +51,13 @@ type PointsConfigRecord = {
   rule12_behavior?: 'grade_only' | 'rank_and_grade' | 'no_points';
   config_version?: number;
   change_reason?: string | null;
+  enable_grace_marks?: boolean;
+  grade_boost_points?: Record<string, number[]>;
+  group_grade_boost_points?: Record<string, number[]>;
+  rank_boost_points?: number[];
+  grade_boost_item_ids?: string[];
+  rank_boost_item_ids?: string[];
+  grace_fields?: { id: string; name: string; max_marks: number }[];
 };
 
 export const useFestival = () => {
@@ -140,6 +147,7 @@ export const useFestival = () => {
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
+        queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
       },
     });
   };

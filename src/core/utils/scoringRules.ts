@@ -27,7 +27,8 @@ export const getScoringRulesForItem = async (
 ): Promise<ItemRule> => {
   
   // Fetch rules from database
-  const { data: dbRules } = await scoringRuleRepository.listRules<any>(tenantId);
+  const { data: dbRules, error } = await scoringRuleRepository.listRules<any>(tenantId);
+  if (error) throw new Error(error.message);
   const rulesList = (dbRules || []) as any[];
 
   // Convert DB criteria back to the ScoringCriterion format
@@ -35,7 +36,7 @@ export const getScoringRulesForItem = async (
     id: rule.id,
     event_name: rule.event_name,
     event_name_ml: rule.event_name_ml,
-    total_marks: rule.entry_mode === 'total_only' ? 100 : (Number(rule.total_marks) || 100),
+    total_marks: Number(rule.total_marks),
     time_limit: rule.time_limit,
     guidelines: rule.guidelines,
     is_default: rule.is_default,
@@ -48,14 +49,14 @@ export const getScoringRulesForItem = async (
   const GENERIC_PERFORMANCE_RULE = rulesList.find(r => r.event_name === 'DEFAULT_PERFORMANCE');
   const GENERIC_CREATIVE_RULE = rulesList.find(r => r.event_name === 'DEFAULT_CREATIVE');
 
-  const defaultPerformance = GENERIC_PERFORMANCE_RULE ? formatDbRule(GENERIC_PERFORMANCE_RULE) : {
-    event_name: 'DEFAULT_PERFORMANCE', total_marks: 100, entry_mode: 'criteria' as const, criteria: [{name: 'Presentation', marks: 100}]
-  };
-  const defaultCreative = GENERIC_CREATIVE_RULE ? formatDbRule(GENERIC_CREATIVE_RULE) : {
-    event_name: 'DEFAULT_CREATIVE', total_marks: 100, entry_mode: 'criteria' as const, criteria: [{name: 'Creativity', marks: 100}]
+  const configuredRule = (rule: any): ItemRule => {
+    if (!rule) throw new Error('Configure a scoring rule and maximum marks for this item first.');
+    const formatted = formatDbRule(rule);
+    if (!Number.isFinite(formatted.total_marks) || formatted.total_marks <= 0) throw new Error('The scoring rule needs a valid maximum mark.');
+    return formatted;
   };
 
-  if (!itemNameEn && !itemNameMl) return defaultPerformance;
+  if (!itemNameEn && !itemNameMl) return configuredRule(GENERIC_PERFORMANCE_RULE);
 
   const normalizedSearchEn = (itemNameEn || '').toLowerCase().trim();
   const normalizedSearchMl = (itemNameMl || '').toLowerCase().trim();
@@ -87,14 +88,14 @@ export const getScoringRulesForItem = async (
   }
 
   if (matchedRule) {
-    return formatDbRule(matchedRule);
+    return configuredRule(matchedRule);
   }
 
   if (itemType === 'offstage') {
-    return defaultCreative;
+    return configuredRule(GENERIC_CREATIVE_RULE);
   }
   
-  return defaultPerformance;
+  return configuredRule(GENERIC_PERFORMANCE_RULE);
 };
 
 export const getCriterionKey = (name: string) =>

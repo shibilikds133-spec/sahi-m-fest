@@ -1,3 +1,5 @@
+import type { CompetitionPublication } from '../../types/scoring';
+
 export type QueryResult<T> = {
   data: T | null;
   error: { code?: string; message: string } | null;
@@ -114,7 +116,7 @@ export interface DatabaseProvider {
   
   // Results Methods
   listResults<T>(scheduleId: string): Promise<ListResult<T>>;
-  publishResults(payloads: Record<string, unknown>[]): Promise<QueryResult<void>>;
+  publishResults(input: CompetitionPublication): Promise<QueryResult<void>>;
   listAdminLeaderboard<T>(tenantId?: string | null, festivalId?: string | null): Promise<ListResult<T>>;
   listPublicLeaderboard<T>(tenantId?: string | null, festivalId?: string | null): Promise<ListResult<T>>;
   listPublicPublishedResults<T>(tenantId?: string | null, festivalId?: string | null, includeParticipantDetails?: boolean): Promise<ListResult<T>>;

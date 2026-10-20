@@ -31,6 +31,12 @@ export const useParticipants = (participantId?: string) => {
     enabled: !!participantId,
   });
 
+  const generalTeamResultsQuery = useQuery({
+    queryKey: ['participantGeneralTeamResults', participantId],
+    queryFn: () => participantService.getParticipantGeneralResults<any>(participantId!),
+    enabled: !!participantId,
+  });
+
   const useItemRegistrations = (itemId: string | undefined) => {
     const { tenant_id } = useAuthStore();
     return useQuery({
@@ -264,6 +270,8 @@ export const useParticipants = (participantId?: string) => {
     
     registrations: registrationsQuery.data || [],
     isLoadingRegistrations: registrationsQuery.isLoading,
+    generalTeamResults: generalTeamResultsQuery.data || [],
+    isLoadingGeneralTeamResults: generalTeamResultsQuery.isLoading,
     
     updateStatus: updateStatusMutation.mutateAsync,
     isUpdatingStatus: updateStatusMutation.isPending,

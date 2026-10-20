@@ -95,6 +95,14 @@ export const participantService = {
     return data;
   },
 
+  async getParticipantGeneralResults<T>(participantId: string): Promise<T[]> {
+    const { data, error } = await supabase.rpc('get_participant_general_results', {
+      p_participant_id: participantId,
+    });
+    throwIfError(error);
+    return (data as T[]) ?? [];
+  },
+
   async getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<T[]> {
     const { data, error } = await participantRepository.getRegistrationsByItem<T>(itemId, tenantId, festivalId);
     throwIfError(error);
@@ -172,7 +180,33 @@ export const participantService = {
     }
 
     // Determine how many new letters we need. We'll grab a larger pool in case of conflicts
-    const participantIds = unassignedRegs.map((r: any) => r.participant_id);
+    // General team registrations intentionally have no participant_id. Their
+    // overlapping-event conflicts must be checked against every roster member.
+    const generalRegistrationIds = unassignedRegs
+      .filter((r: any) => !r.participant_id)
+      .map((r: any) => r.id);
+    const memberIdsByRegistration = new Map<string, string[]>();
+    if (generalRegistrationIds.length > 0) {
+      const { data: members, error: membersError } = await supabase
+        .from('group_members')
+        .select('registration_id, participant_id')
+        .in('registration_id', generalRegistrationIds);
+      if (membersError) throw new Error(membersError.message);
+      for (const member of members ?? []) {
+        if (!member.participant_id) continue;
+        const ids = memberIdsByRegistration.get(member.registration_id) ?? [];
+        ids.push(member.participant_id);
+        memberIdsByRegistration.set(member.registration_id, ids);
+      }
+      for (const registrationId of generalRegistrationIds) {
+        if (!memberIdsByRegistration.get(registrationId)?.length) {
+          throw new Error('A General team entry has no roster; code letters cannot be assigned safely.');
+        }
+      }
+    }
+    const participantIds = [...new Set(unassignedRegs.flatMap((r: any) =>
+      r.participant_id ? [r.participant_id] : (memberIdsByRegistration.get(r.id) ?? [])
+    ))];
     const { data: conflictsMap, error: conflictErr } = await participantRepository.getParticipantConflicts(participantIds, scheduleId);
     if (conflictErr) throw new Error(conflictErr.message);
 
@@ -190,7 +224,13 @@ export const participantService = {
 
     const results = await Promise.all(
       unassignedRegs.map(async (reg: any) => {
-        const participantConflicts = conflictsMap?.[reg.participant_id] || new Set<string>();
+        const conflictIds = reg.participant_id
+          ? [reg.participant_id]
+          : (memberIdsByRegistration.get(reg.id) ?? []);
+        const participantConflicts = new Set<string>();
+        for (const conflictId of conflictIds) {
+          for (const letter of conflictsMap?.[conflictId] ?? []) participantConflicts.add(letter);
+        }
         
         let assignedLetter = null;
         

@@ -13,6 +13,8 @@ import { useJudges } from '../../../../core/hooks/useJudges';
 import { useParticipants } from '../../../../core/hooks/useParticipants';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
 import { calculateGrade } from '../../../../services/judgeService';
+import { useFestival } from '../../../../core/hooks/useFestival';
+import { normalizePointsConfig } from '../../../../core/utils/flexiblePointsEngine';
 import { useAuthStore } from '../../../../core/store/authStore';
 
 import { getScoringRulesForItem, formatCriteriaForUI } from '../../../../core/utils/scoringRules';
@@ -26,6 +28,11 @@ export default function MarkEntryPage() {
 
   const { schedules } = useSchedule();
   const schedule = schedules?.find((s: any) => s.id === scheduleId);
+  const { usePointsConfig } = useFestival();
+  const { data: pointsConfig } = usePointsConfig(schedule?.festival_id);
+  const gradingConfig = React.useMemo(() => normalizePointsConfig(pointsConfig), [pointsConfig]);
+  const [configuredMaximum, setConfiguredMaximum] = useState(NaN);
+  const [ruleError, setRuleError] = useState('');
 
   const {
     judges,
@@ -93,8 +100,12 @@ export default function MarkEntryPage() {
         const itemNameEn = schedule.items.item_name_en || '';
         const itemNameMl = schedule.items.item_name_ml || '';
         const itemType = schedule.items.item_type || 'stage';
-        const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenant_id || undefined);
-        setEventCriteria(formatCriteriaForUI(rules.criteria));
+        setConfiguredMaximum(NaN); setRuleError('');
+        try {
+          const rules = await getScoringRulesForItem(itemNameEn, itemNameMl, itemType as any, tenant_id || undefined);
+          setEventCriteria(formatCriteriaForUI(rules.criteria));
+          setConfiguredMaximum(rules.total_marks);
+        } catch (error: any) { setEventCriteria([]); setRuleError(error.message || 'Configure scoring rules first.'); }
       }
     };
     fetchRules();
@@ -103,6 +114,8 @@ export default function MarkEntryPage() {
   const judge = judges.find((j: any) => j.id === selectedJudge);
 
   const getTotal = (regId: string, judgeId: string) => {
+    const recorded = (markEntries as any[])?.find(m => m.registration_id === regId && m.judge_id === judgeId);
+    if (recorded?.total_mark !== null && recorded?.total_mark !== undefined) return Number(recorded.total_mark);
     const scores = marks[regId]?.[judgeId] ?? {};
     return Object.values(scores).reduce((a, b) => a + b, 0);
   };
@@ -117,6 +130,7 @@ export default function MarkEntryPage() {
 
   return (
     <View className="flex-1 bg-ssf-bg">
+      {!!ruleError && <Text className="p-3 text-red-700 font-poppins text-xs">{ruleError}</Text>}
       {/* Header */}
       <View className="border-b border-ui-border bg-white px-4 py-3">
         <View className="flex-row items-center mb-2">
@@ -204,7 +218,8 @@ export default function MarkEntryPage() {
             (registrations as any[]).map((reg) => {
               const entry = getEntry(reg.id, selectedJudge);
               const total = getTotal(reg.id, selectedJudge);
-              const grade = calculateGrade(total, 100);
+              const maximum = Number(entry?.max_mark_snapshot ?? configuredMaximum);
+              const grade = calculateGrade(total, maximum, gradingConfig);
               const isSaving = saving === reg.id;
               const isFinalized = entry?.is_final === true;
 
@@ -240,7 +255,7 @@ export default function MarkEntryPage() {
                         grade === 'A' ? 'text-blue-700' :
                         grade === 'B' ? 'text-yellow-700' :
                         grade === 'C' ? 'text-orange-700' : 'text-gray-400'
-                      }`}>{total > 0 ? `${grade}` : '—'}</Text>
+                      }`}>{entry?.total_mark != null ? grade : '—'}</Text>
                     </View>
                   </View>
 
@@ -277,7 +292,7 @@ export default function MarkEntryPage() {
                   {/* Total */}
                   <View className="bg-gray-50 rounded-xl p-3 mb-3 flex-row justify-between">
                     <Text className="font-poppins-bold text-ssf-text">Total Mark</Text>
-                    <Text className="font-poppins-black text-ssf-primary text-lg">{total} / 100</Text>
+                    <Text className="font-poppins-black text-ssf-primary text-lg">{total} / {Number.isFinite(maximum) ? maximum : '—'}</Text>
                   </View>
 
                   {/* Status indicator */}

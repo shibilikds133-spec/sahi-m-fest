@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { judgeService } from '../../services/judgeService';
 import { useFestival } from './useFestival';
 import { supabase } from '@/core/config/supabase';
+import type { CompetitionPublication } from '../../types/scoring';
 
 export const useJudges = () => {
   const queryClient = useQueryClient();
@@ -143,7 +144,7 @@ export const useJudges = () => {
   });
 
   const publishResults = useMutation({
-    mutationFn: (payloads: Record<string, unknown>[]) => judgeService.publishResults(payloads),
+    mutationFn: (input: CompetitionPublication) => judgeService.publishResults(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['results'] });
       queryClient.invalidateQueries({ queryKey: ['scheduleReadiness'] });
@@ -151,6 +152,8 @@ export const useJudges = () => {
       queryClient.invalidateQueries({ queryKey: ['festival-results'] });
       queryClient.invalidateQueries({ queryKey: ['public-leaderboard'] });
       queryClient.invalidateQueries({ queryKey: ['public-published-results'] });
+      queryClient.invalidateQueries({ predicate: query => Array.isArray(query.queryKey)
+        && ['leaderboard-preview', 'admin-leaderboard', 'team-standings', 'team-leader-standings', 'unitProfile', 'publicSchedule'].includes(String(query.queryKey[0])) });
     },
   });
 

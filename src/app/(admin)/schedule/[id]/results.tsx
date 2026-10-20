@@ -22,12 +22,12 @@ import {
   calculateGradeFromConfig,
   normalizePointsConfig,
   resolvePointBracket,
+  validateFlexiblePointsConfig,
 } from '../../../../core/utils/flexiblePointsEngine';
-import { pointsService } from '../../../../services/pointsService';
+import { createRequestId } from '../../../../core/utils/requestId';
+import type { CompetitionPublication } from '../../../../types/scoring';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const RANKS = ['1st', '2nd', '3rd', '4th', '5th'] as const;
-const GRADES = ['A+', 'A', 'B', 'C', '-'] as const;
 
 type DirectMarkState = {
   marks: Record<number, number>;
@@ -63,7 +63,7 @@ export default function ResultsPage() {
     useJudgeSubmissionSummary,
   } = useJudges();
 
-  const { updateSchedule } = useSchedule();
+  const publication = React.useRef<{ signature: string; id: string } | null>(null);
 
   const { useScheduleRegistrations } = useParticipants();
   const { data: itemRegistrations, isLoading } = useScheduleRegistrations(scheduleId);
@@ -75,12 +75,14 @@ export default function ResultsPage() {
   );
   const { data: markEntries } = useMarkEntries(scheduleId);
   const { data: existingResults } = useResults(scheduleId);
-  const { data: pointsConfig } = usePointsConfig(resolvedFestivalId ?? undefined);
+  const { data: pointsConfig, error: pointsConfigError } = usePointsConfig(resolvedFestivalId ?? undefined);
   const { data: judgeSummary } = useJudgeSubmissionSummary(scheduleId);
   const flexiblePointsConfig = React.useMemo(
     () => normalizePointsConfig(pointsConfig),
     [pointsConfig],
   );
+
+  const scoringErrors = validateFlexiblePointsConfig(flexiblePointsConfig);
 
   const isGeneralItem = React.useMemo(() => {
     const codes = (schedule?.items?.category_codes as string[]) || [];
@@ -100,7 +102,7 @@ export default function ResultsPage() {
   const [published, setPublished] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<any>(null);
   
-  const [officialBracket, setOfficialBracket] = useState<string>('1');
+  const [officialBracket, setOfficialBracket] = useState<string>('');
   const [bracketManuallyOverridden, setBracketManuallyOverridden] = useState(false);
   const [forceRepublishConfirmed, setForceRepublishConfirmed] = useState(false);
   
@@ -109,7 +111,7 @@ export default function ResultsPage() {
   // Init results from existing results or registrations
   React.useEffect(() => {
     if (schedule) {
-      setOfficialBracket(schedule.official_participant_bracket || '1');
+      setOfficialBracket(schedule.official_participant_bracket || '');
     }
     
     if (registrations && existingResults !== undefined) {
@@ -144,6 +146,12 @@ export default function ResultsPage() {
           }
           
           existingRows.forEach(res => {
+            const inputs = res.collection_method === 'manual' ? res.points_calculation?.inputs : null;
+            if (Array.isArray(inputs) && inputs.length && inputs.every(input => Number.isFinite(input.total)
+              && Number.isFinite(input.maximum) && input.maximum > 0 && input.maximum === inputs[0].maximum)) {
+              setDirectMarks(current => current[res.registration_id] ? current : { ...current,
+                [res.registration_id]: { maxMark: inputs[0].maximum, marks: Object.fromEntries(inputs.map((input, index) => [index + 1, input.total])) } });
+            }
             if (next[res.registration_id]) {
               next[res.registration_id] = {
                 ...next[res.registration_id],
@@ -168,17 +176,25 @@ export default function ResultsPage() {
     || false;
 
   const { data: entrySizes } = useEntrySizes(scheduleId, registrations as any[]);
+  const configuredGroupSize = React.useMemo(() => {
+    const item = schedule?.items;
+    const count = Number(item?.group_min_members);
+    return item?.participation_type === 'group' && item?.source === 'custom'
+      && Number.isSafeInteger(count) && count > 0 && count === Number(item?.group_max_members) ? count : null;
+  }, [schedule?.items]);
   const defaultGroupSize = React.useMemo(() => {
+    if (configuredGroupSize !== null) return configuredGroupSize;
     if (!entrySizes) return 1;
     const sizes = Object.values(entrySizes) as number[];
     if (sizes.length === 0) return 1;
     return Math.max(...sizes); // Safe assumption: all entries in a group event have the same size.
-  }, [entrySizes]);
+  }, [entrySizes, configuredGroupSize]);
 
   const effectiveGroupSize = React.useMemo(() => {
-    if (isGeneralItem && manualGeneralSize !== null) return manualGeneralSize;
+    if (isGeneralItem && flexiblePointsConfig.memberBracketsEnabled && configuredGroupSize === null && manualGeneralSize !== null)
+      return manualGeneralSize;
     return defaultGroupSize;
-  }, [isGeneralItem, manualGeneralSize, defaultGroupSize]);
+  }, [isGeneralItem, manualGeneralSize, defaultGroupSize, configuredGroupSize, flexiblePointsConfig.memberBracketsEnabled]);
 
   const automaticBracket = resolvePointBracket(
     flexiblePointsConfig,
@@ -186,8 +202,8 @@ export default function ResultsPage() {
     isGroupEvent,
   );
   const resolvedBracketKey =
-    !isGroupEvent
-      ? (automaticBracket?.key ?? '1')
+    !flexiblePointsConfig.memberBracketsEnabled || !isGroupEvent
+      ? (automaticBracket?.key ?? '')
       : flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden && !published
         ? automaticBracket?.key ?? officialBracket
         : officialBracket;
@@ -200,21 +216,21 @@ export default function ResultsPage() {
   );
 
   const getMarkSummary = React.useCallback((regId: string) => {
-    const entries = getJudgeMarks(regId).filter((e: any) => e.is_final || e.total_mark != null);
-    if (!entries.length) return null;
+    const entries = getJudgeMarks(regId).filter((e: any) => e.is_final === true);
+    if (!entries.length || entries.some((entry: any) => !Number.isFinite(Number(entry.max_mark_snapshot)) || Number(entry.max_mark_snapshot) <= 0)) return null;
     const rawAverage = entries.reduce(
       (sum: number, entry: any) => sum + Number(entry.total_mark ?? 0),
       0,
     ) / entries.length;
     const percentageAverage = entries.reduce((sum: number, entry: any) => {
-      const maximum = Number(entry.max_mark_snapshot) || 100;
+      const maximum = Number(entry.max_mark_snapshot);
       return sum + ((Number(entry.total_mark ?? 0) / maximum) * 100);
     }, 0) / entries.length;
-    const maxima = [...new Set(entries.map((entry: any) => Number(entry.max_mark_snapshot) || 100))];
+    const maxima = [...new Set(entries.map((entry: any) => Number(entry.max_mark_snapshot)))];
 
     return {
       rawAverage: Math.round(rawAverage * 100) / 100,
-      percentageAverage: Math.round(percentageAverage * 100) / 100,
+      percentageAverage,
       commonMaximum: maxima.length === 1 ? maxima[0] : null,
     };
   }, [getJudgeMarks]);
@@ -227,28 +243,29 @@ export default function ResultsPage() {
     
     const sum = values.reduce((a, b) => a + b, 0);
     const rawAverage = sum / values.length;
-    const maxMark = entry.maxMark || 100;
+    const maxMark = entry.maxMark;
+    if (!Number.isFinite(maxMark) || maxMark <= 0) return null;
     const percentageAverage = (rawAverage / maxMark) * 100;
     
     return {
       rawAverage: Math.round(rawAverage * 100) / 100,
-      percentageAverage: Math.round(percentageAverage * 100) / 100,
+      percentageAverage,
       commonMaximum: maxMark,
       count: values.length,
     };
   }, [directMarks]);
 
-  const getAvgMark = React.useCallback(
-    (regId: string) => {
-      if (mode === 'direct') return getDirectMarkSummary(regId)?.rawAverage ?? null;
-      return getMarkSummary(regId)?.rawAverage ?? null;
-    },
-    [getMarkSummary, getDirectMarkSummary, mode],
-  );
-
-  const getPointsPreview = (grade: string | null, rank: string | null) => {
+  const getPointsPreview = (registrationId: string, grade: string | null, rank: string | null) => {
+    if (published && !forceRepublishConfirmed) {
+      const recorded = (existingResults as any[] | undefined)?.find(r => r.registration_id === registrationId);
+      return { total: recorded?.points_awarded ?? '—', rankPts: recorded?.points_calculation?.rank_points ?? '—',
+        gradePts: recorded?.points_calculation?.grade_points ?? '—', rule12Applies: recorded?.points_calculation?.rule12_applied === true };
+    }
     const rankNum = typeof rank === 'string' ? parseInt(rank.replace(/\D/g, ''), 10) : null;
     
+    if (scoringErrors.length || !resolvePointBracket(flexiblePointsConfig, effectiveGroupSize, isGroupEvent, resolvedBracketKey)) {
+      return { total: '—', rankPts: '—', gradePts: '—', rule12Applies: false };
+    }
     const calculation = calculateFlexiblePoints({
       grade,
       rank: Number.isFinite(rankNum) ? rankNum : null,
@@ -256,6 +273,7 @@ export default function ResultsPage() {
       competingTeamsCount: (registrations as any[]).length,
       isGroup: isGroupEvent,
       config: flexiblePointsConfig,
+      itemId: schedule?.item_id,
       bracketOverride: resolvedBracketKey,
     });
 
@@ -306,7 +324,8 @@ export default function ResultsPage() {
   }, [results]);
 
   const autoFill = React.useCallback(() => {
-    if (!registrations) return;
+    if (!registrations || (!forceRepublishConfirmed && (published ||
+      (!hasInitialized.current && (existingResults as any[] | undefined)?.some(r => r.published === true || r.result_status === 'published'))))) return;
 
     // 1. Calculate avgs and grades
     const scores = (registrations as any[]).map(reg => {
@@ -364,7 +383,7 @@ export default function ResultsPage() {
       });
       return next;
     });
-  }, [registrations, markEntries, getMarkSummary, getDirectMarkSummary, flexiblePointsConfig, mode]);
+  }, [registrations, getMarkSummary, getDirectMarkSummary, flexiblePointsConfig, mode, published, forceRepublishConfirmed, existingResults]);
 
   // Run auto-calculation whenever in marks or direct mode and data is available
   React.useEffect(() => {
@@ -375,7 +394,12 @@ export default function ResultsPage() {
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handlePublish = async () => {
-    if (!officialBracket) {
+    if (pointsConfigError || !pointsConfig || scoringErrors.length) {
+      const message = pointsConfigError?.message || scoringErrors[0] || 'Configure points before publishing.';
+      if (Platform.OS === 'web') window.alert(message); else Alert.alert('Points configuration', message);
+      return;
+    }
+    if (!resolvedBracketKey) {
       if (Platform.OS === 'web') window.alert('Validation Error: Please select the Official Participant Bracket before publishing.');
       else Alert.alert('Validation Error', 'Please select the Official Participant Bracket before publishing.');
       return;
@@ -442,62 +466,28 @@ export default function ResultsPage() {
         throw new Error('Festival is missing for this schedule.');
       }
 
-      const payloads = await Promise.all(Object.values(results).map(async (r) => {
-        const cleanedRank = typeof r.rank === 'string' ? r.rank.replace(/\D/g, '') : '';
-        const rankNum = cleanedRank && cleanedRank.length > 0 ? parseInt(cleanedRank, 10) : null;
-        
-        // The server is authoritative; the shared client engine is used for preview.
-        const normalizedGrade = r.grade && r.grade !== '-' ? r.grade : null;
-        
-        const calculation = await pointsService.calculateAward({
-          festivalId: resolvedFestivalId,
-          grade: normalizedGrade,
-          rank: rankNum,
-          groupSize: effectiveGroupSize,                        // members per team entry → picks bracket
-          competingTeamsCount: (registrations as any[]).length, // total teams competing → Rule 12 check
-          isGroup: isGroupEvent,
-          bracketOverride: resolvedBracketKey,
-        });
-        const avgMark = getAvgMark(r.registration_id);
+      const input: CompetitionPublication = {
+        scheduleId: scheduleId as string,
+        expectedVersion: flexiblePointsConfig.version,
+        mode: mode === 'direct' ? 'manual' : 'judges',
+        bracket: resolvedBracketKey,
+        groupSize: isGeneralItem && flexiblePointsConfig.memberBracketsEnabled && configuredGroupSize === null ? manualGeneralSize : null,
+        requestId: '',
+        entries: (registrations as any[]).map(registration => ({
+          registration_id: registration.id,
+          ...(mode === 'direct' ? { raw_marks: Object.values(directMarks[registration.id]?.marks ?? {}).map(total => ({
+            total, maximum: directMarks[registration.id]?.maxMark,
+          })) } : {}),
+        })),
+      };
+      const signature = JSON.stringify(input);
+      if (!publication.current || publication.current.signature !== signature) {
+        publication.current = { signature, id: createRequestId() };
+      }
+      input.requestId = publication.current.id;
+      await publishResultsMutation.mutateAsync(input);
+      publication.current = null;
 
-        return {
-          tenant_id: schedule?.tenant_id,
-          festival_id: resolvedFestivalId,   // always populated via fallback
-          item_id: schedule?.item_id,
-          schedule_id: scheduleId,
-          registration_id: r.registration_id,
-          total_score: avgMark,
-          rank: rankNum,
-          grade: normalizedGrade,
-          points_awarded: calculation.total,
-          grade_only: calculation.grade_only,
-          points_config_version: calculation.config_version,
-          points_calculation: {
-            rank_points: calculation.rank_points,
-            grade_points: calculation.grade_points,
-            bracket_key: calculation.bracket_key,
-            bracket_label: calculation.bracket_label,
-            participant_count: calculation.participant_count,
-            is_group: calculation.is_group,
-            rule12_applied: calculation.rule12_applied,
-            rule12_behavior: calculation.rule12_behavior,
-            points_mode: calculation.points_mode,
-            grade_thresholds: flexiblePointsConfig.thresholds,
-          },
-          published: true,
-          published_at: new Date().toISOString(),
-          result_status: 'published',
-          public_visible: false,
-          collection_method: mode === 'direct' ? 'manual' : 'judges',
-        };
-      }));
-
-      // Update both results and the schedule's official bracket together
-      await Promise.all([
-        publishResultsMutation.mutateAsync(payloads),
-        updateSchedule({ id: scheduleId, payload: { official_participant_bracket: resolvedBracketKey } })
-      ]);
-      
       setPublished(true);
       setForceRepublishConfirmed(false); // reset lock
       if (Platform.OS === 'web') {
@@ -517,13 +507,6 @@ export default function ResultsPage() {
   };
 
   // ── UI helpers ─────────────────────────────────────────────────────────────
-  const setField = (regId: string, field: 'rank' | 'grade', value: string) => {
-    setResults(prev => ({
-      ...prev,
-      [regId]: { ...prev[regId], [field]: value === '-' ? null : value },
-    }));
-  };
-
   if (isLoading) return <ActivityIndicator color="#1B6B3A" style={{ marginTop: 60 }} />;
 
   // ── Mode selector screen ───────────────────────────────────────────────────
@@ -611,6 +594,7 @@ export default function ResultsPage() {
       </View>
 
       <ScrollView className="flex-1 px-3 pt-3" contentContainerStyle={{ width: '100%', maxWidth: 960, alignSelf: 'center' }}>
+        {(pointsConfigError || scoringErrors.length > 0) && <Text className="font-poppins text-red-700 mb-3">{pointsConfigError?.message || scoringErrors[0]}</Text>}
         {/* Readiness Banner (marks mode only) */}
         {mode === 'marks' && overallReadiness && (
           <View className={`${overallReadiness.color} border border-amber-200 rounded-lg px-3 py-2.5 mb-3`}>
@@ -635,7 +619,7 @@ export default function ResultsPage() {
         )}
 
           {/* General Item Member Slot & Warning */}
-          {isGeneralItem && (
+          {isGeneralItem && flexiblePointsConfig.memberBracketsEnabled && configuredGroupSize === null && (
             <SsfCard className={`mb-3 p-3 ${!isGroupEvent ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}>
               {!isGroupEvent && (
                 <View className="mb-3">
@@ -643,7 +627,7 @@ export default function ResultsPage() {
                     Warning: General Item Registered as Individual
                   </Text>
                   <Text className="font-poppins text-[10px] text-amber-800 leading-4">
-                    ശ്രദ്ധിക്കുക: ഇതൊരു ജനറൽ ഐറ്റം ആണ്, എന്നാൽ സെറ്റിംഗ്സിൽ 'Individual' എന്നാണ് കൊടുത്തിരിക്കുന്നത്. ശരിയായ ഗ്രേഡ് പോയിൻ്റ് ലഭിക്കുന്നതിന് ദയവായി Settings -&gt; Items പോയി ഇതിനെ 'Group' ആക്കി മാറ്റുക.
+                    ശ്രദ്ധിക്കുക: ഇതൊരു ജനറൽ ഐറ്റം ആണ്, എന്നാൽ സെറ്റിംഗ്സിൽ &apos;Individual&apos; എന്നാണ് കൊടുത്തിരിക്കുന്നത്. ശരിയായ ഗ്രേഡ് പോയിൻ്റ് ലഭിക്കുന്നതിന് ദയവായി Settings -&gt; Items പോയി ഇതിനെ &apos;Group&apos; ആക്കി മാറ്റുക.
                   </Text>
                 </View>
               )}
@@ -672,18 +656,18 @@ export default function ResultsPage() {
           )}
 
         {/* Official Participant Bracket Configuration */}
-        {isGroupEvent && (
+        {isGroupEvent && flexiblePointsConfig.memberBracketsEnabled && (
         <SsfCard className="mb-3 border-blue-200 p-3">
           <Text className="font-poppins-bold text-blue-900 text-[12px] mb-0.5">
             👥 ഈ മത്സരത്തിൽ ഒരു ടീമിൽ എത്ര കുട്ടികളുണ്ട്?
           </Text>
           <Text className="font-poppins text-[10px] text-blue-700 mb-2 leading-4">
             {flexiblePointsConfig.autoBracketSelection && !bracketManuallyOverridden
-              ? `Calculated from ${defaultGroupSize} members per entry → ${resolvedBracketKey} default bracket selected automatically.`
+              ? `${configuredGroupSize !== null ? 'Configured for this item' : 'Calculated from registrations'}: ${defaultGroupSize} members per entry → ${resolvedBracketKey} bracket selected automatically.`
               : 'Select the participant bracket for grade calculation. Manual overrides are stored with the result.'}
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
-            {flexiblePointsConfig.brackets.filter((bracket) => bracket.enabled).map((bracket) => {
+            {(flexiblePointsConfig.separateGroupBrackets ? flexiblePointsConfig.groupBrackets : flexiblePointsConfig.brackets).filter((bracket) => bracket.enabled).map((bracket) => {
               const isSelected = resolvedBracketKey === bracket.key;
               // If published, strictly disable other buttons unless forceRepublish is toggled
               const isDisabled =
@@ -722,7 +706,7 @@ export default function ResultsPage() {
           const judgeMarks = getJudgeMarks(reg.id);
           const markSummary = mode === 'direct' ? getDirectMarkSummary(reg.id) : getMarkSummary(reg.id);
           const avg = markSummary?.rawAverage ?? null;
-          const ptsPreview = getPointsPreview(entry?.grade ?? null, entry?.rank ?? null);
+          const ptsPreview = getPointsPreview(reg.id, entry?.grade ?? null, entry?.rank ?? null);
           const directEntryMarksCount = directMarks[reg.id] ? Object.keys(directMarks[reg.id].marks).length : 0;
 
           return (
@@ -774,7 +758,7 @@ export default function ResultsPage() {
                         {m.judges?.name ?? `Judge ${i + 1}`}
                       </Text>
                       <Text className="font-poppins-bold text-[10px] text-ssf-primary">
-                        {m.total_mark}/{m.max_mark_snapshot || 100} {m.is_final ? '✓' : '(draft)'}
+                        {m.total_mark}/{m.max_mark_snapshot ?? '—'} {m.is_final ? '✓' : '(draft)'}
                       </Text>
                     </View>
                   ))}
@@ -802,7 +786,7 @@ export default function ResultsPage() {
                       const judgeIndex = i + 1;
                       const hasMark = directMarks[reg.id]?.marks?.[judgeIndex] !== undefined;
                       const markValue = directMarks[reg.id]?.marks?.[judgeIndex];
-                      const maxVal = directMarks[reg.id]?.maxMark || 100;
+                      const maxVal = directMarks[reg.id]?.maxMark ?? '—';
                       
                       return (
                         <TouchableOpacity
@@ -979,7 +963,7 @@ export default function ResultsPage() {
           onClose={() => setDirectEntryModal(null)}
           onSave={(totalMark, maxMark) => {
              setDirectMarks(prev => {
-                const regState = prev[directEntryModal.regId] || { marks: {}, maxMark: 100 };
+                const regState = prev[directEntryModal.regId] || { marks: {}, maxMark };
                 return {
                    ...prev,
                    [directEntryModal.regId]: {
