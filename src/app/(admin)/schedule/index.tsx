@@ -483,14 +483,17 @@ export default function ScheduleDashboard() {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          className="flex-1 min-w-[140px] bg-white border border-ui-border p-4 rounded-xl flex-row items-center justify-between"
+          className="flex-1 min-w-[140px] bg-emerald-50 border border-emerald-300 p-4 rounded-xl flex-row items-center justify-between"
           onPress={() => router.push('/(admin)/schedule/create')}
+          accessibilityRole="button"
+          accessibilityLabel="Manage scheduled events"
+          accessibilityHint="Opens schedule creation"
         >
           <View>
-            <Text className="font-poppins-black text-ui-text text-lg">{schedules.length}</Text>
-            <Text className="font-poppins text-ui-text-muted text-xs">Scheduled Events</Text>
+            <Text className="font-poppins-black text-emerald-950 text-lg">{schedules.length}</Text>
+            <Text className="font-poppins text-emerald-800 text-xs">Scheduled Events</Text>
           </View>
-          <Calendar color="#0F766E" size={22} />
+          <Calendar color="#047857" size={22} />
         </TouchableOpacity>
       </View>
 
