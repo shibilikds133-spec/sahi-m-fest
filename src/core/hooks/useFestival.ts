@@ -18,6 +18,7 @@ type FestivalCalendarRecord = {
   gender_mode?: 'boys_only' | 'girls_only' | 'both';
   general_category_enabled?: boolean;
   chest_number_category_range?: 100 | 1000;
+  chest_number_template?: 'category' | 'team';
 };
 
 type PointsConfigRecord = {
@@ -109,7 +110,13 @@ export const useFestival = () => {
         if (!tenant_id) throw new Error('Tenant is required to update festival configuration');
         return festivalSettingsService.updateFestival<FestivalCalendarRecord>(tenant_id, payload);
       },
-      onSuccess: () => {
+      onSuccess: (festival) => {
+        const previous = queryClient.getQueryData<FestivalCalendarRecord | null>(['active-festival', tenant_id]);
+        if (!previous || previous.chest_number_template !== festival.chest_number_template ||
+            previous.chest_number_category_range !== festival.chest_number_category_range) {
+          queryClient.invalidateQueries({ queryKey: ['participants'] });
+          queryClient.invalidateQueries({ queryKey: ['participant'] });
+        }
         queryClient.invalidateQueries({ queryKey: ['active-festival', tenant_id] });
       },
     });

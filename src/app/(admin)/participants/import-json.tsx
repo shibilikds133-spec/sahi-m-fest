@@ -220,7 +220,9 @@ export default function ImportJuniorDataset() {
     }
   };
 
-  if (isCollegeFest) return <CollegeFestImportBlock />;
+  if (isCollegeFest || activeFestival?.chest_number_template === 'team') {
+    return <CollegeFestImportBlock teamTemplate={activeFestival?.chest_number_template === 'team'} />;
+  }
   return (
     <ScrollView className="flex-1 bg-ssf-bg py-6 px-4">
       <View className="flex-row items-center mb-6">

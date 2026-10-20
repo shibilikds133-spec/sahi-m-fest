@@ -109,7 +109,7 @@ export default function AddParticipant() {
 
   const festivalLevel = String(activeFestival?.level || '').trim().toLowerCase();
   const currentOrganisation = organisations.find((organisation) => organisation.tenant_id === validTenantId);
-  const availableOrganisations = (festivalLevel === 'sector' || festivalLevel === 'division')
+  const availableOrganisations = (activeFestival?.chest_number_template === 'team' || festivalLevel === 'sector' || festivalLevel === 'division')
     ? organisations.filter((organisation) => organisation.parent_id === currentOrganisation?.id)
     : organisations;
 

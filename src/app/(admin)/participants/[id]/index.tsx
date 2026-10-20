@@ -165,7 +165,7 @@ export default function ParticipantDetails() {
   const [eventsSectionExpanded, setEventsSectionExpanded] = useState(isDesktopProfile);
   const festivalLevel = String(festival?.level || '').trim().toLowerCase();
   const currentOrganisation = organisations.find((organisation) => organisation.tenant_id === validTenantId);
-  const availableOrganisations = festivalLevel === 'sector' || festivalLevel === 'division'
+  const availableOrganisations = festival?.chest_number_template === 'team' || festivalLevel === 'sector' || festivalLevel === 'division'
     ? organisations.filter((organisation) => organisation.parent_id === currentOrganisation?.id)
     : organisations;
 
@@ -265,12 +265,13 @@ export default function ParticipantDetails() {
     }
 
     try {
-      if (selectedOrgId && selectedOrgId !== participant.organisation_id) {
+      const changingTeam = Boolean(selectedOrgId && selectedOrgId !== participant.organisation_id);
+      if (changingTeam) {
         // Team has changed! We need to confirm and call RPC.
         const confirm = await new Promise((resolve) => {
           Alert.alert(
             "Change Team?",
-            "You are changing the team. All Solo items and their future points will be transferred to the new team. Group items will remain with the old team. Proceed?",
+            `You are changing the team. All Solo items and their future points will be transferred to the new team. Group items will remain with the old team.${festival?.chest_number_template === 'team' ? ' The participant will receive a new chest number from the destination team.' : ''} Proceed?`,
             [
               { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
               { text: "Yes, Change Team", style: "destructive", onPress: () => resolve(true) }
@@ -312,7 +313,11 @@ export default function ParticipantDetails() {
       setIsEditing(false);
       try {
         if (photoFile) {
-          await uploadProfilePhoto({ id: participantId, file: photoFile, tenantId: participant.tenant_id, festivalId: participant.festival_id });
+          const photoTenantId = changingTeam
+            ? availableOrganisations.find((organisation) => organisation.id === selectedOrgId)?.tenant_id
+            : participant.tenant_id;
+          if (!photoTenantId) throw new Error('Destination team tenant could not be resolved.');
+          await uploadProfilePhoto({ id: participantId, file: photoFile, tenantId: photoTenantId, festivalId: participant.festival_id });
         } else if (removeExistingPhoto) {
           await removeProfilePhoto(participantId);
         }
