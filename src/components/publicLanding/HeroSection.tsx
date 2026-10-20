@@ -84,7 +84,7 @@ export function HeroSection() {
 
         <Animated.View entering={FadeInUp.duration(880).delay(340).springify()} className="mt-9 flex-row flex-wrap gap-4">
           <TouchableOpacity
-            onPress={() => router.push('/(public)/leaderboard' as never)}
+            onPress={() => router.replace('/(public)/leaderboard' as never)}
             activeOpacity={0.84}
             className="overflow-hidden rounded-full p-[1.5px]"
             style={{
@@ -115,7 +115,7 @@ export function HeroSection() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push('/(public)/leaderboard' as never)}
+            onPress={() => router.replace('/(public)/leaderboard' as never)}
             activeOpacity={0.82}
             className="flex-row items-center rounded-full border border-white/15 bg-white/10 px-6 py-4"
             style={{

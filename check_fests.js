@@ -1,13 +1,14 @@
-const { Client } = require("pg");
-async function run() {
-  const client = new Client({ connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres" });
-  await client.connect();
-  const res = await client.query(`
-    SELECT r.id, r.festival_id, r.item_id, r.public_visible, r.result_status
-    FROM results r
-    WHERE r.item_id IN ('4eb1841c-338e-4e4e-8177-3f3c4109b42b', 'eb7ae2d2-6ab9-496b-a8fd-f597181996e5')
-  `);
-  console.table(res.rows);
-  await client.end();
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in the private environment.');
 }
-run();
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+async function run() {
+  const { data: orgs } = await supabase.from('organisations').select('tenant_id').in('name', ['Gloria', 'Victoria', 'Aurelia']);
+  console.log('Orgs tenants:', [...new Set(orgs.map(o => o.tenant_id))]);
+}
+run().catch(console.error);

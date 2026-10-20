@@ -10,6 +10,7 @@ export default function AdminLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="participants/index" />
         <Stack.Screen name="participants/add" />
+        <Stack.Screen name="participants/programs" />
         <Stack.Screen name="participants/general-entries" />
         <Stack.Screen name="participants/chest-cards" />
         <Stack.Screen name="participants/chest-numbers" />

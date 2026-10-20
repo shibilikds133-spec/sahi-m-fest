@@ -20,12 +20,14 @@ function normalizeEmail(email: any) {
   return normalized;
 }
 
-function makeLoginCredentials(participantName: string) {
-  const slug = participantName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24) || 'participant';
-  const username = `teamleader_${slug}`.slice(0, 40);
-  const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 4);
-  const password = `TL-${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}!`;
-  return { username, email: `${username}_${suffix}@sahi.local`, password };
+function makeLoginCredentials(teamName: string, participantName: string) {
+  const raw = (teamName || participantName || 'team').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const cleanTeam = raw.replace(/^team_/, '') || 'team';
+  const username = `team_${cleanTeam}`.slice(0, 30);
+  const password = `Aa1!${crypto.randomUUID()}`;
+  const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+  const email = `${username}_${suffix}@sahi.local`;
+  return { username, email, password };
 }
 
 serve(async (req) => {
@@ -62,6 +64,136 @@ serve(async (req) => {
       return json(400, { error: 'INVALID_JSON', message: 'Invalid request body.' });
     }
 
+    // Use the caller's JWT for authorization and tenant-scoped visibility checks.
+    const callerClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
+    if (body?.action === 'reset_password') {
+      const targetUserId = typeof body?.user_id === 'string' ? body.user_id : '';
+      const festivalId = typeof body?.festival_id === 'string' ? body.festival_id : '';
+      if (!targetUserId || !festivalId) {
+        return json(400, { error: 'INVALID_RESET_TARGET', message: 'A user and festival are required.' });
+      }
+
+      const { data: callerProfile, error: callerProfileError } = await callerClient
+        .from('profiles')
+        .select('id, role, is_superadmin')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (callerProfileError || !callerProfile || (callerProfile.role !== 'admin' && callerProfile.is_superadmin !== true)) {
+        return json(403, { error: 'FORBIDDEN', message: 'Only an authorized administrator can reset Team Leader passwords.' });
+      }
+
+      const { data: visibleAssignments, error: assignmentError } = await callerClient.rpc(
+        'get_team_leader_assignments_for_admin',
+        { p_festival_id: festivalId },
+      );
+      if (assignmentError) {
+        return json(403, { error: 'ASSIGNMENT_CHECK_FAILED', message: 'Could not verify access to this Team Leader assignment.' });
+      }
+      const targetAssignment = (visibleAssignments || []).find((assignment: any) => assignment.user_id === targetUserId);
+      if (!targetAssignment) {
+        return json(404, { error: 'ASSIGNMENT_NOT_FOUND', message: 'The Team Leader assignment is not available to this administrator.' });
+      }
+
+      const { data: targetProfile, error: targetProfileError } = await admin
+        .from('profiles')
+        .select('team_leader_code, role')
+        .eq('id', targetUserId)
+        .maybeSingle();
+      if (targetProfileError || targetProfile?.role !== 'team_leader') {
+        return json(404, { error: 'TEAM_LEADER_NOT_FOUND', message: 'A valid Team Leader account was not found.' });
+      }
+
+      const password = `Aa1!${crypto.randomUUID()}`;
+      const { error: passwordError } = await admin.auth.admin.updateUserById(targetUserId, {
+        password,
+        user_metadata: { must_change_credentials: true },
+      });
+      if (passwordError) {
+        return json(502, { error: 'PASSWORD_RESET_FAILED', message: 'Could not reset the Team Leader password.' });
+      }
+
+      return json(200, {
+        success: true,
+        username: targetProfile.team_leader_code || '',
+        password,
+        must_change_credentials: true,
+      });
+    }
+
+    // Self-update handler for team leaders on first login
+    if (body?.action === 'self_update_credentials') {
+      const newUsername = typeof body?.new_username === 'string' ? body.new_username.trim().toLowerCase() : '';
+      const newPassword = typeof body?.new_password === 'string' ? body.new_password : '';
+
+      if (!/^[a-z0-9_]{3,30}$/.test(newUsername)) {
+        return json(400, { error: 'INVALID_USERNAME', message: 'Username must be 3-30 lowercase letters, numbers, or underscores.' });
+      }
+      if (!newPassword || newPassword.length < 6) {
+        return json(400, { error: 'INVALID_PASSWORD', message: 'Password must be at least 6 characters.' });
+      }
+
+      // Verify caller profile
+      const { data: callerProf, error: profErr } = await admin
+        .from('profiles')
+        .select('id, role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profErr || !callerProf || callerProf.role !== 'team_leader') {
+        return json(403, { error: 'FORBIDDEN', message: 'Only an authorized Team Leader can update their credentials.' });
+      }
+
+      // Check if username is taken by another profile
+      const { data: existingUser } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('team_leader_code', newUsername)
+        .neq('id', user.id)
+        .maybeSingle();
+
+      if (existingUser) {
+        return json(409, { error: 'USERNAME_TAKEN', message: 'This username is already taken. Please choose another.' });
+      }
+
+      const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 4);
+      const newEmail = `${newUsername}_${suffix}@sahi.local`;
+
+      // Update auth user password, email, and clear must_change_credentials flag
+      const { error: authUpdateError } = await admin.auth.admin.updateUserById(user.id, {
+        email: newEmail,
+        password: newPassword,
+        user_metadata: {
+          must_change_credentials: false,
+        },
+      });
+      if (authUpdateError) {
+        return json(502, { error: 'AUTH_UPDATE_FAILED', message: authUpdateError.message });
+      }
+
+      // Update profile
+      const { error: profileUpdateError } = await admin
+        .from('profiles')
+        .update({
+          team_leader_code: newUsername,
+          team_leader_email: newEmail,
+        })
+        .eq('id', user.id);
+
+      if (profileUpdateError) {
+        return json(502, { error: 'PROFILE_UPDATE_FAILED', message: profileUpdateError.message });
+      }
+
+      return json(200, {
+        success: true,
+        username: newUsername,
+        message: 'Credentials updated successfully.',
+      });
+    }
+
     const participantId = body?.participant_id;
     if (!participantId || typeof participantId !== 'string') {
       return json(400, { error: 'INVALID_PARTICIPANT', message: 'Valid participant_id is required.' });
@@ -80,13 +212,7 @@ serve(async (req) => {
     const idempotencyKey = body?.idempotency_key || crypto.randomUUID();
     const resetPassword = body?.reset_password === true;
 
-    // 3. Create Caller Client (for RLS and visibility checks in RPC)
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-
-    // 4. Authorize the caller and target before using the service role.
+    // Authorize the caller and target before using the service role.
     // The service role is never used as proof that the caller may manage data.
     const { data: callerProfile, error: callerProfileError } = await callerClient
       .from('profiles')
@@ -118,6 +244,17 @@ serve(async (req) => {
       return json(409, { error: 'FESTIVAL_NOT_ACTIVE', message: 'The participant does not belong to an active festival.' });
     }
 
+    // Look up team name if available
+    let teamName = typeof body?.team_name === 'string' ? body.team_name.trim() : '';
+    if (!teamName && participant.organisation_id) {
+      const { data: org } = await callerClient
+        .from('organisations')
+        .select('name')
+        .eq('id', participant.organisation_id)
+        .maybeSingle();
+      if (org?.name) teamName = org.name;
+    }
+
     if (resetPassword && participant.user_id) {
       const [{ data: linkedProfile, error: linkedProfileError }, { data: linkedAuthUser, error: linkedAuthError }] = await Promise.all([
         admin
@@ -132,36 +269,47 @@ serve(async (req) => {
         return json(409, { error: 'TEAM_LEADER_ACCOUNT_NOT_FOUND', message: 'A valid Team Leader account was not found for this participant.' });
       }
 
-      const generated = makeLoginCredentials(participant.name || 'participant');
+      const generated = makeLoginCredentials(teamName, participant.name || 'participant');
+      const newPassword = requestedPassword || generated.password;
       const { error: passwordError } = await admin.auth.admin.updateUserById(participant.user_id, {
-        password: generated.password,
+        password: newPassword,
+        user_metadata: {
+          must_change_credentials: true,
+        },
       });
       if (passwordError) {
         return json(502, { error: 'PASSWORD_RESET_FAILED', message: 'Could not generate a new Team Leader password.' });
       }
+
+      const activeUsername = linkedProfile.team_leader_code || linkedProfile.team_leader_email || linkedAuthUser.user.email;
 
       return json(200, {
         success: true,
         reset: true,
         participant_id: participantId,
         user_id: participant.user_id,
-        username: linkedProfile.team_leader_code || linkedProfile.team_leader_email || linkedAuthUser.user.email,
-        email: linkedProfile.team_leader_email || linkedAuthUser.user.email,
-        password: generated.password,
-        message: 'A new Team Leader password was generated successfully.',
+        username: activeUsername,
+        password: newPassword,
+        must_change_credentials: true,
+        message: 'A new Team Leader password was generated successfully. First login change required.',
       });
     }
 
-    const generated = makeLoginCredentials(participant.name || 'participant');
-    const email = requestedEmail || generated.email;
+    const generated = makeLoginCredentials(teamName, participant.name || 'participant');
+    const username = (typeof body?.username === 'string' && body.username.trim()) ? body.username.trim().toLowerCase() : generated.username;
     const password = requestedPassword || generated.password;
-    const username = requestedEmail ? null : generated.username;
+    // Internal synthetic email mapped from username for resolve_login_email compatibility
+    const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 4);
+    const email = `${username}_${suffix}@sahi.local`;
 
     // 5. Create Auth User securely (Service Role)
     const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
       email,
       password: password,
       email_confirm: true,
+      user_metadata: {
+        must_change_credentials: true,
+      },
     });
 
     if (createError || !createdUser?.user) {
@@ -256,8 +404,8 @@ serve(async (req) => {
       participant_id: participantId,
       user_id: newUserId,
       username,
-      email,
       password,
+      must_change_credentials: true,
       message: 'Team Leader account created successfully.'
     });
 

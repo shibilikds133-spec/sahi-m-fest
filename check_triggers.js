@@ -1,23 +1,21 @@
-const { Client } = require("pg");
-
-async function run() {
-  const client = new Client({
-    connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres"
-  });
-
+const { Client } = require('pg');
+async function runSQL() {
+  const connectionString = process.env.SUPABASE_DB_URL;
+  if (!connectionString) throw new Error('SUPABASE_DB_URL is required in the private environment.');
+  const client = new Client({ connectionString });
   try {
     await client.connect();
-    const res = await client.query(`
-      SELECT trigger_name, action_statement 
-      FROM information_schema.triggers 
-      WHERE event_object_table = 'mark_entries';
+    const result = await client.query(`
+      SELECT tgname, proname
+      FROM pg_trigger
+      JOIN pg_proc ON pg_trigger.tgfoid = pg_proc.oid
+      WHERE tgrelid = 'mark_entries'::regclass;
     `);
-    console.log(JSON.stringify(res.rows, null, 2));
+    console.log(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
   } finally {
     await client.end();
   }
 }
-
-run();
+runSQL();

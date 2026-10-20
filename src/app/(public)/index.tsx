@@ -1,6 +1,5 @@
-import React from 'react';
-import { PublicLandingPage } from '../../components/publicLanding/PublicLandingPage';
+import { Redirect } from 'expo-router';
 
 export default function PublicLandingRoute() {
-  return <PublicLandingPage />;
+  return <Redirect href="/(auth)/login" />;
 }

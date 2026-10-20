@@ -3,6 +3,7 @@ import { AlvioraCustomRenderer } from '../../components/leaderboard/AlvioraCusto
 import { SahithyolsavLandingPage } from '../../components/publicLanding/SahithyolsavLandingPage';
 import {
   ActivityIndicator,
+  BackHandler,
   Platform,
   RefreshControl,
   ScrollView,
@@ -335,6 +336,30 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
   const breakpoint: Breakpoint = viewportWidth >= 1120 ? 'desktop' : viewportWidth >= 760 ? 'tablet' : 'mobile';
   const isDesktop = breakpoint === 'desktop';
   const isMobile = breakpoint === 'mobile';
+
+  // Block back navigation on the root leaderboard page
+  useEffect(() => {
+    if (page !== 'landing') return;
+
+    if (Platform.OS === 'web') {
+      const handlePopState = (event: PopStateEvent) => {
+        window.history.pushState(null, '', window.location.href);
+      };
+      // Push an initial state so the first back press is caught
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    } else {
+      const backAction = () => {
+        // Return true to prevent default back behavior
+        return true;
+      };
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      return () => backHandler.remove();
+    }
+  }, [page]);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('organisations');
   const { tenant_id: authTenantId } = useAuthStore();
@@ -697,7 +722,7 @@ export function DefaultPublicLeaderboardExperience({ page = 'landing' }: { page?
     <View style={styles.compactHeaderContent}>
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => router.push('/(public)/leaderboard' as never)}
+        onPress={() => router.replace('/(public)/leaderboard' as never)}
         style={styles.backButton}
       >
         <ArrowLeft size={16} color="rgba(255,255,255,0.76)" />

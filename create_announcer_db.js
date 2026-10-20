@@ -1,8 +1,13 @@
 const { Client } = require("pg");
 
 async function run() {
+  const connectionString = process.env.SUPABASE_DB_URL;
+  if (!connectionString) {
+    throw new Error("SUPABASE_DB_URL is required; do not hard-code database credentials.");
+  }
+
   const client = new Client({
-    connectionString: "postgresql://postgres:m1o2n3u4907273@db.szhwkngspodujiqzblab.supabase.co:5432/postgres"
+    connectionString
   });
 
   try {

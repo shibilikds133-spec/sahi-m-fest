@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,7 +12,7 @@ import {
   PanResponder,
   Platform,
 } from 'react-native';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { ui } from '@/constants/designSystem';
 
@@ -28,6 +29,7 @@ const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
+type SelectorMode = 'month' | 'year' | null;
 
 export function SsfDatePicker({
   value,
@@ -38,8 +40,10 @@ export function SsfDatePicker({
 }: SsfDatePickerProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [open, setOpen] = useState(false);
+  const [selectorMode, setSelectorMode] = useState<SelectorMode>(null);
   
   const anchorRef = useRef<View>(null);
+  const yearPickerRef = useRef<ScrollView>(null);
   const [menuTop, setMenuTop] = useState(0);
   const [menuLeft, setMenuLeft] = useState(0);
 
@@ -55,11 +59,16 @@ export function SsfDatePicker({
 
   const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth());
   const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
+  const yearOptions = useMemo(() => {
+    const latestYear = new Date().getFullYear() + 20;
+    return Array.from({ length: latestYear - 1799 }, (_, index) => latestYear - index);
+  }, []);
 
   useEffect(() => {
     if (open) {
       setCurrentMonth(initialDate.getMonth());
       setCurrentYear(initialDate.getFullYear());
+      setSelectorMode(null);
       
       anchorRef.current?.measureInWindow((x, y, w, h) => {
         let top = y + h + 8;
@@ -102,6 +111,17 @@ export function SsfDatePicker({
     
     setCurrentMonth(newMonth);
     setCurrentYear(newYear);
+  };
+
+  const openYearSelector = () => {
+    setSelectorMode('year');
+    const selectedYearIndex = yearOptions.indexOf(currentYear);
+    requestAnimationFrame(() => {
+      yearPickerRef.current?.scrollTo({
+        y: Math.max(0, Math.floor(selectedYearIndex / 4) * 36 - 72),
+        animated: false,
+      });
+    });
   };
 
   const panResponder = useRef(
@@ -191,57 +211,141 @@ export function SsfDatePicker({
             ]}
           >
             <View style={styles.header}>
-              <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navButton}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+                onPress={() => changeMonth(-1)}
+                style={styles.navButton}
+              >
                 <ChevronLeft size={20} color={ui.colors.text} />
               </TouchableOpacity>
-              <Text style={styles.headerText}>
-                {MONTHS[currentMonth]} {currentYear}
-              </Text>
-              <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navButton}>
+              <View style={styles.headerSelectors}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select month, currently ${MONTHS[currentMonth]}`}
+                  onPress={() => setSelectorMode(selectorMode === 'month' ? null : 'month')}
+                  style={[styles.headerSelector, selectorMode === 'month' && styles.headerSelectorActive]}
+                >
+                  <Text style={styles.headerSelectorText}>{MONTHS[currentMonth]}</Text>
+                  <ChevronDown size={14} color={ui.colors.textMuted} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select year, currently ${currentYear}`}
+                  onPress={openYearSelector}
+                  style={[styles.headerSelector, selectorMode === 'year' && styles.headerSelectorActive]}
+                >
+                  <Text style={styles.headerSelectorText}>{currentYear}</Text>
+                  <ChevronDown size={14} color={ui.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+                onPress={() => changeMonth(1)}
+                style={styles.navButton}
+              >
                 <ChevronRight size={20} color={ui.colors.text} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.calendarBody} {...panResponder.panHandlers}>
-              <View style={styles.weekRow}>
-                {DAYS.map((d, i) => (
-                  <Text key={i} style={styles.dayLabel}>{d}</Text>
-                ))}
-              </View>
-
-              {grid.map((week, rIndex) => (
-                <View key={rIndex} style={styles.weekRow}>
-                  {week.map((day, cIndex) => {
-                    if (!day) return <View key={cIndex} style={styles.dayCell} />;
-                    
-                    const selected = isSelected(day);
-                    const currentToday = isToday(day);
-
+            {selectorMode === 'month' ? (
+              <View style={styles.selectorPanel}>
+                <Text style={styles.selectorLabel}>Select month</Text>
+                <View style={styles.selectionGrid}>
+                  {MONTHS.map((month, index) => {
+                    const selected = currentMonth === index;
                     return (
                       <TouchableOpacity
-                        key={cIndex}
-                        style={[
-                          styles.dayCell,
-                          selected && styles.dayCellSelected,
-                          currentToday && !selected && styles.dayCellToday
-                        ]}
-                        onPress={() => handleSelectDate(day)}
+                        key={month}
+                        accessibilityRole="button"
+                        accessibilityLabel={month}
+                        style={[styles.selectorCell, selected && styles.selectorCellSelected]}
+                        onPress={() => {
+                          setCurrentMonth(index);
+                          setSelectorMode(null);
+                        }}
                       >
-                        <Text
-                          style={[
-                            styles.dayText,
-                            selected && styles.dayTextSelected,
-                            currentToday && !selected && styles.dayTextToday
-                          ]}
-                        >
-                          {day}
+                        <Text style={[styles.selectorCellText, selected && styles.selectorCellTextSelected]}>
+                          {month.slice(0, 3)}
                         </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
-              ))}
-            </View>
+              </View>
+            ) : selectorMode === 'year' ? (
+              <View style={styles.selectorPanel}>
+                <Text style={styles.selectorLabel}>Select year</Text>
+                <ScrollView
+                  ref={yearPickerRef}
+                  style={styles.yearPickerScroll}
+                  contentContainerStyle={styles.yearPickerGrid}
+                  showsVerticalScrollIndicator
+                >
+                  {yearOptions.map((year) => {
+                    const selected = currentYear === year;
+                    return (
+                      <TouchableOpacity
+                        key={year}
+                        accessibilityRole="button"
+                        accessibilityLabel={String(year)}
+                        style={[styles.selectorCell, styles.yearCell, selected && styles.selectorCellSelected]}
+                        onPress={() => {
+                          setCurrentYear(year);
+                          setSelectorMode(null);
+                        }}
+                      >
+                        <Text style={[styles.selectorCellText, selected && styles.selectorCellTextSelected]}>
+                          {year}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : (
+              <View style={styles.calendarBody} {...panResponder.panHandlers}>
+                <View style={styles.weekRow}>
+                  {DAYS.map((d, i) => (
+                    <Text key={i} style={styles.dayLabel}>{d}</Text>
+                  ))}
+                </View>
+
+                {grid.map((week, rIndex) => (
+                  <View key={rIndex} style={styles.weekRow}>
+                    {week.map((day, cIndex) => {
+                      if (!day) return <View key={cIndex} style={styles.dayCell} />;
+
+                      const selected = isSelected(day);
+                      const currentToday = isToday(day);
+
+                      return (
+                        <TouchableOpacity
+                          key={cIndex}
+                          style={[
+                            styles.dayCell,
+                            selected && styles.dayCellSelected,
+                            currentToday && !selected && styles.dayCellToday
+                          ]}
+                          onPress={() => handleSelectDate(day)}
+                        >
+                          <Text
+                            style={[
+                              styles.dayText,
+                              selected && styles.dayTextSelected,
+                              currentToday && !selected && styles.dayTextToday
+                            ]}
+                          >
+                            {day}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -298,9 +402,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  headerText: {
+  headerSelectors: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  headerSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  headerSelectorActive: {
+    backgroundColor: ui.colors.surfaceMuted,
+  },
+  headerSelectorText: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 16,
+    fontSize: 14,
     color: ui.colors.text,
   },
   navButton: {
@@ -312,6 +435,49 @@ const styles = StyleSheet.create({
   },
   calendarBody: {
     flexDirection: 'column',
+  },
+  selectorPanel: {
+    paddingTop: 2,
+  },
+  selectorLabel: {
+    marginBottom: 8,
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    color: ui.colors.textMuted,
+  },
+  selectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  yearPickerScroll: {
+    maxHeight: 240,
+  },
+  yearPickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingBottom: 4,
+  },
+  selectorCell: {
+    width: '25%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  yearCell: {
+    height: 36,
+  },
+  selectorCellSelected: {
+    backgroundColor: ui.colors.primary,
+  },
+  selectorCellText: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 13,
+    color: ui.colors.text,
+  },
+  selectorCellTextSelected: {
+    color: ui.colors.surface,
+    fontFamily: 'Poppins_700Bold',
   },
   weekRow: {
     flexDirection: 'row',

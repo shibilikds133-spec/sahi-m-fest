@@ -22,6 +22,7 @@ export default function FestivalCalendarSettings() {
     registration_open: '',
     registration_close: '',
     chest_number_category_range: 100 as 100 | 1000,
+    gender_mode: 'both' as 'boys_only' | 'girls_only' | 'both',
   });
 
   const [saved, setSaved] = useState(false);
@@ -36,6 +37,7 @@ export default function FestivalCalendarSettings() {
         registration_open: festival.registration_open ? festival.registration_open.split('T')[0] : '',
         registration_close: festival.registration_close ? festival.registration_close.split('T')[0] : '',
         chest_number_category_range: festival.chest_number_category_range ?? 100,
+        gender_mode: festival.gender_mode ?? 'both',
       });
     }
   }, [festival]);
@@ -152,6 +154,32 @@ export default function FestivalCalendarSettings() {
                 />
               )}
             </View>
+          </View>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Festival Gender</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Text className="mb-3 text-xs font-poppins text-ui-text-muted">
+            This setting applies to the entire festival and all its categories.
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {([
+              { value: 'boys_only', label: 'Boys Only' },
+              { value: 'girls_only', label: 'Girls Only' },
+              { value: 'both', label: 'Both' },
+            ] as const).map((option) => (
+              <Button
+                key={option.value}
+                variant={formData.gender_mode === option.value ? 'default' : 'outline'}
+                onPress={() => setFormData({ ...formData, gender_mode: option.value })}
+              >
+                {option.label}
+              </Button>
+            ))}
           </View>
         </CardContent>
       </Card>

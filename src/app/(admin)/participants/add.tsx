@@ -90,6 +90,8 @@ export default function AddParticipant() {
   const [collegeCategory, setCollegeCategory] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [organisations, setOrganisations] = useState<OrganisationOption[]>([]);
+  const [isOrganisationsLoading, setIsOrganisationsLoading] = useState(false);
+  const [organisationsLoadError, setOrganisationsLoadError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Unified Candidate Profile settings state
@@ -105,7 +107,7 @@ export default function AddParticipant() {
   const dobInputRef = useRef<any>(null);
   const categoryFestivalRef = useRef<string | undefined>(festivalId);
 
-  const festivalLevel = String(activeFestival?.level || '').toLowerCase();
+  const festivalLevel = String(activeFestival?.level || '').trim().toLowerCase();
   const currentOrganisation = organisations.find((organisation) => organisation.tenant_id === validTenantId);
   const availableOrganisations = (festivalLevel === 'sector' || festivalLevel === 'division')
     ? organisations.filter((organisation) => organisation.parent_id === currentOrganisation?.id)
@@ -153,11 +155,31 @@ export default function AddParticipant() {
 
   // Fetch org type for org label and available hierarchies
   useEffect(() => {
-    if (validTenantId) {
-      participantService.listOrganisations(validTenantId).then((data) => {
-        setOrganisations(data);
-      });
+    if (!validTenantId) {
+      setOrganisations([]);
+      setIsOrganisationsLoading(false);
+      setOrganisationsLoadError('');
+      return;
     }
+
+    let cancelled = false;
+    setOrganisations([]);
+    setIsOrganisationsLoading(true);
+    setOrganisationsLoadError('');
+    participantService.listOrganisations(validTenantId)
+      .then((data) => {
+        if (!cancelled) setOrganisations(data);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setOrganisations([]);
+        setOrganisationsLoadError(error instanceof Error ? error.message : 'Could not load organisations.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsOrganisationsLoading(false);
+      });
+
+    return () => { cancelled = true; };
   }, [validTenantId]);
 
   // Auto-resolve category whenever inputs change
@@ -292,42 +314,24 @@ export default function AddParticipant() {
     let saveError: Error | null = null;
     let photoUploadError: Error | null = null;
     try {
-      chest_number = await participantService.generateChestNumber(category, festivalId);
-      // The unique index is the final authority. Two admins can generate the
-      // same number concurrently, so retry an automatically generated number
-      // when the insert loses that race.
-      let newParticipant: any;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          newParticipant = await participantService.createParticipant<any>({
-            tenant_id: targetTenantId,
-            festival_id: festivalId,
-            organisation_id: selectedOrgId,
-            name: name.trim(),
-            category_code: category,
-            chest_number,
-            status: 'approved',
-            age: ageNum,
-            class_std: isCollegeFest ? null : classStd || null,
-            dob: dob || null,
-            gender,
-            public_profile_enabled: publicProfileEnabled,
-            show_organisation_public: showOrganisationPublic,
-          });
-          break;
-        } catch (error: any) {
-          const isDuplicateChest = error?.code === '23505'
-            && String(error?.message || '').includes('unique_active_chest_number');
-          if (!isDuplicateChest || attempt === 2) throw error;
-          // Do not call the generator again here: if RLS hides the existing
-          // row, it can return the same candidate repeatedly. Advance the
-          // candidate that the database just rejected instead.
-          const match = chest_number.match(/^(.*-)(\d+)$/);
-          chest_number = match
-            ? `${match[1]}${(Number(match[2]) + 1).toString().padStart(match[2].length, '0')}`
-            : await participantService.generateChestNumber(category, festivalId);
-        }
+      if (!targetTenantId) {
+        throw new Error('Unable to determine the participant tenant. Please reselect the organisation.');
       }
+      const newParticipant = await participantService.createParticipantWithChestNumber<any>({
+        tenant_id: targetTenantId,
+        festival_id: festivalId,
+        organisation_id: selectedOrgId,
+        name: name.trim(),
+        category_code: category,
+        status: 'approved',
+        age: ageNum,
+        class_std: isCollegeFest ? null : classStd || null,
+        dob: dob || null,
+        gender,
+        public_profile_enabled: publicProfileEnabled,
+        show_organisation_public: showOrganisationPublic,
+      });
+      chest_number = String(newParticipant.chest_number || '');
 
       if (photoFile && newParticipant?.id) {
         try {
@@ -610,7 +614,16 @@ export default function AddParticipant() {
             <Building2 size={17} color="#334155" />
             <Text className="font-poppins-bold text-sm text-ssf-text">Organisation (Unit/Sector/Division) <Text className="text-red-600">*</Text></Text>
           </View>
-          {availableOrganisations.length > 0 ? (
+          {isFestivalLoading || isOrganisationsLoading ? (
+            <View className="flex-row items-center gap-2 py-2">
+              <ActivityIndicator size="small" color={ui.colors.primary} />
+              <Text className="font-poppins text-xs text-ssf-text-muted">Loading festival and eligible organisations…</Text>
+            </View>
+          ) : organisationsLoadError ? (
+            <Text className="font-poppins text-xs text-red-500">Could not load organisations: {organisationsLoadError}</Text>
+          ) : !activeFestival ? (
+            <Text className="font-poppins text-xs text-ssf-text-muted">Activate a festival before selecting an organisation.</Text>
+          ) : availableOrganisations.length > 0 ? (
             <View className="flex-row flex-wrap gap-2">
               {availableOrganisations.map((org) => (
                 <TouchableOpacity

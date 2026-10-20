@@ -16,6 +16,7 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  ClipboardList,
   ChevronDown,
   ChevronRight,
   Home,
@@ -73,7 +74,13 @@ const navItems: NavItem[] = [
     label: "Participants",
     path: "/(admin)/participants",
     icon: Users,
-    match: (path) => path.includes("/participants"),
+    match: (path) => path === "/(admin)/participants" || path === "/participants",
+  },
+  {
+    label: "Programs",
+    path: "/(admin)/participants/programs",
+    icon: ClipboardList,
+    match: (path) => path.includes("/participants/programs"),
   },
   {
     label: "Schedules",
@@ -211,6 +218,7 @@ const navItems: NavItem[] = [
 ];
 
 function getPageTitle(pathname: string) {
+  if (pathname.includes('/participants/programs')) return 'Programs';
   if (pathname.includes("/participants/")) {
     if (pathname.endsWith("/add")) return "Add Participant";
     if (pathname.includes("chest-card")) return "Chest Cards";

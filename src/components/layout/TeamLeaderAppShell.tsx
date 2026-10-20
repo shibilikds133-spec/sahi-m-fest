@@ -97,9 +97,16 @@ export function TeamLeaderAppShell({
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { width } = useWindowDimensions();
   const { context } = useTeamLeaderContext();
+
+  React.useEffect(() => {
+    if (user?.user_metadata?.must_change_credentials && pathname !== "/team/first-login") {
+      router.replace("/team/first-login");
+    }
+  }, [user, pathname, router]);
   const teamPrimary = context?.portal_primary_color || "#0F766E";
   const teamAccent = context?.portal_accent_color || "#14B8A6";
   const teamInitial = (context?.team_name || "T")

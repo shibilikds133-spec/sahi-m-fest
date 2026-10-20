@@ -109,7 +109,7 @@ export default function LoginScreen() {
             </Text>
 
             <View style={styles.heroActions}>
-              <TouchableOpacity onPress={() => router.push('/(public)/leaderboard' as never)} style={styles.publicButton}>
+              <TouchableOpacity onPress={() => router.replace('/(public)/leaderboard' as never)} style={styles.publicButton}>
                 <Trophy size={18} color={palette.ink} />
                 <Text style={styles.publicButtonText}>Public Leaderboard</Text>
               </TouchableOpacity>
@@ -178,7 +178,7 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push('/(public)/leaderboard' as never)} style={styles.linkButton}>
+            <TouchableOpacity onPress={() => router.replace('/(public)/leaderboard' as never)} style={styles.linkButton}>
               <Text style={styles.linkButtonText}>Continue to public results</Text>
             </TouchableOpacity>
           </View>

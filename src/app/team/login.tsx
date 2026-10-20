@@ -41,7 +41,11 @@ export default function TeamLeaderLogin() {
         return;
       }
       setUser(result.user, result.tenant_id, result.role, result.is_superadmin);
-      router.replace('/team/dashboard');
+      if (result.user?.user_metadata?.must_change_credentials) {
+        router.replace('/team/first-login');
+      } else {
+        router.replace('/team/dashboard');
+      }
     } catch (error: any) {
       setErrorMsg(authService.friendlyError(error.message));
     } finally {

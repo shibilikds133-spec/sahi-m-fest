@@ -7,8 +7,8 @@ import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories
 import { useAuthStore } from '../../../core/store/authStore';
 import { HANDBOOK_ITEMS } from '../../../constants/items';
 import { useRouter } from 'expo-router';
-import { Search, CheckCircle, Circle, Plus, Trash2 } from 'lucide-react-native';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/shadcn/card';
+import { Search, CheckCircle, Circle } from 'lucide-react-native';
+import { Card, CardContent } from '../../../components/ui/shadcn/card';
 import { Button } from '../../../components/ui/shadcn/button';
 import { Input } from '../../../components/ui/shadcn/input';
 import { Label } from '../../../components/ui/shadcn/label';
@@ -18,7 +18,7 @@ export default function ItemActivationSettings() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const { useActiveFestival, useActiveItems, useItems, useUpdateActiveItems } = useFestival();
+  const { useActiveFestival, useActiveItems, useSelectableItems, useApplyItemChanges } = useFestival();
   const { tenant_id: currentTenantId } = useAuthStore();
   const { data: festival } = useActiveFestival();
   const isCollegeFest = festival?.festival_template === 'college_fest';
@@ -33,11 +33,13 @@ export default function ItemActivationSettings() {
     return collegeCategories;
   }, [collegeCategories, festival?.general_category_enabled, isCollegeFest]);
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
-  const { data: persistedItems = [], isLoading: persistedItemsLoading } = useItems(festival?.id);
-  const updateActiveItems = useUpdateActiveItems(festival?.id);
+  const { data: persistedItems = [], isLoading: persistedItemsLoading } = useSelectableItems(festival?.id);
+  const applyItemChanges = useApplyItemChanges(festival?.id);
 
   const [search, setSearch] = useState('');
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+  const [selectionBase, setSelectionBase] = useState<string[]>([]);
+  const [draftFestivalId, setDraftFestivalId] = useState<string | null>(null);
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual', groupSize: '' });
@@ -87,10 +89,13 @@ export default function ItemActivationSettings() {
   }, [isCollegeFest, itemCategoryOptions]);
 
   useEffect(() => {
-    if (activeCodes) {
+    if (festival?.id && activeCodes && draftFestivalId !== festival.id) {
       setSelectedCodes(activeCodes);
+      setSelectionBase(activeCodes);
+      setDraftFestivalId(festival.id);
+      setCustomItems([]);
     }
-  }, [activeCodes]);
+  }, [activeCodes, festival?.id, draftFestivalId]);
 
   const availableItems = useMemo(() => {
     const combined = [
@@ -167,14 +172,19 @@ export default function ItemActivationSettings() {
 
   const handleSave = async () => {
     try {
+      const selectedSet = new Set(selectedCodes);
+      const originalSet = new Set(selectionBase);
+      const activateCodes = selectedCodes.filter(code => !originalSet.has(code));
+      const deactivateCodes = selectionBase.filter(code => !selectedSet.has(code));
       const selectedRecords = [...HANDBOOK_ITEMS, ...customItems].filter(i =>
-        selectedCodes.includes(i.item_code)
+        activateCodes.includes(i.item_code)
       );
-      await updateActiveItems.mutateAsync({
-        selectedCodes,
+      await applyItemChanges.mutateAsync({
+        activateCodes,
+        deactivateCodes,
         itemRecords: selectedRecords
       });
-      Alert.alert('Success', `${selectedCodes.length} items activated!`);
+      Alert.alert('Success', 'Item changes saved.');
       router.replace('/(admin)/settings' as any);
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to sync items');
@@ -345,8 +355,8 @@ export default function ItemActivationSettings() {
 
       {/* Fixed Save Button */}
       <View className="absolute bottom-0 left-0 right-0 bg-ssf-bg border-t border-ui-border px-4 py-4">
-        <Button onPress={handleSave} disabled={updateActiveItems.isPending}>
-          {updateActiveItems.isPending ? 'Saving...' : `Save Changes (${selectedCodes.length} Items)`}
+        <Button onPress={handleSave} disabled={applyItemChanges.isPending || !draftFestivalId}>
+          {applyItemChanges.isPending ? 'Saving...' : `Save Changes (${selectedCodes.length} Items)`}
         </Button>
       </View>
 

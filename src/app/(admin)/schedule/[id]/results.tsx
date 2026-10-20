@@ -15,7 +15,7 @@ import { SsfButton } from '../../../../components/ui/SsfButton';
 import { useJudges } from '../../../../core/hooks/useJudges';
 import { useParticipants } from '../../../../core/hooks/useParticipants';
 import { useSchedule } from '../../../../core/hooks/useSchedule';
-import { useEntrySizes } from './useEntrySizes';
+import { useEntrySizes } from '../../../../core/hooks/useEntrySizes';
 import { useFestival } from '../../../../core/hooks/useFestival';
 import {
   calculateFlexiblePoints,

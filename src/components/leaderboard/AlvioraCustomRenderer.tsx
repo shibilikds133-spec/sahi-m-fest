@@ -644,7 +644,7 @@ export function AlvioraCustomRenderer({ page = 'landing' }: { page?: PublicLeade
     <View style={styles.compactHeaderContent}>
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => router.push('/(public)/leaderboard' as never)}
+        onPress={() => router.replace('/(public)/leaderboard' as never)}
         style={styles.backButton}
       >
         <ArrowLeft size={16} color="rgba(255,255,255,0.76)" />

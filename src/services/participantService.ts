@@ -11,6 +11,8 @@ export type OrganisationOption = {
   id: string;
   name: string;
   org_type: string;
+  parent_id?: string | null;
+  tenant_id?: string | null;
 };
 
 export type PublicCandidateProfile = {
@@ -445,6 +447,39 @@ export const participantService = {
     throwIfError(error);
     if (!data) throw new Error('Participant was not returned after create');
     return data;
+  },
+
+  async createParticipantWithChestNumber<T>(input: {
+    tenant_id: string;
+    festival_id: string;
+    organisation_id: string;
+    name: string;
+    category_code: string;
+    status: ParticipantStatus;
+    age: number | null;
+    class_std: string | null;
+    dob: string | null;
+    gender: 'boys' | 'girls';
+    public_profile_enabled: boolean;
+    show_organisation_public: boolean;
+  }): Promise<T> {
+    const { data, error } = await supabase.rpc('create_participant_with_chest_number', {
+      p_tenant_id: input.tenant_id,
+      p_festival_id: input.festival_id,
+      p_organisation_id: input.organisation_id,
+      p_name: input.name,
+      p_category_code: input.category_code,
+      p_status: input.status,
+      p_age: input.age,
+      p_class_std: input.class_std,
+      p_dob: input.dob,
+      p_gender: input.gender,
+      p_public_profile_enabled: input.public_profile_enabled,
+      p_show_organisation_public: input.show_organisation_public,
+    });
+    throwIfError(error);
+    if (!data) throw new Error('Participant was not returned after create');
+    return data as T;
   },
 
   async createParticipants<T>(payloads: Record<string, unknown>[]): Promise<T[]> {

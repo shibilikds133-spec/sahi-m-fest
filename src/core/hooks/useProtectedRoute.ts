@@ -52,7 +52,7 @@ export function useProtectedRoute() {
         !inJudgeGroup && 
         segments[0] !== 'notifications'
       ) {
-        router.replace('/(public)');
+        router.replace('/(auth)/login');
       }
       return;
     }
@@ -69,7 +69,7 @@ export function useProtectedRoute() {
       } else if (role === 'team_leader') {
         router.replace('/team/dashboard');
       } else {
-        router.replace('/(public)');
+        router.replace('/(public)/leaderboard');
       }
       return;
     }
