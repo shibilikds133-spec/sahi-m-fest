@@ -835,6 +835,8 @@ const styles = StyleSheet.create({
   },
   desktopNavItemActive: {
     backgroundColor: ui.colors.primarySoft,
+    borderWidth: 1,
+    borderColor: "#B9E5DE",
   },
   desktopNavLabel: {
     color: "#334155",
