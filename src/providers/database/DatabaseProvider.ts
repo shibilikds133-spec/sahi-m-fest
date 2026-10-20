@@ -17,6 +17,13 @@ export interface DatabaseProvider {
   upsertFestival<T>(payload: Record<string, unknown>): Promise<QueryResult<T>>;
   getActiveItemCodes(festivalId: string): Promise<ListResult<{ item_code: string }>>;
   getItems<T>(festivalId: string): Promise<ListResult<T>>;
+  getSelectableItems<T>(festivalId: string, tenantId: string): Promise<ListResult<T>>;
+  applyItemChanges(
+    festivalId: string,
+    activateCodes: string[],
+    deactivateCodes: string[],
+    itemRecords?: any[],
+  ): Promise<QueryResult<void>>;
   setActiveItemCodes(
     festivalId: string,
     tenantId: string,

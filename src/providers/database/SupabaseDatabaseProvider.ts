@@ -79,6 +79,30 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
+  async getSelectableItems<T>(festivalId: string, tenantId: string): Promise<ListResult<T>> {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*')
+      .eq('festival_id', festivalId)
+      .eq('tenant_id', tenantId);
+    return { data: (data as T[]) ?? [], error: normalizeError(error) };
+  }
+
+  async applyItemChanges(
+    festivalId: string,
+    activateCodes: string[],
+    deactivateCodes: string[],
+    itemRecords: any[] = [],
+  ): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('apply_competition_item_changes', {
+      p_festival_id: festivalId,
+      p_activate_codes: activateCodes,
+      p_deactivate_codes: deactivateCodes,
+      p_records: itemRecords,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
   async setActiveItemCodes(
     festivalId: string,
     tenantId: string,

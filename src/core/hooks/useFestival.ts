@@ -15,6 +15,7 @@ type FestivalCalendarRecord = {
   registration_close?: string | null;
   is_active: boolean;
   festival_template: FestivalTemplate;
+  gender_mode?: 'boys_only' | 'girls_only' | 'both';
   general_category_enabled?: boolean;
   chest_number_category_range?: 100 | 1000;
 };
@@ -138,6 +139,28 @@ export const useFestival = () => {
     });
   };
 
+  const useSelectableItems = (festivalId: string | undefined) => useQuery({
+    queryKey: ['selectable-items', festivalId, tenant_id],
+    queryFn: () => festivalSettingsService.getSelectableItems<any>(festivalId!, tenant_id!),
+    enabled: !!festivalId && !!tenant_id,
+  });
+
+  const useApplyItemChanges = (festivalId: string | undefined) => useMutation({
+    mutationFn: async ({ activateCodes, deactivateCodes, itemRecords }: {
+      activateCodes: string[];
+      deactivateCodes: string[];
+      itemRecords?: any[];
+    }) => {
+      if (!festivalId || !tenant_id) throw new Error('Select a festival before changing programs.');
+      await festivalSettingsService.applyItemChanges(festivalId, activateCodes, deactivateCodes, itemRecords);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['selectable-items', festivalId] });
+    },
+  });
+
   // 7. Mutation: Sync Active Items
   const useUpdateActiveItems = (festivalId: string | undefined) => {
     return useMutation({
@@ -159,6 +182,8 @@ export const useFestival = () => {
     useUpdateFestival,
     useActiveItems,
     useItems,
+    useSelectableItems,
+    useApplyItemChanges,
     useUpdateActiveItems,
   };
 };

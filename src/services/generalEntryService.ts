@@ -5,7 +5,7 @@ export type GeneralTeamEntry = {
   entry_chest_number: string;
   organisation_id: string;
   organisation: { name: string } | null;
-  item: { item_code: string; item_name_en: string } | null;
+  item: { id: string; item_code: string; item_name_en: string } | null;
   members: { participant: { name: string; chest_number: string | null } | null }[];
 };
 
@@ -13,7 +13,7 @@ export const generalEntryService = {
   async list(festivalId: string): Promise<GeneralTeamEntry[]> {
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, entry_chest_number, organisation_id, organisation:organisations(name), item:items(item_code, item_name_en), members:group_members(participant:participants(name, chest_number))')
+      .select('id, entry_chest_number, organisation_id, organisation:organisations(name), item:items(id, item_code, item_name_en), members:group_members(participant:participants(name, chest_number))')
       .eq('festival_id', festivalId)
       .eq('entry_kind', 'general_team')
       .order('created_at', { ascending: false });

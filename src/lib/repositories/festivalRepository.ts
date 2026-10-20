@@ -25,6 +25,19 @@ export const festivalRepository = {
     return databaseProvider.getItems<T>(festivalId);
   },
 
+  getSelectableItems<T>(festivalId: string, tenantId: string) {
+    return databaseProvider.getSelectableItems<T>(festivalId, tenantId);
+  },
+
+  applyItemChanges(
+    festivalId: string,
+    activateCodes: string[],
+    deactivateCodes: string[],
+    itemRecords?: any[],
+  ) {
+    return databaseProvider.applyItemChanges(festivalId, activateCodes, deactivateCodes, itemRecords);
+  },
+
   async setActiveItemCodes(
     festivalId: string, 
     tenantId: string, 

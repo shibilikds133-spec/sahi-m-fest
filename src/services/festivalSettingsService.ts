@@ -56,6 +56,24 @@ export const festivalSettingsService = {
     return data;
   },
 
+  async getSelectableItems<T>(festivalId: string, tenantId: string): Promise<T[]> {
+    const { data, error } = await festivalRepository.getSelectableItems<T>(festivalId, tenantId);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async applyItemChanges(
+    festivalId: string,
+    activateCodes: string[],
+    deactivateCodes: string[],
+    itemRecords?: any[],
+  ): Promise<void> {
+    const { error } = await festivalRepository.applyItemChanges(
+      festivalId, activateCodes, deactivateCodes, itemRecords,
+    );
+    if (error) throw new Error(error.message);
+  },
+
   async updateActiveItemCodes(
     festivalId: string,
     tenantId: string,
