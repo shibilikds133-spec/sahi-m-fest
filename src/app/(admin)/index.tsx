@@ -45,6 +45,7 @@ import { useAuthStore } from '../../core/store/authStore';
 import { usePageManagementStore } from '../../core/store/pageManagementStore';
 import { PageAccessControl } from '../../components/layout/PageAccessControl';
 import { useNotificationsInbox } from '../../core/hooks/useNotificationsInbox';
+import { FEATURE_FLAGS } from '../../core/config/features';
 
 type DashboardIcon = React.ComponentType<{
   color?: string;
@@ -426,7 +427,7 @@ export default function AdminDashboard() {
     { label: 'Schedules', icon: Calendar, visible: sVisible, onPress: () => router.push('/(admin)/schedule' as any) },
     { label: 'Sub Organisations', icon: Building2, visible: oVisible, onPress: () => router.push('/(admin)/organisations' as any) },
     { label: 'Festival Settings', icon: Settings, visible: setVisible, onPress: () => router.push('/(admin)/settings' as any) },
-    { label: 'Communication Center', icon: Megaphone, visible: cVisible, onPress: () => router.push('/(admin)/communication' as any) },
+    { label: 'Communication Center', icon: Megaphone, visible: cVisible && FEATURE_FLAGS.ENABLE_COMMUNICATION_CENTER, onPress: () => router.push('/(admin)/communication' as any) },
     { label: 'Judge Management', icon: UserCheck, visible: jVisible, onPress: () => router.push('/(admin)/judges' as any) },
     { label: 'Leaderboard Management', icon: Medal, visible: lVisible, onPress: () => router.push('/(admin)/settings/leaderboard' as any) },
     { label: 'Open Judge Portal', icon: Trophy, visible: true, onPress: () => router.push('/judge' as any) },
@@ -437,7 +438,7 @@ export default function AdminDashboard() {
     { label: 'Manage Schedules', icon: Calendar, visible: sVisible, onPress: () => router.push('/(admin)/schedule' as any) },
     { label: 'Sub Organisations', icon: Building2, visible: oVisible, onPress: () => router.push('/(admin)/organisations' as any) },
     { label: 'Festival Settings', icon: Settings, visible: setVisible, onPress: () => router.push('/(admin)/settings' as any) },
-    { label: 'Communication Center', icon: Megaphone, visible: cVisible, onPress: () => router.push('/(admin)/communication' as any) },
+    { label: 'Communication Center', icon: Megaphone, visible: cVisible && FEATURE_FLAGS.ENABLE_COMMUNICATION_CENTER, onPress: () => router.push('/(admin)/communication' as any) },
     { label: 'Judge Management', icon: UserCheck, visible: jVisible, onPress: () => router.push('/(admin)/judges' as any) },
     { label: 'Leaderboard Management', icon: BarChart3, visible: lVisible, onPress: () => router.push('/(admin)/settings/leaderboard' as any) },
   ];

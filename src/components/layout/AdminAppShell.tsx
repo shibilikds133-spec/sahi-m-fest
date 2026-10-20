@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import {
+  BadgePlus,
   Bell,
   Building2,
   CalendarDays,
@@ -39,6 +40,7 @@ import {
 
 import { useAuthStore } from "@/core/store/authStore";
 import { useFestival } from "@/core/hooks/useFestival";
+import { FEATURE_FLAGS } from "@/core/config/features";
 import { ui } from "@/constants/designSystem";
 import { JudgeApprovalToast } from "../ui/JudgeApprovalToast";
 import { useJudgeApprovalStore } from "@/core/store/judgeApprovalStore";
@@ -102,12 +104,14 @@ const navItems: NavItem[] = [
     icon: Building2,
     match: (path) => path.includes("/organisations"),
   },
-  {
-    label: "Communication Center",
-    path: "/(admin)/communication",
-    icon: Megaphone,
-    match: (path) => path.includes("/communication"),
-  },
+  ...(FEATURE_FLAGS.ENABLE_COMMUNICATION_CENTER
+    ? [{
+        label: "Communication Center",
+        path: "/(admin)/communication",
+        icon: Megaphone,
+        match: (path: string) => path.includes("/communication"),
+      }]
+    : []),
   {
     label: "Judge Management",
     path: "/(admin)/judges",
@@ -177,7 +181,7 @@ const navItems: NavItem[] = [
   {
     label: "Grace Marks",
     path: "/(admin)/grace-marks",
-    icon: Trophy,
+    icon: BadgePlus,
     match: (path) => path.includes("/grace-marks"),
   },
   {
