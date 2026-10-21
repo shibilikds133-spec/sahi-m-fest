@@ -20,10 +20,26 @@ function normalizeEmail(email: any) {
   return normalized;
 }
 
-function makeLoginCredentials(teamName: string, participantName: string) {
-  const raw = (teamName || participantName || 'team').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  const cleanTeam = raw.replace(/^team_/, '') || 'team';
-  const username = `team_${cleanTeam}`.slice(0, 30);
+async function makeLoginCredentials(admin: ReturnType<typeof createClient>) {
+  // Keep initial usernames short and independent of long team/participant names.
+  // Check the existing unique profile index before creating the Auth user.
+  let username = '';
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    const candidate = `teamleader_${suffix}`;
+    const { data, error } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('team_leader_code', candidate)
+      .maybeSingle();
+    if (error) throw new Error('Could not verify Team Leader username availability.');
+    if (!data) {
+      username = candidate;
+      break;
+    }
+  }
+  if (!username) throw new Error('Could not generate an available Team Leader username. Please retry.');
+
   const password = `Aa1!${crypto.randomUUID()}`;
   const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
   const email = `${username}_${suffix}@sahi.local`;
@@ -269,8 +285,7 @@ serve(async (req) => {
         return json(409, { error: 'TEAM_LEADER_ACCOUNT_NOT_FOUND', message: 'A valid Team Leader account was not found for this participant.' });
       }
 
-      const generated = makeLoginCredentials(teamName, participant.name || 'participant');
-      const newPassword = requestedPassword || generated.password;
+      const newPassword = requestedPassword || `Aa1!${crypto.randomUUID()}`;
       const { error: passwordError } = await admin.auth.admin.updateUserById(participant.user_id, {
         password: newPassword,
         user_metadata: {
@@ -295,7 +310,7 @@ serve(async (req) => {
       });
     }
 
-    const generated = makeLoginCredentials(teamName, participant.name || 'participant');
+    const generated = await makeLoginCredentials(admin);
     const username = (typeof body?.username === 'string' && body.username.trim()) ? body.username.trim().toLowerCase() : generated.username;
     const password = requestedPassword || generated.password;
     // Internal synthetic email mapped from username for resolve_login_email compatibility

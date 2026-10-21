@@ -105,7 +105,7 @@ export default function TeamLeaderPortalAdmin() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [tempCredentials, setTempCredentials] = useState<{ username: string | null, email?: string, password: string } | null>(null);
-  const [resetCredentials, setResetCredentials] = useState<{ username: string | null, email?: string, password: string } | null>(null);
+  const [resetCredentials, setResetCredentials] = useState<{ assignmentId: string, username: string | null, email?: string, password: string } | null>(null);
   const [resettingAssignmentId, setResettingAssignmentId] = useState<string | null>(null);
   const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
 
@@ -114,8 +114,32 @@ export default function TeamLeaderPortalAdmin() {
   const copyCredential = async (value: string | null | undefined, label: string) => {
     if (!value) return;
     try {
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value);
+      if (Platform.OS === 'web') {
+        let copied = false;
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(value);
+            copied = true;
+          } catch {
+            // Fall back for browsers/contexts that expose but deny Clipboard API.
+          }
+        }
+        if (!copied && typeof document !== 'undefined') {
+          const field = document.createElement('textarea');
+          field.value = value;
+          field.setAttribute('readonly', '');
+          field.style.position = 'fixed';
+          field.style.opacity = '0';
+          document.body.appendChild(field);
+          try {
+            field.focus();
+            field.select();
+            copied = document.execCommand('copy');
+          } finally {
+            document.body.removeChild(field);
+          }
+        }
+        if (!copied) throw new Error('Browser clipboard is unavailable.');
       } else {
         Clipboard.setString(value);
       }
@@ -372,13 +396,14 @@ export default function TeamLeaderPortalAdmin() {
               const credentials = await teamLeaderPortalService.resetPassword(assignment.user_id, activeFestival.id);
 
               setResetCredentials({
+                assignmentId: assignment.id,
                 username: credentials.username || assignment.leader_code,
                 password: credentials.password,
               });
 
               Alert.alert(
                 'Password Reset Complete',
-                `A new temporary password was generated for ${assignment.team_name}. Copy it from the reset details. The leader must change it after signing in.`
+                `A new temporary password was generated for ${assignment.team_name}. It is shown on that team's assignment card, where you can copy it. The leader must change it after signing in.`
               );
             } catch (error: any) {
               Alert.alert('Password reset failed', error?.message || 'Please try again.');
@@ -779,35 +804,6 @@ export default function TeamLeaderPortalAdmin() {
           </View>
         </CardHeader>
         <CardContent>
-          {resetCredentials && (
-            <View className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-              <Text className="font-medium text-amber-900 mb-2">New Team Leader Login Credentials</Text>
-              <View className="flex-row items-center justify-between py-1">
-                <Text className="text-sm text-amber-800 flex-1">Username: {resetCredentials.username}</Text>
-                <TouchableOpacity onPress={() => copyCredential(resetCredentials.username, 'Username')} className="px-2 py-1 rounded border border-amber-300">
-                  <Text className="text-xs text-amber-800">{copiedCredential === 'Username' ? 'Copied' : 'Copy username'}</Text>
-                </TouchableOpacity>
-              </View>
-              <View className="flex-row items-center justify-between py-1">
-                <Text className="text-sm text-amber-800 flex-1">Temporary Password: {resetCredentials.password}</Text>
-                <TouchableOpacity onPress={() => copyCredential(resetCredentials.password, 'Password')} className="px-2 py-1 rounded border border-amber-300">
-                  <Text className="text-xs text-amber-800">{copiedCredential === 'Password' ? 'Copied' : 'Copy password'}</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                onPress={() => {
-                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                  const text = `Username: ${resetCredentials.username}\nPassword: ${resetCredentials.password}\nLogin Link: ${origin}/team/login`;
-                  copyCredential(text, 'Login credentials');
-                }}
-                className="flex-row items-center justify-center mt-2 px-3 py-2 rounded bg-amber-700"
-              >
-                <Copy size={14} color="#ffffff" />
-                <Text className="text-xs text-white font-medium ml-1">{copiedCredential === 'Login credentials' ? 'Copied' : 'Copy login details'}</Text>
-              </TouchableOpacity>
-              <Text className="text-xs text-amber-700 mt-2">This password replaces the previous password. On next sign-in, the leader will be asked to set their new credentials.</Text>
-            </View>
-          )}
           <View className="flex-row items-center border border-input rounded-lg px-3 mb-3 h-10">
             <Search size={16} className="text-muted-foreground" />
             <TextInput
@@ -869,6 +865,39 @@ export default function TeamLeaderPortalAdmin() {
                             {resettingAssignmentId === assignment.id ? 'Resetting...' : 'Reset password'}
                           </Text>
                         </TouchableOpacity>
+                      </View>
+                    )}
+                    {resetCredentials?.assignmentId === assignment.id && (
+                      <View className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                        <Text className="font-medium text-amber-900 mb-1">New temporary login credentials</Text>
+                        <View className="flex-row items-center justify-between py-1">
+                          <Text className="text-xs text-amber-800 flex-1">Username: {resetCredentials.username}</Text>
+                          <TouchableOpacity onPress={() => copyCredential(resetCredentials.username, `Reset_Username_${assignment.id}`)} className="px-2 py-1 rounded border border-amber-300">
+                            <Text className="text-xs text-amber-800">{copiedCredential === `Reset_Username_${assignment.id}` ? 'Copied' : 'Copy username'}</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <View className="flex-row items-center justify-between py-1">
+                          <Text className="text-xs text-amber-800 flex-1">Temporary password: {resetCredentials.password}</Text>
+                          <TouchableOpacity
+                            onPress={() => copyCredential(resetCredentials.password, `Reset_Password_${assignment.id}`)}
+                            className="px-2 py-1 rounded border border-amber-300"
+                            accessibilityLabel={`Copy temporary password for ${assignment.leader_name}`}
+                          >
+                            <Text className="text-xs text-amber-800">{copiedCredential === `Reset_Password_${assignment.id}` ? 'Copied' : 'Copy password'}</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                            const text = `Username: ${resetCredentials.username}\nPassword: ${resetCredentials.password}\nLogin Link: ${origin}/team/login`;
+                            copyCredential(text, `Reset_Login_${assignment.id}`);
+                          }}
+                          className="flex-row items-center justify-center mt-2 px-3 py-2 rounded bg-amber-700"
+                        >
+                          <Copy size={14} color="#ffffff" />
+                          <Text className="text-xs text-white font-medium ml-1">{copiedCredential === `Reset_Login_${assignment.id}` ? 'Copied' : 'Copy login details'}</Text>
+                        </TouchableOpacity>
+                        <Text className="text-xs text-amber-700 mt-2">This temporary password replaces the previous one. The leader will be asked to change it after signing in.</Text>
                       </View>
                     )}
                   </View>
