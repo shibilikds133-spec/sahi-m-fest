@@ -255,7 +255,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   if (!pin) {
     return (
       <View className="flex-1 bg-ssf-bg items-center justify-center px-5 py-8">
-        <SsfCard className="w-full max-w-md p-6 shadow-sm">
+        <SsfCard className={`w-full max-w-md shadow-sm ${isMobile ? 'p-4' : 'p-6'}`}>
           <View className="mb-4 h-12 w-12 items-center justify-center rounded-xl bg-teal-50"><LockKeyhole size={23} color="#0F766E" /></View>
           <Text className="text-2xl font-poppins-black text-ssf-text">Stage access</Text>
           <Text className="mt-1 font-poppins text-sm text-ssf-text-muted">Enter the four-digit PIN provided for this stage.</Text>
@@ -280,7 +280,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   if (venueQuery.isError) {
     return (
       <View className="flex-1 items-center justify-center bg-ssf-bg px-5">
-        <SsfCard className="w-full max-w-md p-6">
+        <SsfCard className={`w-full max-w-md ${isMobile ? 'p-4' : 'p-6'}`}>
           <Text className="font-poppins-bold text-lg text-ssf-text">Stage access was not granted</Text>
           <Text className="mt-2 font-poppins text-sm text-ssf-text-muted">{(venueQuery.error as Error).message}</Text>
           <SsfButton
@@ -316,14 +316,14 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
       <View className="flex-1 bg-ssf-bg">
         <ScrollView className="flex-1 px-3 py-3" refreshControl={<RefreshControl refreshing={venueQuery.isRefetching} onRefresh={refresh} />}>
           <View className="mb-4 flex-row items-center">
-            <TouchableOpacity onPress={() => setSelectedScheduleId(null)} className="mr-3 h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Back to stage events" onPress={() => setSelectedScheduleId(null)} className={`${isMobile ? 'mr-2 h-11 w-11 rounded-xl' : 'mr-3 h-9 w-9 rounded-lg'} shrink-0 items-center justify-center border border-ui-border bg-white`}>
               <ArrowLeft size={18} color="#0F172A" />
             </TouchableOpacity>
-            <View className="flex-1">
-              <Text className="text-xl font-poppins-black text-ssf-text">{mode === 'checkin' ? 'Green Room Check-In' : 'Code Letters'}</Text>
-              <Text className="font-poppins text-xs text-ssf-text-muted">{selectedSchedule.item_name_en || selectedSchedule.item_code}</Text>
+            <View className="min-w-0 flex-1">
+              <Text numberOfLines={isMobile ? 1 : undefined} className={`${isMobile ? 'text-base' : 'text-xl'} font-poppins-black text-ssf-text`}>{mode === 'checkin' ? 'Green Room Check-In' : 'Code Letters'}</Text>
+              <Text numberOfLines={1} className="font-poppins text-xs text-ssf-text-muted">{selectedSchedule.item_name_en || selectedSchedule.item_code}</Text>
             </View>
-            <TouchableOpacity accessibilityLabel="Refresh stage data" onPress={refresh} className="h-9 w-9 items-center justify-center rounded-lg border border-ui-border bg-white">
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Refresh stage data" onPress={refresh} className={`${isMobile ? 'h-11 w-11 rounded-xl' : 'h-9 w-9 rounded-lg'} ml-2 shrink-0 items-center justify-center border border-ui-border bg-white`}>
               <RefreshCw size={15} color="#475569" />
             </TouchableOpacity>
           </View>
@@ -344,9 +344,13 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
                 </View>
                 <View className="h-2 w-full overflow-hidden rounded-full bg-gray-100"><View className="h-2 rounded-full bg-ssf-primary" style={{ width: activeEntries.length ? `${verifiedCount / activeEntries.length * 100}%` : '0%' }} /></View>
                 {allVerified ? (
-                  <View className="mt-3 flex-row items-center justify-between">
+                  <View className={`mt-3 ${isMobile ? 'gap-y-2' : 'flex-row items-center justify-between'}`}>
                     <View className="flex-row items-center gap-1"><ShieldCheck size={16} color="#16A34A" /><Text className="font-poppins-bold text-sm text-green-700">All Participants Verified!</Text></View>
-                    <SsfButton label="Start Draw →" size="sm" onPress={() => setMode('codes')} />
+                    {isMobile ? (
+                      <TouchableOpacity accessibilityRole="button" onPress={() => setMode('codes')} className="mt-2 h-11 w-full items-center justify-center rounded-lg bg-ssf-primary px-3">
+                        <Text className="font-poppins-bold text-xs text-white">Start Draw →</Text>
+                      </TouchableOpacity>
+                    ) : <SsfButton label="Start Draw →" size="sm" onPress={() => setMode('codes')} />}
                   </View>
                 ) : activeEntries.length > 0 ? (
                   <Text className="mt-3 font-poppins-bold text-xs text-amber-700">{activeEntries.length - verifiedCount} participants remaining unverified.</Text>
@@ -359,17 +363,79 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
               </View>
             </>
           ) : (
-            <SsfCard className="mb-3 p-4">
+            <SsfCard className={`mb-3 ${isMobile ? 'p-3' : 'p-4'}`}>
               <View className="flex-row flex-wrap items-center justify-between gap-3">
                 <Text className="font-poppins-bold text-lg text-ssf-text">Participants ({eligibleForCodes.length})</Text>
-                {!isLocked ? <SsfButton label={busyId === `draw-${selectedSchedule.id}` ? 'Drawing...' : 'Draw Letters'} onPress={drawCodeLetters} disabled={busyId === `draw-${selectedSchedule.id}` || eligibleForCodes.length === 0} icon={<RefreshCw size={14} color="#FFF" />} size="sm" /> : null}
+                {!isLocked ? isMobile ? (
+                  <TouchableOpacity accessibilityRole="button" onPress={drawCodeLetters} disabled={busyId === `draw-${selectedSchedule.id}` || eligibleForCodes.length === 0} className={`h-11 w-full flex-row items-center justify-center rounded-lg bg-ssf-primary px-3 ${busyId === `draw-${selectedSchedule.id}` || eligibleForCodes.length === 0 ? 'opacity-50' : ''}`}>
+                    <RefreshCw size={14} color="#FFFFFF" />
+                    <Text className="ml-2 font-poppins-bold text-xs text-white">{busyId === `draw-${selectedSchedule.id}` ? 'Drawing...' : 'Draw Letters'}</Text>
+                  </TouchableOpacity>
+                ) : <SsfButton label={busyId === `draw-${selectedSchedule.id}` ? 'Drawing...' : 'Draw Letters'} onPress={drawCodeLetters} disabled={busyId === `draw-${selectedSchedule.id}` || eligibleForCodes.length === 0} icon={<RefreshCw size={14} color="#FFF" />} size="sm" /> : null}
               </View>
               <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">Only checked-in entries are included. Fixed manual letters stay unchanged.</Text>
             </SsfCard>
           )}
 
+          {visibleEntries.length === 0 ? (
+            <SsfCard className="mb-6 items-center py-8">
+              <Users size={28} color="#94A3B8" />
+              <Text className="mt-2 text-center font-poppins text-sm text-ssf-text-muted">No participants found.</Text>
+            </SsfCard>
+          ) : isMobile ? (
+            <View className="mb-6 gap-y-2">
+              {visibleEntries.map((entry) => {
+                const rejected = entry.status === 'rejected';
+                const eligible = entry.status !== 'rejected' && !!entry.is_verified;
+                const saving = busyId === entry.id;
+                const statusStyle = rejected ? 'border-red-200 bg-red-50 text-red-700' : entry.is_verified ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800';
+                return (
+                  <SsfCard key={entry.id} className={`p-3 ${rejected ? 'opacity-70' : ''}`}>
+                    <View className="flex-row items-start gap-3">
+                      <View className={`h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 ${rejected ? 'border-red-300 bg-red-50' : entry.is_verified ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+                        <Text numberOfLines={1} className={`font-poppins-black text-[10px] ${rejected ? 'text-red-600' : entry.is_verified ? 'text-green-700' : 'text-gray-600'}`}>{entry.participant_chest_number || '?'}</Text>
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <Text numberOfLines={2} className={`font-poppins-bold text-sm ${rejected ? 'text-slate-400 line-through' : 'text-ssf-text'}`}>{entry.participant_name || 'Entry'}</Text>
+                        <Text numberOfLines={1} className="mt-0.5 font-poppins text-xs text-ssf-text-muted">{entry.organisation_name || '—'}{entry.entry_kind === 'general_team' ? ' · Team' : ''}</Text>
+                        {!!entry.members?.length ? <Text numberOfLines={2} className="mt-1 font-poppins text-[10px] leading-4 text-ssf-text-muted">{entry.members.map((member) => `${member.name}${member.chest_number ? ` (${member.chest_number})` : ''}`).join(', ')}</Text> : null}
+                      </View>
+                      {mode === 'checkin' ? (
+                        <View className={`min-h-7 shrink-0 items-center justify-center rounded-full border px-2 ${statusStyle.split(' ').slice(0, 2).join(' ')}`}>
+                          <Text className={`font-poppins-bold text-[9px] ${statusStyle.split(' ')[2]}`}>{rejected ? 'Rejected' : entry.is_verified ? 'Verified' : 'Pending'}</Text>
+                        </View>
+                      ) : (
+                        <View className={`h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border px-2 ${eligible ? 'border-teal-100 bg-teal-50' : 'border-slate-200 bg-slate-50'}`}>
+                          <Text className={`font-poppins-black text-lg ${eligible ? 'text-ssf-primary' : 'text-slate-300'}`}>{eligible ? entry.code_letter || '—' : '—'}</Text>
+                        </View>
+                      )}
+                    </View>
+                    {mode === 'checkin' ? (
+                      !isLocked ? (
+                        <View className="mt-3 flex-row gap-2">
+                          {rejected ? (
+                            <PortalAction label="Restore" mobile disabled={saving} onPress={() => updateRegistration(entry, 'restore')} />
+                          ) : (
+                            <>
+                              <PortalAction label={entry.is_verified ? 'Undo' : 'Verify'} mobile disabled={saving} onPress={() => updateRegistration(entry, entry.is_verified ? 'unverify' : 'verify')} />
+                              <PortalAction label="Reject" mobile danger disabled={saving} onPress={() => updateRegistration(entry, 'reject')} />
+                            </>
+                          )}
+                        </View>
+                      ) : null
+                    ) : (
+                      <View className="mt-2 flex-row items-center justify-between">
+                        {eligible && entry.code_letter_fixed ? <Text className="font-poppins text-[10px] text-ssf-text-muted">Fixed letter</Text> : <View />}
+                        {eligible && !isLocked ? <PortalAction label={entry.code_letter ? 'Edit letter' : 'Assign letter'} mobile disabled={!!busyId} onPress={() => { setEditingEntry(entry); setLetterDraft(entry.code_letter || ''); setLetterError(''); }} /> : null}
+                      </View>
+                    )}
+                  </SsfCard>
+                );
+              })}
+            </View>
+          ) : (
           <SsfCard className="mb-6 overflow-hidden p-0">
-            {visibleEntries.length === 0 ? <Text className="py-5 text-center font-poppins text-sm text-ssf-text-muted">No participants found.</Text> : visibleEntries.map((entry) => {
+            {visibleEntries.map((entry) => {
               const rejected = entry.status === 'rejected';
               const eligible = entry.status !== 'rejected' && !!entry.is_verified;
               const saving = busyId === entry.id;
@@ -410,17 +476,26 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
               );
             })}
           </SsfCard>
+          )}
 
           {mode === 'codes' && !isLocked && eligibleForCodes.length > 0 && eligibleForCodes.every((entry) => !!entry.code_letter) ? (
-            <SsfButton
-              label="Lock code-letter shuffle"
-              variant="outline"
-              onPress={() => confirmAction('Lock this event?', 'Code letters and check-in changes will become read-only.', () => {
+            isMobile ? (
+              <TouchableOpacity accessibilityRole="button" onPress={() => confirmAction('Lock this event?', 'Code letters and check-in changes will become read-only.', () => {
                 void runMutation(`lock-${selectedSchedule.id}`, () => stageManagementService.venuePortalLockSchedule(venueId, pin, selectedSchedule.id), 'Event locked.');
-              })}
-              className="mb-6 self-start"
-              icon={<Lock size={14} color="#475569" />}
-            />
+              })} className="mb-6 h-11 flex-row items-center justify-center rounded-lg border border-ui-border bg-white px-3">
+                <Lock size={14} color="#475569" /><Text className="ml-2 font-poppins-bold text-xs text-ui-text">Lock code-letter shuffle</Text>
+              </TouchableOpacity>
+            ) : (
+              <SsfButton
+                label="Lock code-letter shuffle"
+                variant="outline"
+                onPress={() => confirmAction('Lock this event?', 'Code letters and check-in changes will become read-only.', () => {
+                  void runMutation(`lock-${selectedSchedule.id}`, () => stageManagementService.venuePortalLockSchedule(venueId, pin, selectedSchedule.id), 'Event locked.');
+                })}
+                className="mb-6 self-start"
+                icon={<Lock size={14} color="#475569" />}
+              />
+            )
           ) : null}
         </ScrollView>
 
@@ -448,13 +523,13 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   const filteredWorkflow = selectedStatus !== 'All';
 
   return (
-    <ScrollView className="flex-1 bg-ssf-bg px-4 py-6" refreshControl={<RefreshControl refreshing={venueQuery.isRefetching} onRefresh={refresh} />}>
+      <ScrollView className={`flex-1 bg-ssf-bg ${isMobile ? 'px-3 py-3' : 'px-4 py-6'}`} refreshControl={<RefreshControl refreshing={venueQuery.isRefetching} onRefresh={refresh} />}>
       <View className="mb-5 flex-row items-center justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-3xl font-poppins-black text-ssf-text">{venueQuery.data?.venue.name || 'Stage Management'}</Text>
+          <Text numberOfLines={isMobile ? 2 : undefined} className={`${isMobile ? 'text-xl' : 'text-3xl'} font-poppins-black text-ssf-text`}>{venueQuery.data?.venue.name || 'Stage Management'}</Text>
           <Text className="mt-1 font-poppins text-sm text-ssf-text-muted">{filteredSchedules.length} scheduled events</Text>
         </View>
-        <TouchableOpacity onPress={refresh} disabled={venueQuery.isRefetching} className="h-9 w-9 items-center justify-center rounded-xl border border-ssf-border bg-white">
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Refresh stage events" onPress={refresh} disabled={venueQuery.isRefetching} className={`${isMobile ? 'h-11 w-11' : 'h-9 w-9'} items-center justify-center rounded-xl border border-ssf-border bg-white`}>
           <RefreshCw size={16} color="#475569" />
         </TouchableOpacity>
       </View>
@@ -529,7 +604,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
       ) : (
         <View className="gap-y-4">
           {filteredSchedules.map((schedule) => (
-            <SsfCard key={schedule.id} className="p-4">
+            <SsfCard key={schedule.id} className={isMobile ? 'p-3' : 'p-4'}>
               <View className="mb-2">
                 <Text numberOfLines={2} className="font-poppins-bold text-base text-ssf-text">{schedule.item_name_en || 'Unknown Event'}</Text>
                 {schedule.item_name_ml ? <Text numberOfLines={1} className="mt-0.5 font-poppins text-xs text-ssf-text-muted">{schedule.item_name_ml}</Text> : null}
@@ -538,7 +613,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
               </View>
               <View className="mb-3 flex-row flex-wrap items-center gap-x-4 gap-y-1"><View className="flex-row items-center gap-x-1"><Clock size={13} color="#6B7280" /><Text className="font-poppins text-xs text-gray-600">{timeText(schedule.start_time)} – {timeText(schedule.end_time)}</Text></View><View className="flex-row items-center gap-x-1"><Calendar size={13} color="#6B7280" /><Text className="font-poppins text-xs text-gray-600">{dateText(schedule.start_time)}</Text></View></View>
               <WorkflowBadges registrations={eventRegistrations(schedule.id)} />
-              <View className="mt-3 flex-row gap-x-2 border-t border-gray-100 pt-3"><SsfButton label="Check-In" variant="outline" size="sm" className="flex-1" onPress={() => openSchedule(schedule, 'checkin')} /><SsfButton label="Code Letters" variant="outline" size="sm" className="flex-1" onPress={() => openSchedule(schedule, 'codes')} /></View>
+              <View className="mt-3 flex-row gap-x-2 border-t border-gray-100 pt-3"><SsfButton label="Check-In" variant="outline" size={isMobile ? 'md' : 'sm'} className="flex-1" onPress={() => openSchedule(schedule, 'checkin')} /><SsfButton label="Code Letters" variant="outline" size={isMobile ? 'md' : 'sm'} className="flex-1" onPress={() => openSchedule(schedule, 'codes')} /></View>
             </SsfCard>
           ))}
         </View>
@@ -547,12 +622,12 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   );
 }
 
-function PortalAction({ label, onPress, disabled, danger, primary }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean; primary?: boolean }) {
+function PortalAction({ label, onPress, disabled, danger, primary, mobile }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean; primary?: boolean; mobile?: boolean }) {
   const style = primary ? 'border-teal-700 bg-teal-700 text-white' : danger ? 'border-red-200 bg-red-50 text-red-700' : 'border-ui-border bg-white text-ui-text';
   const textClass = style.split(' ').slice(2).join(' ');
   return (
-    <TouchableOpacity onPress={onPress} disabled={disabled} className={`h-8 items-center justify-center rounded-lg border px-3 ${style.split(' ').slice(0, 2).join(' ')} ${disabled ? 'opacity-50' : ''}`}>
-      <Text className={`font-poppins-bold text-[9px] ${textClass}`}>{label}</Text>
+    <TouchableOpacity accessibilityRole="button" onPress={onPress} disabled={disabled} className={`${mobile ? 'h-11 min-w-0 flex-1 px-2' : 'h-8 px-3'} items-center justify-center rounded-lg border ${style.split(' ').slice(0, 2).join(' ')} ${disabled ? 'opacity-50' : ''}`}>
+      <Text numberOfLines={1} className={`font-poppins-bold ${mobile ? 'text-[10px]' : 'text-[9px]'} ${textClass}`}>{label}</Text>
     </TouchableOpacity>
   );
 }
