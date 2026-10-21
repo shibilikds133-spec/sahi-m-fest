@@ -73,6 +73,10 @@ export default function ResultsPage() {
     ),
     [itemRegistrations],
   );
+  // Label-only refreshes must not rerun score/rank calculation over unsaved
+  // result edits. Participant eligibility changes still update these IDs.
+  const registrationIdentity = registrations.map((registration: any) => registration.id).sort().join('|');
+  const scoringRegistrationIds = React.useMemo(() => registrationIdentity ? registrationIdentity.split('|') : [], [registrationIdentity]);
   const { data: markEntries } = useMarkEntries(scheduleId);
   const { data: existingResults } = useResults(scheduleId);
   const { data: pointsConfig, error: pointsConfigError } = usePointsConfig(resolvedFestivalId ?? undefined);
@@ -108,12 +112,12 @@ export default function ResultsPage() {
   
   const hasInitialized = React.useRef(false);
 
+  React.useEffect(() => {
+    setOfficialBracket(schedule?.official_participant_bracket || '');
+  }, [schedule?.id, schedule?.official_participant_bracket]);
+
   // Init results from existing results or registrations
   React.useEffect(() => {
-    if (schedule) {
-      setOfficialBracket(schedule.official_participant_bracket || '');
-    }
-    
     if (registrations && existingResults !== undefined) {
       setResults(prev => {
         let changed = false;
@@ -128,6 +132,9 @@ export default function ResultsPage() {
               rank: null,
               grade: null,
             };
+            changed = true;
+          } else if (next[reg.id].code_letter !== reg.code_letter) {
+            next[reg.id] = { ...next[reg.id], code_letter: reg.code_letter };
             changed = true;
           }
         });
@@ -324,12 +331,12 @@ export default function ResultsPage() {
   }, [results]);
 
   const autoFill = React.useCallback(() => {
-    if (!registrations || (!forceRepublishConfirmed && (published ||
+    if (!scoringRegistrationIds.length || (!forceRepublishConfirmed && (published ||
       (!hasInitialized.current && (existingResults as any[] | undefined)?.some(r => r.published === true || r.result_status === 'published'))))) return;
 
     // 1. Calculate avgs and grades
-    const scores = (registrations as any[]).map(reg => {
-      const markSummary = mode === 'direct' ? getDirectMarkSummary(reg.id) : getMarkSummary(reg.id);
+    const scores = scoringRegistrationIds.map(registrationId => {
+      const markSummary = mode === 'direct' ? getDirectMarkSummary(registrationId) : getMarkSummary(registrationId);
       const normalizedAverage = markSummary?.percentageAverage ?? null;
       let grade = normalizedAverage !== null
         ? calculateGradeFromConfig(normalizedAverage, 100, flexiblePointsConfig)
@@ -337,7 +344,7 @@ export default function ResultsPage() {
       // Convert null to '-'
       if (!grade) grade = '-';
       return {
-        id: reg.id,
+        id: registrationId,
         avg: normalizedAverage ?? 0,
         grade,
       };
@@ -383,7 +390,7 @@ export default function ResultsPage() {
       });
       return next;
     });
-  }, [registrations, getMarkSummary, getDirectMarkSummary, flexiblePointsConfig, mode, published, forceRepublishConfirmed, existingResults]);
+  }, [scoringRegistrationIds, getMarkSummary, getDirectMarkSummary, flexiblePointsConfig, mode, published, forceRepublishConfirmed, existingResults]);
 
   // Run auto-calculation whenever in marks or direct mode and data is available
   React.useEffect(() => {
@@ -946,7 +953,7 @@ export default function ResultsPage() {
           scheduleId={scheduleId as string}
           registrationId={editingRegistration.id}
           participantName={editingRegistration.participants?.name ?? 'Unknown'}
-          codeLetter={editingRegistration.code_letter}
+          codeLetter={registrations.find((reg: any) => reg.id === editingRegistration.id)?.code_letter ?? editingRegistration.code_letter}
           tenantId={schedule.tenant_id}
           itemNameEn={schedule.items?.item_name_en}
           itemNameMl={schedule.items?.item_name_ml}
@@ -978,7 +985,7 @@ export default function ResultsPage() {
              });
           }}
           participantName={directEntryModal.participantName}
-          codeLetter={directEntryModal.codeLetter}
+          codeLetter={registrations.find((reg: any) => reg.id === directEntryModal.regId)?.code_letter ?? directEntryModal.codeLetter}
           tenantId={schedule.tenant_id}
           itemNameEn={schedule.items?.item_name_en}
           itemNameMl={schedule.items?.item_name_ml}

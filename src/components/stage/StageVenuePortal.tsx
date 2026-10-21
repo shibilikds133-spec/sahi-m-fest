@@ -31,6 +31,9 @@ import { SsfButton } from '@/components/ui/SsfButton';
 import { SsfCard } from '@/components/ui/SsfCard';
 import { SsfSelectMenu } from '@/components/ui/SsfSelectMenu';
 import { stageManagementService, StageRegistrationRow, StageScheduleRow } from '@/services/stageManagementService';
+import { codeLetterTarget, codeLetterPreview } from '@/core/utils/codeLetters';
+import { invalidateCodeLetters } from '@/core/utils/invalidateCodeLetters';
+import { useCodeLetterUpdates } from '@/core/hooks/useCodeLetterUpdates';
 
 type PortalRegistration = StageRegistrationRow & {
   entry_kind?: string;
@@ -118,6 +121,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   });
   const schedules = venueQuery.data?.schedules ?? [];
   const registrations = (venueQuery.data?.registrations ?? []) as PortalRegistration[];
+  useCodeLetterUpdates(pin ? `venue:${venueId}` : null, () => venueQuery.refetch());
   const selectedSchedule = schedules.find((row) => row.id === selectedScheduleId) ?? null;
 
   const refresh = async () => {
@@ -136,9 +140,11 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   const runMutation = async (id: string, operation: () => Promise<unknown>, successText: string) => {
     setBusyId(id);
     try {
-      await operation();
+      const result = await operation();
       await venueQuery.refetch();
-      message('Updated', successText);
+      const warning = (result as { conflictsUnavoidable?: boolean } | null)?.conflictsUnavoidable
+        ? '\nSome overlapping-event letter conflicts remain. Review the assigned order.' : '';
+      message('Updated', successText + warning);
     } catch (error: any) {
       message('Unable to update', error?.message || 'Please try again.');
     } finally {
@@ -185,14 +191,14 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
   const drawCodeLetters = async () => {
     if (!selectedSchedule) return;
     const eligible = eventRegistrations(selectedSchedule.id).filter((row) => row.status !== 'rejected' && row.is_verified);
-    const overwrite = eligible.some((row) => !!row.code_letter);
+    const overwrite = eligible.length > 0 && eligible.every((row) => !!row.code_letter);
     if (overwrite) {
       const action = () => runMutation(
         `draw-${selectedSchedule.id}`,
         () => stageManagementService.venuePortalDrawLetters(venueId, pin, selectedSchedule.id, true),
         'Code letters were assigned.',
       );
-      confirmAction('Redraw code letters?', 'Existing letters for this event will be replaced.', () => { void action(); });
+      confirmAction('Redraw code letters?', 'Fixed manual letters will stay unchanged. Only the remaining letters will be redrawn.', () => { void action(); });
       return;
     }
     await runMutation(
@@ -226,18 +232,19 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
       setLetterError('Enter one letter from A to Z.');
       return;
     }
-    const duplicate = eventRegistrations(selectedSchedule.id).some((row) => row.id !== editingEntry.id && row.code_letter === letter && row.status !== 'rejected');
-    if (duplicate) {
-      setLetterError('This letter is already assigned in this event.');
+    const target = codeLetterTarget(eventRegistrations(selectedSchedule.id), editingEntry.id, letter);
+    if (target && !editingEntry.code_letter) {
+      setLetterError('This entry has no letter to swap. Choose an unused letter.');
       return;
     }
     try {
       setBusyId(editingEntry.id);
-      await stageManagementService.venuePortalUpdateCodeLetter(venueId, pin, selectedSchedule.id, editingEntry.id, letter);
-      await venueQuery.refetch();
+      await stageManagementService.venuePortalUpdateCodeLetter(venueId, pin, selectedSchedule.id, editingEntry.id, letter,
+        editingEntry.code_letter, target?.id ?? null);
+      await invalidateCodeLetters(queryClient, { venueId, scheduleId: selectedSchedule.id });
       setEditingEntry(null);
       setLetterDraft('');
-      message('Updated', 'Code letter saved.');
+      message('Updated', target ? 'Code letters swapped and fixed for future draws.' : 'Code letter assigned and fixed for future draws.');
     } catch (error: any) {
       setLetterError(error?.message || 'Unable to save this code letter.');
     } finally {
@@ -357,7 +364,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
                 <Text className="font-poppins-bold text-lg text-ssf-text">Participants ({eligibleForCodes.length})</Text>
                 {!isLocked ? <SsfButton label={busyId === `draw-${selectedSchedule.id}` ? 'Drawing...' : 'Draw Letters'} onPress={drawCodeLetters} disabled={busyId === `draw-${selectedSchedule.id}` || eligibleForCodes.length === 0} icon={<RefreshCw size={14} color="#FFF" />} size="sm" /> : null}
               </View>
-              <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">Only checked-in entries are included in the draw.</Text>
+              <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">Only checked-in entries are included. Fixed manual letters stay unchanged.</Text>
             </SsfCard>
           )}
 
@@ -392,8 +399,11 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
                     </View>
                   ) : (
                     <View className="flex-row items-center gap-2">
-                      <Text className={`font-poppins-black text-lg ${eligible ? 'text-ssf-primary' : 'text-slate-300'}`}>{eligible ? entry.code_letter || '—' : '—'}</Text>
-                      {eligible && !isLocked ? <PortalAction label="Edit" disabled={saving} onPress={() => { setEditingEntry(entry); setLetterDraft(entry.code_letter || ''); setLetterError(''); }} /> : null}
+                      <View className="min-w-[24px] items-center">
+                        <Text className={`font-poppins-black text-lg ${eligible ? 'text-ssf-primary' : 'text-slate-300'}`}>{eligible ? entry.code_letter || '—' : '—'}</Text>
+                        {eligible && entry.code_letter_fixed ? <Text className="font-poppins text-[10px] text-ssf-text-muted">Fixed</Text> : null}
+                      </View>
+                      {eligible && !isLocked ? <PortalAction label={entry.code_letter ? 'Edit' : 'Assign'} disabled={!!busyId} onPress={() => { setEditingEntry(entry); setLetterDraft(entry.code_letter || ''); setLetterError(''); }} /> : null}
                     </View>
                   )}
                 </View>
@@ -417,13 +427,15 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
         {editingEntry ? (
           <View className="absolute inset-0 z-50 items-center justify-center bg-black/50 p-4">
             <SsfCard className="w-full max-w-sm p-5">
-              <Text className="font-poppins-bold text-lg text-ssf-text">Edit Code Letter</Text>
+              <Text className="font-poppins-bold text-lg text-ssf-text">{editingEntry.code_letter ? 'Edit Code Letter' : 'Assign Code Letter'}</Text>
               <Text className="mb-4 mt-1 font-poppins text-sm text-ssf-text-muted">{editingEntry.participant_name}</Text>
-              <TextInput value={letterDraft} onChangeText={(value) => setLetterDraft(value.slice(-1).toUpperCase().replace(/[^A-Z]/g, ''))} placeholder="A-Z" maxLength={1} autoCapitalize="characters" className="h-12 rounded-xl border border-ssf-border text-center font-poppins-black text-2xl text-ssf-text" />
+              <TextInput value={letterDraft} editable={!busyId} onChangeText={(value) => setLetterDraft(value.slice(-1).toUpperCase().replace(/[^A-Z]/g, ''))} placeholder="A-Z" maxLength={1} autoCapitalize="characters" className="h-10 rounded-xl border border-ssf-border text-center font-poppins-black text-xl text-ssf-text" />
+              <Text className="mt-2 font-poppins text-xs text-ssf-text-muted">{codeLetterPreview(editingEntry.code_letter, letterDraft,
+                codeLetterTarget(eventRegistrations(selectedSchedule.id), editingEntry.id, letterDraft)?.participant_name || undefined)}</Text>
               {letterError ? <Text className="mt-2 font-poppins text-xs text-red-600">{letterError}</Text> : null}
               <View className="mt-4 flex-row gap-2">
-                <SsfButton label="Cancel" variant="outline" className="flex-1" onPress={() => setEditingEntry(null)} />
-                <SsfButton label={busyId === editingEntry.id ? 'Saving...' : 'Save'} className="flex-1" onPress={() => { void saveLetter(); }} disabled={busyId === editingEntry.id} />
+                <SsfButton label="Cancel" variant="outline" className="flex-1" disabled={!!busyId} onPress={() => setEditingEntry(null)} />
+                <SsfButton label={busyId === editingEntry.id ? 'Saving...' : codeLetterTarget(eventRegistrations(selectedSchedule.id), editingEntry.id, letterDraft) ? 'Swap' : 'Assign'} className="flex-1" onPress={() => { void saveLetter(); }} disabled={!!busyId} />
               </View>
             </SsfCard>
           </View>

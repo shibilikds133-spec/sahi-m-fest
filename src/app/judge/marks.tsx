@@ -12,6 +12,7 @@ import { judgeTokenService } from '../../services/judgeTokenService';
 import { pointsService } from '../../services/pointsService';
 import { GradeThresholds } from '../../core/utils/flexiblePointsEngine';
 import { calculateGrade } from '../../services/judgeService';
+import { useCodeLetterUpdates } from '../../core/hooks/useCodeLetterUpdates';
 import {
   getScoringRulesForItem,
   formatCriteriaForUI,
@@ -30,6 +31,16 @@ export default function JudgeMarksPage() {
   const [marks, setMarks] = useState<Record<string, Record<string, number>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  useCodeLetterUpdates(session?.schedule_id ? `schedule:${session.schedule_id}` : null, async () => {
+    if (!session?.token) return;
+    const { data, error } = await databaseProvider.getJudgeRegistrationsByToken<any>(session.token);
+    if (error) return;
+    // Refresh labels only: keep the active registration, mark drafts, input
+    // focus, submission state and the in-flight sync queue bound to their IDs.
+    const letters = new Map((data ?? []).map((row: any) => [row.id, row.code_letter]));
+    setRegistrations((current) => current.map((row) => letters.has(row.id)
+      ? { ...row, code_letter: letters.get(row.id) } : row));
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [eventCriteria, setEventCriteria] = useState<any[]>([]);

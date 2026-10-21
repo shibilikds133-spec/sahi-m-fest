@@ -13,8 +13,8 @@ DO $$
 DECLARE tenant uuid:=gen_random_uuid(); other_tenant uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); judge_user uuid:=gen_random_uuid();
   festival uuid:=gen_random_uuid(); root uuid:=gen_random_uuid(); fields jsonb; config jsonb; saved public.points_config;
   item_ids uuid[]:='{}'; schedule_ids uuid[]:='{}'; team_ids uuid[]:='{}'; reg_ids uuid[]:='{}';
-  item uuid; schedule uuid; team uuid; participant uuid; reg uuid; i integer; j integer;
-  entries jsonb; answer jsonb; award jsonb; draft jsonb:='{}'; workspace jsonb; submission jsonb; request uuid;
+  item uuid; schedule uuid; team uuid; participant uuid; reg uuid; i integer; j integer; entry_size integer;
+  entries jsonb; answer jsonb; award jsonb; group_award jsonb; group_config jsonb; draft jsonb:='{}'; workspace jsonb; submission jsonb; request uuid;
   f1 uuid:=gen_random_uuid(); f2 uuid:=gen_random_uuid(); expected integer[]:=ARRAY[16,24,22,30]; ctx jsonb;
   token_id uuid:=gen_random_uuid(); judge_id uuid:=gen_random_uuid(); token_value text:=upper(gen_random_uuid()::text);
 BEGIN
@@ -66,7 +66,26 @@ BEGIN
       jsonb_set(config->'point_brackets'->0,'{min}','4'::jsonb))),
     item_ids[4],'A+',1,100,3,false,NULL);
   PERFORM pg_temp.assert(award->>'profile'='both' AND (award->>'total')::integer=30,
-    'member-count OFF uses the smallest configured range regardless of array order and group size');
+    'legacy point rows resolve to the same default award regardless of member count');
+  group_config:=to_jsonb(saved)||jsonb_build_object(
+    'separate_group_brackets',true,'member_brackets_enabled',true,'allow_bracket_override',true,
+    'point_brackets',jsonb_build_array(jsonb_build_object('key','participant_default','label','Participant','min',1,'max',null,'enabled',true,'points',jsonb_build_array(9,6,3,1))),
+    'group_point_brackets',jsonb_build_array(
+      jsonb_build_object('key','group_default','label','From 2','min',2,'max',8,'enabled',true,'points',jsonb_build_array(15,12,8,3)),
+      jsonb_build_object('key','group_large','label','9 and above','min',9,'max',null,'enabled',true,'points',jsonb_build_array(5,4,3,2))),
+    'grade_boost_item_ids',jsonb_build_array(item_ids[4]),'rank_boost_item_ids',jsonb_build_array(item_ids[4]),
+    'grade_boost_points',jsonb_build_object('participant_default',jsonb_build_array(40,35,30,25)),
+    'group_grade_boost_points',jsonb_build_object('group_default',jsonb_build_array(25,21,16,10)),
+    'rank_boost_points',jsonb_build_array(13,10,5),
+    'grade_boost_sections',jsonb_build_array(jsonb_build_object('id','group-grade','item_ids',jsonb_build_array(item_ids[4]),
+      'points',jsonb_build_object('participant_default',jsonb_build_array(40,35,30,25)),
+      'group_points',jsonb_build_object('group_default',jsonb_build_array(25,21,16,10)))),
+    'rank_boost_sections',jsonb_build_array(jsonb_build_object('id','group-rank','item_ids',jsonb_build_array(item_ids[4]),'points',jsonb_build_array(13,10,5))));
+  FOREACH entry_size IN ARRAY ARRAY[1,5,100] LOOP
+    group_award:=scoring_private.award(group_config,item_ids[4],'A+',1,entry_size,3,true,'group_default');
+    PERFORM pg_temp.assert(group_award->>'bracket_key'='group_default' AND group_award->>'profile'='both' AND
+      (group_award->>'total')::integer=38,'separate group defaults and item-specific boosts apply at every member count');
+  END LOOP;
   PERFORM pg_temp.denied(format('select public.save_scoring_configuration(%L,0,%L::jsonb,null)',festival,config),'stale config save rejected');
   PERFORM pg_temp.denied(format('select public.save_scoring_configuration(%L,1,%L::jsonb,null)',festival,config-'grade_thresholds'),'missing thresholds rejected');
   FOR i IN 1..4 LOOP
@@ -174,10 +193,16 @@ BEGIN
   UPDATE public.judge_tokens SET is_used=true WHERE id=token_id;
   PERFORM pg_temp.denied(format('select public.get_judge_scoring_context(%L)',token_value),'used judge token cannot access active context');
   PERFORM pg_temp.denied(format('select public.upsert_judge_mark(%L,%L,''{}'',76,''draft'',''total_only'',80,''[]'')',token_value,reg),'used token cannot save marks');
-  config:=jsonb_set(config,'{point_brackets,0,min}','4'::jsonb)||'{"member_brackets_enabled":false}'::jsonb;
-  saved:=public.save_scoring_configuration(festival,2,config,'Use one configured range for all entry sizes');
-  PERFORM pg_temp.assert(saved.config_version=3 AND NOT saved.member_brackets_enabled,
-    'member-count switch persists without a hardcoded member number');
+  config:=config||jsonb_build_object('member_brackets_enabled',true,'allow_bracket_override',true,
+    'point_brackets',jsonb_build_array(
+      jsonb_build_object('key','large','label','21 and above','min',21,'max',null,'enabled',true,'points',jsonb_build_array(5,4,3,2)),
+      jsonb_build_object('key','shared','label','From 2','min',2,'max',20,'enabled',true,'points',jsonb_build_array(9,6,3,1))),
+    'grade_boost_points',jsonb_build_object('shared',jsonb_build_array(17,14,11,8),'large',jsonb_build_array(12,10,8,6)));
+  saved:=public.save_scoring_configuration(festival,2,config,'Use one default grade-points value for all entry sizes');
+  PERFORM pg_temp.assert(saved.config_version=3 AND NOT saved.member_brackets_enabled AND NOT saved.allow_bracket_override AND
+    jsonb_array_length(saved.point_brackets)=1 AND saved.point_brackets->0->>'key'='shared' AND
+    (saved.point_brackets->0->>'min')::integer=1 AND saved.point_brackets->0->'max'='null'::jsonb,
+    'legacy ranges persist as one open-ended default point row');
   answer:=public.preview_competition_points(schedule_ids[1],3,entries,'judges');
   PERFORM pg_temp.assert((SELECT bool_and(value->'calculation'->>'bracket_key'='shared') FROM jsonb_each(answer->'results')),
     'published preview uses configured bracket with member-count switch off');

@@ -9,6 +9,7 @@ import { supabase } from '@/core/config/supabase';
 import { useAuthStore } from '@/core/store/authStore';
 import { useFestival } from '@/core/hooks/useFestival';
 import { ui } from '@/constants/designSystem';
+import { useCodeLetterUpdates } from '@/core/hooks/useCodeLetterUpdates';
 
 
 interface StrategicResult {
@@ -39,12 +40,17 @@ export default function SmartAnnouncerPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailedResults, setDetailedResults] = useState<any[]>([]);
   const [selectedItemName, setSelectedItemName] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  useCodeLetterUpdates(isDetailsModalOpen && currentFestival?.id ? `festival:${currentFestival.id}` : null, async () => {
+    if (isDetailsModalOpen && selectedItemId) await fetchDetailedResults(selectedItemId, selectedItemName);
+  });
 
   // Team Filter State
   const [teams, setTeams] = useState<string[]>([]);
   const [selectedFilterTeam, setSelectedFilterTeam] = useState<string>('All');
 
   const fetchDetailedResults = async (itemId: string, itemName: string) => {
+    setSelectedItemId(itemId);
     setIsDetailsModalOpen(true);
     setLoadingDetails(true);
     setSelectedItemName(itemName);

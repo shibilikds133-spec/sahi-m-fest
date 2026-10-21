@@ -33,38 +33,70 @@ const parseBrackets = (value: unknown): PointBracket[] => array(value).map(row =
   min: configurationNumber(row.min), max: row.max === null ? null : configurationNumber(row.max),
   points: gradePoints(row.points), enabled: row.enabled !== false,
 }));
+const singleDefaultBracket = (rows: PointBracket[]): PointBracket[] => {
+  const keys = rows.map(row => row.key);
+  const validRows = rows.every(row => row.key && Number.isSafeInteger(row.min) && row.min >= 1 &&
+    (row.max === null || (Number.isSafeInteger(row.max) && row.max >= row.min)));
+  if (!validRows || new Set(keys).size !== keys.length) return rows;
+  const enabled = rows.filter(row => row.enabled).sort((left, right) => left.min - right.min || left.key.localeCompare(right.key));
+  const selected = enabled[0];
+  return selected ? [{ ...selected, label: 'Default grade points', min: 1, max: null, enabled: true }] : rows;
+};
 const boostMap = (value: any): Record<string, GradePoints> => Object.fromEntries(
   Object.entries(value && typeof value === 'object' && !Array.isArray(value) ? value : {})
     .map(([key, points]) => [key, gradePoints(points)]),
 );
-export const normalizePointsConfig = (record?: any): FlexiblePointsConfig => ({
-  // Legacy mode remains metadata; it never supplies numerical scoring rules.
-  mode: ['official', 'hybrid', 'custom'].includes(record?.points_mode) ? record.points_mode : 'custom',
-  rankPoints: [record?.rank_1_points, record?.rank_2_points, record?.rank_3_points].map(configurationNumber) as [number, number, number],
-  thresholds: {
-    aPlus: configurationNumber(record?.grade_thresholds?.a_plus), a: configurationNumber(record?.grade_thresholds?.a),
-    b: configurationNumber(record?.grade_thresholds?.b), c: configurationNumber(record?.grade_thresholds?.c),
-  },
-  brackets: parseBrackets(record?.point_brackets), groupBrackets: parseBrackets(record?.group_point_brackets),
-  separateGroupBrackets: record?.separate_group_brackets === true,
-  gradeBoostEnabled: record?.grade_boost_enabled !== false,
-  rankBoostEnabled: record?.rank_boost_enabled !== false,
-  memberBracketsEnabled: record?.member_brackets_enabled !== false,
-  autoBracketSelection: record?.auto_bracket_selection === true, allowBracketOverride: record?.allow_bracket_override === true,
-  rule12Enabled: record?.less_than_3_teams_rule === true, rule12MinTeams: configurationNumber(record?.rule12_min_teams),
-  rule12Behavior: record?.rule12_behavior, enableGraceMarks: record?.enable_grace_marks === true,
-  version: Number.isInteger(record?.config_version) ? record.config_version : 0,
-  gradeBoostPoints: boostMap(record?.grade_boost_points), groupGradeBoostPoints: boostMap(record?.group_grade_boost_points),
-  rankBoostPoints: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number],
-  gradeBoostItemIds: array(record?.grade_boost_item_ids), rankBoostItemIds: array(record?.rank_boost_item_ids),
-  gradeBoostSections: array(record?.grade_boost_sections).length ? array(record.grade_boost_sections).map((s: any) => ({
-    id: String(s.id ?? ''), itemIds: array(s.item_ids), points: boostMap(s.points), groupPoints: boostMap(s.group_points),
-  })) : [{ id: 'legacy-grade-section', itemIds: array(record?.grade_boost_item_ids), points: boostMap(record?.grade_boost_points), groupPoints: boostMap(record?.group_grade_boost_points) }],
-  rankBoostSections: array(record?.rank_boost_sections).length ? array(record.rank_boost_sections).map((s: any) => ({
-    id: String(s.id ?? ''), itemIds: array(s.item_ids), points: [0, 1, 2].map(i => configurationNumber(s.points?.[i])) as [number, number, number],
-  })) : [{ id: 'legacy-rank-section', itemIds: array(record?.rank_boost_item_ids), points: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number] }],
-  graceFields: array(record?.grace_fields).map(f => ({ id: String(f.id ?? ''), name: String(f.name ?? ''), maxMarks: configurationNumber(f.max_marks) })),
-});
+const keepDefaultPointMap = (value: any, key: string | undefined): Record<string, GradePoints> => {
+  const parsed = boostMap(value);
+  return key && Object.prototype.hasOwnProperty.call(parsed, key) ? { [key]: parsed[key] } : {};
+};
+export const normalizePointsConfig = (record?: any): FlexiblePointsConfig => {
+  const brackets = singleDefaultBracket(parseBrackets(record?.point_brackets));
+  const separateGroupBrackets = record?.separate_group_brackets === true;
+  const groupBrackets = separateGroupBrackets ? singleDefaultBracket(parseBrackets(record?.group_point_brackets)) : brackets;
+  const participantKey = brackets.find(bracket => bracket.enabled)?.key;
+  const groupKey = groupBrackets.find(bracket => bracket.enabled)?.key;
+  const gradeBoostPoints = keepDefaultPointMap(record?.grade_boost_points, participantKey);
+  const groupGradeBoostPoints = keepDefaultPointMap(record?.group_grade_boost_points, groupKey);
+  const storedGradeSections = array(record?.grade_boost_sections);
+  const storedRankSections = array(record?.rank_boost_sections);
+  const gradeBoostSections = storedGradeSections.length ? storedGradeSections.map((section: any) => ({
+    id: String(section.id ?? ''), itemIds: array(section.item_ids),
+    points: keepDefaultPointMap(section.points, participantKey),
+    groupPoints: keepDefaultPointMap(section.group_points, groupKey),
+  })) : [{ id: 'legacy-grade-section', itemIds: array(record?.grade_boost_item_ids),
+    points: gradeBoostPoints, groupPoints: groupGradeBoostPoints }];
+  const rankBoostSections = storedRankSections.length ? storedRankSections.map((section: any) => ({
+    id: String(section.id ?? ''), itemIds: array(section.item_ids),
+    points: [0, 1, 2].map(i => configurationNumber(section.points?.[i])) as [number, number, number],
+  })) : [{ id: 'legacy-rank-section', itemIds: array(record?.rank_boost_item_ids),
+    points: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number] }];
+  return {
+    // Legacy mode remains metadata; it never supplies numerical scoring rules.
+    mode: ['official', 'hybrid', 'custom'].includes(record?.points_mode) ? record.points_mode : 'custom',
+    rankPoints: [record?.rank_1_points, record?.rank_2_points, record?.rank_3_points].map(configurationNumber) as [number, number, number],
+    thresholds: {
+      aPlus: configurationNumber(record?.grade_thresholds?.a_plus), a: configurationNumber(record?.grade_thresholds?.a),
+      b: configurationNumber(record?.grade_thresholds?.b), c: configurationNumber(record?.grade_thresholds?.c),
+    },
+    brackets, groupBrackets,
+    separateGroupBrackets,
+    gradeBoostEnabled: record?.grade_boost_enabled !== false,
+    rankBoostEnabled: record?.rank_boost_enabled !== false,
+    // Compatibility fields remain in the config shape, but member-count scoring
+    // and bracket overrides are no longer part of the active scoring contract.
+    memberBracketsEnabled: false,
+    autoBracketSelection: record?.auto_bracket_selection === true, allowBracketOverride: false,
+    rule12Enabled: record?.less_than_3_teams_rule === true, rule12MinTeams: configurationNumber(record?.rule12_min_teams),
+    rule12Behavior: record?.rule12_behavior, enableGraceMarks: record?.enable_grace_marks === true,
+    version: Number.isInteger(record?.config_version) ? record.config_version : 0,
+    gradeBoostPoints, groupGradeBoostPoints,
+    rankBoostPoints: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number],
+    gradeBoostItemIds: array(record?.grade_boost_item_ids), rankBoostItemIds: array(record?.rank_boost_item_ids),
+    gradeBoostSections, rankBoostSections,
+    graceFields: array(record?.grace_fields).map(f => ({ id: String(f.id ?? ''), name: String(f.name ?? ''), maxMarks: configurationNumber(f.max_marks) })),
+  };
+};
 export const setDefaultGradePoint = (
   config: FlexiblePointsConfig, group: boolean, gradeIndex: number, value: number, newBracketKey: string,
 ): FlexiblePointsConfig => {
@@ -86,26 +118,37 @@ export const setDefaultGradePoint = (
     return { ...bracket, points };
   }) };
 };
-export const serializePointsConfig = (c: FlexiblePointsConfig) => ({
-  points_mode: c.mode, rank_1_points: c.rankPoints[0], rank_2_points: c.rankPoints[1], rank_3_points: c.rankPoints[2],
-  grade_thresholds: { a_plus: c.thresholds.aPlus, a: c.thresholds.a, b: c.thresholds.b, c: c.thresholds.c },
-  point_brackets: c.brackets, group_point_brackets: c.separateGroupBrackets ? c.groupBrackets : c.brackets,
-  separate_group_brackets: c.separateGroupBrackets, auto_bracket_selection: c.autoBracketSelection,
-  grade_boost_enabled: c.gradeBoostEnabled, rank_boost_enabled: c.rankBoostEnabled,
-  member_brackets_enabled: c.memberBracketsEnabled,
-  allow_bracket_override: c.allowBracketOverride, less_than_3_teams_rule: c.rule12Enabled,
-  rule12_min_teams: Number.isFinite(c.rule12MinTeams) ? c.rule12MinTeams : null, rule12_behavior: c.rule12Behavior ?? null,
-  enable_grace_marks: c.enableGraceMarks,
-  grade_boost_sections: c.gradeBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points, group_points: s.groupPoints })),
-  rank_boost_sections: c.rankBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points.every(Number.isFinite) ? s.points : [] })),
-  // Keep legacy columns as a compatibility projection; new scoring reads section arrays.
-  grade_boost_points: Object.assign({}, ...c.gradeBoostSections.map(s => s.points)),
-  group_grade_boost_points: Object.assign({}, ...c.gradeBoostSections.map(s => s.groupPoints)),
-  rank_boost_points: c.rankBoostSections[0]?.points.every(Number.isFinite) ? c.rankBoostSections[0].points : [],
-  grade_boost_item_ids: [...new Set(c.gradeBoostSections.flatMap(s => s.itemIds))],
-  rank_boost_item_ids: [...new Set(c.rankBoostSections.flatMap(s => s.itemIds))],
-  grace_fields: c.graceFields.map(f => ({ id: f.id, name: f.name.trim(), max_marks: f.maxMarks })),
-});
+export const serializePointsConfig = (c: FlexiblePointsConfig) => {
+  const brackets = singleDefaultBracket(c.brackets);
+  const groupBrackets = c.separateGroupBrackets ? singleDefaultBracket(c.groupBrackets) : brackets;
+  const participantKey = brackets.find(bracket => bracket.enabled)?.key;
+  const groupKey = groupBrackets.find(bracket => bracket.enabled)?.key;
+  const gradeBoostSections = c.gradeBoostSections.map(section => ({
+    ...section,
+    points: keepDefaultPointMap(section.points, participantKey),
+    groupPoints: keepDefaultPointMap(section.groupPoints, groupKey),
+  }));
+  return {
+    points_mode: c.mode, rank_1_points: c.rankPoints[0], rank_2_points: c.rankPoints[1], rank_3_points: c.rankPoints[2],
+    grade_thresholds: { a_plus: c.thresholds.aPlus, a: c.thresholds.a, b: c.thresholds.b, c: c.thresholds.c },
+    point_brackets: brackets, group_point_brackets: groupBrackets,
+    separate_group_brackets: c.separateGroupBrackets, auto_bracket_selection: c.autoBracketSelection,
+    grade_boost_enabled: c.gradeBoostEnabled, rank_boost_enabled: c.rankBoostEnabled,
+    member_brackets_enabled: false,
+    allow_bracket_override: false, less_than_3_teams_rule: c.rule12Enabled,
+    rule12_min_teams: Number.isFinite(c.rule12MinTeams) ? c.rule12MinTeams : null, rule12_behavior: c.rule12Behavior ?? null,
+    enable_grace_marks: c.enableGraceMarks,
+    grade_boost_sections: gradeBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points, group_points: s.groupPoints })),
+    rank_boost_sections: c.rankBoostSections.map(s => ({ id: s.id, item_ids: s.itemIds, points: s.points.every(Number.isFinite) ? s.points : [] })),
+    // Keep legacy columns as a compatibility projection; new scoring reads section arrays.
+    grade_boost_points: Object.assign({}, ...gradeBoostSections.map(s => s.points)),
+    group_grade_boost_points: Object.assign({}, ...gradeBoostSections.map(s => s.groupPoints)),
+    rank_boost_points: c.rankBoostSections[0]?.points.every(Number.isFinite) ? c.rankBoostSections[0].points : [],
+    grade_boost_item_ids: [...new Set(c.gradeBoostSections.flatMap(s => s.itemIds))],
+    rank_boost_item_ids: [...new Set(c.rankBoostSections.flatMap(s => s.itemIds))],
+    grace_fields: c.graceFields.map(f => ({ id: f.id, name: f.name.trim(), max_marks: f.maxMarks })),
+  };
+};
 export const calculateGradeFromConfig = (total: number, maximum: number, config: Pick<FlexiblePointsConfig, 'thresholds'>): string | null => {
   if (!Number.isFinite(total) || !Number.isFinite(maximum) || maximum <= 0 || total < 0 || total > maximum) return null;
   const { aPlus, a, b, c } = config.thresholds;
@@ -113,15 +156,13 @@ export const calculateGradeFromConfig = (total: number, maximum: number, config:
   const pct = total / maximum * 100;
   return pct >= aPlus ? 'A+' : pct >= a ? 'A' : pct >= b ? 'B' : pct >= c ? 'C' : null;
 };
-export const resolvePointBracket = (config: FlexiblePointsConfig, size: number, group: boolean, override?: string | null) => {
+export const resolvePointBracket = (config: FlexiblePointsConfig, _size: number, group: boolean, override?: string | null) => {
   const enabled = (group && config.separateGroupBrackets ? config.groupBrackets : config.brackets).filter(b => b.enabled);
-  if (!config.memberBracketsEnabled) {
-    const bracket = [...enabled].sort((a, b) => a.min - b.min)[0] ?? null;
-    if (override && override !== bracket?.key) return null;
-    return bracket;
-  }
-  if (override && config.allowBracketOverride) return enabled.find(b => b.key === override) ?? null;
-  return enabled.find(b => size >= b.min && (b.max === null || size <= b.max)) ?? null;
+  const bracket = [...enabled].sort((a, b) => a.min - b.min || a.key.localeCompare(b.key))[0] ?? null;
+  // Keep accepting the persisted default key for older result flows, but never
+  // let a client choose a different member-count bracket.
+  if (override && override !== bracket?.key) return null;
+  return bracket;
 };
 export const getPointsProfile = (config: FlexiblePointsConfig, itemId: string): PointsProfile => {
   const g = config.gradeBoostSections.some(section => section.itemIds.includes(itemId)), r = config.rankBoostSections.some(section => section.itemIds.includes(itemId));
@@ -158,6 +199,7 @@ export const calculateFlexiblePoints = ({ grade, rank, groupSize, competingTeams
 };
 export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] => {
   const errors: string[] = [];
+  if (c.memberBracketsEnabled) errors.push('Member-count grade brackets are no longer supported. Reload the default grade-points configuration.');
   const gradeIds = c.gradeBoostSections.flatMap(section => section.itemIds), rankIds = c.rankBoostSections.flatMap(section => section.itemIds);
   if (!c.gradeBoostEnabled && gradeIds.length) errors.push('Remove Grade Boost competitions before turning it off.');
   if (!c.rankBoostEnabled && rankIds.length) errors.push('Remove Rank Boost competitions before turning it off.');
@@ -179,6 +221,8 @@ export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] 
   const check = (rows: PointBracket[], label: string, group = false) => {
     const enabled = rows.filter(b => b.enabled).sort((a, b) => a.min - b.min), keys = new Set<string>();
     if (!enabled.length) errors.push(label + ': add an enabled bracket.');
+    if (enabled.length && (enabled.length !== 1 || enabled[0].min !== 1 || enabled[0].max !== null))
+      errors.push(label + ': configure one default grade-points value for every member count.');
     rows.forEach(b => {
       if (!b.key || keys.has(b.key)) errors.push(label + ': bracket keys must be unique.');
       keys.add(b.key);

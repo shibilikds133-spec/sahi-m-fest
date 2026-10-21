@@ -47,10 +47,11 @@ export default function ProgramsScreen() {
   );
   const { data: items = [], isLoading: itemsLoading } = useItems(festival?.id);
   const applyItemChanges = useApplyItemChanges(festival?.id);
-  const { participants, isLoadingList: participantsLoading, registerParticipant, useFestivalRegistrations } = useParticipants();
+  const { participants, isLoadingList: participantsLoading, registerParticipant, deleteRegistration, useFestivalRegistrations } = useParticipants();
   const { data: festivalRegistrations = [] } = useFestivalRegistrations(festival?.id);
   const [section, setSection] = useState<'individual' | 'general'>('individual');
   const [activeCard, setActiveCard] = useState<{ item: ProgramItem; category: string; kind: 'participant' | 'general_team' } | null>(null);
+  const [cardModalMode, setCardModalMode] = useState<'details' | 'assign'>('assign');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [participantCategoryFilter, setParticipantCategoryFilter] = useState('All categories');
@@ -61,6 +62,7 @@ export default function ProgramsScreen() {
   const [itemToDeactivate, setItemToDeactivate] = useState<ProgramItem | null>(null);
   const [deactivating, setDeactivating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDeselect, setConfirmDeselect] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -108,6 +110,13 @@ export default function ProgramsScreen() {
   ), [participants, festival?.id, visibleOrganisationIds, activeCard?.category, activeCard?.kind, activeCard?.item.gender]);
   const currentRegistrations = entries.data ?? [];
   const participantById = useMemo(() => new Map((participants as any[]).map(person => [person.id, person])), [participants]);
+  const activeAssignedRegistrations = useMemo(() => festivalRegistrations.filter((row: any) =>
+    activeCard?.kind === 'participant' && row.item_id === activeCard.item.id && row.participant_id && row.status !== 'rejected'
+      && matchesCategory(String(participantById.get(row.participant_id)?.category_code || '').trim().toUpperCase(), activeCard.category)
+  ), [festivalRegistrations, activeCard, participantById]);
+  const activeAssignedIds = useMemo(() => new Set(activeAssignedRegistrations.map((row: any) => row.participant_id)), [activeAssignedRegistrations]);
+  const activeAssignedParticipants = useMemo(() => Array.from(activeAssignedIds)
+    .map(id => participantById.get(id)).filter(Boolean), [activeAssignedIds, participantById]);
   const chosenParticipants = eligibleParticipants.filter(person => selectedIds.includes(person.id));
   const orgIds = new Set(chosenParticipants.map(person => person.organisation_id).filter(Boolean));
   const requiredMin = Number(activeCard?.item.group_min_members ?? 0);
@@ -158,10 +167,46 @@ export default function ProgramsScreen() {
     finally { setSaving(false); }
   };
 
-  const openCard = (card: typeof programCards[number]) => {
-    setActiveCard(card); setSelectedIds([]); setSearch(''); setParticipantCategoryFilter('All categories'); setError(''); setNotice('');
+  const deselectSelected = async () => {
+    if (!festival || !activeCard || activeCard.kind !== 'participant' || saving || selectedIds.length === 0) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const selectedRows = activeAssignedRegistrations.filter((row: any) => selectedIds.includes(row.participant_id));
+      let removed = 0;
+      const failures: string[] = [];
+      for (const row of selectedRows as any[]) {
+        try {
+          const result = await deleteRegistration({
+            registrationId: row.id,
+            itemId: activeCard.item.id,
+            reason: 'Deselected from Programs page',
+          });
+          if (result.status === 'removed') removed += 1;
+          else failures.push(result.message || 'An assignment could not be deselected because it has dependent competition data.');
+        } catch (cause) {
+          failures.push(cause instanceof Error ? cause.message : 'An assignment could not be deselected.');
+        }
+      }
+      setSelectedIds([]);
+      setConfirmDeselect(false);
+      setNotice(`${removed} participant assignment(s) deselected.${failures.length ? ` ${failures.join(' ')}` : ''}`);
+      await queryClient.invalidateQueries({ queryKey: ['festivalRegistrations', festival.id] });
+      await queryClient.invalidateQueries({ queryKey: ['participantRegistrations'] });
+      await queryClient.invalidateQueries({ queryKey: ['program-intake-statuses', festival.id] });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not deselect the selected participants.');
+    } finally {
+      setSaving(false);
+    }
   };
-  const visibleParticipants = eligibleParticipants.filter(person =>
+
+  const openCard = (card: typeof programCards[number], mode: 'details' | 'assign') => {
+    setActiveCard(card); setCardModalMode(mode); setSelectedIds([]); setConfirmDeselect(false); setSearch(''); setParticipantCategoryFilter('All categories'); setError(''); setNotice('');
+  };
+  const visibleParticipants = (cardModalMode === 'details'
+    ? activeAssignedParticipants
+    : [...activeAssignedParticipants, ...eligibleParticipants.filter(person => !activeAssignedIds.has(person.id))])
+    .filter(person =>
     (participantCategoryFilter === 'All categories' || String(person.category_code || '').trim().toUpperCase() === participantCategoryFilter)
       && `${person.name ?? ''} ${person.chest_number ?? ''} ${person.organisations?.name ?? ''}`.toLowerCase().includes(search.trim().toLowerCase()));
   const participantCategoryOptions = Array.from(new Set(eligibleParticipants
@@ -240,8 +285,8 @@ export default function ProgramsScreen() {
           <View className="min-h-[76px] flex-row items-start justify-between gap-2"><View className="flex-1"><Text className="font-poppins-bold text-sm text-ui-text" numberOfLines={2}>{card.item.item_name_en || card.item.item_name_ml || card.item.item_code}</Text><Text className="mt-1 font-poppins text-[11px] text-ui-text-muted">{card.category}</Text></View><View className={`rounded-full px-2 py-1 ${complete ? 'bg-emerald-100' : 'bg-slate-100'}`}><Text className={`font-poppins-bold text-[10px] ${complete ? 'text-emerald-800' : 'text-slate-600'}`}>{complete ? 'Complete' : 'Open'}</Text></View></View>
           <View className="mb-3 flex-row flex-wrap gap-1.5"><View className="rounded-md bg-slate-100 px-2 py-1"><Text className="font-poppins-bold text-[10px] text-slate-700">{card.item.participation_type === 'individual' ? 'Individual' : 'Group'}</Text></View>{!!card.item.item_type && <View className="rounded-md bg-slate-100 px-2 py-1"><Text className="font-poppins-bold text-[10px] text-slate-700">{card.item.item_type}</Text></View>}</View>
           <Text className="mb-3 font-poppins text-[11px] text-ui-text-muted">{card.item.item_code} · {card.kind === 'general_team' ? `${existingGeneralCount(card.item.id)} team entries` : `${individualAssignedCount(card.item.id, card.category)} assigned`}</Text>
-          <View className="flex-row gap-2"><TouchableOpacity onPress={() => openCard(card)} className="flex-1 items-center rounded-md border border-ui-border px-2 py-2"><Text className="font-poppins-bold text-[11px] text-ui-text">View details</Text></TouchableOpacity><TouchableOpacity onPress={() => setItemToDeactivate(card.item)} accessibilityRole="button" accessibilityLabel={`Deactivate ${card.item.item_name_en || card.item.item_code}`} className="flex-row items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-2"><Trash2 size={13} color="#B91C1C"/><Text className="font-poppins-bold text-[11px] text-red-700">Delete</Text></TouchableOpacity></View>
-          <TouchableOpacity onPress={() => openCard(card)} className="mt-2 items-center rounded-md bg-emerald-800 px-2 py-2.5"><Text className="font-poppins-bold text-[11px] text-white">Assign participants</Text></TouchableOpacity>
+          <View className="flex-row gap-2"><TouchableOpacity onPress={() => openCard(card, 'details')} className="flex-1 items-center rounded-md border border-ui-border px-2 py-2"><Text className="font-poppins-bold text-[11px] text-ui-text">View participants</Text></TouchableOpacity><TouchableOpacity onPress={() => setItemToDeactivate(card.item)} accessibilityRole="button" accessibilityLabel={`Deactivate ${card.item.item_name_en || card.item.item_code}`} className="flex-row items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-2"><Trash2 size={13} color="#B91C1C"/><Text className="font-poppins-bold text-[11px] text-red-700">Delete</Text></TouchableOpacity></View>
+          <TouchableOpacity onPress={() => openCard(card, 'assign')} className="mt-2 items-center rounded-md bg-emerald-800 px-2 py-2.5"><Text className="font-poppins-bold text-[11px] text-white">Assign participants</Text></TouchableOpacity>
         </View>;
       })}</View>}
     </ScrollView>
@@ -263,21 +308,38 @@ export default function ProgramsScreen() {
       <View className="flex-1 items-center justify-center bg-black/40 p-3">
         <Pressable className="absolute inset-0" onPress={() => !saving && setActiveCard(null)} accessibilityRole="button" accessibilityLabel="Close participant picker" />
         <View style={{ width: Math.max(0, Math.min(width - 24, 900)), height: Math.max(0, Math.min(height - 24, 820)) }} className="rounded-2xl bg-white p-4">
-          <View className="mb-3 flex-row items-start"><View className="flex-1"><Text className="font-poppins-black text-lg text-ui-text">{activeCard?.item.item_name_en || activeCard?.item.item_code}</Text><Text className="font-poppins text-xs text-ui-text-muted">{activeCard?.category} · {activeCard?.kind === 'general_team' ? 'General team entry' : 'Individual participant'}</Text></View><TouchableOpacity onPress={() => !saving && setActiveCard(null)} accessibilityLabel="Close"><X size={20} color="#475569" /></TouchableOpacity></View>
+          <View className="mb-3 flex-row items-start"><View className="flex-1"><Text className="font-poppins-black text-lg text-ui-text">{activeCard?.item.item_name_en || activeCard?.item.item_code}</Text><Text className="font-poppins text-xs text-ui-text-muted">{activeCard?.category} · {activeCard?.kind === 'general_team' ? 'General team entry' : 'Individual participant'} · {cardModalMode === 'details' ? 'Assigned participants' : 'Assign participants'}</Text></View><TouchableOpacity onPress={() => !saving && setActiveCard(null)} accessibilityLabel="Close"><X size={20} color="#475569" /></TouchableOpacity></View>
+          {cardModalMode === 'details' && activeCard?.kind === 'general_team' ? <>
+            <Text className="mb-2 font-poppins text-xs text-ui-text-muted">Showing existing team entries and their assigned members only.</Text>
+            <ScrollView className="min-h-0 flex-1" style={{ flex: 1, minHeight: 80 }} keyboardShouldPersistTaps="handled">
+              {currentRegistrations.filter(entry => (entry as any).item?.id === activeCard.item.id).length ? currentRegistrations.filter(entry => (entry as any).item?.id === activeCard.item.id).map((entry: any) => <View key={entry.id} className="mb-2 rounded-lg border border-ui-border bg-white p-3"><Text className="font-poppins-bold text-sm text-ui-text">{entry.entry_chest_number} · {entry.organisation?.name || 'Organisation unavailable'}</Text>{(entry.members ?? []).map((member: any, index: number) => <Text key={`${entry.id}:${index}`} className="mt-1 font-poppins text-xs text-ui-text-muted">{member.participant?.name || 'Participant'}{member.participant?.chest_number ? ` · ${member.participant.chest_number}` : ''}</Text>)}</View>) : <Text className="py-4 font-poppins text-sm text-ui-text-muted">No team entries have been assigned to this program.</Text>}
+            </ScrollView>
+          </> : <>
           {activeCard?.kind === 'general_team' && <Text className="mb-2 font-poppins text-xs text-ui-text-muted">All categories are included. Choose {requiredMin}{requiredMax > requiredMin ? `–${requiredMax}` : ''} members from one organisation; the team entry is created for them.</Text>}
-          {activeCard?.kind === 'participant' && <Text className="mb-2 font-poppins text-xs text-ui-text-muted">Showing only {activeCard.category} participants.</Text>}
+          {activeCard?.kind === 'participant' && <Text className="mb-2 font-poppins text-xs text-ui-text-muted">{cardModalMode === 'details' ? `Showing only participants assigned to this ${activeCard.category} program.` : `Showing only ${activeCard.category} participants. Existing assignments appear first.`}</Text>}
           <View className="mb-2 h-10 flex-row items-center rounded-lg border border-ui-border px-3"><Search size={15} color="#64748B"/><TextInput value={search} onChangeText={setSearch} placeholder="Search name, chest number or organisation" className="ml-2 flex-1 font-poppins text-sm outline-none" /></View>
           {activeCard?.kind === 'general_team' && <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2 max-h-10 flex-none"><View className="flex-row items-center gap-2"><TouchableOpacity onPress={() => setParticipantCategoryFilter('All categories')} className={`rounded-full border px-3 py-2 ${participantCategoryFilter === 'All categories' ? 'border-emerald-700 bg-emerald-700' : 'border-ui-border bg-white'}`}><Text className={`font-poppins-bold text-xs ${participantCategoryFilter === 'All categories' ? 'text-white' : 'text-ui-text'}`}>All categories</Text></TouchableOpacity>{participantCategoryOptions.map(category => <TouchableOpacity key={category} onPress={() => setParticipantCategoryFilter(category)} className={`rounded-full border px-3 py-2 ${participantCategoryFilter === category ? 'border-emerald-700 bg-emerald-700' : 'border-ui-border bg-white'}`}><Text className={`font-poppins-bold text-xs ${participantCategoryFilter === category ? 'text-white' : 'text-ui-text'}`}>{category}</Text></TouchableOpacity>)}</View></ScrollView>}
-          <Text className="mb-2 font-poppins text-xs text-ui-text-muted">{visibleParticipants.length} participants · {selectedIds.length} selected</Text>
+          <Text className="mb-2 font-poppins text-xs text-ui-text-muted">{visibleParticipants.length} participants{cardModalMode === 'assign' ? ` · ${selectedIds.length} selected` : ''}</Text>
           <ScrollView className="min-h-0 flex-1" style={{ flex: 1, minHeight: 80 }} keyboardShouldPersistTaps="handled">
             {visibleParticipants.length ? visibleParticipants.map(person => {
               const chosen = selectedIds.includes(person.id);
-              return <TouchableOpacity key={person.id} onPress={() => setSelectedIds(ids => chosen ? ids.filter(id => id !== person.id) : [...ids, person.id])} className={`mb-1 flex-row items-center rounded-lg border px-3 py-2 ${chosen ? 'border-emerald-500 bg-emerald-50' : 'border-ui-border bg-white'}`}><View className={`mr-3 h-5 w-5 items-center justify-center rounded border ${chosen ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'}`}>{chosen && <Check size={13} color="white"/>}</View><View className="flex-1"><Text className="font-poppins-bold text-sm text-ui-text">{person.name}</Text><Text className="font-poppins text-xs text-ui-text-muted">{person.chest_number || 'No chest number'} · {person.organisations?.name || 'Organisation unavailable'}{activeCard?.kind === 'general_team' ? ` · ${person.category_code || 'No category'}` : ''}</Text></View></TouchableOpacity>;
+              const alreadyAssigned = activeCard?.kind === 'participant' && activeAssignedIds.has(person.id);
+              const selectable = cardModalMode === 'details' ? alreadyAssigned : !alreadyAssigned;
+              return <TouchableOpacity key={person.id} disabled={!selectable} onPress={() => setSelectedIds(ids => chosen ? ids.filter(id => id !== person.id) : [...ids, person.id])} className={`mb-1 flex-row items-center rounded-lg border px-3 py-2 ${alreadyAssigned ? 'border-emerald-200 bg-emerald-50' : chosen ? 'border-emerald-500 bg-emerald-50' : 'border-ui-border bg-white'}`}><View className={`mr-3 h-5 w-5 items-center justify-center rounded border ${chosen ? 'border-emerald-600 bg-emerald-600' : alreadyAssigned ? 'border-emerald-500 bg-white' : 'border-slate-300'}`}>{chosen && <Check size={13} color="white"/>}{alreadyAssigned && !chosen && <Check size={13} color="#047857"/>}</View><View className="flex-1"><Text className="font-poppins-bold text-sm text-ui-text">{person.name}</Text><Text className="font-poppins text-xs text-ui-text-muted">{person.chest_number || 'No chest number'} · {person.organisations?.name || 'Organisation unavailable'}{activeCard?.kind === 'general_team' ? ` · ${person.category_code || 'No category'}` : ''}</Text></View>{alreadyAssigned && cardModalMode === 'assign' && <Text className="ml-2 font-poppins-bold text-[10px] text-emerald-800">Already assigned</Text>}</TouchableOpacity>;
             }) : <Text className="py-4 font-poppins text-sm text-ui-text-muted">No eligible participants in this category.</Text>}
           </ScrollView>
+          </>}
           {!!error && <Text className="my-2 font-poppins text-xs text-red-700">{error}</Text>}{!!notice && <Text className="my-2 font-poppins text-xs text-emerald-700">{notice}</Text>}
-          {activeCard?.kind === 'general_team' && selectedIds.length > 0 && (orgIds.size !== 1 || !generalSizeValid) && <Text className="mt-2 font-poppins text-xs text-amber-700">Select the configured team size and use one organisation.</Text>}
-          <View className="mt-3 flex-row flex-wrap gap-2"><SsfButton label={saving ? 'Adding…' : activeCard?.kind === 'general_team' ? 'Create team entry' : `Add selected (${selectedIds.length})`} onPress={addSelected} disabled={saving || !selectedIds.length || (activeCard?.kind === 'general_team' && (orgIds.size !== 1 || !generalSizeValid))}/><SsfButton label={saving ? 'Saving…' : cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || '') ? 'Reopen program' : 'Mark fully complete'} onPress={() => setComplete(!cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || ''))} disabled={saving}/></View>
+          {cardModalMode === 'details' && activeCard?.kind === 'participant' && <View className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            {confirmDeselect ? <>
+              <Text className="font-poppins text-xs text-amber-900">Remove the selected assignment(s) from this program? Participant records are kept. If check-in, code letters, marks, or results exist, the server will block removal and preserve the history.</Text>
+              <View className="mt-2 flex-row gap-2"><SsfButton label="Keep assignments" variant="outline" size="sm" onPress={() => setConfirmDeselect(false)} disabled={saving}/><SsfButton label={saving ? 'Deselecting…' : 'Confirm deselect'} size="sm" onPress={deselectSelected} disabled={saving || !selectedIds.length} className="bg-red-700"/></View>
+            </> : <SsfButton label={`Deselect selected (${selectedIds.length})`} variant="outline" size="sm" onPress={() => setConfirmDeselect(true)} disabled={saving || !selectedIds.length} className="border-amber-300 bg-white"/>}
+          </View>}
+          {cardModalMode === 'assign' && <>
+            {activeCard?.kind === 'general_team' && selectedIds.length > 0 && (orgIds.size !== 1 || !generalSizeValid) && <Text className="mt-2 font-poppins text-xs text-amber-700">Select the configured team size and use one organisation.</Text>}
+            <View className="mt-3 flex-row flex-wrap gap-2"><SsfButton label={saving ? 'Adding…' : activeCard?.kind === 'general_team' ? 'Create team entry' : `Add selected (${selectedIds.length})`} onPress={addSelected} disabled={saving || !selectedIds.length || (activeCard?.kind === 'general_team' && (orgIds.size !== 1 || !generalSizeValid))}/><SsfButton label={saving ? 'Saving…' : cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || '') ? 'Reopen program' : 'Mark fully complete'} onPress={() => setComplete(!cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || ''))} disabled={saving}/></View>
+          </>}
         </View>
       </View>
     </Modal>
