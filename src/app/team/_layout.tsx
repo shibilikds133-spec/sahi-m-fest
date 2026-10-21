@@ -14,6 +14,7 @@ export default function TeamLeaderLayout() {
         <Stack.Screen name="schedule/full" />
         <Stack.Screen name="results" />
         <Stack.Screen name="participants" />
+        <Stack.Screen name="programs" />
         <Stack.Screen name="announcements" />
         <Stack.Screen name="profile" />
       </Stack>

@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from "expo-router";
 import {
   CalendarDays,
+  ClipboardList,
   Home,
   LogOut,
   Menu,
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     path: "/team/participants",
     icon: ScrollText,
     match: (path) => path.includes("/team/participants"),
+  },
+  {
+    label: 'Programs',
+    path: '/team/programs',
+    icon: ClipboardList,
+    match: (path) => path.includes('/team/programs'),
   },
   {
     label: "Announcements",
