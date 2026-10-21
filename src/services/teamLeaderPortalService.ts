@@ -148,4 +148,33 @@ export const teamLeaderPortalService = {
   getPublishedResults: () => readRpc<TeamLeaderPublishedResult>('get_team_leader_published_results'),
   getStandings: () => readRpc<TeamLeaderStanding>('get_team_leader_standings'),
   getAnnouncements: () => readRpc<TeamLeaderAnnouncement>('get_team_leader_announcements'),
+  resetPassword: async (userId: string, festivalId: string) => {
+    const { data, error } = await supabase.functions.invoke('provision-team-leader', {
+      body: { action: 'reset_password', user_id: userId, festival_id: festivalId },
+    });
+    if (error) throw error;
+    if (!data?.success || typeof data?.password !== 'string') {
+      throw new Error(data?.message || 'Password reset did not complete.');
+    }
+    return data as { success: true; password: string; username: string };
+  },
+
+  selfUpdateCredentials: async (
+    newUsernameOrLegacyUserId: string | null,
+    newPasswordOrUsername: string,
+    legacyPassword?: string,
+  ) => {
+    // Keep the previous three-argument call shape working for older route copies.
+    const newUsername = legacyPassword === undefined ? newUsernameOrLegacyUserId : newPasswordOrUsername;
+    const newPassword = legacyPassword === undefined ? newPasswordOrUsername : legacyPassword;
+    const { data, error } = await supabase.functions.invoke('provision-team-leader', {
+      body: {
+        action: 'self_update_credentials',
+        new_username: newUsername,
+        new_password: newPassword,
+      },
+    });
+    if (error) throw error;
+    return data;
+  },
 };
