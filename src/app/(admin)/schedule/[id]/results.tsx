@@ -309,7 +309,7 @@ export default function ResultsPage() {
          if (marksCount > 0) anySubmissions = true;
          if (marksCount >= expectedJudges) fullyReadyCount++;
       } else {
-         const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null);
+         const marks = getJudgeMarks(reg.id).filter((m: any) => m.is_final === true);
          if (marks.length > 0) anySubmissions = true;
          if (marks.length >= expectedJudges) fullyReadyCount++;
       }
@@ -422,7 +422,7 @@ export default function ResultsPage() {
         if (mode === 'direct') {
           count = directMarks[reg.id] ? Object.keys(directMarks[reg.id].marks).length : 0;
         } else {
-          count = getJudgeMarks(reg.id).filter((m: any) => m.is_final || m.total_mark != null).length;
+          count = getJudgeMarks(reg.id).filter((m: any) => m.is_final === true).length;
         }
         
         if (count === 0) {
@@ -611,8 +611,12 @@ export default function ResultsPage() {
             {judgeSummary && (judgeSummary as any[]).length > 0 && (
               <View className="mt-1.5 gap-y-0.5">
                 {(judgeSummary as any[]).map((j: any, idx: number) => {
-                  const submitted = Number(j.submitted_count) || 0;
-                  const total = Number(j.total_assigned) || 0;
+                  const submitted = new Set(((markEntries as any[]) ?? [])
+                    .filter((entry: any) => entry.judge_id === j.judge_id
+                      && entry.is_final === true
+                      && scoringRegistrationIds.includes(entry.registration_id))
+                    .map((entry: any) => entry.registration_id)).size;
+                  const total = scoringRegistrationIds.length;
                   return (
                     <Text key={j.judge_id} className="font-poppins text-[10px] text-gray-600">
                       {idx + 1}. {j.judge_name}:{' '}

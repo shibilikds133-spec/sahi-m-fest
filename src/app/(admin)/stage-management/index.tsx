@@ -9,6 +9,12 @@ import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
 import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
 import { useAuthStore } from '../../../core/store/authStore';
 
+const getRegistrationsForSchedule = (registrations: any[], schedule: any) =>
+  registrations.filter((registration: any) =>
+    registration.item_id === schedule.item_id
+    && registration.festival_id === schedule.festival_id
+  );
+
 function ScheduleWorkflowBadges({ registrations = [] }: { registrations?: any[] }) {
   const activeRegs = registrations.filter((r: any) => r.status !== 'rejected');
   const verifiedRegs = activeRegs.filter((r: any) => r.is_verified);
@@ -180,7 +186,8 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
       // 4. Status/Workflow Filter
       let matchesStatus = true;
       if (selectedStatus !== 'All') {
-        const scheduleRegs = allRegistrations.filter((r: any) => r.schedule_id === schedule.id && r.status !== 'rejected');
+        const scheduleRegs = getRegistrationsForSchedule(allRegistrations, schedule)
+          .filter((registration: any) => registration.status !== 'rejected');
         const verifiedRegs = scheduleRegs.filter((r: any) => r.is_verified);
         
         const checkinDone = scheduleRegs.length > 0 && scheduleRegs.every((r: any) => r.is_verified);
@@ -748,7 +755,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
                 </View>
               </View>
               <View style={{ flex: 1.3 }} className="pr-3">
-                <ScheduleWorkflowBadges registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)} />
+                <ScheduleWorkflowBadges registrations={getRegistrationsForSchedule(allRegistrations, schedule)} />
               </View>
               <View style={{ width: 190 }} className="flex-row justify-end gap-x-2">
                 <TouchableOpacity
@@ -819,7 +826,7 @@ export function StageManagementDashboard({ venueIdOverride }: { venueIdOverride?
               </View>
 
               <ScheduleWorkflowBadges 
-                registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
+                registrations={getRegistrationsForSchedule(allRegistrations, schedule)}
               />
 
               {/* Action buttons — 2×2 grid on mobile */}

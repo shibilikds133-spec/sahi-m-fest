@@ -29,6 +29,12 @@ const normalizeCategory = (value: string) => {
   return norm === 'GN' ? 'GENERAL' : norm;
 };
 
+const getRegistrationsForSchedule = (registrations: any[], schedule: any) =>
+  registrations.filter((registration: any) =>
+    registration.item_id === schedule.item_id
+    && registration.festival_id === schedule.festival_id
+  );
+
 const categoryAliases: Record<string, string[]> = {
   LP: ['LP'],
   UP: ['UP'],
@@ -44,45 +50,20 @@ const categoryAliases: Record<string, string[]> = {
   GN: ['GENERAL', 'GN'],
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ScheduleStatusBadge({ scheduleId }: { scheduleId: string }) {
-  const { useJudgeSubmissionSummary } = useJudges();
-  const { data: summary } = useJudgeSubmissionSummary(scheduleId);
-  if (!summary || !(summary as any[]).length) return null;
-  const rows = summary as any[];
-  const totalSubmitted = rows.reduce((acc: number, j: any) => acc + Number(j.submitted_count), 0);
-  const totalExpected = rows.reduce((acc: number, j: any) => acc + Number(j.total_assigned), 0);
-  const allDone = rows.every((j: any) => Number(j.submitted_count) >= Number(j.total_assigned) && Number(j.total_assigned) > 0);
-  return (
-    <View className={`flex-row items-center gap-x-1 px-2 py-0.5 rounded-full mt-2 self-start ${
-      allDone ? 'bg-green-100' : totalSubmitted > 0 ? 'bg-orange-100' : 'bg-gray-100'
-    }`}>
-      <Text className={`font-poppins text-xs ${
-        allDone ? 'text-green-700' : totalSubmitted > 0 ? 'text-orange-700' : 'text-gray-500'
-      }`}>
-        {allDone ? `✅ Marks: All submitted` : `📝 Marks: ${totalSubmitted}/${totalExpected} submitted`}
-      </Text>
-    </View>
-  );
-}
-
 function ScheduleWorkflowBadges({
   scheduleId,
   registrations = [],
   isShuffleLocked,
-  marksCompleted = false,
-  expectedJudgeCount = 3,
   compact = false,
 }: {
   scheduleId: string;
   registrations?: any[];
   isShuffleLocked?: boolean;
-  marksCompleted?: boolean;
-  expectedJudgeCount?: number;
   compact?: boolean;
 }) {
-  const { useJudgeSubmissionSummary, useResults } = useJudges();
+  const { useJudgeSubmissionSummary, useMarkEntries, useResults } = useJudges();
   const { data: summary } = useJudgeSubmissionSummary(scheduleId);
+  const { data: markEntries } = useMarkEntries(scheduleId, 30000);
   const { data: results } = useResults(scheduleId);
   const resultRows = (results as any[]) ?? [];
   const hasInternalPublished = resultRows.some((row) =>
@@ -102,10 +83,15 @@ function ScheduleWorkflowBadges({
   const codesPending = verifiedRegs.length > 0 && verifiedRegs.some((r: any) => r.code_letter === null || r.code_letter === undefined) && !isShuffleLocked;
 
   const rows = (summary as any[]) ?? [];
-  const totalSubmitted = rows.reduce((acc: number, j: any) => acc + Number(j.submitted_count), 0);
-  const registrationsPerJudge = rows.length > 0 ? Number(rows[0].total_assigned) : 0;
-  const totalExpected = registrationsPerJudge * expectedJudgeCount;
-  const allDone = marksCompleted;
+  const eligibleRegistrationIds = new Set(verifiedRegs
+    .filter((registration: any) => !!registration.code_letter)
+    .map((registration: any) => registration.id));
+  const submittedEntries = new Set(((markEntries as any[]) ?? [])
+    .filter((entry: any) => entry.is_final === true && eligibleRegistrationIds.has(entry.registration_id))
+    .map((entry: any) => `${entry.judge_id}:${entry.registration_id}`));
+  const totalSubmitted = submittedEntries.size;
+  const totalExpected = eligibleRegistrationIds.size * rows.length;
+  const allDone = totalExpected > 0 && totalSubmitted >= totalExpected;
 
   const badges: { label: string; bg: string; text: string }[] = [];
 
@@ -294,7 +280,8 @@ export default function ScheduleDashboard() {
       // 5. Status/Workflow Filter
       let matchesStatus = true;
       if (selectedStatus !== 'All') {
-         const scheduleRegs = allRegistrations.filter((r: any) => r.schedule_id === schedule.id && r.status !== 'rejected');
+         const scheduleRegs = getRegistrationsForSchedule(allRegistrations, schedule)
+           .filter((registration: any) => registration.status !== 'rejected');
         const verifiedRegs = scheduleRegs.filter((r: any) => r.is_verified);
         
         const checkinDone = scheduleRegs.length > 0 && scheduleRegs.every((r: any) => r.is_verified);
@@ -900,10 +887,8 @@ export default function ScheduleDashboard() {
                 <View style={{ flex: 1.4 }} className="pr-3">
                   <ScheduleWorkflowBadges
                     scheduleId={schedule.id}
-                    registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
+                    registrations={getRegistrationsForSchedule(allRegistrations, schedule)}
                     isShuffleLocked={schedule.is_shuffle_locked}
-                    expectedJudgeCount={schedule.expected_judge_count || 3}
-                    marksCompleted={allJudgeWorkflowStatuses.find((status: any) => status.schedule_id === schedule.id)?.marks_completed === true}
                   />
                 </View>
                 <View style={{ flex: 2.1 }} className="flex-row flex-wrap justify-end gap-1.5">
@@ -1053,15 +1038,9 @@ export default function ScheduleDashboard() {
 
               <ScheduleWorkflowBadges 
                 scheduleId={schedule.id} 
-                registrations={allRegistrations.filter((r: any) => r.schedule_id === schedule.id)}
+                registrations={getRegistrationsForSchedule(allRegistrations, schedule)}
                 isShuffleLocked={schedule.is_shuffle_locked}
-                expectedJudgeCount={schedule.expected_judge_count || 3}
                 compact
-                marksCompleted={
-                  allJudgeWorkflowStatuses.find(
-                    (status: any) => status.schedule_id === schedule.id
-                  )?.marks_completed === true
-                }
               />
 
               {/* Action buttons — 2×2 grid on mobile */}

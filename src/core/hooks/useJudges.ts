@@ -50,6 +50,8 @@ export const useJudges = () => {
       judgeService.assignJudgesToSchedule(scheduleId, judgeIds),
     onSuccess: (_, { scheduleId }) => {
       queryClient.invalidateQueries({ queryKey: ['scheduleJudges', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['judgeSubmissionSummary', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['markEntries', scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
     },
   });
