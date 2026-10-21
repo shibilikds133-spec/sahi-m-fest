@@ -61,6 +61,25 @@ test('configured minimum-team behaviour applies to every profile without inventi
   config.rule12Behavior = 'no_points';
   assert.equal(award(config, 'both', { competingTeamsCount: 2 }).total, 0);
 });
+test('disabled minimum-team rule accepts missing rule values without changing configured scoring', () => {
+  const raw = { ...stored(), less_than_3_teams_rule: false, rule12_min_teams: null, rule12_behavior: null };
+  const config = normalizePointsConfig(raw);
+  assert.equal(config.rule12Enabled, false);
+  assert.ok(Number.isNaN(config.rule12MinTeams));
+  assert.equal(config.rule12Behavior, null);
+  assert.deepEqual(validateFlexiblePointsConfig(config), []);
+  assert.equal(award(config, 'both', { competingTeamsCount: 0 }).total, 30);
+
+  const saved = serializePointsConfig(config);
+  assert.equal(saved.less_than_3_teams_rule, false);
+  assert.equal(saved.rule12_min_teams, null);
+  assert.equal(saved.rule12_behavior, null);
+  assert.deepEqual(validateFlexiblePointsConfig(normalizePointsConfig(saved)), []);
+
+  const enabled = { ...config, rule12Enabled: true };
+  assert.ok(validateFlexiblePointsConfig(enabled).includes('Complete the minimum-team rule.'));
+  assert.throws(() => award(enabled, 'both', { competingTeamsCount: 0 }));
+});
 test('grade boosts use the same default point key for every member count, and missing defaults block scoring', () => {
   const config = normalizePointsConfig(stored());
   assert.equal(config.brackets.length, 1);

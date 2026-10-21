@@ -49,8 +49,8 @@ type PointsConfigRecord = {
   separate_group_brackets?: boolean;
   auto_bracket_selection?: boolean;
   allow_bracket_override?: boolean;
-  rule12_min_teams?: number;
-  rule12_behavior?: 'grade_only' | 'rank_and_grade' | 'no_points';
+  rule12_min_teams?: number | null;
+  rule12_behavior?: 'grade_only' | 'rank_and_grade' | 'no_points' | null;
   config_version?: number;
   change_reason?: string | null;
   enable_grace_marks?: boolean;

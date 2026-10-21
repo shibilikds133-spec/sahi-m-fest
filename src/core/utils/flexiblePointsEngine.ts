@@ -12,7 +12,7 @@ export type FlexiblePointsConfig = {
   brackets: PointBracket[]; groupBrackets: PointBracket[]; separateGroupBrackets: boolean;
   gradeBoostEnabled: boolean; rankBoostEnabled: boolean; memberBracketsEnabled: boolean;
   autoBracketSelection: boolean; allowBracketOverride: boolean; rule12Enabled: boolean;
-  rule12MinTeams: number; rule12Behavior: Rule12Behavior; enableGraceMarks: boolean; version: number;
+  rule12MinTeams: number; rule12Behavior: Rule12Behavior | null; enableGraceMarks: boolean; version: number;
   gradeBoostPoints: Record<string, GradePoints>; groupGradeBoostPoints: Record<string, GradePoints>;
   rankBoostPoints: [number, number, number]; gradeBoostItemIds: string[]; rankBoostItemIds: string[];
   gradeBoostSections: GradeBoostSection[]; rankBoostSections: RankBoostSection[];
@@ -88,7 +88,7 @@ export const normalizePointsConfig = (record?: any): FlexiblePointsConfig => {
     memberBracketsEnabled: false,
     autoBracketSelection: record?.auto_bracket_selection === true, allowBracketOverride: false,
     rule12Enabled: record?.less_than_3_teams_rule === true, rule12MinTeams: configurationNumber(record?.rule12_min_teams),
-    rule12Behavior: record?.rule12_behavior, enableGraceMarks: record?.enable_grace_marks === true,
+    rule12Behavior: record?.rule12_behavior ?? null, enableGraceMarks: record?.enable_grace_marks === true,
     version: Number.isInteger(record?.config_version) ? record.config_version : 0,
     gradeBoostPoints, groupGradeBoostPoints,
     rankBoostPoints: [0, 1, 2].map(i => configurationNumber(record?.rank_boost_points?.[i])) as [number, number, number],
@@ -216,7 +216,7 @@ export const validateFlexiblePointsConfig = (c: FlexiblePointsConfig): string[] 
   if (![aPlus, a, b, low].every(x => Number.isFinite(x) && x >= 0 && x <= 100) || !(aPlus > a && a > b && b > low))
     errors.push('Enter ordered grade percentages: A+ > A > B > C.');
   if (!validPoints(c.rankPoints, 3)) errors.push('Enter all baseline rank points as non-negative whole numbers.');
-  if (!Number.isSafeInteger(c.rule12MinTeams) || c.rule12MinTeams < 1 || !['grade_only', 'rank_and_grade', 'no_points'].includes(c.rule12Behavior))
+  if (c.rule12Enabled && (!Number.isSafeInteger(c.rule12MinTeams) || c.rule12MinTeams < 1 || !['grade_only', 'rank_and_grade', 'no_points'].includes(c.rule12Behavior ?? '')))
     errors.push('Complete the minimum-team rule.');
   const check = (rows: PointBracket[], label: string, group = false) => {
     const enabled = rows.filter(b => b.enabled).sort((a, b) => a.min - b.min), keys = new Set<string>();
