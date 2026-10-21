@@ -190,7 +190,7 @@ export default function JudgeMarksPage() {
       setEventTotalMarks(rules.total_marks);
       setScoringRuleId(rules.id ?? null);
       setEventTimeLimit(rules.time_limit ?? null);
-      if (rules.guidelines || rules.time_limit || rules.criteria?.length > 0) {
+      if (rules.is_default || rules.guidelines || rules.time_limit || rules.criteria?.length > 0) {
         setEventGuidelines(rules.guidelines || null);
         setShowGuidelines(true); // Automatically show on first load
       }
@@ -471,19 +471,21 @@ export default function JudgeMarksPage() {
               </View>
             )}
 
-            {entryMode === 'criteria' && eventCriteria.length > 0 && (
+            {(entryMode === 'total_only' || eventCriteria.length > 0) && (
               <View className="mb-6">
                 <Text className="font-poppins-bold text-xs text-slate-500 uppercase tracking-wider mb-3">Scoring Criteria (Total: {eventTotalMarks})</Text>
-                <View className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-                  {eventCriteria.map((c, i) => (
-                    <View key={c.key} className={`flex-row justify-between items-center p-3 ${i !== eventCriteria.length - 1 ? 'border-b border-slate-200' : ''}`}>
-                      <Text className="font-poppins text-slate-700 text-sm">{c.label}</Text>
-                      <View className="bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
-                        <Text className="font-poppins-bold text-slate-700 text-xs">{c.max} Marks</Text>
+                {entryMode === 'criteria' && eventCriteria.length > 0 && (
+                  <View className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                    {eventCriteria.map((c, i) => (
+                      <View key={c.key} className={`flex-row justify-between items-center p-3 ${i !== eventCriteria.length - 1 ? 'border-b border-slate-200' : ''}`}>
+                        <Text className="font-poppins text-slate-700 text-sm">{c.label}</Text>
+                        <View className="bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                          <Text className="font-poppins-bold text-slate-700 text-xs">{c.max} Marks</Text>
+                        </View>
                       </View>
-                    </View>
-                  ))}
-                </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
 

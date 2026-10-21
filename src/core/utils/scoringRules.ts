@@ -26,28 +26,16 @@ const FALLBACK_PERFORMANCE_RULE: ItemRule = {
   event_name: 'DEFAULT_PERFORMANCE',
   total_marks: 100,
   is_default: true,
-  entry_mode: 'criteria',
-  criteria: [
-    { name: 'Presentation', marks: 25 },
-    { name: 'Skill Quality', marks: 25 },
-    { name: 'Accuracy', marks: 20 },
-    { name: 'Creativity', marks: 15 },
-    { name: 'Confidence', marks: 15 },
-  ],
+  entry_mode: 'total_only',
+  criteria: [],
 };
 
 const FALLBACK_CREATIVE_RULE: ItemRule = {
   event_name: 'DEFAULT_CREATIVE',
   total_marks: 100,
   is_default: true,
-  entry_mode: 'criteria',
-  criteria: [
-    { name: 'Creativity', marks: 25 },
-    { name: 'Content Quality', marks: 25 },
-    { name: 'Technical Quality', marks: 20 },
-    { name: 'Presentation', marks: 15 },
-    { name: 'Originality', marks: 15 },
-  ],
+  entry_mode: 'total_only',
+  criteria: [],
 };
 
 export const getScoringRulesForItem = async (
@@ -89,10 +77,13 @@ export const getScoringRulesForItem = async (
 
   const defaultRuleForItem = (): ItemRule => {
     const databaseRule = itemType === 'offstage' ? GENERIC_CREATIVE_RULE : GENERIC_PERFORMANCE_RULE;
-    if (databaseRule) return configuredRule(databaseRule);
+    if (databaseRule) {
+      const configuredDefault = configuredRule(databaseRule);
+      return { ...configuredDefault, total_marks: 100, entry_mode: 'total_only', criteria: [] };
+    }
 
     const fallback = itemType === 'offstage' ? FALLBACK_CREATIVE_RULE : FALLBACK_PERFORMANCE_RULE;
-    return { ...fallback, criteria: fallback.criteria.map(criterion => ({ ...criterion })) };
+    return { ...fallback };
   };
 
   if (!itemNameEn && !itemNameMl) return defaultRuleForItem();
