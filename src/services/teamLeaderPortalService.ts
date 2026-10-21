@@ -152,7 +152,20 @@ export const teamLeaderPortalService = {
     const { data, error } = await supabase.functions.invoke('provision-team-leader', {
       body: { action: 'reset_password', user_id: userId, festival_id: festivalId },
     });
-    if (error) throw error;
+    if (error) {
+      let message = error.message;
+      const response = (error as { context?: Response }).context;
+      if (response && typeof response.json === 'function') {
+        try {
+          const payload = await response.json();
+          if (typeof payload?.message === 'string') message = payload.message;
+          else if (typeof payload?.error === 'string') message = payload.error;
+        } catch {
+          // Keep the SDK message if the function returned a non-JSON error body.
+        }
+      }
+      throw new Error(message);
+    }
     if (!data?.success || typeof data?.password !== 'string') {
       throw new Error(data?.message || 'Password reset did not complete.');
     }
