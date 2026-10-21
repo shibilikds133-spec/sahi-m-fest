@@ -380,40 +380,43 @@ export default function TeamLeaderPortalAdmin() {
   };
 
   const handleResetPassword = async (assignment: Assignment) => {
-    Alert.alert(
-      'Reset Team Leader Password',
-      `Generate a new temporary password for ${assignment.team_name}? The current password will stop working, and the leader must change the new password after signing in.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset Password',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setResettingAssignmentId(assignment.id);
-              setResetCredentials(null);
-              if (!activeFestival?.id) throw new Error('No active festival is selected.');
-              const credentials = await teamLeaderPortalService.resetPassword(assignment.user_id, activeFestival.id);
+    const confirmation = `Generate a new temporary password for ${assignment.team_name}? The current password will stop working, and the leader must change the new password after signing in.`;
+    const reset = async () => {
+      try {
+        setResettingAssignmentId(assignment.id);
+        setResetCredentials(null);
+        if (!activeFestival?.id) throw new Error('No active festival is selected.');
+        const credentials = await teamLeaderPortalService.resetPassword(assignment.user_id, activeFestival.id);
 
-              setResetCredentials({
-                assignmentId: assignment.id,
-                username: credentials.username || assignment.leader_code,
-                password: credentials.password,
-              });
+        setResetCredentials({
+          assignmentId: assignment.id,
+          username: credentials.username || assignment.leader_code,
+          password: credentials.password,
+        });
 
-              Alert.alert(
-                'Password Reset Complete',
-                `A new temporary password was generated for ${assignment.team_name}. It is shown on that team's assignment card, where you can copy it. The leader must change it after signing in.`
-              );
-            } catch (error: any) {
-              Alert.alert('Password reset failed', error?.message || 'Please try again.');
-            } finally {
-              setResettingAssignmentId(null);
-            }
-          },
-        },
-      ]
-    );
+        const successMessage = `A new temporary password was generated for ${assignment.team_name}. It is shown on that team's assignment card, where you can copy it. The leader must change it after signing in.`;
+        if (Platform.OS === 'web') window.alert(successMessage);
+        else Alert.alert('Password Reset Complete', successMessage);
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Please try again.';
+        if (Platform.OS === 'web') window.alert(`Password reset failed: ${errorMessage}`);
+        else Alert.alert('Password reset failed', errorMessage);
+      } finally {
+        setResettingAssignmentId(null);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Reset Team Leader Password\n\n${confirmation}`)) {
+        await reset();
+      }
+      return;
+    }
+
+    Alert.alert('Reset Team Leader Password', confirmation, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset Password', style: 'destructive', onPress: () => { void reset(); } },
+    ]);
   };
 
   const handleParticipantSelect = useCallback((participant: Participant) => {
