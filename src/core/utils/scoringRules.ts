@@ -19,6 +19,37 @@ export interface ItemRule {
   entry_mode: ScoringEntryMode;
 }
 
+// Keep the same 100-mark fallback available even when a project has not seeded
+// the global DEFAULT_* rows yet. These are runtime fallbacks only; explicit
+// tenant/global rules returned by the database still take precedence.
+const FALLBACK_PERFORMANCE_RULE: ItemRule = {
+  event_name: 'DEFAULT_PERFORMANCE',
+  total_marks: 100,
+  is_default: true,
+  entry_mode: 'criteria',
+  criteria: [
+    { name: 'Presentation', marks: 25 },
+    { name: 'Skill Quality', marks: 25 },
+    { name: 'Accuracy', marks: 20 },
+    { name: 'Creativity', marks: 15 },
+    { name: 'Confidence', marks: 15 },
+  ],
+};
+
+const FALLBACK_CREATIVE_RULE: ItemRule = {
+  event_name: 'DEFAULT_CREATIVE',
+  total_marks: 100,
+  is_default: true,
+  entry_mode: 'criteria',
+  criteria: [
+    { name: 'Creativity', marks: 25 },
+    { name: 'Content Quality', marks: 25 },
+    { name: 'Technical Quality', marks: 20 },
+    { name: 'Presentation', marks: 15 },
+    { name: 'Originality', marks: 15 },
+  ],
+};
+
 export const getScoringRulesForItem = async (
   itemNameEn: string, 
   itemNameMl?: string, 
@@ -56,7 +87,15 @@ export const getScoringRulesForItem = async (
     return formatted;
   };
 
-  if (!itemNameEn && !itemNameMl) return configuredRule(GENERIC_PERFORMANCE_RULE);
+  const defaultRuleForItem = (): ItemRule => {
+    const databaseRule = itemType === 'offstage' ? GENERIC_CREATIVE_RULE : GENERIC_PERFORMANCE_RULE;
+    if (databaseRule) return configuredRule(databaseRule);
+
+    const fallback = itemType === 'offstage' ? FALLBACK_CREATIVE_RULE : FALLBACK_PERFORMANCE_RULE;
+    return { ...fallback, criteria: fallback.criteria.map(criterion => ({ ...criterion })) };
+  };
+
+  if (!itemNameEn && !itemNameMl) return defaultRuleForItem();
 
   const normalizedSearchEn = (itemNameEn || '').toLowerCase().trim();
   const normalizedSearchMl = (itemNameMl || '').toLowerCase().trim();
@@ -91,11 +130,7 @@ export const getScoringRulesForItem = async (
     return configuredRule(matchedRule);
   }
 
-  if (itemType === 'offstage') {
-    return configuredRule(GENERIC_CREATIVE_RULE);
-  }
-  
-  return configuredRule(GENERIC_PERFORMANCE_RULE);
+  return defaultRuleForItem();
 };
 
 export const getCriterionKey = (name: string) =>
