@@ -86,11 +86,18 @@ function ScheduleWorkflowBadges({
   const eligibleRegistrationIds = new Set(verifiedRegs
     .filter((registration: any) => !!registration.code_letter)
     .map((registration: any) => registration.id));
-  const submittedEntries = new Set(((markEntries as any[]) ?? [])
-    .filter((entry: any) => entry.is_final === true && eligibleRegistrationIds.has(entry.registration_id))
-    .map((entry: any) => `${entry.judge_id}:${entry.registration_id}`));
-  const totalSubmitted = submittedEntries.size;
-  const totalExpected = eligibleRegistrationIds.size * rows.length;
+  const finalRegistrationsByJudge = new Map<string, Set<string>>();
+  for (const entry of (markEntries as any[]) ?? []) {
+    if (entry.is_final !== true || !eligibleRegistrationIds.has(entry.registration_id)) continue;
+    const submitted = finalRegistrationsByJudge.get(entry.judge_id) ?? new Set<string>();
+    submitted.add(entry.registration_id);
+    finalRegistrationsByJudge.set(entry.judge_id, submitted);
+  }
+  const totalExpected = rows.length;
+  const totalSubmitted = rows.filter((judge: any) =>
+    eligibleRegistrationIds.size > 0
+    && (finalRegistrationsByJudge.get(judge.judge_id)?.size ?? 0) >= eligibleRegistrationIds.size
+  ).length;
   const allDone = totalExpected > 0 && totalSubmitted >= totalExpected;
 
   const badges: { label: string; bg: string; text: string }[] = [];
@@ -121,7 +128,7 @@ function ScheduleWorkflowBadges({
   if (compact) {
     const labels = badges.map((badge) => badge.label);
     if (rows.length > 0) {
-      labels.push(allDone ? 'Marks complete' : `Marks ${totalSubmitted}/${totalExpected}`);
+      labels.push(`Marks ${totalSubmitted}/${totalExpected} judges submitted`);
     }
     return (
       <Text numberOfLines={1} className="font-poppins text-[9px] text-ssf-text-muted">
@@ -144,7 +151,7 @@ function ScheduleWorkflowBadges({
           <Text className={`font-poppins-bold text-[9px] ${
             allDone ? 'text-emerald-700' : totalSubmitted > 0 ? 'text-amber-700' : 'text-slate-500'
           }`}>
-            {allDone ? 'Marks: All submitted' : `Marks: ${totalSubmitted}/${totalExpected} submitted`}
+            {`Marks: ${totalSubmitted}/${totalExpected} judges submitted`}
           </Text>
         </View>
       )}
