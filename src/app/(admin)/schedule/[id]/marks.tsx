@@ -54,7 +54,10 @@ export default function MarkEntryPage() {
     ),
     [itemRegistrations],
   );
-  const { data: markEntries, refetch: refetchMarks } = useMarkEntries(scheduleId);
+  // Keep the marks and status panel on the same refresh cadence. The status
+  // counts below are derived from these same entries as the per-card Finalized
+  // indicators, rather than trusting a separately cached aggregate count.
+  const { data: markEntries } = useMarkEntries(scheduleId, 30000);
   const { data: judgeSummary } = useJudgeSubmissionSummary(scheduleId);
 
   // Local state: marks[registrationId][judgeId] = { criteria_scores, total_mark }
@@ -125,6 +128,7 @@ export default function MarkEntryPage() {
     (markEntries as any[])?.find(
       m => m.registration_id === regId && m.judge_id === judgeId
     );
+  const visibleRegistrationIds = new Set(registrations.map((registration: any) => registration.id));
 
   if (loadingRegs) return <ActivityIndicator color="#1B6B3A" style={{ marginTop: 60 }} />;
 
@@ -146,12 +150,16 @@ export default function MarkEntryPage() {
         </Text>
 
         {/* Judge Status Panel */}
-        {judgeSummary && (judgeSummary as any[]).length > 0 && (
+        {Array.isArray(markEntries) && judgeSummary && (judgeSummary as any[]).length > 0 && (
           <View className="mt-3 rounded-lg border border-ui-border bg-ui-muted p-3 gap-y-1.5">
             <Text className="font-poppins-bold text-ssf-text text-xs mb-1">Judge Status</Text>
             {(judgeSummary as any[]).map((j: any, idx: number) => {
-              const total = Number(j.total_assigned) || 0;
-              const submitted = Number(j.submitted_count) || 0;
+              const total = visibleRegistrationIds.size;
+              const submitted = new Set((markEntries as any[])
+                .filter((entry: any) => entry.judge_id === j.judge_id
+                  && entry.is_final === true
+                  && visibleRegistrationIds.has(entry.registration_id))
+                .map((entry: any) => entry.registration_id)).size;
               const allDone = submitted >= total && total > 0;
               const partial = submitted > 0 && !allDone;
               return (

@@ -87,10 +87,11 @@ export const useJudges = () => {
   });
 
   // ── Mark entries for a schedule ───────────────────────────────────────────────
-  const useMarkEntries = (scheduleId: string | undefined) => useQuery({
+  const useMarkEntries = (scheduleId: string | undefined, refetchInterval?: number) => useQuery({
     queryKey: ['markEntries', scheduleId],
     queryFn: () => judgeService.listMarkEntries<any>(scheduleId!),
     enabled: !!scheduleId,
+    ...(refetchInterval ? { refetchInterval } : {}),
   });
 
   // ── Save (draft) mark entry ───────────────────────────────────────────────────
