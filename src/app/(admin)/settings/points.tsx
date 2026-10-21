@@ -111,17 +111,18 @@ export default function PointsSettings() {
   const assignments = (kind: 'gradeBoostItemIds' | 'rankBoostItemIds') => kind === 'gradeBoostItemIds' ? form.gradeBoostSections : form.rankBoostSections;
   const assignedInOtherSection = (id: string, kind: 'gradeBoostItemIds' | 'rankBoostItemIds', sectionId: string) =>
     assignments(kind).findIndex(section => section.id !== sectionId && section.itemIds.includes(id));
+  const panelSection = competitionPanel?.boost === 'gradeBoostItemIds'
+    ? form.gradeBoostSections.find(section => section.id === competitionPanel.sectionId)
+    : form.rankBoostSections.find(section => section.id === competitionPanel?.sectionId);
+  const panelSelectedIds = panelSection?.itemIds ?? [];
   const panelItems = competitionPanel?.mode === 'both'
     ? bothBoostItems
     : competitionPanel?.mode === 'preview'
       ? (items as any[]).filter(item => competitionPanel.boost === 'gradeBoostItemIds'
         ? form.gradeBoostSections.find(section => section.id === competitionPanel.sectionId)?.itemIds.includes(item.id)
         : form.rankBoostSections.find(section => section.id === competitionPanel.sectionId)?.itemIds.includes(item.id))
-      : visibleItems;
-  const panelSection = competitionPanel?.boost === 'gradeBoostItemIds'
-    ? form.gradeBoostSections.find(section => section.id === competitionPanel.sectionId)
-    : form.rankBoostSections.find(section => section.id === competitionPanel?.sectionId);
-  const panelSelectedIds = panelSection?.itemIds ?? [];
+      : visibleItems.slice().sort((left, right) =>
+        Number(panelSelectedIds.includes(right.id)) - Number(panelSelectedIds.includes(left.id)));
   const competitionOptionsLoading = itemsLoading || (isCollegeFest && categoriesLoading);
   const competitionOptionsError = itemsError || (isCollegeFest && categoriesError);
   const panelTitle = competitionPanel?.mode === 'both'
