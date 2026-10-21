@@ -8,6 +8,7 @@ import { useParticipants } from '../../../core/hooks/useParticipants';
 import { useGoBack } from '../../../core/hooks/useGoBack';
 import { ArrowLeft, RefreshCw, Lock, AlertTriangle, XCircle, Edit2 } from 'lucide-react-native';
 import { useAuthStore } from '../../../core/store/authStore';
+import { codeLetterTarget, codeLetterPreview } from '../../../core/utils/codeLetters';
 
 export default function CodeLetterGeneration() {
   const { id } = useLocalSearchParams();
@@ -118,12 +119,14 @@ export default function CodeLetterGeneration() {
            scheduleId,
            itemId: schedule.item_id,
            festivalId: schedule.festival_id,
-           overwrite: hasExistingLetters,
+           overwrite: allHaveLetters,
            secureStage: true,
          });
         await stage.registrationsQuery.refetch();
         const isSmart = result && (result as any).smartPriorityApplied;
-        const msg = isSmart 
+        const msg = result?.conflictsUnavoidable
+          ? 'Code letters assigned. Some overlapping-event letter conflicts remain; review the order.'
+          : isSmart
           ? '✅ Code letters assigned successfully!\n(Smart conflict-safe priority applied)' 
           : '✅ Code letters assigned successfully!';
         
@@ -142,7 +145,7 @@ export default function CodeLetterGeneration() {
     };
 
     if (allHaveLetters) {
-      const msg = '⚠️ Code letters have already been assigned for ALL participants. Drawing again will shuffle and OVERWRITE existing code letters. Are you sure you want to proceed?';
+      const msg = 'Fixed manual letters will stay unchanged. Only the remaining letters will be redrawn. Continue?';
       if (Platform.OS === 'web') {
         if (window.confirm(msg)) {
           await action();
@@ -159,7 +162,7 @@ export default function CodeLetterGeneration() {
       }
     } else if (hasExistingLetters) {
       // Partial assignment case
-      const msg = 'Some participants already have code letters. Draw again to normalize all approved participants as A, B, C...?';
+      const msg = 'Existing assignments will stay unchanged. Draw only the remaining letters for verified participants?';
       if (Platform.OS === 'web') {
         if (window.confirm(msg)) {
           await action();
@@ -187,10 +190,9 @@ export default function CodeLetterGeneration() {
       return;
     }
 
-    // Check for duplicate in current event
-    const isDuplicate = activeRegistrations.some((r:any) => r.id !== editingReg.id && r.code_letter === letter);
-    if (isDuplicate) {
-      setEditError('This letter is already assigned in this event.');
+    const target = codeLetterTarget(activeRegistrations, editingReg.id, letter);
+    if (target && !editingReg.code_letter) {
+      setEditError('This entry has no letter to swap. Choose an unused letter.');
       return;
     }
 
@@ -202,7 +204,8 @@ export default function CodeLetterGeneration() {
     }
 
     try {
-      await stage.updateCodeLetter({ scheduleId, registrationId: editingReg.id, codeLetter: letter });
+      await stage.updateCodeLetter({ scheduleId, registrationId: editingReg.id, codeLetter: letter,
+        expectedLetter: editingReg.code_letter, expectedSwapId: target?.id ?? null });
       await stage.registrationsQuery.refetch();
       setEditingReg(null);
       setNewLetter('');
@@ -311,11 +314,14 @@ export default function CodeLetterGeneration() {
                 >
                   <Text className="flex-[3] font-poppins text-sm text-ssf-text">{reg.participants?.name}</Text>
                   <Text className="flex-1 font-poppins-bold text-sm text-center text-ssf-text">{reg.participants?.chest_number}</Text>
-                  <Text className="flex-1 font-poppins-black text-lg text-center text-ssf-primary">
-                    {reg.code_letter || '-'}
-                  </Text>
+                  <View className="flex-1 items-center">
+                    <Text className="font-poppins-black text-lg text-ssf-primary">{reg.code_letter || '-'}</Text>
+                    {reg.code_letter_fixed ? <Text className="font-poppins text-[10px] text-ssf-text-muted">Fixed</Text> : null}
+                  </View>
                   {!isShuffleLocked && (
                     <TouchableOpacity 
+                      accessibilityRole="button"
+                      accessibilityLabel={`Edit code letter for ${reg.participants?.name || 'entry'}`}
                       className="w-10 items-center justify-center p-2 rounded-full bg-blue-50"
                       onPress={() => {
                         setEditingReg(reg);
@@ -382,17 +388,20 @@ export default function CodeLetterGeneration() {
       <Modal visible={!!editingReg} transparent animationType="fade">
         <View className="flex-1 bg-black/50 justify-center items-center p-4">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <Text className="font-poppins-bold text-xl mb-2">Edit Code Letter</Text>
+            <Text className="font-poppins-bold text-xl mb-2">{editingReg?.code_letter ? 'Edit Code Letter' : 'Assign Code Letter'}</Text>
             <Text className="font-poppins text-ssf-text-muted mb-4">{editingReg?.participants?.name}</Text>
             
             <TextInput
               value={newLetter}
+              editable={!stage.isUpdatingCodeLetter}
               onChangeText={setNewLetter}
               placeholder="Enter letter (A-Z)"
-              className="border border-ssf-border rounded-xl p-4 font-poppins-black text-2xl text-center uppercase mb-2"
+              className="h-10 border border-ssf-border rounded-xl px-3 font-poppins-black text-xl text-center uppercase mb-2"
               maxLength={1}
               autoCapitalize="characters"
             />
+            <Text className="font-poppins text-xs text-ssf-text-muted mb-2">{codeLetterPreview(editingReg?.code_letter ?? null, newLetter,
+              codeLetterTarget(activeRegistrations, editingReg?.id, newLetter)?.participants?.name)}</Text>
             
             {!!editError && (
               <View className="bg-red-50 p-3 rounded-lg flex-row items-start gap-x-2 mb-4">
@@ -405,11 +414,12 @@ export default function CodeLetterGeneration() {
               <SsfButton 
                 label="Cancel" 
                 variant="outline" 
+                disabled={stage.isUpdatingCodeLetter}
                 className="flex-1" 
                 onPress={() => { setEditingReg(null); setEditError(''); }} 
               />
               <SsfButton 
-                label={stage.isUpdatingCodeLetter ? 'Saving...' : 'Save'}
+                label={stage.isUpdatingCodeLetter ? 'Saving...' : codeLetterTarget(activeRegistrations, editingReg?.id, newLetter) ? 'Swap' : 'Assign'}
                 className="flex-1" 
                 onPress={validateAndSaveEdit} 
                 disabled={stage.isUpdatingCodeLetter}

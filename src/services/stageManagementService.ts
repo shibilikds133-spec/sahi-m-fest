@@ -43,6 +43,7 @@ export type StageRegistrationRow = {
   status: string | null;
   is_verified: boolean | null;
   code_letter: string | null;
+  code_letter_fixed?: boolean;
   participant_name: string | null;
   participant_chest_number: string | null;
   participant_category_code: string | null;
@@ -112,13 +113,19 @@ export const stageManagementService = {
   },
 
   async getRegistrations(options: { scheduleId?: string; festivalId?: string }): Promise<StageRegistrationRow[]> {
-    let { data, error } = await supabase.rpc('get_stage_management_registrations_scoped', {
+    let { data, error } = await supabase.rpc('get_stage_management_registrations_with_letters', {
       p_schedule_id: options.scheduleId ?? null,
       p_festival_id: options.festivalId ?? null,
     });
     const rpcMissingFromSchemaCache = error
       && ['42883', 'PGRST202'].includes((error as any).code);
     if (rpcMissingFromSchemaCache) {
+      ({ data, error } = await supabase.rpc('get_stage_management_registrations_scoped', {
+        p_schedule_id: options.scheduleId ?? null,
+        p_festival_id: options.festivalId ?? null,
+      }));
+    }
+    if (error && ['42883', 'PGRST202'].includes((error as any).code)) {
       ({ data, error } = await supabase.rpc('get_stage_management_registrations', {
         p_schedule_id: options.scheduleId ?? null,
         p_festival_id: options.festivalId ?? null,
@@ -153,11 +160,22 @@ export const stageManagementService = {
     return data;
   },
 
-  async updateCodeLetter(scheduleId: string, registrationId: string, codeLetter: string) {
-    const { data, error } = await supabase.rpc('stage_update_code_letter', {
+  async updateCodeLetter(scheduleId: string, registrationId: string, codeLetter: string,
+    expectedLetter: string | null, expectedSwapId: string | null) {
+    const { data, error } = await supabase.rpc('stage_edit_code_letter', {
       p_schedule_id: scheduleId,
       p_registration_id: registrationId,
       p_code_letter: codeLetter,
+      p_expected_letter: expectedLetter,
+      p_expected_swap_id: expectedSwapId,
+    });
+    throwIfError(error);
+    return data;
+  },
+
+  async drawCodeLetters(scheduleId: string, overwrite: boolean) {
+    const { data, error } = await supabase.rpc('stage_draw_code_letters', {
+      p_schedule_id: scheduleId, p_overwrite: overwrite,
     });
     throwIfError(error);
     return data;

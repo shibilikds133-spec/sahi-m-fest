@@ -137,7 +137,11 @@ export const participantService = {
     overwrite = false,
     festivalId?: string,
     secureStage = false,
-  ): Promise<{ smartPriorityApplied: boolean } | void> {
+  ): Promise<{ smartPriorityApplied: boolean; conflictsUnavoidable?: boolean } | void> {
+    if (secureStage) {
+      const result = await stageManagementService.drawCodeLetters(scheduleId, overwrite);
+      return { smartPriorityApplied: false, conflictsUnavoidable: result?.conflictsUnavoidable === true };
+    }
     // Code-letter generation must use the selected schedule scope. Item-only
     // reads are tenant-local and can omit registrations belonging to visible
     // child organisations shown on the schedule/check-in page.

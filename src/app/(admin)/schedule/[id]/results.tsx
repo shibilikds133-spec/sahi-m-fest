@@ -67,6 +67,9 @@ export default function ResultsPage() {
     [itemRegistrations],
   );
   const { data: markEntries } = useMarkEntries(scheduleId);
+  // Letter refreshes must not overwrite unsaved result edits by rerunning scoring.
+  const registrationIdentity = registrations.map((registration: any) => registration.id).sort().join('|');
+  const scoringRegistrationIds = React.useMemo(() => registrationIdentity ? registrationIdentity.split('|') : [], [registrationIdentity]);
   const { data: existingResults } = useResults(scheduleId);
   const { data: pointsConfig } = usePointsConfig(resolvedFestivalId ?? undefined);
   const { data: judgeSummary } = useJudgeSubmissionSummary(scheduleId);
@@ -90,12 +93,12 @@ export default function ResultsPage() {
   
   const hasInitialized = React.useRef(false);
 
+  React.useEffect(() => {
+    setOfficialBracket(schedule?.official_participant_bracket || '1');
+  }, [schedule?.id, schedule?.official_participant_bracket]);
+
   // Init results from existing results or registrations
   React.useEffect(() => {
-    if (schedule) {
-      setOfficialBracket(schedule.official_participant_bracket || '1');
-    }
-    
     if (registrations && existingResults !== undefined) {
       setResults(prev => {
         let changed = false;
@@ -110,6 +113,9 @@ export default function ResultsPage() {
               rank: null,
               grade: null,
             };
+            changed = true;
+          } else if (next[reg.id].code_letter !== reg.code_letter) {
+            next[reg.id] = { ...next[reg.id], code_letter: reg.code_letter };
             changed = true;
           }
         });
@@ -256,11 +262,11 @@ export default function ResultsPage() {
   }, [results]);
 
   const autoFillFromMarks = React.useCallback(() => {
-    if (!registrations || !markEntries) return;
+    if (!scoringRegistrationIds.length || !markEntries) return;
 
     // 1. Calculate avgs and grades
-    const scores = (registrations as any[]).map(reg => {
-      const markSummary = getMarkSummary(reg.id);
+    const scores = scoringRegistrationIds.map(registrationId => {
+      const markSummary = getMarkSummary(registrationId);
       const normalizedAverage = markSummary?.percentageAverage ?? null;
       let grade = normalizedAverage !== null
         ? calculateGradeFromConfig(normalizedAverage, 100, flexiblePointsConfig)
@@ -268,7 +274,7 @@ export default function ResultsPage() {
       // Convert null to '-'
       if (!grade) grade = '-';
       return {
-        id: reg.id,
+        id: registrationId,
         avg: normalizedAverage ?? 0,
         grade,
       };
@@ -314,7 +320,7 @@ export default function ResultsPage() {
       });
       return next;
     });
-  }, [registrations, markEntries, getMarkSummary, flexiblePointsConfig]);
+  }, [scoringRegistrationIds, markEntries, getMarkSummary, flexiblePointsConfig]);
 
   // Run auto-calculation whenever in marks mode and data is available
   React.useEffect(() => {
