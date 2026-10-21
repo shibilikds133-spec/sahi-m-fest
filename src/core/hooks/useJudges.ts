@@ -180,22 +180,17 @@ export const useJudges = () => {
   // Admin manual mark override
       // Admin manual mark override
     const adminUpsertMark = useMutation({
-      mutationFn: async ({ scheduleId, judgeId, registrationId, criteriaScores, totalMark, maxMark, criteriaSnapshot, status }: { scheduleId: string, judgeId: string, registrationId: string, criteriaScores: any, totalMark: number, maxMark: number, criteriaSnapshot: any, status: string }) => {
-        const { data: schedule } = await supabase.from('schedules').select('tenant_id').eq('id', scheduleId).single();
-        const { data, error } = await supabase.from('mark_entries').upsert({
-          schedule_id: scheduleId,
-          judge_id: judgeId,
-          registration_id: registrationId,
-          tenant_id: schedule?.tenant_id,
-          criteria_scores: criteriaScores,
-          total_mark: totalMark,
-          max_mark_snapshot: maxMark,
-          criteria_snapshot: criteriaSnapshot,
-          entry_mode_snapshot: Object.keys(criteriaScores || {}).length > 0 ? 'criteria' : 'total_only',
-          is_draft: status === 'draft',
-          is_final: status === 'final',
-          submitted_at: status === 'final' ? new Date().toISOString() : null,
-        }, { onConflict: 'schedule_id,judge_id,registration_id' }).select().single();
+      mutationFn: async ({ scheduleId, judgeId, registrationId, criteriaScores, totalMark, maxMark, criteriaSnapshot, status }: { scheduleId: string, judgeId: string, registrationId: string, criteriaScores: any, totalMark: number, maxMark: number, criteriaSnapshot: any, status: 'final' }) => {
+        const { data, error } = await supabase.rpc('admin_upsert_mark', {
+          p_schedule_id: scheduleId,
+          p_judge_id: judgeId,
+          p_registration_id: registrationId,
+          p_criteria_scores: criteriaScores,
+          p_total_mark: totalMark,
+          p_max_mark: maxMark,
+          p_criteria_snapshot: criteriaSnapshot,
+          p_status: status,
+        });
         if (error) throw error;
         return data;
       },

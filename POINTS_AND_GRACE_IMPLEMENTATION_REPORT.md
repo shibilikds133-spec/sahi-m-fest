@@ -85,11 +85,13 @@ Cleanup was blocked by the execution policy. The task-created databases `scoring
 
 ## Release gates and remaining risks
 
-### A — Existing reset authorization must be reviewed separately
+### 2026-10-21 finalized-mark correction follow-up
 
-**Verified from repository, not confirmed in a live target:** `supabase/migrations/20260914055131_fix_unlock_marks_rpc.sql` defines `unlock_schedule_marks` as `SECURITY DEFINER`, grants execution to `authenticated`, and contains no caller-role/tenant authorization check. Migration 0841 has the same boundary issue. Migration 171's `admin_upsert_mark` checks an admin role but does not establish schedule ownership.
+- **Verified from repository:** `supabase/migrations/20261021131729_preserve_final_marks_and_secure_admin_reentry.sql` replaces the earlier unlock RPC without updating `mark_entries`; it only moves matching published/ready results to draft and unpublished. The admin edit now uses the `admin_upsert_mark` RPC and touches only the selected schedule/judge/registration row. A previously finalized row is reopened and finalized again inside one transaction; failure rolls that edit back.
+- **Security boundary:** Both RPCs require a signed-in admin/super-admin and scope tenant-admin roles to the schedule tenant. The admin-edit RPC additionally validates the target registration and active judge assignment. The browser no longer treats the tenant ID as an admin password.
+- **Validation:** Targeted ESLint passed. Full-project `tsc --noEmit` remains failing on existing errors across clone/export folders and unrelated application components. No PostgreSQL test was run and this migration has not been applied to Staging or Main, so the database behavior is not yet runtime-verified.
 
-These pre-existing definitions contradict the desired admin-only, tenant-scoped reset invariant. They were not broadened or rewritten here because the user explicitly restricted this task to scoring changes while preserving reset behaviour. Do not describe that invariant as verified secure or release on that assumption. Inspect installed definitions with the preflight and obtain approval for a focused authorization remediation before production rollout. Token expiry and final-mark regression checks do not prove reset authorization.
+The earlier definitions remain in migration history, but this later migration replaces them when applied. Verify migration history and the installed function definitions on the intended target before treating the authorization and finalized-mark behavior as live.
 
 ### B — Target configuration/history preflight is pending
 

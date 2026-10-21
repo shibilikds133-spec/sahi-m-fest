@@ -914,19 +914,19 @@ export default function ResultsPage() {
             <TouchableOpacity
               onPress={() => {
                 if (Platform.OS === 'web') {
-                  const ans = window.prompt("Security Check: Enter Admin Password (Tenant ID) to unlock marks:");
-                  if (ans === schedule?.tenant_id) {
+                  const confirmed = window.confirm(
+                    "Results will be unpublished for correction. Judge marks will remain finalized; only marks you edit and save will change. Continue?",
+                  );
+                  if (confirmed) {
                     unlockScheduleMarks.mutate(scheduleId, { onSuccess: () => setPublished(false) });
-                  } else if (ans !== null) {
-                    window.alert("Incorrect Password! Marks were not unlocked.");
                   }
                 } else {
                   Alert.alert(
-                    "Unlock All Marks",
-                    "Security Notice: Unlocking will unpublish results and allow mark edits. Proceed?",
+                    "Enable Mark Editing",
+                    "Results will be unpublished for correction. Judge marks will remain finalized; only marks you edit and save will change. Proceed?",
                     [
                       { text: "Cancel", style: "cancel" },
-                      { text: "Yes, Unlock All", style: "destructive", onPress: () => unlockScheduleMarks.mutate(scheduleId, { onSuccess: () => setPublished(false) }) }
+                      { text: "Continue", style: "destructive", onPress: () => unlockScheduleMarks.mutate(scheduleId, { onSuccess: () => setPublished(false) }) }
                     ]
                   );
                 }
