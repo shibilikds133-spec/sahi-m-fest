@@ -122,16 +122,18 @@ export default function GeneralEntriesScreen() {
 
       <View className="mb-2 flex-row items-center justify-between">
         <Text className="font-poppins-bold text-xs text-ui-text">Team roster (required)</Text>
-        <Text className="font-poppins-bold text-xs text-emerald-700">{participantIds.length} selected</Text>
+        <Text className="font-poppins-bold text-xs text-emerald-700">{participantIds.length} selected{maxMembers > 0 ? ` / ${maxMembers} max` : ''}</Text>
       </View>
       <Text className="mb-2 font-poppins text-xs text-ui-text-muted">Choose participants from one team. Their participant chest numbers stay unchanged; this entry receives a separate number.</Text>
       <View className="mb-2 h-10 flex-row items-center rounded-lg border border-ui-border bg-white px-3">
         <Search size={15} color="#64748B" /><TextInput value={participantSearch} onChangeText={setParticipantSearch} placeholder="Search by child name or chest number" className="ml-2 flex-1 font-poppins text-sm outline-none" />
       </View>
       <View className="max-h-72 gap-y-1">
+        {maxMembers > 0 && participantIds.length >= maxMembers && <Text className="mb-1 font-poppins text-xs text-amber-700">Maximum {maxMembers} members selected. Deselect someone to choose another.</Text>}
         {filteredParticipants.length ? filteredParticipants.map(p => {
           const active = participantIds.includes(p.id);
-          return <TouchableOpacity key={p.id} onPress={() => toggleParticipant(p.id)} className={`flex-row items-center rounded-lg border px-3 py-2 ${active ? 'border-emerald-500 bg-emerald-50' : 'border-ui-border bg-white'}`}>
+          const atMemberLimit = maxMembers > 0 && participantIds.length >= maxMembers && !active;
+          return <TouchableOpacity key={p.id} disabled={atMemberLimit} onPress={() => toggleParticipant(p.id)} className={`flex-row items-center rounded-lg border px-3 py-2 ${atMemberLimit ? 'opacity-50' : ''} ${active ? 'border-emerald-500 bg-emerald-50' : 'border-ui-border bg-white'}`}>
             <View className={`mr-3 h-5 w-5 items-center justify-center rounded border ${active ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'}`}>{active && <Check size={13} color="white" />}</View>
             <View className="flex-1"><Text className="font-poppins-bold text-sm text-ui-text">{p.name}</Text><Text className="font-poppins text-xs text-ui-text-muted">Chest #{p.chest_number ?? '—'} · {p.organisations?.name ?? 'Team not set'}</Text></View>
             <Users size={15} color="#64748B" />
