@@ -14,6 +14,7 @@ import { Check, ChevronDown, Search, UserRound, X } from 'lucide-react-native';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
 import { TeamLeaderParticipant, TeamLeaderProgramOption, teamLeaderPortalService } from '@/services/teamLeaderPortalService';
+import { invalidateGeneralMembership } from '@/core/utils/invalidateGeneralMembership';
 
 const teal = '#0F766E';
 const muted = '#64748B';
@@ -146,8 +147,9 @@ export default function TeamProgramsScreen() {
     try {
       const created = await teamLeaderPortalService.createGeneralEntry(activeGeneralProgram.item_id, selectedGeneralParticipantIds);
       await queryClient.invalidateQueries({
-        queryKey: ['team-leader-programs', context?.festival_id, selectedParticipant?.id],
+        queryKey: ['team-leader-programs', context?.festival_id],
       });
+      await invalidateGeneralMembership(queryClient, context!.festival_id, selectedGeneralParticipantIds);
       setActiveGeneralProgram(null);
       setSelectedGeneralParticipantIds([]);
       setNotice({ kind: 'success', text: `General team entry ${created.entry_chest_number} created with ${created.member_count} students.` });

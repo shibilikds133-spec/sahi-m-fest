@@ -10,6 +10,7 @@ import { useParticipants } from '../../../core/hooks/useParticipants';
 import { useAuthStore } from '../../../core/store/authStore';
 import { supabase } from '../../../core/config/supabase';
 import { generalEntryService } from '../../../services/generalEntryService';
+import { invalidateGeneralMembership } from '../../../core/utils/invalidateGeneralMembership';
 
 type ProgramItem = { id: string; item_code: string; item_name_en?: string; item_name_ml?: string; category_codes?: string[] | string | null; participation_type?: string; item_type?: string | null; gender?: string | null; is_active?: boolean; group_min_members?: number | null; group_max_members?: number | null };
 type IntakeStatus = { item_id: string; category_code: string; entry_kind: 'participant' | 'general_team'; is_complete: boolean };
@@ -147,7 +148,7 @@ export default function ProgramsScreen() {
         if (orgIds.size !== 1 || !generalSizeValid) throw new Error('Select the configured number of participants from one organisation.');
         const created = await generalEntryService.create(festival.id, activeCard.item.id, selectedIds);
         setNotice(`General team entry ${created.entry_chest_number} created.`);
-        await queryClient.invalidateQueries({ queryKey: ['general-team-entries', festival.id] });
+        await invalidateGeneralMembership(queryClient, festival.id, selectedIds);
         await queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations'] });
       } else {
         const failures: string[] = [];

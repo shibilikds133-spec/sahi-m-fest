@@ -1,4 +1,5 @@
 import React from 'react';
+import { GroupEntryRoster } from './GroupEntryRoster';
 import {
   ActivityIndicator,
   Alert,
@@ -398,7 +399,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
                       <View className="min-w-0 flex-1">
                         <Text numberOfLines={2} className={`font-poppins-bold text-sm ${rejected ? 'text-slate-400 line-through' : 'text-ssf-text'}`}>{entry.participant_name || 'Entry'}</Text>
                         <Text numberOfLines={1} className="mt-0.5 font-poppins text-xs text-ssf-text-muted">{entry.organisation_name || '—'}{entry.entry_kind === 'general_team' ? ' · Team' : ''}</Text>
-                        {!!entry.members?.length ? <Text numberOfLines={2} className="mt-1 font-poppins text-[10px] leading-4 text-ssf-text-muted">{entry.members.map((member) => `${member.name}${member.chest_number ? ` (${member.chest_number})` : ''}`).join(', ')}</Text> : null}
+                        <GroupEntryRoster entry={entry} />
                       </View>
                       {mode === 'checkin' ? (
                         <View className={`min-h-7 shrink-0 items-center justify-center rounded-full border px-2 ${statusStyle.split(' ').slice(0, 2).join(' ')}`}>
@@ -448,7 +449,7 @@ export default function StageVenuePortal({ venueId }: { venueId: string }) {
                     <View className="flex-1">
                       <Text className={`font-poppins-bold text-sm ${rejected ? 'text-slate-400 line-through' : 'text-ssf-text'}`}>{entry.participant_name || 'Entry'}</Text>
                       <Text className="font-poppins text-[11px] text-ssf-text-muted">{entry.organisation_name || '—'}{entry.entry_kind === 'general_team' ? ' · Team' : ''}</Text>
-                      {!!entry.members?.length ? <Text numberOfLines={2} className="mt-0.5 font-poppins text-[10px] text-ssf-text-muted">{entry.members.map((member) => `${member.name}${member.chest_number ? ` (${member.chest_number})` : ''}`).join(', ')}</Text> : null}
+                        <GroupEntryRoster entry={entry} />
                     </View>
                   </View>
                   {mode === 'checkin' ? (

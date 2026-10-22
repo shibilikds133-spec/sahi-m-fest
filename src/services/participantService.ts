@@ -28,6 +28,8 @@ export type PublicCandidateProfile = {
   };
   participated_items: {
     registration_id: string;
+    entry_kind?: 'participant' | 'general_team';
+    entry_chest_number?: string | null;
     item_id: string | null;
     item_name: string;
     item_name_ml: string;

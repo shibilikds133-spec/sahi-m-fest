@@ -1,3 +1,5 @@
+import { findParticipantQrEntry } from '../../../../core/utils/checkInIdentity';
+import { GroupEntryRoster } from '../../../../components/stage/GroupEntryRoster';
 import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
@@ -152,11 +154,7 @@ export default function CheckIn() {
       }
 
       const chest = parsed.chest || parsed.pid;
-      const reg = registrations?.find(
-        (r: any) =>
-          r.participants?.chest_number === parsed.chest ||
-          r.participants?.id === parsed.pid
-      );
+      const reg = findParticipantQrEntry(registrations ?? [], parsed);
       if (reg) {
         handleVerify(reg.id);
       } else {
@@ -396,6 +394,7 @@ export default function CheckIn() {
                     <View className="min-w-0 flex-1">
                       <Text numberOfLines={2} className={`font-poppins-bold text-sm ${isRejected ? 'text-slate-500 line-through' : 'text-ssf-text'}`}>{reg.participants?.name || 'Participant'}</Text>
                       <Text numberOfLines={1} className="mt-0.5 font-poppins text-xs text-ssf-text-muted">{reg.participants?.category_code || '—'} · Chest {reg.participants?.chest_number || '—'}</Text>
+                        <GroupEntryRoster entry={reg} />
                       {reg.participants?.organisations?.name ? <Text numberOfLines={1} className="mt-1 font-poppins text-[11px] text-blue-700">{reg.participants.organisations.name}</Text> : null}
                     </View>
                     <View className={`min-h-7 shrink-0 items-center justify-center rounded-full border px-2 ${badge.split(' ').slice(0, 2).join(' ')}`}>
@@ -413,7 +412,7 @@ export default function CheckIn() {
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity accessibilityRole="button" onPress={() => setVerifyModal({ reg, visible: true })} disabled={isUpdating} className={`mt-3 h-11 flex-row items-center justify-center gap-2 rounded-lg bg-ssf-primary ${isUpdating ? 'opacity-60' : ''}`}>
-                        <Camera size={16} color="#FFFFFF" /><Text className="font-poppins-bold text-xs text-white">Verify participant</Text>
+                        <Camera size={16} color="#FFFFFF" /><Text className="font-poppins-bold text-xs text-white">{reg.entry_kind === 'general_team' ? 'Verify group' : 'Verify participant'}</Text>
                       </TouchableOpacity>
                     )
                   ) : null}
@@ -573,6 +572,7 @@ export default function CheckIn() {
                         <Text className="font-poppins text-xs text-ssf-text-muted">
                           {reg.participants?.category_code} · Chest {reg.participants?.chest_number}
                         </Text>
+                        <GroupEntryRoster entry={reg} />
                         {reg.participants?.organisations?.name ? (
                           <View className="flex-row items-center mt-0.5">
                             <View className="bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">
@@ -696,12 +696,12 @@ export default function CheckIn() {
             backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', zIndex: 200, padding: 20,
           }}
         >
-          <View style={{ backgroundColor: '#FFF', borderRadius: 20, width: '100%', maxWidth: 360, overflow: 'hidden' }}>
+          <ScrollView style={{ backgroundColor: '#FFF', borderRadius: 20, width: '100%', maxWidth: 360, overflow: 'hidden', maxHeight: '95%', flexGrow: 0 }}>
             {/* Green header */}
             <View style={{ backgroundColor: '#1B6B3A', padding: 16, alignItems: 'center' }}>
               <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 18 }}>Identity Verification</Text>
               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>
-                Confirm this is the right participant
+                {verifyModal.reg.entry_kind === 'general_team' ? 'Confirm this group entry' : 'Confirm this is the right participant'}
               </Text>
             </View>
 
@@ -713,7 +713,7 @@ export default function CheckIn() {
                 backgroundColor: '#F3F4F6', marginBottom: 16,
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                {verifyModal.reg.participants?.photo_url ? (
+                {verifyModal.reg.entry_kind === 'general_team' ? <Users size={48} color="#1B6B3A" /> : verifyModal.reg.participants?.photo_url ? (
                   <Image
                     source={{ uri: verifyModal.reg.participants.photo_url }}
                     style={{ width: '100%', height: '100%' }}
@@ -742,11 +742,12 @@ export default function CheckIn() {
                   ? ` · 🏫 ${verifyModal.reg.participants.organisations.name}`
                   : ''}
               </Text>
+              <GroupEntryRoster entry={verifyModal.reg} />
 
               {/* Instruction */}
               <View style={{ backgroundColor: '#FEF3C7', borderRadius: 10, padding: 12, width: '100%', marginTop: 16, marginBottom: 20 }}>
                 <Text style={{ color: '#92400E', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
-                  ⚠️ Compare the photo above with the person standing in front of you before approving.
+                  {verifyModal.reg.entry_kind === 'general_team' ? 'Confirm the group chest number, program and team. One representative can check in this entry.' : '⚠️ Compare the photo above with the person standing in front of you before approving.'}
                 </Text>
               </View>
 
@@ -778,7 +779,7 @@ export default function CheckIn() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       )}
     </View>

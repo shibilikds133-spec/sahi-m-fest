@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../core/store/authStore';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useParticipants } from '../../../core/hooks/useParticipants';
 import { generalEntryService } from '../../../services/generalEntryService';
+import { invalidateGeneralMembership } from '../../../core/utils/invalidateGeneralMembership';
 
 type GeneralItem = {
   id: string;
@@ -79,7 +80,7 @@ export default function GeneralEntriesScreen() {
       const result = await generalEntryService.create(festival.id, selectedItem.id, participantIds);
       setSuccessMessage(`Entry ${result.entry_chest_number} created for ${selectedParticipants.length} members.`);
       setParticipantIds([]); setItemId('');
-      await queryClient.invalidateQueries({ queryKey: ['general-team-entries', festival.id] });
+      await invalidateGeneralMembership(queryClient, festival.id, participantIds);
       await queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations'] });
       await queryClient.invalidateQueries({ queryKey: ['participantRegistrations'] });
     } catch (error) {
