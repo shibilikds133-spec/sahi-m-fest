@@ -260,7 +260,7 @@ export default function ProgramsScreen() {
           <Text className="mt-1 font-poppins text-xs text-ui-text-muted">{sectionCards.length} programs · {doneCount} completed</Text>
         </View>
         <View className="flex-row items-center gap-2">
-          {(['individual', 'group'] as const).map(value => <TouchableOpacity key={value} onPress={() => { setSection(value); setTypeFilter('All types'); setCategoryFilter('All categories'); }} className={`rounded-lg border px-3 py-2 ${section === value ? 'border-emerald-700 bg-emerald-700' : 'border-ui-border bg-white'}`}><Text className={`font-poppins-bold text-xs ${section === value ? 'text-white' : 'text-ui-text'}`}>{value === 'individual' ? 'Individual' : 'Group'}</Text></TouchableOpacity>)}
+          {(['individual', 'group'] as const).map(value => <TouchableOpacity key={value} onPress={() => { setSection(value); setTypeFilter('All types'); setCategoryFilter('All categories'); }} className={`rounded-lg border px-3 py-2 ${section === value ? 'border-emerald-700 bg-emerald-700' : 'border-ui-border bg-white'}`}><Text className={`font-poppins-bold text-xs ${section === value ? 'text-white' : 'text-ui-text'}`}>{value === 'individual' ? 'Individual' : 'Group items'}</Text></TouchableOpacity>)}
           <TouchableOpacity onPress={() => router.push('/(admin)/settings/items' as any)} className="flex-row items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2" accessibilityRole="button"><Plus size={15} color="white"/><Text className="font-poppins-bold text-xs text-white">Add program</Text></TouchableOpacity>
         </View>
       </View>
