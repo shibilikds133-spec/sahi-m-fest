@@ -1,5 +1,5 @@
 import { ui } from '@/constants/designSystem';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SsfCard } from '../../../components/ui/SsfCard';
@@ -14,6 +14,13 @@ import * as Sharing from 'expo-sharing';
 import * as XLSX from 'xlsx';
 import { SsfSelectMenu } from '../../../components/ui/SsfSelectMenu';
 import { SsfTableSkeleton } from '../../../components/ui/SsfSkeleton';
+import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories';
+import {
+  buildParticipantCategoryOptions,
+  isGeneralCategoryCode,
+  participantHasCompetitionRegistration,
+  participantHasGeneralTeamRegistration,
+} from '../../../core/utils/participantCompetitionFilter';
 
 export default function ParticipantsList() {
   const router = useRouter();
@@ -21,6 +28,11 @@ export default function ParticipantsList() {
   const isDesktopTable = width >= 980;
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
+  const isCollegeFest = activeFestival?.festival_template === 'college_fest';
+  const { data: configuredCategories = [], isLoading: isLoadingCategories } = useFestivalCategories(
+    isCollegeFest ? activeFestival?.id : undefined,
+    true,
+  );
   const { useItems } = useFestival();
   const { data: activeItems = [], isLoading: isLoadingItems } = useItems(activeFestival?.id);
   const { tenant_id: tenantId, is_superadmin: isSuperadmin } = useAuthStore();
@@ -36,7 +48,7 @@ export default function ParticipantsList() {
     isDeleting,
     isApprovingMultiple
   } = useParticipants();
-  const { data: festivalRegistrations = [], isLoading: isLoadingRegistrations } = useFestivalRegistrations(activeFestival?.id);
+  const { data: festivalRegistrations = [], isLoading: isLoadingRegistrations } = useFestivalRegistrations(activeFestival?.id, true);
 
   // Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,13 +57,11 @@ export default function ParticipantsList() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedGender, setSelectedGender] = useState<string>('All');
 
-  const categories = [
-    'All',
-    ...Array.from(new Set([
-      'LP', 'UP', 'HS', 'HSS', 'JUNIOR', 'SENIOR', 'CAMPUS', 'GENERAL',
-      ...participants.map((participant: any) => participant.category_code).filter(Boolean),
-    ])).sort((a, b) => (a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b))),
-  ];
+  const hasGeneralCategory = activeFestival?.general_category_enabled === true
+    || (festivalRegistrations as any[]).some((registration) => registration.entry_kind === 'general_team');
+  const categoryOptions = useMemo(() => buildParticipantCategoryOptions(
+    participants as any[], configuredCategories, isCollegeFest, hasGeneralCategory,
+  ), [configuredCategories, hasGeneralCategory, isCollegeFest, participants]);
   const itemOptions = [
     { id: 'All', label: 'All items' },
     ...(activeItems as any[])
@@ -96,13 +106,17 @@ export default function ParticipantsList() {
   const filteredParticipants = participants.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.chest_number && p.chest_number.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCat = selectedCategory === 'All' || p.category_code === selectedCategory;
+    const matchesCat = selectedCategory === 'All'
+      || (isGeneralCategoryCode(selectedCategory)
+        ? participantHasGeneralTeamRegistration(festivalRegistrations, p.id)
+        : String(p.category_code ?? '').trim().toUpperCase() === selectedCategory);
     const matchesCompetition = selectedCompetition === 'All' || (
-      !!selectedCompetitionDetails?.itemId && festivalRegistrations.some((registration: any) =>
-        registration.participant_id === p.id &&
-        registration.item_id === selectedCompetitionDetails.itemId &&
-        registration.status !== 'rejected' &&
-        (!selectedCompetitionDetails.categoryCode || (p.category_code || '').trim().toUpperCase() === selectedCompetitionDetails.categoryCode.trim().toUpperCase())
+      !!selectedCompetitionDetails?.itemId && participantHasCompetitionRegistration(
+        festivalRegistrations,
+        p.id,
+        selectedCompetitionDetails.itemId,
+        selectedCompetitionDetails.categoryCode,
+        p.category_code,
       )
     );
     const matchesStatus = selectedStatus === 'All' || (p.status || 'pending').toLowerCase() === selectedStatus.toLowerCase();
@@ -459,7 +473,7 @@ export default function ParticipantsList() {
           />
           <CompactFilter
             label="Category"
-            items={categories}
+            items={categoryOptions}
             selectedValue={selectedCategory}
             onSelect={setSelectedCategory}
             width={148}
@@ -529,7 +543,7 @@ export default function ParticipantsList() {
 
       {/* List */}
       <SsfCard className="mb-20 p-0 overflow-hidden">
-        {isLoadingList || isLoadingItems || isLoadingRegistrations ? (
+        {isLoadingList || isLoadingItems || isLoadingRegistrations || isLoadingCategories ? (
           <View className="p-4">
             <SsfTableSkeleton rows={7} columns={6} compact={!isDesktopTable} />
           </View>

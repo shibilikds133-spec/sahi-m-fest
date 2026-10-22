@@ -24,8 +24,8 @@ export const participantRepository = {
     return databaseProvider.getAdminRegistrationsBySchedule<T>(scheduleId);
   },
 
-  listRegistrationsByFestival<T>(festivalId: string) {
-    return databaseProvider.listRegistrationsByFestival<T>(festivalId);
+  listRegistrationsByFestival<T>(festivalId: string, includeGeneralTeamMembers?: boolean) {
+    return databaseProvider.listRegistrationsByFestival<T>(festivalId, includeGeneralTeamMembers);
   },
 
   updateRegistration<T>(registrationId: string, updates: Record<string, unknown>) {

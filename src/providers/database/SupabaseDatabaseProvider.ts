@@ -234,10 +234,13 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
-  async listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>> {
+  async listRegistrationsByFestival<T>(festivalId: string, includeGeneralTeamMembers = false): Promise<ListResult<T>> {
+    const columns = 'id, item_id, participant_id, organisation_id, tenant_id, festival_id, status, is_verified, code_letter';
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, item_id, participant_id, organisation_id, tenant_id, festival_id, status, is_verified, code_letter')
+      .select(includeGeneralTeamMembers
+        ? `${columns}, entry_kind, group_members(participant_id)`
+        : columns)
       .eq('festival_id', festivalId);
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }

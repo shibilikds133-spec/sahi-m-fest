@@ -52,7 +52,7 @@ export interface DatabaseProvider {
   getParticipantRegistrations<T>(participantId: string): Promise<ListResult<T>>;
   getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<ListResult<T>>;
   getAdminRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>>;
-  listRegistrationsByFestival<T>(festivalId: string): Promise<ListResult<T>>;
+  listRegistrationsByFestival<T>(festivalId: string, includeGeneralTeamMembers?: boolean): Promise<ListResult<T>>;
   updateRegistration<T>(registrationId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;
   safeUnassignRegistration<T>(registrationId: string, reason?: string | null): Promise<QueryResult<T>>;
   updateParticipant<T>(participantId: string, updates: Record<string, unknown>): Promise<QueryResult<T>>;

@@ -152,8 +152,8 @@ export const participantService = {
     })) as T[];
   },
 
-  async listRegistrationsByFestival<T>(festivalId: string): Promise<T[]> {
-    const { data, error } = await participantRepository.listRegistrationsByFestival<T>(festivalId);
+  async listRegistrationsByFestival<T>(festivalId: string, includeGeneralTeamMembers = false): Promise<T[]> {
+    const { data, error } = await participantRepository.listRegistrationsByFestival<T>(festivalId, includeGeneralTeamMembers);
     throwIfError(error);
     return data;
   },

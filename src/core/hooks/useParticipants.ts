@@ -78,12 +78,12 @@ export const useParticipants = (participantId?: string) => {
     });
   };
 
-  const useFestivalRegistrations = (festivalId: string | undefined) => {
+  const useFestivalRegistrations = (festivalId: string | undefined, includeGeneralTeamMembers = false) => {
     useCodeLetterUpdates(festivalId ? `festival:${festivalId}` : null,
       () => invalidateCodeLetters(queryClient, { festivalId }));
     return useQuery({
-      queryKey: ['festivalRegistrations', festivalId],
-      queryFn: () => participantService.listRegistrationsByFestival<any>(festivalId!),
+      queryKey: ['festivalRegistrations', festivalId, includeGeneralTeamMembers],
+      queryFn: () => participantService.listRegistrationsByFestival<any>(festivalId!, includeGeneralTeamMembers),
       enabled: !!festivalId,
     });
   };
