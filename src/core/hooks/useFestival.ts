@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { festivalSettingsService } from '../../services/festivalSettingsService';
+import type { UpdateCompetitionItemParams } from '../../providers/database/DatabaseProvider';
 import { useAuthStore } from '../store/authStore';
 import type { FestivalTemplate } from '../festival/templatePolicy';
 
@@ -170,6 +171,18 @@ export const useFestival = () => {
     },
   });
 
+  const useUpdateCompetitionItem = (festivalId: string | undefined) => useMutation({
+    mutationFn: async (params: Omit<UpdateCompetitionItemParams, 'festivalId'>) => {
+      if (!festivalId || !tenant_id) throw new Error('Select a festival before editing competitions.');
+      await festivalSettingsService.updateCompetitionItem({ ...params, festivalId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['selectable-items', festivalId] });
+    },
+  });
+
   // 7. Mutation: Sync Active Items
   const useUpdateActiveItems = (festivalId: string | undefined) => {
     return useMutation({
@@ -193,6 +206,7 @@ export const useFestival = () => {
     useItems,
     useSelectableItems,
     useApplyItemChanges,
+    useUpdateCompetitionItem,
     useUpdateActiveItems,
   };
 };

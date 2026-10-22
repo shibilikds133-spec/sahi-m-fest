@@ -7,7 +7,7 @@ import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories
 import { useAuthStore } from '../../../core/store/authStore';
 import { HANDBOOK_ITEMS } from '../../../constants/items';
 import { useRouter } from 'expo-router';
-import { Search, CheckCircle, Circle } from 'lucide-react-native';
+import { Search, CheckCircle, Circle, Pencil } from 'lucide-react-native';
 import { Card, CardContent } from '../../../components/ui/shadcn/card';
 import { Button } from '../../../components/ui/shadcn/button';
 import { Input } from '../../../components/ui/shadcn/input';
@@ -18,7 +18,7 @@ export default function ItemActivationSettings() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const { useActiveFestival, useActiveItems, useSelectableItems, useApplyItemChanges } = useFestival();
+  const { useActiveFestival, useActiveItems, useSelectableItems, useApplyItemChanges, useUpdateCompetitionItem } = useFestival();
   const { tenant_id: currentTenantId } = useAuthStore();
   const { data: festival } = useActiveFestival();
   const isCollegeFest = festival?.festival_template === 'college_fest';
@@ -35,6 +35,7 @@ export default function ItemActivationSettings() {
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
   const { data: persistedItems = [], isLoading: persistedItemsLoading } = useSelectableItems(festival?.id);
   const applyItemChanges = useApplyItemChanges(festival?.id);
+  const updateCompetitionItem = useUpdateCompetitionItem(festival?.id);
 
   const [search, setSearch] = useState('');
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
@@ -42,6 +43,8 @@ export default function ItemActivationSettings() {
   const [draftFestivalId, setDraftFestivalId] = useState<string | null>(null);
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [editingDraft, setEditingDraft] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual', groupSize: '' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
@@ -52,6 +55,17 @@ export default function ItemActivationSettings() {
     return false;
   });
   const [tenantFilterLoaded, setTenantFilterLoaded] = useState(false);
+
+  const formCategoryOptions = useMemo(() => {
+    if (!editingItem) return itemCategoryOptions;
+    const currentCodes = Array.isArray(editingItem.category_codes)
+      ? editingItem.category_codes.map(String)
+      : String(editingItem.category_codes || '').split(',').map((code: string) => code.trim()).filter(Boolean);
+    const missingCurrentCodes = currentCodes
+      .filter((code: string) => !itemCategoryOptions.some(category => category.code === code))
+      .map((code: string) => ({ id: code, code, name: code }));
+    return [...itemCategoryOptions, ...missingCurrentCodes];
+  }, [editingItem, itemCategoryOptions]);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -79,14 +93,14 @@ export default function ItemActivationSettings() {
   }, [showTenantItemsOnly, tenantFilterLoaded, tenantFilterStorageKey]);
 
   useEffect(() => {
-    if (isCollegeFest && itemCategoryOptions.length > 0) {
-      setCustomForm(current => ({ ...current, cat: current.cat && current.cat.split(',').every(code => itemCategoryOptions.some(category => category.code === code))
+    if (isCollegeFest && formCategoryOptions.length > 0) {
+      setCustomForm(current => ({ ...current, cat: current.cat && current.cat.split(',').every(code => formCategoryOptions.some(category => category.code === code))
         ? current.cat
-        : itemCategoryOptions[0].code }));
+        : formCategoryOptions[0].code }));
     } else if (!isCollegeFest) {
       setCustomForm(current => ({ ...current, cat: 'GN' }));
     }
-  }, [isCollegeFest, itemCategoryOptions]);
+  }, [isCollegeFest, formCategoryOptions]);
 
   useEffect(() => {
     if (festival?.id && activeCodes && draftFestivalId !== festival.id) {
@@ -137,36 +151,111 @@ export default function ItemActivationSettings() {
     );
   }, [availableItems, search]);
 
+  const isDraftItem = (item: any) => customItems.some(candidate => candidate.id === item.id);
+  const hasFixedGroupSize = (item: any) => {
+    const minMembers = Number(item.group_min_members);
+    const maxMembers = Number(item.group_max_members);
+    return Number.isSafeInteger(minMembers) && minMembers > 0 && minMembers === maxMembers;
+  };
+  const canEditItem = (item: any) => {
+    if (isDraftItem(item)) return true;
+    if (!item.id || !currentTenantId || item.tenant_id !== currentTenantId) return false;
+    if (item.participation_type === 'individual') return true;
+    return item.participation_type === 'group' && hasFixedGroupSize(item);
+  };
+
+  const closeItemModal = () => {
+    setIsAddModalOpen(false);
+    setEditingItem(null);
+    setEditingDraft(false);
+    setCategoryMenuOpen(false);
+  };
+
+  const openItemEditor = (item: any) => {
+    const draft = isDraftItem(item);
+    const categoryCodes = Array.isArray(item.category_codes)
+      ? item.category_codes.map(String)
+      : String(item.category_codes || '').split(',').map((code: string) => code.trim()).filter(Boolean);
+    setEditingItem(item);
+    setEditingDraft(draft);
+    setCustomForm({
+      code: item.item_code || '',
+      name: item.item_name_ml || item.item_name_en || '',
+      cat: categoryCodes.join(','),
+      type: item.participation_type || 'individual',
+      groupSize: item.group_min_members == null ? '' : String(item.group_min_members),
+    });
+    setIsAddModalOpen(true);
+  };
+
   const toggleItem = (code: string) => {
     setSelectedCodes(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
     );
   };
 
-  const handleAddCustom = () => {
-    if (!customForm.name || !customForm.cat) {
+  const handleSaveItemDetails = async () => {
+    const name = customForm.name.trim();
+    if (!name || !customForm.cat.trim()) {
       Alert.alert('Error', 'Please fill in Name and Category');
       return;
     }
     const categories = [...new Set(customForm.cat.split(',').map(value => value.trim()).filter(Boolean))];
-    if (!categories.length || (isCollegeFest && categories.some(code => !itemCategoryOptions.some(category => category.code === code)))) {
+    if (!categories.length || (isCollegeFest && categories.some(code => !formCategoryOptions.some(category => category.code === code)))) {
       Alert.alert('Error', 'Select valid categories.'); return;
+    }
+    if (editingItem && editingDraft && categories.length !== 1) {
+      Alert.alert('Error', 'A new item draft must have exactly one category.'); return;
     }
     const groupSize = Number(customForm.groupSize);
     if (customForm.type === 'group' && (!/^\d+$/.test(customForm.groupSize.trim()) || !Number.isSafeInteger(groupSize) || groupSize < 1 || groupSize > 2147483647)) {
       Alert.alert('Error', 'Enter the number of members for this group competition.');
       return;
     }
+
+    if (editingItem && !editingDraft) {
+      try {
+        await updateCompetitionItem.mutateAsync({
+          itemId: editingItem.id,
+          itemNameMl: name,
+          categoryCodes: categories,
+          groupMemberCount: editingItem.participation_type === 'group' ? groupSize : null,
+          expectedUpdatedAt: editingItem.updated_at ?? null,
+        });
+        Alert.alert('Success', 'Item details updated.');
+        closeItemModal();
+      } catch (e: any) {
+        Alert.alert('Error', e.message || 'Failed to update item. Reload and try again.');
+      }
+      return;
+    }
+
+    if (editingItem && editingDraft) {
+      const oldCode = editingItem.item_code;
+      const nextCode = `${categories[0].toUpperCase()}-C${String(editingItem.id).slice(0, 8).toUpperCase()}`;
+      setCustomItems(current => current.map(item => item.id === editingItem.id ? {
+        ...item,
+        item_code: nextCode,
+        item_name_ml: name,
+        category_codes: categories,
+        participation_type: customForm.type,
+        group_min_members: customForm.type === 'group' ? groupSize : undefined,
+        group_max_members: customForm.type === 'group' ? groupSize : undefined,
+      } : item));
+      setSelectedCodes(current => current.map(code => code === oldCode ? nextCode : code));
+      closeItemModal();
+      return;
+    }
+
     const newItems = categories.map(category => {
       const id = createRequestId();
       return { id, item_code: `${category.toUpperCase()}-C${id.slice(0, 8).toUpperCase()}`,
-        item_name_ml: customForm.name.trim(), category_codes: [category], participation_type: customForm.type, source: 'custom',
+        item_name_ml: name, category_codes: [category], participation_type: customForm.type, source: 'custom',
         ...(customForm.type === 'group' ? { group_min_members: groupSize, group_max_members: groupSize } : {}) };
     });
-    setCustomItems([...customItems, ...newItems]);
-    setSelectedCodes([...selectedCodes, ...newItems.map(item => item.item_code)]);
-    setIsAddModalOpen(false);
-    setCategoryMenuOpen(false);
+    setCustomItems(current => [...current, ...newItems]);
+    setSelectedCodes(current => [...current, ...newItems.map(item => item.item_code)]);
+    closeItemModal();
     setCustomForm({ code: '', name: '', cat: isCollegeFest ? (itemCategoryOptions[0]?.code || '') : 'GN', type: 'individual', groupSize: '' });
   };
 
@@ -222,7 +311,12 @@ export default function ItemActivationSettings() {
               onChangeText={setSearch}
             />
           </View>
-          <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || itemCategoryOptions.length === 0)} onPress={() => setIsAddModalOpen(true)}>
+          <Button variant="outline" size="sm" disabled={isCollegeFest && (categoriesLoading || itemCategoryOptions.length === 0)} onPress={() => {
+            setEditingItem(null);
+            setEditingDraft(false);
+            setCustomForm({ code: 'CUST-', name: '', cat: isCollegeFest ? (itemCategoryOptions[0]?.code || '') : 'GN', type: 'individual', groupSize: '' });
+            setIsAddModalOpen(true);
+          }}>
             + Custom
           </Button>
           <Button variant="ghost" size="sm" onPress={() => setSelectedCodes(availableItems.map(i => i.item_code))}>
@@ -266,45 +360,42 @@ export default function ItemActivationSettings() {
                 <View className="w-24">
                   <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Type</Text>
                 </View>
+                <View className="w-20">
+                  <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Action</Text>
+                </View>
               </View>
 
               {/* Table Rows */}
               {allItems.map((item, idx) => {
                 const isSelected = selectedCodes.includes(item.item_code);
+                const editable = canEditItem(item);
+                const tenantOwned = isDraftItem(item) || (!!currentTenantId && item.tenant_id === currentTenantId);
+                const unsupportedGroupSize = item.participation_type === 'group' && !hasFixedGroupSize(item);
                 return (
-                  <TouchableOpacity
-                    key={item.item_code}
-                    onPress={() => toggleItem(item.item_code)}
-                    className={`flex-row items-center px-4 py-3 border-b border-ui-border ${
-                      isSelected ? 'bg-green-50' : idx % 2 === 0 ? 'bg-white' : 'bg-ui-muted/30'
-                    }`}
-                  >
-                    <View className="w-10">
-                      {isSelected ? (
-                        <CheckCircle size={18} color="#0F766E" />
-                      ) : (
-                        <Circle size={18} color="#CBD5E1" />
-                      )}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-poppins-bold text-xs text-ui-primary">{item.item_code}</Text>
-                    </View>
-                    <View className="flex-[2]">
-                      <Text className="font-poppins text-sm text-ui-text">{item.item_name_ml}</Text>
-                    </View>
-                    <View className="w-24">
-                      <View className="bg-ui-primary/10 px-2 py-0.5 rounded self-start">
-                        <Text className="font-poppins-bold text-[10px] text-ui-primary">
-                          {item.category_codes[0] || 'GN'}
-                        </Text>
+                  <View key={item.item_code} className={`flex-row items-center border-b border-ui-border px-4 py-2 ${isSelected ? 'bg-green-50' : idx % 2 === 0 ? 'bg-white' : 'bg-ui-muted/30'}`}>
+                    <TouchableOpacity onPress={() => toggleItem(item.item_code)} className="min-h-11 flex-1 flex-row items-center">
+                      <View className="w-10">
+                        {isSelected ? <CheckCircle size={18} color="#0F766E" /> : <Circle size={18} color="#CBD5E1" />}
                       </View>
-                    </View>
-                    <View className="w-24">
-                      <Text className="font-poppins text-xs text-ui-text-muted">
-                        {item.participation_type === 'individual' ? 'Individual' : 'Group'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                      <View className="flex-1">
+                        <Text className="font-poppins-bold text-xs text-ui-primary">{item.item_code}</Text>
+                      </View>
+                      <View className="flex-[2]">
+                        <Text className="font-poppins text-sm text-ui-text">{item.item_name_ml}</Text>
+                      </View>
+                      <View className="w-24">
+                        <View className="bg-ui-primary/10 px-2 py-0.5 rounded self-start">
+                          <Text className="font-poppins-bold text-[10px] text-ui-primary">{item.category_codes?.[0] || 'GN'}</Text>
+                        </View>
+                      </View>
+                      <View className="w-24">
+                        <Text className="font-poppins text-xs text-ui-text-muted">{item.participation_type === 'individual' ? 'Individual' : 'Group'}</Text>
+                      </View>
+                    </TouchableOpacity>
+                    {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="ml-2 h-9 w-20 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
+                      <Pencil size={13} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-[10px] text-ui-text">Edit</Text>
+                    </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="ml-2 w-20 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : <View className="ml-2 w-20" />}
+                  </View>
                 );
               })}
 
@@ -326,25 +417,27 @@ export default function ItemActivationSettings() {
 
                 {items.map((item) => {
                   const isSelected = selectedCodes.includes(item.item_code);
+                  const editable = canEditItem(item);
+                  const tenantOwned = isDraftItem(item) || (!!currentTenantId && item.tenant_id === currentTenantId);
+                  const unsupportedGroupSize = item.participation_type === 'group' && !hasFixedGroupSize(item);
                   return (
-                    <TouchableOpacity key={item.item_code} onPress={() => toggleItem(item.item_code)}>
-                      <Card className={`mb-2 ${isSelected ? 'border-ui-primary/30 bg-green-50' : ''}`}>
-                        <CardContent className="p-4 flex-row items-center">
-                          <View className="flex-1">
+                    <Card key={item.item_code} className={`mb-2 ${isSelected ? 'border-ui-primary/30 bg-green-50' : ''}`}>
+                        <CardContent className="p-3 flex-row items-center">
+                          <TouchableOpacity onPress={() => toggleItem(item.item_code)} className="min-h-11 flex-1 flex-row items-center">
+                            <View className="flex-1">
                             <Text className="text-xs font-poppins-bold text-ui-primary mb-1">{item.item_code}</Text>
                             <Text className="text-base font-poppins-bold text-ui-text">{item.item_name_ml}</Text>
                             <Text className="text-xs text-ui-text-muted mt-1">
                               {item.participation_type === 'individual' ? 'Individual' : 'Group'} Match
                             </Text>
-                          </View>
-                          {isSelected ? (
-                            <CheckCircle size={22} color="#0F766E" />
-                          ) : (
-                            <Circle size={22} color="#CBD5E1" />
-                          )}
+                            </View>
+                            {isSelected ? <CheckCircle size={22} color="#0F766E" /> : <Circle size={22} color="#CBD5E1" />}
+                          </TouchableOpacity>
+                          {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="ml-2 h-11 min-w-11 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white px-2" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
+                            <Pencil size={14} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-xs text-ui-text">Edit</Text>
+                          </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="ml-2 max-w-16 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : null}
                         </CardContent>
-                      </Card>
-                    </TouchableOpacity>
+                    </Card>
                   );
                 })}
               </View>
@@ -364,10 +457,10 @@ export default function ItemActivationSettings() {
       <Modal visible={isAddModalOpen} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white p-6 rounded-t-3xl min-h-[50%]">
-            <Text className="text-xl font-poppins-bold text-ui-text mb-4">Add Custom Item</Text>
+            <Text className="text-xl font-poppins-bold text-ui-text mb-4">{editingItem ? 'Edit Item' : 'Add Custom Item'}</Text>
 
             <View className="mb-4">
-              <Label>Item Name (Malayalam/English)</Label>
+              <Label>{editingItem ? 'Item Name (Malayalam)' : 'Item Name (Malayalam/English)'}</Label>
               <Input
                 value={customForm.name}
                 onChangeText={t => setCustomForm({...customForm, name: t})}
@@ -391,7 +484,7 @@ export default function ItemActivationSettings() {
                   </TouchableOpacity>
                   {categoryMenuOpen && (
                     <View className="mt-1 rounded-md border border-ui-border bg-white">
-                      {itemCategoryOptions.map(category => (
+                      {formCategoryOptions.map(category => (
                         <TouchableOpacity
                           key={category.id}
                           className="border-b border-ui-border px-3 py-2.5 last:border-b-0"
@@ -419,7 +512,11 @@ export default function ItemActivationSettings() {
 
             <View className="mb-6">
               <Label>Participation Type</Label>
-              <View className="flex-row gap-2 mt-2">
+              {editingItem && !editingDraft ? (
+                <Text className="mt-2 font-poppins text-sm text-ui-text">
+                  {customForm.type === 'individual' ? 'Individual' : 'Group'} (fixed for this item)
+                </Text>
+              ) : <View className="flex-row gap-2 mt-2">
                 <Button
                   variant={customForm.type === 'individual' ? 'default' : 'outline'}
                   size="sm"
@@ -434,7 +531,7 @@ export default function ItemActivationSettings() {
                 >
                   Group
                 </Button>
-              </View>
+              </View>}
             </View>
 
             {customForm.type === 'group' && <View className="mb-6">
@@ -445,8 +542,8 @@ export default function ItemActivationSettings() {
             </View>}
 
             <View className="gap-3">
-              <Button onPress={handleAddCustom}>Add to List</Button>
-              <Button variant="outline" onPress={() => setIsAddModalOpen(false)}>Cancel</Button>
+              <Button onPress={handleSaveItemDetails} disabled={updateCompetitionItem.isPending}>{editingItem ? 'Save item details' : 'Add to List'}</Button>
+              <Button variant="outline" onPress={closeItemModal}>Cancel</Button>
             </View>
           </View>
         </View>

@@ -1,4 +1,5 @@
 import { databaseProvider } from '../../providers/database';
+import type { UpdateCompetitionItemParams } from '../../providers/database/DatabaseProvider';
 
 export const festivalRepository = {
   async getActiveFestival<T>(tenantId: string) {
@@ -36,6 +37,10 @@ export const festivalRepository = {
     itemRecords?: any[],
   ) {
     return databaseProvider.applyItemChanges(festivalId, activateCodes, deactivateCodes, itemRecords);
+  },
+
+  updateCompetitionItem(params: UpdateCompetitionItemParams) {
+    return databaseProvider.updateCompetitionItem(params);
   },
 
   async setActiveItemCodes(

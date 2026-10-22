@@ -1,4 +1,5 @@
 import { festivalRepository } from '../lib/repositories/festivalRepository';
+import type { UpdateCompetitionItemParams } from '../providers/database/DatabaseProvider';
 
 const notFoundCode = 'PGRST116';
 
@@ -71,6 +72,11 @@ export const festivalSettingsService = {
     const { error } = await festivalRepository.applyItemChanges(
       festivalId, activateCodes, deactivateCodes, itemRecords,
     );
+    if (error) throw new Error(error.message);
+  },
+
+  async updateCompetitionItem(params: UpdateCompetitionItemParams): Promise<void> {
+    const { error } = await festivalRepository.updateCompetitionItem(params);
     if (error) throw new Error(error.message);
   },
 

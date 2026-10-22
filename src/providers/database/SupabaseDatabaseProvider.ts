@@ -1,5 +1,5 @@
 import { supabase } from '../../core/config/supabase';
-import { DatabaseProvider, ListResult, QueryResult } from './DatabaseProvider';
+import { DatabaseProvider, ListResult, QueryResult, UpdateCompetitionItemParams } from './DatabaseProvider';
 import { CompetitionPublication, competitionArguments } from '../../types/scoring';
 
 const normalizeError = (error: any): QueryResult<never>['error'] => {
@@ -99,6 +99,18 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       p_activate_codes: activateCodes,
       p_deactivate_codes: deactivateCodes,
       p_records: itemRecords,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async updateCompetitionItem(params: UpdateCompetitionItemParams): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('update_competition_item', {
+      p_festival_id: params.festivalId,
+      p_item_id: params.itemId,
+      p_item_name_ml: params.itemNameMl,
+      p_category_codes: params.categoryCodes,
+      p_group_member_count: params.groupMemberCount,
+      p_expected_updated_at: params.expectedUpdatedAt,
     });
     return { data: undefined, error: normalizeError(error) };
   }

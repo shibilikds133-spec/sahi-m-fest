@@ -10,6 +10,15 @@ export type ListResult<T> = {
   error: { code?: string; message: string } | null;
 };
 
+export type UpdateCompetitionItemParams = {
+  festivalId: string;
+  itemId: string;
+  itemNameMl: string;
+  categoryCodes: string[];
+  groupMemberCount: number | null;
+  expectedUpdatedAt: string | null;
+};
+
 export interface DatabaseProvider {
   getActiveFestival<T>(tenantId: string): Promise<QueryResult<T>>;
   getPointsConfig<T>(festivalId: string): Promise<QueryResult<T>>;
@@ -24,6 +33,7 @@ export interface DatabaseProvider {
     deactivateCodes: string[],
     itemRecords?: any[],
   ): Promise<QueryResult<void>>;
+  updateCompetitionItem(params: UpdateCompetitionItemParams): Promise<QueryResult<void>>;
   setActiveItemCodes(
     festivalId: string,
     tenantId: string,
