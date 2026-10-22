@@ -40,7 +40,9 @@ async function main() {
       CREATE TRIGGER audit_participant_chest_number_change AFTER UPDATE OF chest_number,organisation_id ON public.participants FOR EACH ROW EXECUTE FUNCTION public.audit_participant_chest_number_change();
       CREATE TRIGGER sync_festival_chest_numbers_on_settings_change AFTER INSERT OR UPDATE OF chest_number_template,chest_number_category_range ON public.festival_calendar FOR EACH ROW EXECUTE FUNCTION public.sync_festival_chest_numbers_on_settings_change();`);
     sql(read('supabase/migrations/20261022020647_festival_chest_order_and_final_lock.sql'));
+    sql(read('supabase/migrations/20261022110000_hide_archived_teams_from_chest_order.sql'));
     sql(read('supabase/tests/chest_order_transaction.sql'));
+    sql(read('supabase/tests/chest_order_archived_team.sql'));
     // A second connection waits for the same festival lock and must observe the
     // committed final lock rather than overwriting it with an old snapshot.
     const ids = "ARRAY['00000000-0000-4000-8000-000000000021','00000000-0000-4000-8000-000000000022','00000000-0000-4000-8000-000000000023']::uuid[]";

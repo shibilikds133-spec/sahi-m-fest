@@ -29,6 +29,7 @@ export const useOrganisations = () => {
   const invalidateOrganisationLists = () => {
     queryClient.invalidateQueries({ queryKey: ['childOrganisations', parentId] });
     queryClient.invalidateQueries({ queryKey: ['archivedChildOrganisations', parentId] });
+    queryClient.invalidateQueries({ queryKey: ['chest-number-order'] });
   };
 
   const createOrganisationMutation = useMutation({

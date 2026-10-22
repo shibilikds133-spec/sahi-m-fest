@@ -39,13 +39,23 @@ function TeamChestNumbers({ festivalId }: { festivalId: string }) {
   const state = draft?.base ?? query.data;
   const locked = !!query.data?.locked;
   const ids = draft?.ids ?? state?.teams.map(team => team.id) ?? [];
+  const teamsById = new Map((state?.teams ?? []).map(team => [team.id, team]));
+  const visibleIds = ids.filter(id => !teamsById.get(id)?.archived_at);
   const stale = !!draft && !!query.data && (draft.base.revision !== query.data.revision ||
-    draft.base.range !== query.data.range || draft.base.teams.map(team => team.id).join() !== query.data.teams.map(team => team.id).join());
+    draft.base.range !== query.data.range ||
+    draft.base.teams.map(team => `${team.id}:${team.archived_at ?? ''}`).join() !==
+      query.data.teams.map(team => `${team.id}:${team.archived_at ?? ''}`).join());
 
   const move = (from: number, to: number) => {
-    if (!state || busy || locked || from === to || from < 0 || to < 0 || from >= ids.length || to >= ids.length) return;
+    if (!state || busy || locked || from === to || from < 0 || to < 0 || from >= visibleIds.length || to >= visibleIds.length) return;
+    const activePositions = ids.reduce<number[]>((positions, id, index) => {
+      if (!teamsById.get(id)?.archived_at) positions.push(index);
+      return positions;
+    }, []);
+    const activeIds = activePositions.map(index => ids[index]);
     const next = [...ids];
-    next.splice(to, 0, next.splice(from, 1)[0]);
+    activeIds.splice(to, 0, activeIds.splice(from, 1)[0]);
+    activePositions.forEach((position, index) => { next[position] = activeIds[index]; });
     setDraft(next.every((id, index) => id === state.teams[index]?.id) ? null : { base: state, ids: next });
     setNotice('');
   };
@@ -59,15 +69,15 @@ function TeamChestNumbers({ festivalId }: { festivalId: string }) {
     }
     if (origin.current?.id !== id) return;
     const center = origin.current.center + dy;
-    let target = ids.indexOf(id);
+    let target = visibleIds.indexOf(id);
     let distance = Infinity;
-    ids.forEach((key, index) => {
+    visibleIds.forEach((key, index) => {
       const layout = layouts.current.get(key);
       if (!layout) return;
       const delta = Math.abs(center - (layout.y + layout.height / 2));
       if (delta < distance) { distance = delta; target = index; }
     });
-    if (phase === 'end') { move(ids.indexOf(id), target); origin.current = null; setDrag(null); }
+    if (phase === 'end') { move(visibleIds.indexOf(id), target); origin.current = null; setDrag(null); }
     else setDrag({ id, dy, target });
   };
   const openDialog = (next: 'lock' | 'unlock' | 'regenerate') => { setDialogError(''); setCode(''); setDialog(next); };
@@ -100,7 +110,7 @@ function TeamChestNumbers({ festivalId }: { festivalId: string }) {
           <View className="bg-blue-50 border border-blue-200 p-3 rounded-xl mb-4 flex-row gap-3">
             {locked ? <LockKeyhole size={20} color={ui.colors.info} /> : <AlertTriangle size={20} color={ui.colors.info} />}
             <View className="flex-1"><Text className="font-poppins-bold text-blue-800">{locked ? 'Chest numbers locked' : 'Team number order'}</Text>
-              <Text className="font-poppins text-xs text-blue-700 mt-1">{locked ? 'Unlock with the tenant ID to change the order or regenerate numbers.' : `Drag a team or use the arrows. The first team gets ${state.range}–${state.range * 2 - 1}. Save before final locking.`}</Text>
+              <Text className="font-poppins text-xs text-blue-700 mt-1">{locked ? 'Unlock with the tenant ID to change the order or regenerate numbers.' : 'Drag an active team or use the arrows. Archived teams are hidden and keep their number ranges. Save before final locking.'}</Text>
             </View>
           </View>
           <View className="flex-row flex-wrap gap-2 mb-3">
@@ -119,13 +129,14 @@ function TeamChestNumbers({ festivalId }: { festivalId: string }) {
           {stale && <Text accessibilityRole="alert" className="font-poppins text-sm text-red-700 mb-3">Saved settings or teams changed. Discard changes to load the current order.</Text>}
           {!!notice && <Text accessibilityRole="alert" className="font-poppins text-sm text-ssf-text mb-3">{notice}</Text>}
           {!!draft && <Text className="font-poppins text-xs text-ssf-text-muted mb-3">Preview only. Save order will reassign existing chest numbers.</Text>}
-          {!ids.length ? <SsfCard><Text className="font-poppins text-ssf-text-muted">No teams found for this festival.</Text></SsfCard> : <View>
-            {ids.map((id, index) => {
+          {!visibleIds.length ? <SsfCard><Text className="font-poppins text-ssf-text-muted">No active teams found for this festival.</Text></SsfCard> : <View>
+            {visibleIds.map((id, index) => {
               const team = state.teams.find(team => team.id === id)!;
               const maxSlot = Math.max(0, ...state.teams.map(team => team.slot_number ?? 0));
-              const unallocatedIndex = state.teams.slice(0, index + 1).filter(team => team.slot_number === null).length;
-              const slot = draft ? index + 1 : team.slot_number ?? maxSlot + unallocatedIndex;
-              return <ChestTeamOrderRow key={id} team={team} index={index} count={ids.length} range={state.range} slot={slot}
+              const fullIndex = ids.indexOf(id);
+              const unallocatedIndex = state.teams.slice(0, fullIndex + 1).filter(team => team.slot_number === null).length;
+              const slot = draft ? state.teams[fullIndex]?.slot_number ?? maxSlot + unallocatedIndex : team.slot_number ?? maxSlot + unallocatedIndex;
+              return <ChestTeamOrderRow key={id} team={team} index={index} count={visibleIds.length} range={state.range} slot={slot}
                 disabled={locked || busy || stale} dragging={drag?.id === id} offset={drag?.id === id ? drag.dy : 0}
                 dropTarget={!!drag && drag.target === index} onMove={move} onDrag={handleDrag}
                 onLayout={(key, y, height) => { layouts.current.set(key, { y, height }); }} />;

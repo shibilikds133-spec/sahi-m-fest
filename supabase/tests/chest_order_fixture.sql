@@ -8,7 +8,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated,anon;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon;
 CREATE TABLE public.tenants(id uuid PRIMARY KEY,organisation_id uuid);
 CREATE TABLE public.profiles(id uuid PRIMARY KEY,tenant_id uuid,role text,is_superadmin boolean DEFAULT false);
-CREATE TABLE public.organisations(id uuid PRIMARY KEY,parent_id uuid,tenant_id uuid,name text,created_at timestamptz DEFAULT now());
+CREATE TABLE public.organisations(id uuid PRIMARY KEY,parent_id uuid,tenant_id uuid,name text,archived_at timestamptz,created_at timestamptz DEFAULT now());
 CREATE TABLE public.festival_calendar(id uuid PRIMARY KEY,tenant_id uuid,chest_number_template text,chest_number_category_range integer);
 CREATE TABLE public.festival_team_chest_slots(
   festival_id uuid REFERENCES public.festival_calendar ON DELETE CASCADE,

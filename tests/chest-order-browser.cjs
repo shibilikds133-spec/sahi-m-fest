@@ -10,7 +10,12 @@ const root = path.resolve(__dirname, '../output/chest-order-web');
 const output = path.resolve(__dirname, '../output/chest-order-validation');
 const id = n => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
 const tenant = id(1), festival = id(11), user = id(101);
-const initial = ['AL COGNIX', 'EL CLARIX', 'LA COSMIX — a longer team name for mobile'].map((name, i) => ({ id: id(21 + i), name, slot_number: i + 1, total: 12 + i, numeric: 12 + i }));
+const initial = [
+  { id: id(21), name: 'AL COGNIX', slot_number: 1, total: 12, numeric: 12 },
+  { id: id(22), name: 'Archived Test Team', archived_at: '2026-10-22T00:00:00Z', slot_number: 2, total: 1, numeric: 1 },
+  { id: id(23), name: 'EL CLARIX', slot_number: 3, total: 13, numeric: 13 },
+  { id: id(24), name: 'LA COSMIX — a longer team name for mobile', slot_number: 4, total: 14, numeric: 14 },
+];
 let state = { festival_id: festival, template: 'team', range: 100, revision: 0, locked: false, teams: initial };
 let failRead = false, conflict = false;
 const writes = [], errors = [];
@@ -106,6 +111,7 @@ async function main() {
       await text(page, 'Team number order');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, 'Horizontal overflow at ' + width);
       assert.equal((await rowOrder(page)).length, 3);
+      assert.equal((await rowOrder(page)).some(label => label.includes('Archived Test Team')), false);
       await page.screenshot({ path: path.join(output, 'chest-order-' + width + '.png'), fullPage: true });
     }
     await page.setViewport({ width: 1440, height: 1000 });
@@ -114,7 +120,8 @@ async function main() {
     assert.equal(writes.length, 0, 'Dragging must not persist numbers before Save');
     assert.match((await rowOrder(page))[2], /AL COGNIX/);
     await click(page, 'Save order'); await text(page, 'Team order and chest numbers saved.');
-    assert.deepEqual(state.teams.map(team => team.id), [id(22), id(23), id(21)]);
+    assert.deepEqual(state.teams.map(team => team.id), [id(23), id(22), id(24), id(21)]);
+    assert.equal(state.teams.find(team => team.id === id(22)).slot_number, 2, 'Archived team slot must remain fixed');
     await page.reload({ waitUntil: 'networkidle0' }); assert.match((await rowOrder(page))[0], /EL CLARIX/);
     await click(page, 'Final Lock'); await click(page, 'Final Lock'); await text(page, 'Chest numbers locked');
     assert.equal(state.locked, true);
@@ -140,9 +147,9 @@ async function main() {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
     await page.screenshot({ path: path.join(output, 'final-lock-phone.png'), fullPage: true });
     await click(page, 'Cancel');
-    state = { ...state, teams: [] }; await page.reload({ waitUntil: 'networkidle0' }); await text(page, 'No teams found');
+    state = { ...state, teams: [] }; await page.reload({ waitUntil: 'networkidle0' }); await text(page, 'No active teams found');
     failRead = true; await page.reload({ waitUntil: 'networkidle0' }); await text(page, 'Chest settings temporarily unavailable');
-    failRead = false; await click(page, 'Retry'); await text(page, 'No teams found');
+    failRead = false; await click(page, 'Retry'); await text(page, 'No active teams found');
     assert.deepEqual(errors, []);
     console.log('PASS: five responsive widths, desktop drag, touch drag, arrows, explicit Save, persistence, final lock, wrong/correct Tenant ID, stale-save recovery and empty/error states');
   } finally { if (browser) await browser.close(); await new Promise(resolve => server.close(resolve)); }

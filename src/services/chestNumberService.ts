@@ -1,6 +1,6 @@
 import { supabase } from '../core/config/supabase';
 
-export type ChestTeam = { id: string; name: string; slot_number: number | null; total: number; numeric: number };
+export type ChestTeam = { id: string; name: string; archived_at?: string | null; slot_number: number | null; total: number; numeric: number };
 export type ChestOrderState = {
   festival_id: string; template: 'team' | 'category'; range: number;
   locked: boolean; revision: number; teams: ChestTeam[];
