@@ -8,8 +8,8 @@ const puppeteer=require('puppeteer-core');
 const web=path.resolve(__dirname,'../output/general-group-web');
 const out=path.resolve(__dirname,'../output/general-group-validation');
 const id=n=>String(n).padStart(32,'0').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/,'$1-$2-$3-$4-$5');
-const children=['Amina Abdulla','Hana Muhammed'];
-const festival={id:id(11),tenant_id:id(1),is_active:true,custom_name:'Test Festival',level:'unit',festival_year:2026};
+const children=['Amina Abdulla','Hana Muhammed','Zara Ali'];
+const festival={id:id(11),tenant_id:id(1),is_active:true,general_category_enabled:true,custom_name:'Test Festival',level:'unit',festival_year:2026};
 const profile={profile:{id:id(31),slug:'amina',name:children[0],category_code:'HS',organisation_name:'Test Team'},
  participated_items:[{registration_id:id(61),item_id:id(42),item_name:'Solo competition',category_codes:['HS'],participation_type:'individual'},
  {registration_id:id(62),item_id:id(41),item_name:'General group competition',category_codes:['GN'],participation_type:'group',entry_kind:'general_team',entry_chest_number:'1001'}],
@@ -18,7 +18,8 @@ const entry={id:id(62),schedule_id:id(51),item_id:id(41),participant_id:null,org
  code_letter:null,entry_kind:'general_team',entry_chest_number:'1001',participant_name:'Test Team',participant_chest_number:'1001',participant_category_code:'GN',
  organisation_name:'Test Team',members:children.map((name,i)=>({name,chest_number:String(101+i)}))};
 const groupCard={id:id(62),entry_chest_number:'1001',organisation_id:id(21),organisation:{name:'Test Team'},
- item:{id:id(41),item_code:'TRL',item_name_en:'General group competition'},members:children.map((name,i)=>({participant:{name,chest_number:String(101+i)}}))};
+ item:{id:id(41),item_code:'TRL',item_name_en:'General group competition',item_name_ml:null,group_min_members:2,group_max_members:3,gender:'both'},
+ members:children.slice(0,2).map((name,i)=>({participant_id:id(31+i),participant:{id:id(31+i),name,chest_number:String(101+i)}}))};
 let failCards=false,emptyCards=false,hiddenProfile=false,locked=false,verification;
 const seen=[];
 async function clickText(page,text){const ok=await page.evaluate(text=>{
@@ -28,7 +29,7 @@ async function clickText(page,text){const ok=await page.evaluate(text=>{
 async function text(page,value){try{await page.waitForFunction(v=>document.body.innerText.includes(v),{timeout:10000},value);}
  catch(e){throw new Error(e.message+' Expected '+value+'; body='+await page.evaluate(()=>document.body.innerText));}}
 async function capture(page,label,focusText){for(const width of [320,375,768,1024,1440]){
- await page.setViewport({width,height:900});await new Promise(r=>setTimeout(r,80));
+ await page.setViewport({width,height:900});await new Promise(r=>setTimeout(r,300));
  if(focusText)await page.evaluate(text=>{const el=[...document.querySelectorAll('*')].find(e=>e.childElementCount===0&&e.textContent.includes(text));el?.scrollIntoView({block:'center'});},focusText);
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
  assert.equal(overflow,false,`${label} horizontal overflow at ${width}`);
@@ -67,7 +68,17 @@ async function capture(page,label,focusText){for(const width of [320,375,768,102
    assert.equal('p_participant_id' in input,false);assert.equal(input.p_action,'verify');verification=input;entry.is_verified=true;result={};
  }else if(rpc==='profiles')result={role:'admin',tenant_id:id(1),is_superadmin:false};
  else if(rpc==='festival_calendar')result=festival;
- else if(rpc==='participants')result=children.map((name,i)=>({id:id(31+i),name,chest_number:String(101+i),profile_slug:'child-'+i,category_code:'HS',organisations:{name:'Test Team'}}));
+  else if(rpc==='participants')result=children.map((name,i)=>({id:id(i===2?36:31+i),name,chest_number:String(101+i),profile_slug:'child-'+i,
+    festival_id:id(11),organisation_id:id(21),status:'approved',gender:'male',category_code:'HS',organisations:{name:'Test Team'}}));
+  else if(rpc==='items')result=[{...groupCard.item,category_codes:['GN'],participation_type:'group',is_active:true}];
+  else if(rpc==='update_general_team_roster'){
+    const input=JSON.parse(req.postData());assert.equal(input.p_registration_id,id(62));
+    assert.deepEqual(input.p_expected_participant_ids,[id(31),id(32)]);
+    assert.deepEqual(input.p_participant_ids,[id(31),id(36)]);
+    groupCard.members=[{participant_id:id(31),participant:{id:id(31),name:children[0],chest_number:'101'}},
+      {participant_id:id(36),participant:{id:id(36),name:children[2],chest_number:'103'}}];
+    result={registration_id:id(62),entry_chest_number:'1001',member_count:2,changed:true};
+  }
  else if(rpc==='registrations'){
    assert.ok(url.searchParams.get('entry_kind')==='eq.general_team');assert.equal(url.searchParams.get('festival_id'),'eq.'+id(11));
    if(failCards){await respond({message:'Group cards temporarily unavailable'},400);return;}result=emptyCards?[]:[groupCard];
@@ -98,6 +109,25 @@ async function capture(page,label,focusText){for(const width of [320,375,768,102
  await page.pdf({path:path.join(out,'group-card-print.pdf'),format:'A4',printBackground:true,preferCSSPageSize:true});
  emptyCards=true;await page.reload({waitUntil:'networkidle0'});await clickText(page,'Student cards');await clickText(page,'Group cards');await text(page,'No General group entries match these filters.');assert.equal(await page.$$eval('.qr-wrapper',els=>els.length),0);emptyCards=false;
  failCards=true;await page.reload({waitUntil:'networkidle0'});await clickText(page,'Student cards');await clickText(page,'Group cards');await text(page,'Group cards temporarily unavailable');
- assert.deepEqual(errors,[]);console.log('PASS: candidate membership/privacy, group roster/check-in identity/locks, group cards, empty/error states and five responsive widths.');
+  failCards=false;
+  await page.goto(base+'/participants/general-entries',{waitUntil:'networkidle0'});
+  await text(page,'Existing entries');await text(page,'Hana Muhammed');
+  const entrySearch='input[placeholder="Chest, name or program"]';
+  const searchEntries=async value=>{await page.click(entrySearch);await page.keyboard.down('Control');await page.keyboard.press('A');await page.keyboard.up('Control');await page.keyboard.type(value);};
+  await searchEntries('not-a-real-member');await text(page,'No entries match this search.');
+  for(const value of ['Hana','1001','General group']){
+    await searchEntries(value);
+    await page.waitForFunction(()=>document.querySelectorAll('[aria-label="Edit members of entry 1001"]').length===1);
+  }
+  await clickText(page,'Edit members');await text(page,'Entry #1001');await text(page,'Zara Ali');
+  await capture(page,'general-entry-editor','Edit team members');
+  await page.setViewport({width:375,height:900});
+  await clickText(page,'Hana Muhammed');await clickText(page,'Zara Ali');await clickText(page,'Save members');
+  await text(page,'Entry 1001 roster updated.');
+  await page.reload({waitUntil:'networkidle0'});await text(page,'Amina Abdulla, Zara Ali');
+  assert.equal(await page.evaluate(()=>document.body.innerText.includes('Amina Abdulla, Hana Muhammed')),false,'Removed member must disappear from saved roster');
+  await page.goto(base+'/participants/general-entries?edit='+id(62),{waitUntil:'networkidle0'});
+  await text(page,'Edit team members');await text(page,'Zara Ali');
+  assert.deepEqual(errors,[]);console.log('PASS: group identity/locks, current-roster edit, dynamic entry search, and five responsive widths.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);console.error([...new Set(seen)]);process.exitCode=1;});

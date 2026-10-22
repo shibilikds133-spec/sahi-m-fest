@@ -28,7 +28,10 @@ function extract(file, name) {
       extract('supabase/migrations/152_fix_checkin_child_tenant_scope.sql','stage_update_registration'),
       read('supabase/migrations/174_fix_admin_bypass_item_visibility.sql'),
       read('supabase/migrations/172_public_leaderboard_item_limit.sql'),
-      read('supabase/migrations/'+migration),read('supabase/tests/general_group_identity_transaction.sql')].join('\n');
+      read('supabase/migrations/'+migration),
+      read('supabase/migrations/20261022034136_general_team_roster_edit.sql'),
+      read('supabase/tests/general_group_identity_transaction.sql'),
+      read('supabase/tests/general_team_roster_edit_transaction.sql')].join('\n');
     const output = docker(['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres'],sql);
     console.log(output.split('\n').filter(s=>/PASS:/.test(s)).join('\n'));
     // Two independent real sessions must serialize, then allocate distinct cards.
@@ -61,6 +64,17 @@ function extract(file, name) {
     assert.equal(groupWrite.code,0,groupWrite.output);assert.ok(studentWaiting,'Student allocation must wait on the same festival lock');
     assert.notEqual(studentWrite.code,0);assert.match(studentWrite.output,/reserved by a General group entry/);
     console.log('PASS: concurrent student/group numbering serializes and rejects the cross-table duplicate.');
-    console.log(`Passed ${(output.match(/PASS:/g)||[]).length+2} PostgreSQL contract assertions.`);
+    const editEntry=`(SELECT (data->>'registration_id')::uuid FROM test.created)`;
+    const firstEdit=connection();firstEdit.child.stdin.write(actor+`BEGIN;SELECT public.update_general_team_roster(${editEntry},ARRAY['${id(31)}','${id(32)}']::uuid[],ARRAY['${id(31)}','${id(36)}']::uuid[]);SELECT 'EDIT_LOCK_HELD';\n`);
+    for(let i=0;!firstEdit.output().includes('EDIT_LOCK_HELD');i++){if(i===50)throw new Error(firstEdit.output());await new Promise(r=>setTimeout(r,100));}
+    const staleEdit=connection();staleEdit.child.stdin.end(actor+`SELECT public.update_general_team_roster(${editEntry},ARRAY['${id(31)}','${id(36)}']::uuid[],ARRAY['${id(31)}','${id(36)}']::uuid[]);`);
+    let editWaiting=false;
+    for(let i=0;i<30;i++){const count=docker(['exec',container,'psql','-U','postgres','-At','-c',"SELECT count(*) FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%update_general_team_roster%' AND query NOT LIKE '%pg_stat_activity%'"]);
+      if(Number(count.trim())>0){editWaiting=true;break;}await new Promise(r=>setTimeout(r,100));}
+    firstEdit.child.stdin.end('COMMIT;\n');const [saved,stale]=await Promise.all([firstEdit.done,staleEdit.done]);
+    assert.equal(saved.code,0,saved.output);assert.ok(editWaiting,'Second roster writer must wait for the entry lock');
+    assert.notEqual(stale.code,0);assert.match(stale.output,/This roster changed/);
+    console.log('PASS: concurrent roster saves serialize and reject a stale editor without losing the first update.');
+    console.log(`Passed ${(output.match(/PASS:/g)||[]).length+3} PostgreSQL contract assertions.`);
   } finally { if(created)docker(['rm','-f',container]); }
 })().catch(e=>{console.error(e.message);process.exitCode=1;});

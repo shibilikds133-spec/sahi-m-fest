@@ -1,14 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, Check, Search, Users } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Check, Search, Users, X } from 'lucide-react-native';
 import { SsfButton } from '../../../components/ui/SsfButton';
 import { SsfCard } from '../../../components/ui/SsfCard';
 import { useAuthStore } from '../../../core/store/authStore';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useParticipants } from '../../../core/hooks/useParticipants';
-import { generalEntryService } from '../../../services/generalEntryService';
+import { generalEntryService, type GeneralTeamEntry } from '../../../services/generalEntryService';
 import { invalidateGeneralMembership } from '../../../core/utils/invalidateGeneralMembership';
 
 type GeneralItem = {
@@ -24,6 +24,8 @@ type GeneralItem = {
 
 export default function GeneralEntriesScreen() {
   const router = useRouter();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const { width, height } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { role, is_superadmin } = useAuthStore();
   const { useActiveFestival, useItems } = useFestival();
@@ -37,6 +39,15 @@ export default function GeneralEntriesScreen() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [existingSearch, setExistingSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editIds, setEditIds] = useState<string[]>([]);
+  const [editExpectedIds, setEditExpectedIds] = useState<string[]>([]);
+  const [editSearch, setEditSearch] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editNotice, setEditNotice] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const openedFromRoute = useRef<string | null>(null);
 
   const entriesQuery = useQuery({
     queryKey: ['general-team-entries', festival?.id],
@@ -67,6 +78,69 @@ export default function GeneralEntriesScreen() {
     `${item.item_code} ${item.item_name_en}`.toLowerCase().includes(itemSearch.trim().toLowerCase()));
   const filteredParticipants = festivalParticipants.filter(p =>
     `${p.name ?? ''} ${p.chest_number ?? ''}`.toLowerCase().includes(participantSearch.trim().toLowerCase()));
+  const visibleEntries = useMemo(() => {
+    const term = existingSearch.trim().toLowerCase();
+    if (!term) return entriesQuery.data ?? [];
+    return (entriesQuery.data ?? []).filter(entry => [
+      entry.entry_chest_number, entry.item?.item_code, entry.item?.item_name_en,
+      entry.item?.item_name_ml, entry.organisation?.name,
+      ...(entry.members ?? []).flatMap(member => [member.participant?.name, member.participant?.chest_number]),
+    ].filter(Boolean).join(' ').toLowerCase().includes(term));
+  }, [entriesQuery.data, existingSearch]);
+
+  const openEdit = (entry: GeneralTeamEntry) => {
+    const members = entry.members.map(member => member.participant_id);
+    setEditingId(entry.id);
+    setEditIds(members);
+    setEditExpectedIds(members);
+    setEditSearch('');
+    setEditError('');
+    setEditNotice('');
+  };
+  useEffect(() => {
+    if (typeof edit !== 'string' || !entriesQuery.data || openedFromRoute.current === edit) return;
+    const entry = entriesQuery.data.find(row => row.id === edit);
+    if (entry) { openedFromRoute.current = edit; openEdit(entry); }
+  }, [edit, entriesQuery.data]);
+
+  const editingEntry = entriesQuery.data?.find(entry => entry.id === editingId) ?? null;
+  const editMin = Number(editingEntry?.item?.group_min_members ?? 0);
+  const editMax = Number(editingEntry?.item?.group_max_members ?? 0);
+  const editEligible = festivalParticipants.filter(p => p.organisation_id === editingEntry?.organisation_id
+    && (!editingEntry?.item?.gender || ['both', ''].includes(editingEntry.item.gender.toLowerCase())
+      || String(p.gender ?? '').toLowerCase() === editingEntry.item.gender.toLowerCase()));
+  const editChoices = [...editEligible, ...(editingEntry?.members ?? [])
+    .filter(member => !editEligible.some(p => p.id === member.participant_id))
+    .map(member => ({ id: member.participant_id, name: member.participant?.name ?? 'Unavailable participant',
+      chest_number: member.participant?.chest_number ?? null, organisation_id: editingEntry?.organisation_id ?? '',
+      organisations: editingEntry?.organisation ?? null }))]
+    .sort((a, b) => Number(editIds.includes(b.id)) - Number(editIds.includes(a.id))
+      || String(a.name).localeCompare(String(b.name)))
+    .filter(p => `${p.name ?? ''} ${p.chest_number ?? ''}`.toLowerCase().includes(editSearch.trim().toLowerCase()));
+  const editChanged = editIds.length !== editExpectedIds.length || editIds.some(id => !editExpectedIds.includes(id));
+  const editValid = editMin > 0 && editIds.length >= editMin && (editMax <= 0 || editIds.length <= editMax)
+    && editIds.every(id => editEligible.some(p => p.id === id));
+
+  const saveEdit = async () => {
+    if (!festival || !editingEntry || !editChanged || !editValid || editSaving) return;
+    setEditSaving(true); setEditError('');
+    try {
+      await generalEntryService.updateRoster(editingEntry.id, editIds, editExpectedIds);
+      const affected = [...new Set([...editExpectedIds, ...editIds])];
+      await invalidateGeneralMembership(queryClient, festival.id, affected);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations'] }),
+        queryClient.invalidateQueries({ queryKey: ['entrySizes'] }),
+        queryClient.invalidateQueries({ queryKey: ['itemRegistrations', editingEntry.item?.id] }),
+        queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === 'participantRegistrations'
+          && typeof query.queryKey[1] === 'string' && affected.includes(query.queryKey[1]) }),
+      ]);
+      setEditNotice(`Entry ${editingEntry.entry_chest_number} roster updated.`);
+      setEditingId(null);
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Could not save this roster.');
+    } finally { setEditSaving(false); }
+  };
 
   const toggleParticipant = (id: string) => {
     setErrorMessage(''); setSuccessMessage('');
@@ -95,7 +169,7 @@ export default function GeneralEntriesScreen() {
     <Text className="font-poppins-bold text-ui-text">General category is disabled for this festival.</Text>
   </SsfCard></View>;
 
-  return <ScrollView className="flex-1 bg-ssf-bg p-4" contentContainerStyle={{ paddingBottom: 32 }}>
+  return <><ScrollView className="flex-1 bg-ssf-bg p-4" contentContainerStyle={{ paddingBottom: 32 }}>
     <View className="mb-4 flex-row items-center gap-3">
       <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-xl border border-ui-border bg-white" accessibilityRole="button" accessibilityLabel="Go back">
         <ArrowLeft size={18} color="#334155" />
@@ -148,16 +222,68 @@ export default function GeneralEntriesScreen() {
     </SsfCard>
 
     <View className="mt-5 flex-row items-center justify-between"><Text className="font-poppins-bold text-lg text-ui-text">Existing entries</Text>
-      <Text className="font-poppins text-xs text-ui-text-muted">{entriesQuery.data?.length ?? 0}</Text></View>
+      <Text className="font-poppins text-xs text-ui-text-muted">{visibleEntries.length}{existingSearch.trim() ? ` / ${entriesQuery.data?.length ?? 0}` : ''}</Text></View>
+    <View className="mt-2 h-10 flex-row items-center rounded-lg border border-ui-border bg-white px-3">
+      <Search size={15} color="#64748B" /><TextInput value={existingSearch} onChangeText={setExistingSearch}
+        placeholder="Chest, name or program" accessibilityLabel="Search existing General entries by chest number, participant or program"
+        className="ml-2 flex-1 font-poppins text-sm outline-none" />
+    </View>
+    {!!editNotice && <Text className="mt-2 font-poppins text-xs text-emerald-700">{editNotice}</Text>}
     {entriesQuery.isLoading ? <View className="p-5"><ActivityIndicator /></View>
       : entriesQuery.error ? <SsfCard><Text className="font-poppins text-xs text-red-700">{entriesQuery.error.message}</Text></SsfCard>
       : !entriesQuery.data?.length ? <SsfCard><Text className="font-poppins text-xs text-ui-text-muted">No General team entries yet.</Text></SsfCard>
-      : entriesQuery.data.map(entry => <SsfCard key={entry.id} className="mt-2">
+      : !visibleEntries.length ? <SsfCard><Text className="font-poppins text-xs text-ui-text-muted">No entries match this search.</Text></SsfCard>
+      : visibleEntries.map(entry => <SsfCard key={entry.id} className="mt-2">
         <View className="flex-row items-start justify-between gap-3"><View className="flex-1">
           <Text className="font-poppins-bold text-sm text-ui-text">{entry.item?.item_name_en ?? 'General competition'}</Text>
           <Text className="font-poppins text-xs text-ui-text-muted">{entry.organisation?.name ?? 'Team'} · {entry.members?.length ?? 0} members</Text>
         </View><Text className="font-poppins-bold text-sm text-emerald-700">{entry.entry_chest_number}</Text></View>
         <Text className="mt-2 font-poppins text-xs text-ui-text-muted">{(entry.members ?? []).map(m => m.participant?.name).filter(Boolean).join(', ') || 'Roster unavailable'}</Text>
+        <TouchableOpacity onPress={() => openEdit(entry)} accessibilityRole="button" accessibilityLabel={`Edit members of entry ${entry.entry_chest_number}`}
+          className="mt-3 self-start rounded-lg border border-ui-border bg-white px-3 py-2">
+          <Text className="font-poppins-bold text-xs text-ui-text">Edit members</Text>
+        </TouchableOpacity>
       </SsfCard>)}
-  </ScrollView>;
+  </ScrollView>
+    <Modal visible={!!editingEntry} transparent animationType="fade" onRequestClose={() => !editSaving && setEditingId(null)}>
+      <View className="flex-1 items-center justify-center bg-black/40 p-3">
+        <Pressable className="absolute inset-0" onPress={() => !editSaving && setEditingId(null)} accessibilityRole="button" accessibilityLabel="Close roster editor" />
+        <View style={{ width: Math.max(0, Math.min(width - 24, 760)), height: Math.max(0, Math.min(height - 24, Math.max(380, 290 + editChoices.length * 58))), backgroundColor: '#FFFFFF' }} className="rounded-2xl p-4">
+          <View className="mb-3 flex-row items-start justify-between gap-3">
+            <View className="flex-1"><Text className="font-poppins-black text-lg text-ui-text">Edit team members</Text>
+              <Text className="font-poppins text-xs text-ui-text-muted">{editingEntry?.item?.item_name_en} · Entry #{editingEntry?.entry_chest_number}</Text></View>
+            <TouchableOpacity onPress={() => !editSaving && setEditingId(null)} accessibilityLabel="Close roster editor" className="h-10 w-10 items-center justify-center"><X size={20} color="#475569" /></TouchableOpacity>
+          </View>
+          <Text className="mb-2 font-poppins text-xs text-ui-text-muted">Entry chest number, marks and results stay unchanged. Only the saved members will appear in this entry.</Text>
+          <View className="mb-2 h-10 flex-row items-center rounded-lg border border-ui-border px-3">
+            <Search size={15} color="#64748B" /><TextInput value={editSearch} onChangeText={setEditSearch}
+              placeholder="Name or chest #" accessibilityLabel="Search eligible team members by name or chest number"
+              className="ml-2 flex-1 font-poppins text-sm outline-none" />
+          </View>
+          <Text className="mb-2 font-poppins-bold text-xs text-ui-text">{editIds.length} selected · Required {editMin}{editMax > editMin ? `–${editMax}` : ''}</Text>
+          <ScrollView className="min-h-0 flex-1" keyboardShouldPersistTaps="handled">
+            {editChoices.map(person => {
+              const selected = editIds.includes(person.id);
+              const eligible = editEligible.some(p => p.id === person.id);
+              const limitReached = editMax > 0 && editIds.length >= editMax && !selected;
+              return <TouchableOpacity key={person.id} disabled={editSaving || limitReached || (!eligible && !selected)}
+                onPress={() => { setEditIds(ids => selected ? ids.filter(id => id !== person.id) : [...ids, person.id]); setEditError(''); }}
+                className={`mb-1 flex-row items-center rounded-lg border px-3 py-2 ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-ui-border bg-white'} ${limitReached ? 'opacity-50' : ''}`}>
+                <View className={`mr-3 h-5 w-5 items-center justify-center rounded border ${selected ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'}`}>{selected && <Check size={13} color="white" />}</View>
+                <View className="flex-1"><Text className="font-poppins-bold text-sm text-ui-text">{person.name}</Text>
+                  <Text className="font-poppins text-xs text-ui-text-muted">Chest #{person.chest_number ?? '—'}{!eligible ? ' · no longer eligible' : ''}</Text></View>
+              </TouchableOpacity>;
+            })}
+            {!editChoices.length && <Text className="py-4 font-poppins text-sm text-ui-text-muted">No team members match this search.</Text>}
+          </ScrollView>
+          {!editValid && <Text className="mt-2 font-poppins text-xs text-amber-700">Choose the configured team size using eligible members from this team.</Text>}
+          {!!editError && <Text className="mt-2 font-poppins text-xs text-red-700">{editError}</Text>}
+          <View className="mt-3 flex-row flex-wrap items-center gap-2">
+            <View><SsfButton label={editSaving ? 'Saving…' : 'Save members'} onPress={saveEdit} disabled={!editChanged || !editValid || editSaving} /></View>
+            <TouchableOpacity onPress={() => setEditingId(null)} disabled={editSaving} className="rounded-lg border border-ui-border px-4 py-2"><Text className="font-poppins-bold text-sm text-ui-text">Cancel</Text></TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  </>;
 }

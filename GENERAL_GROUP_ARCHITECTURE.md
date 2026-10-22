@@ -21,7 +21,7 @@ Use disposable PostgreSQL fixtures for numbering/collisions, cross-festival/team
 
 ## Validation status
 
-Implemented locally. Live Supabase deployment and production data have not been verified or changed.
+Implemented in repository source. Live Supabase deployment and production data have not been verified or changed.
 
 ### Verified data/API flow
 
@@ -30,20 +30,21 @@ Implemented locally. Live Supabase deployment and production data have not been 
 3. Scoped stage reads return the entry identity and roster. Manual search uses the group chest number; verification submits only the registration UUID to the existing stage API. A student QR cannot resolve a General group. No student attendance rows are written.
 4. The existing Chest Cards page has Group cards and program filtering, using the existing template/printing controls. Group cards show the group chest, program and team without a child-profile QR.
 5. Creation invalidates the affected festival's group/check-in caches and the selected members' cached profiles/results. Unrelated candidate profiles are not invalidated. Existing team/program queries are refreshed after Team Leader creation.
+6. Admin can open an existing General entry from General Entries or the Programs group details and edit only its current member links. General Entries searches loaded entries by group chest number, member name/chest number, or program name/code. Save calls `update_general_team_roster` with the originally loaded member IDs for stale-edit protection; the RPC locks the registration, checks admin/tenant/team scope, eligibility and configured member count, then atomically updates `group_members` and `raw_group_members`. It records an audit row but does not replace the registration, chest number, check-in, code letter, marks or result. A private transaction-scoped capability permits this RPC alone to edit a finished entry; direct member writes retain the lock. Only current members appear in the entry and their participation lists; removed members are not retained as historical participation. Old and new members' caches and operational roster/entry-size caches are invalidated.
 
 ### Observed validation
 
-- `node tests/general-group-db.cjs`: **41 PostgreSQL assertions passed**, plus real two-session group/group and participant/group allocation races. Tests load the actual migration, stage update, profile, public individual feed and team leaderboard SQL into a disposable PostgreSQL 15 fixture. This is not a full staging-schema rehearsal.
-- `node --test tests/check-in-identity.test.cjs tests/general-membership-cache.test.cjs tests/code-letter-updates.test.cjs tests/scoring.test.cjs`: **24 tests passed**.
+- `node tests/general-group-db.cjs`: **66 PostgreSQL assertions passed**, including real two-session group/group, participant/group and stale roster-edit races. Tests load the actual migrations, stage update, profile, public individual feed and team leaderboard SQL into a disposable PostgreSQL 15 fixture. This is not a full staging-schema rehearsal.
+- `node --test tests/check-in-identity.test.cjs tests/general-membership-cache.test.cjs tests/code-letter-updates.test.cjs tests/scoring.test.cjs`: **25 tests passed**.
 - `node tests/code-letters-db.cjs`: **39 existing PostgreSQL assertions passed**, plus the concurrent stale-swap regression.
-- Expo web export passed with synthetic `.invalid` Supabase configuration. Browser fixtures cover 320/375/768/1024/1440px, a short 375x667 verification modal, member profile/privacy, group check-in identity/locks, and cards' empty/error states. Requests to real services are blocked. These are mocked browser checks, not live E2E tests.
+- Expo web export passed with synthetic `.invalid` Supabase configuration. Browser fixtures cover 320/375/768/1024/1440px, a short 375x667 verification modal, member profile/privacy, group check-in identity/locks, cards' empty/error states, and General Entries search/edit/current-roster behavior. Requests to real services are blocked. These are mocked browser checks, not live E2E tests.
 - A General card was exported to PDF and its content/render inspected separately. Physical printing was not performed.
-- Full repository `tsc --noEmit` remains blocked by existing source/nested-checkout diagnostics. A scoped source comparison found no additional diagnostics from this change; this does not claim that the full project typecheck passes.
+- Full repository `tsc --noEmit` remains blocked by existing source/nested-checkout diagnostics; the edited UI/service files have no reported TypeScript diagnostics. Focused ESLint passed. This does not claim that the full project typecheck passes.
 
 ### Deployment boundary and compatibility
 
-Apply `supabase/migrations/20261021172215_general_group_identity_and_profile.sql` only after verifying the target project/migration ledger and the existing General entries, Team Leader assignment and scoped operational-read prerequisites. Deploy the updated frontend after the migration. No Edge Function changes are needed for this feature.
+For roster editing, apply `supabase/migrations/20261022034136_general_team_roster_edit.sql` only after the original `20261021172215_general_group_identity_and_profile.sql` migration and after verifying the target project/migration ledger. Deploy the updated frontend after the edit migration. No Edge Function changes are needed. Live database migration state and runtime behavior are unverified here.
 
-Existing General chest numbers and results are retained. Historical participant-backed group rows are not automatically converted to native General team entries. Existing group rosters are not rewritten; new writes are validated. Published group entries keep their existing operational locks. A child leaving a team later does not silently transfer that group's ownership or result.
+Existing General chest numbers and results are retained. Historical participant-backed group rows are not automatically converted to native General team entries. The migration does not rewrite existing group rosters. Published group entries keep their operational locks for direct writes; an authorized admin roster edit is the narrow exception. A child leaving a team later does not silently transfer that group's ownership or result. Editing a roster does not recalculate or republish existing points; future calculations use the current member count from `raw_group_members`.
 
 The main-branch change is scoped to this feature's UI, SQL migration, tests and architecture notes. The live Supabase migration state has not been checked or changed. Apply the migration and deploy the frontend to activate the feature.
