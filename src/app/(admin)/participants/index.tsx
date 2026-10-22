@@ -7,7 +7,7 @@ import { useParticipants } from '../../../core/hooks/useParticipants';
 import { useFestival } from '../../../core/hooks/useFestival';
 import { useAuthStore } from '../../../core/store/authStore';
 import { downloadParticipantItemsPdf, downloadParticipantPdf } from '../../../services/participantItemsPdfService';
-import { UserPlus, ChevronRight, Upload, CheckSquare, Square, X, Search, FileDown, CheckCircle, Trash2, GitCompare, RotateCcw, Users, Trophy } from 'lucide-react-native';
+import { UserPlus, ChevronRight, Upload, CheckSquare, Square, X, Search, FileDown, CheckCircle, Trash2, GitCompare, RotateCcw, Trophy } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -412,17 +412,6 @@ export default function ParticipantsList() {
           <TouchableOpacity onPress={() => router.push('/(admin)/participants/import')} className="p-2 bg-white border border-ssf-border rounded-lg">
             <Upload size={20} color="#1B6B3A" />
           </TouchableOpacity>
-          {activeFestival?.general_category_enabled === true && (
-            <TouchableOpacity
-              onPress={() => router.push('/(admin)/participants/general-entries' as any)}
-              className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-2"
-              accessibilityRole="button"
-              accessibilityLabel="Manage General team entries"
-            >
-              <Users size={16} color="#1B6B3A" />
-              <Text className="font-poppins-bold text-ssf-primary text-xs">General Entries</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
             onPress={() => router.push('/(admin)/participants/programs' as any)}
             className="p-2 bg-white border border-ssf-border rounded-lg flex-row items-center gap-x-2"

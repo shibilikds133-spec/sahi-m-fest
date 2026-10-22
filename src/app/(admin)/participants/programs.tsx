@@ -79,7 +79,7 @@ export default function ProgramsScreen() {
   });
   const entries = useQuery({
     queryKey: ['general-team-entries', festival?.id],
-    enabled: !!festival?.id && festival?.general_category_enabled === true,
+    enabled: !!festival?.id && festival?.general_category_enabled === true && section === 'general',
     queryFn: () => generalEntryService.list(festival!.id),
   });
 
