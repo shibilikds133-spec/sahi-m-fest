@@ -1,7 +1,8 @@
 # Group participation and leader identity
 
-Local implementation, 2026-10-22. Database deployment is not verified. This document
-describes the code and migration; it does not claim a staging or production rollout.
+This document describes the group-participation implementation and observed target
+deployment state as of 2026-10-22. Repository, disposable-test, and live-database
+evidence are kept separate below.
 
 ## Confirmed decisions
 
@@ -69,7 +70,11 @@ rewritten by this RPC.
 
 ## Database and security
 
-Migration: `20261022120000_group_participation_leader_identity.sql`.
+Repository group-flow migration: `20261022120000_group_participation_leader_identity.sql`.
+Target cleanup migration: `20261022154229_remove_group_entry_chest_allocator.sql`.
+The target already exposed the leader-based schema/RPC before this task, but its
+migration list did not contain the repository's `20261022120000` version. The
+cleanup migration is recorded in the target migration list as `20261022154229`.
 
 - Adds `registrations.group_leader_participant_id` (FK, restrict delete),
   `group_members.member_order`, a leader-kind check and a partial team/item unique
@@ -86,6 +91,10 @@ Migration: `20261022120000_group_participation_leader_identity.sql`.
   server-side. Private helpers are not granted to application roles.
 - Existing read RPC definitions retain their authorization and visibility predicates;
   only group identity display fields and participation-type checks are adapted.
+- The forward cleanup removes the unused group chest allocator, participant chest
+  collision guard, group-number unique index, and counter table. It preserves the
+  legacy `entry_chest_number` field and API alias. It refuses to run while any
+  numbered group registrations exist.
 
 ## Regression and rollout gates
 
@@ -113,18 +122,29 @@ The browser fixture requires an Expo web export built with the synthetic URL
 It intercepts all external requests and never accesses a live database. Run with
 `node tests/group-participation-browser.cjs`.
 
-Before application rollout: inspect actual deployed function/schema versions, run
-the read-only report, apply/replay the migration in the agreed environment, confirm
-PostgREST exposes both explicitly named participant relationships, then deploy the
-matching app. Existing legacy conflicts require separate review; the migration
-does not choose or delete historical results. No persistent database apply, commit,
-push or deployment is part of the current local implementation.
+The allocator cleanup has been applied to the configured target Supabase project.
+Before applying, read-only checks found zero group registrations and zero numbered
+group registrations. After applying, catalog checks confirmed the allocator,
+participant chest guard, old unique index and counter table are absent. Group creation
+still uses the leader participant ID and does not allocate a group number. Source
+Supabase was not modified. No frontend deployment was triggered by this migration.
 
 This worktree also retains the earlier Item Activation delete draft and its
 independent `20261022091102_delete_inactive_competition_item.sql` migration. A
 combined deployment must include its matching RPCs; do not deploy its UI alone.
 
 ## Validation actually run
+
+- Current task: `node tests/group-participation-db.cjs` passed against the disposable
+  PGlite fixture; `node --test tests/group-participation.test.cjs
+  tests/check-in-identity.test.cjs tests/participant-competition-filter.test.cjs
+  tests/scoring.test.cjs tests/general-membership-cache.test.cjs
+  tests/code-letter-updates.test.cjs` passed all 40 tests.
+- Current task: the new cleanup SQL executed against a disposable PostgreSQL fixture;
+  catalog assertions confirmed the allocator, trigger, index and counter table were
+  removed. A read-only post-apply query verified the same on the target project.
+- Earlier validation recorded below was documented before this task and was not
+  rerun as part of the main promotion.
 
 - 40 Node focused/regression tests passed (group/category mapping, QR, category
   filtering, membership cache, existing scoring and code-letter updates).
