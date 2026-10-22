@@ -44,6 +44,7 @@ export default function ItemActivationSettings() {
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [itemEditError, setItemEditError] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState(false);
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual', groupSize: '' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
@@ -168,6 +169,7 @@ export default function ItemActivationSettings() {
     setIsAddModalOpen(false);
     setEditingItem(null);
     setEditingDraft(false);
+    setItemEditError(null);
     setCategoryMenuOpen(false);
   };
 
@@ -177,6 +179,7 @@ export default function ItemActivationSettings() {
       ? item.category_codes.map(String)
       : String(item.category_codes || '').split(',').map((code: string) => code.trim()).filter(Boolean);
     setEditingItem(item);
+    setItemEditError(null);
     setEditingDraft(draft);
     setCustomForm({
       code: item.item_code || '',
@@ -214,6 +217,7 @@ export default function ItemActivationSettings() {
     }
 
     if (editingItem && !editingDraft) {
+      setItemEditError(null);
       try {
         await updateCompetitionItem.mutateAsync({
           itemId: editingItem.id,
@@ -225,7 +229,8 @@ export default function ItemActivationSettings() {
         Alert.alert('Success', 'Item details updated.');
         closeItemModal();
       } catch (e: any) {
-        Alert.alert('Error', e.message || 'Failed to update item. Reload and try again.');
+        const message = e?.message || 'Failed to update item. Reload and try again.';
+        setItemEditError(e?.code ? `[${e.code}] ${message}` : message);
       }
       return;
     }
@@ -540,6 +545,16 @@ export default function ItemActivationSettings() {
                 onChangeText={groupSize => setCustomForm(current => ({ ...current, groupSize }))}
                 placeholder="Enter the number of members" />
             </View>}
+
+            {itemEditError && (
+              <View
+                className="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2"
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
+                <Text className="font-poppins text-sm text-red-700">Save failed: {itemEditError}</Text>
+              </View>
+            )}
 
             <View className="gap-3">
               <Button onPress={handleSaveItemDetails} disabled={updateCompetitionItem.isPending}>{editingItem ? 'Save item details' : 'Add to List'}</Button>

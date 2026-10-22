@@ -77,7 +77,9 @@ export const festivalSettingsService = {
 
   async updateCompetitionItem(params: UpdateCompetitionItemParams): Promise<void> {
     const { error } = await festivalRepository.updateCompetitionItem(params);
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw Object.assign(new Error(error.message), { code: error.code });
+    }
   },
 
   async updateActiveItemCodes(
