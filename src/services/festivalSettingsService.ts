@@ -63,6 +63,12 @@ export const festivalSettingsService = {
     return data;
   },
 
+  async getHiddenCompetitionItemCodes(festivalId: string): Promise<string[]> {
+    const { data, error } = await festivalRepository.getHiddenCompetitionItemCodes(festivalId);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   async applyItemChanges(
     festivalId: string,
     activateCodes: string[],
@@ -80,6 +86,11 @@ export const festivalSettingsService = {
     if (error) {
       throw Object.assign(new Error(error.message), { code: error.code });
     }
+  },
+
+  async deleteInactiveCompetitionItem(festivalId: string, itemId: string): Promise<void> {
+    const { error } = await festivalRepository.deleteInactiveCompetitionItem(festivalId, itemId);
+    if (error) throw new Error(error.message);
   },
 
   async updateActiveItemCodes(

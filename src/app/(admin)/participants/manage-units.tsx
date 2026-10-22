@@ -95,7 +95,10 @@ export default function ManageUnits() {
   );
 
   const registeredParticipantIds = useMemo(() => {
-    return new Set(itemRegistrations.map((r: any) => r.participant_id));
+    return new Set(itemRegistrations.flatMap((r: any) => [
+      ...(r.participant_id ? [r.participant_id] : []),
+      ...(r.group_members ?? []).map((member: any) => member.participant_id),
+    ]));
   }, [itemRegistrations]);
 
   // Load Batches & Audit Logs

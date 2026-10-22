@@ -15,3 +15,10 @@ test('a group chest QR never checks in a group as a student',()=>assert.equal(fi
 test('a member student QR resolves only their solo entry',()=>assert.equal(findParticipantQrEntry([group,child],{pid:'child'}),child));
 test('student chest cards still resolve after group rows',()=>assert.equal(findParticipantQrEntry([group,child],{chest:'101'}),child));
 test('legacy group row with missing metadata and null ID cannot match a student QR',()=>assert.equal(findParticipantQrEntry([{participants:{id:null,chest_number:'1000'}}],{pid:'child'}),undefined));
+
+const leaderGroup = { id:'leader-group',entry_kind:'general_team',participant_id:null,group_leader_participant_id:'leader',participants:{id:null,chest_number:'102'} };
+test('the assigned group leader QR checks in the group',()=>assert.equal(findParticipantQrEntry([leaderGroup],{pid:'leader'}),leaderGroup));
+test('leader chest identifies the group without a new group number',()=>assert.equal(findParticipantQrEntry([leaderGroup],{chest:'102'}),leaderGroup));
+test('a different member cannot check in the group with their QR',()=>assert.equal(findParticipantQrEntry([leaderGroup],{pid:'member',chest:'102'}),undefined));
+test('blank leader QR cannot match the group',()=>assert.equal(findParticipantQrEntry([leaderGroup],{}),undefined));
+test('the existing participant profile QR identifies its group leader',()=>assert.equal(findParticipantQrEntry([{...leaderGroup,group_leader_profile_slug:'leader-profile'}],{pid:'leader-profile',chest:'102'}).id,'leader-group'));

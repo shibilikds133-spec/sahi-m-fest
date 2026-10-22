@@ -58,7 +58,7 @@ export default function ParticipantsList() {
   const [selectedGender, setSelectedGender] = useState<string>('All');
 
   const hasGeneralCategory = activeFestival?.general_category_enabled === true
-    || (festivalRegistrations as any[]).some((registration) => registration.entry_kind === 'general_team');
+    || (festivalRegistrations as any[]).some((registration) => registration.item?.category_codes?.some(isGeneralCategoryCode));
   const categoryOptions = useMemo(() => buildParticipantCategoryOptions(
     participants as any[], configuredCategories, isCollegeFest, hasGeneralCategory,
   ), [configuredCategories, hasGeneralCategory, isCollegeFest, participants]);

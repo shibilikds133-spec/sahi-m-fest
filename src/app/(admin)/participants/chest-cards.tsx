@@ -68,6 +68,7 @@ type ChestTemplate = {
 
 type ChestCardParticipant = {
   profile_slug?: string | null;
+  qr_participant_id?: string | null;
   entry_kind?: 'participant' | 'general_team';
   item_code?: string;
   id: string;
@@ -322,12 +323,12 @@ const ChestCard = ({
   const chestNumber = participant.chest_number || '---';
   const categoryCode = participant.category_code || 'GN';
   const participantName = participant.entry_kind === 'general_team'
-    ? participant.name || 'General competition'
+    ? participant.name || 'Group competition'
     : formatParticipantName(participant.name);
   const participantUnit = participant.organisations?.name || 'Unit Name';
   const isPlainGroup = participant.entry_kind === 'general_team' && !template.backgroundUri;
   const qrSize = 300; // Fixed size to prevent re-fetching on print scale change
-  const qrUrl = createQrUrl(chestNumber, participant.profile_slug || participant.id, categoryCode, qrSize, template.fields.qr.color, template.fields.qr.backgroundColor);
+  const qrUrl = createQrUrl(chestNumber, participant.profile_slug || participant.qr_participant_id || participant.id, categoryCode, qrSize, template.fields.qr.color, template.fields.qr.backgroundColor);
 
   return (
     <View
@@ -535,8 +536,10 @@ export default function ChestCardsPage() {
   const cardRows = useMemo<ChestCardParticipant[]>(() => cardMode === 'groups'
     ? (groupQuery.data ?? []).map(entry => ({
         id: `general:${entry.id}`, entry_kind: 'general_team' as const,
-        chest_number: entry.entry_chest_number, category_code: 'GN',
-        name: `${entry.item?.item_code || ''} · ${entry.item?.item_name_en || 'General competition'}`,
+        chest_number: entry.entry_chest_number, category_code: entry.item?.category_codes?.[0] || 'GN',
+        qr_participant_id: entry.group_leader_participant_id,
+        profile_slug: entry.leader?.profile_slug,
+        name: `${entry.item?.item_code || ''} · ${entry.item?.item_name_en || 'Group competition'}`,
         item_code: entry.item?.item_code || '', organisation_id: entry.organisation_id,
         organisations: entry.organisation,
       }))
@@ -544,7 +547,7 @@ export default function ChestCardsPage() {
   const programs = useMemo(() => Array.from(new Set(cardRows.map(row => row.item_code).filter(Boolean))) as string[], [cardRows]);
   const activeTemplate = templates.find(t => t.id === selectedTemplateId) ?? templates[0] ?? defaultTemplate();
   const sampleParticipant: ChestCardParticipant = cardRows.find(p => p.chest_number) ?? (cardMode === 'groups' ? {
-    id: 'sample-group', entry_kind: 'general_team', chest_number: '—', category_code: 'GN', name: 'General competition',
+    id: 'sample-group', entry_kind: 'general_team', chest_number: '—', category_code: 'GN', name: 'Group competition',
   } : {
     id: 'sample',
     chest_number: 'HS-404',

@@ -293,7 +293,7 @@ export default function PublicCandidateProfileScreen() {
                       </Text>
                       <Text style={styles.itemMeta}>
                         {item.entry_kind === 'general_team'
-                          ? `General group · Chest ${item.entry_chest_number || '—'} · Team points only`
+                          ? `Group · Leader chest ${item.entry_chest_number || '—'} · Team points only`
                           : `${(item.category_codes || []).join(' / ') || 'General'} · ${item.participation_type}`}
                       </Text>
                     </View>
@@ -334,7 +334,7 @@ export default function PublicCandidateProfileScreen() {
                         {result.item_name_ml || result.item_name}
                       </Text>
                       <Text style={styles.itemMeta} numberOfLines={1}>
-                        {result.entry_kind === 'general_team' ? 'General team · ' : ''}
+                        {result.entry_kind === 'general_team' ? 'Group · ' : ''}
                         {formatDate(result.published_at)}{result.grade ? ` · Grade ${result.grade}` : ''}
                       </Text>
                     </View>

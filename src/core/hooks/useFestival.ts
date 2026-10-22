@@ -155,6 +155,12 @@ export const useFestival = () => {
     enabled: !!festivalId && !!tenant_id,
   });
 
+  const useHiddenCompetitionItemCodes = (festivalId: string | undefined) => useQuery({
+    queryKey: ['hidden-competition-item-codes', festivalId, tenant_id],
+    queryFn: () => festivalSettingsService.getHiddenCompetitionItemCodes(festivalId!),
+    enabled: !!festivalId && !!tenant_id,
+  });
+
   const useApplyItemChanges = (festivalId: string | undefined) => useMutation({
     mutationFn: async ({ activateCodes, deactivateCodes, itemRecords }: {
       activateCodes: string[];
@@ -168,6 +174,7 @@ export const useFestival = () => {
       queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
       queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
       queryClient.invalidateQueries({ queryKey: ['selectable-items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['hidden-competition-item-codes', festivalId] });
     },
   });
 
@@ -180,6 +187,19 @@ export const useFestival = () => {
       queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
       queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
       queryClient.invalidateQueries({ queryKey: ['selectable-items', festivalId] });
+    },
+  });
+
+  const useDeleteInactiveCompetitionItem = (festivalId: string | undefined) => useMutation({
+    mutationFn: async (itemId: string) => {
+      if (!festivalId || !tenant_id) throw new Error('Select a festival before deleting a competition.');
+      await festivalSettingsService.deleteInactiveCompetitionItem(festivalId, itemId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['selectable-items', festivalId] });
+      queryClient.invalidateQueries({ queryKey: ['hidden-competition-item-codes', festivalId] });
     },
   });
 
@@ -205,8 +225,10 @@ export const useFestival = () => {
     useActiveItems,
     useItems,
     useSelectableItems,
+    useHiddenCompetitionItemCodes,
     useApplyItemChanges,
     useUpdateCompetitionItem,
+    useDeleteInactiveCompetitionItem,
     useUpdateActiveItems,
   };
 };

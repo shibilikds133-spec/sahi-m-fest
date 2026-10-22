@@ -88,6 +88,13 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
   }
 
+  async getHiddenCompetitionItemCodes(festivalId: string): Promise<ListResult<string>> {
+    const { data, error } = await supabase.rpc('get_hidden_competition_item_codes', {
+      p_festival_id: festivalId,
+    });
+    return { data: (data as string[]) ?? [], error: normalizeError(error) };
+  }
+
   async applyItemChanges(
     festivalId: string,
     activateCodes: string[],
@@ -111,6 +118,14 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       p_category_codes: params.categoryCodes,
       p_group_member_count: params.groupMemberCount,
       p_expected_updated_at: params.expectedUpdatedAt,
+    });
+    return { data: undefined, error: normalizeError(error) };
+  }
+
+  async deleteInactiveCompetitionItem(festivalId: string, itemId: string): Promise<QueryResult<void>> {
+    const { error } = await supabase.rpc('delete_inactive_competition_item', {
+      p_festival_id: festivalId,
+      p_item_id: itemId,
     });
     return { data: undefined, error: normalizeError(error) };
   }
@@ -173,7 +188,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   async getRegistrationsByItem<T>(itemId: string, tenantId: string, festivalId?: string): Promise<ListResult<T>> {
     let query = supabase
       .from('registrations')
-      .select('*, participants(*, organisations(id, name, org_type))')
+      .select('*, participants:participants!registrations_participant_id_fkey(*, organisations(id, name, org_type)), group_members(participant_id)')
       .eq('item_id', itemId)
       .eq('tenant_id', tenantId);
     if (festivalId) query = query.eq('festival_id', festivalId);
@@ -182,10 +197,15 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async getAdminRegistrationsBySchedule<T>(scheduleId: string): Promise<ListResult<T>> {
-    const scoped = await supabase.rpc('get_stage_management_registrations_scoped', {
+    let scoped = await supabase.rpc('get_stage_management_registrations_with_letters', {
       p_schedule_id: scheduleId,
       p_festival_id: null,
     });
+    if (scoped.error && ['42883', 'PGRST202'].includes((scoped.error as any).code)) {
+      scoped = await supabase.rpc('get_stage_management_registrations_scoped', {
+        p_schedule_id: scheduleId, p_festival_id: null,
+      });
+    }
 
     if (!scoped.error && scoped.data && scoped.data.length > 0) {
       const normalized = (scoped.data as any[]).map((row) => ({
@@ -225,7 +245,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
       if (scheduleError || !schedule) return { data: [], error: normalizeError(scheduleError ?? error) };
       const legacy = await supabase
         .from('registrations')
-        .select('*, participants(*, organisations(id, name, org_type))')
+        .select('*, participants:participants!registrations_participant_id_fkey(*, organisations(id, name, org_type))')
         .eq('tenant_id', schedule.tenant_id)
         .eq('festival_id', schedule.festival_id)
         .eq('item_id', schedule.item_id);
@@ -239,7 +259,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
     const { data, error } = await supabase
       .from('registrations')
       .select(includeGeneralTeamMembers
-        ? `${columns}, entry_kind, group_members(participant_id)`
+        ? `${columns}, entry_kind, item:items(category_codes), group_members(participant_id)`
         : columns)
       .eq('festival_id', festivalId);
     return { data: (data as T[]) ?? [], error: normalizeError(error) };
@@ -452,7 +472,8 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
           id,
           status,
           created_at,
-          participants(name, organisations(name)),
+          participants:participants!registrations_participant_id_fkey(name, organisations(name)),
+          leader:participants!registrations_group_leader_participant_id_fkey(name),
           items(item_name_en, item_name_ml),
           organisations(name)
         `)
@@ -546,7 +567,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
 
         return {
           id: registration.id,
-          participantName: participant?.name || 'Participant',
+          participantName: participant?.name || registration.leader?.name || 'Participant',
           itemName: item?.item_name_en || item?.item_name_ml || 'Festival item',
           organisationName:
             organisation?.name ||

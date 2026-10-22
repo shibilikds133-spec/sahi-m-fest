@@ -4,6 +4,8 @@ import { stageManagementService } from '../../services/stageManagementService';
 import { useAuthStore } from '../store/authStore';
 import { useCodeLetterUpdates } from './useCodeLetterUpdates';
 import { invalidateCodeLetters } from '../utils/invalidateCodeLetters';
+import { isGroupCompetition } from '../utils/groupParticipation';
+import { invalidateGeneralMembership } from '../utils/invalidateGeneralMembership';
 
 export const usePublicCandidateProfile = (slug?: string | null) =>
   useQuery({
@@ -239,6 +241,10 @@ export const useParticipants = (participantId?: string) => {
       queryClient.invalidateQueries({ queryKey: ['participantRegistrations', variables.participant.id] });
       const tenantId = useAuthStore.getState().tenant_id;
       queryClient.invalidateQueries({ queryKey: ['itemRegistrations', variables.item.id, tenantId] });
+      if (isGroupCompetition(variables.item)) {
+        void invalidateGeneralMembership(queryClient, variables.participant.festival_id, [variables.participant.id]);
+        queryClient.invalidateQueries({ queryKey: ['festivalRegistrations', variables.participant.festival_id] });
+      }
     },
   });
 

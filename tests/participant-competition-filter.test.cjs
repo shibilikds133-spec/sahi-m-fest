@@ -29,6 +29,7 @@ test('matches members of General team entries without treating them as participa
     item_id: 'general-item',
     participant_id: null,
     entry_kind: 'general_team',
+    item: { category_codes: ['GN'] },
     status: 'approved',
     group_members: [{ participant_id: 'person-1' }, { participant_id: 'person-2' }],
   }];
@@ -44,6 +45,13 @@ test('matches members of General team entries without treating them as participa
 test('does not match rejected entries', () => {
   const registrations = [{ item_id: 'item-1', participant_id: 'person-1', status: 'rejected' }];
   assert.equal(participantHasCompetitionRegistration(registrations, 'person-1', 'item-1'), false);
+});
+
+test('General category is independent of the group discriminator',()=>{
+  const group={entry_kind:'general_team',status:'approved',group_members:[{participant_id:'p'}],item:{category_codes:['HS']}};
+  assert.equal(participantHasGeneralTeamRegistration([group],'p'),false);
+  assert.equal(participantHasGeneralTeamRegistration([{entry_kind:'participant',participant_id:'p',item:{category_codes:['GN']}}],'p'),true);
+  assert.equal(participantHasGeneralTeamRegistration([{...group,item:null}],'p'),false);
 });
 
 test('category filter options come from current festival data, not a hard-coded category catalog', () => {

@@ -4,6 +4,7 @@ type CompetitionRegistration = {
   entry_kind?: string | null;
   status?: string | null;
   group_members?: { participant_id?: string | null }[] | null;
+  item?: { category_codes?: string[] | null } | null;
 };
 
 type CategoryParticipant = { category_code?: string | null };
@@ -20,9 +21,10 @@ export function participantHasGeneralTeamRegistration(
   registrations: CompetitionRegistration[],
   participantId: string,
 ): boolean {
-  return registrations.some((registration) => registration.entry_kind === 'general_team'
-    && registration.status?.toLowerCase() !== 'rejected'
-    && registration.group_members?.some((member) => member.participant_id === participantId));
+  return registrations.some((registration) => registration.status?.toLowerCase() !== 'rejected'
+    && registration.item?.category_codes?.some(isGeneralCategoryCode)
+    && (registration.participant_id === participantId
+      || registration.group_members?.some((member) => member.participant_id === participantId)));
 }
 
 export function buildParticipantCategoryOptions(

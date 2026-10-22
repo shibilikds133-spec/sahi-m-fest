@@ -30,6 +30,10 @@ export const festivalRepository = {
     return databaseProvider.getSelectableItems<T>(festivalId, tenantId);
   },
 
+  getHiddenCompetitionItemCodes(festivalId: string) {
+    return databaseProvider.getHiddenCompetitionItemCodes(festivalId);
+  },
+
   applyItemChanges(
     festivalId: string,
     activateCodes: string[],
@@ -41,6 +45,10 @@ export const festivalRepository = {
 
   updateCompetitionItem(params: UpdateCompetitionItemParams) {
     return databaseProvider.updateCompetitionItem(params);
+  },
+
+  deleteInactiveCompetitionItem(festivalId: string, itemId: string) {
+    return databaseProvider.deleteInactiveCompetitionItem(festivalId, itemId);
   },
 
   async setActiveItemCodes(

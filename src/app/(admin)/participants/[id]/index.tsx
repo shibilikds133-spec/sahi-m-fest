@@ -995,7 +995,7 @@ export default function ParticipantDetails() {
               <Text numberOfLines={1} className="font-poppins-bold text-base">Registered Events</Text>
               <Text numberOfLines={1} className="font-poppins text-[10px] text-ssf-text-muted">
                 {itemsView === 'general'
-                  ? `${generalEntries.length} ${generalEntries.length === 1 ? 'General item' : 'General items'} assigned`
+                  ? `${generalEntries.length} ${generalEntries.length === 1 ? 'Group item' : 'Group items'} assigned`
                   : `${events.length} ${events.length === 1 ? 'event' : 'events'} assigned`}
               </Text>
             </View>
@@ -1009,7 +1009,7 @@ export default function ParticipantDetails() {
             value={itemsView}
             options={[
               { label: 'Individual Events', value: 'individual' },
-              { label: 'General Programs', value: 'general' },
+              { label: 'Group Programs', value: 'general' },
             ]}
             onValueChange={(value) => setItemsView(value as 'individual' | 'general')}
             accessibilityLabel="Choose event type"
@@ -1049,7 +1049,7 @@ export default function ParticipantDetails() {
         ) : generalEntries.length === 0 ? (
           <View className="items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8">
             <Trophy size={26} color="#CBD5E1" />
-            <Text className="mt-2 font-poppins-bold text-xs text-ssf-text-muted">No General items assigned yet</Text>
+            <Text className="mt-2 font-poppins-bold text-xs text-ssf-text-muted">No Group items assigned yet</Text>
           </View>
         ) : (
           <View className="gap-y-2">
@@ -1059,9 +1059,9 @@ export default function ParticipantDetails() {
                   <Text className="font-poppins-bold text-[11px] text-emerald-700">{index + 1}</Text>
                 </View>
                 <View className="ml-3 flex-1">
-                  <Text className="font-poppins-bold text-[13px]">{entry.item_name_en || entry.item_code || 'General competition'}</Text>
+                  <Text className="font-poppins-bold text-[13px]">{entry.item_name_en || entry.item_code || 'Group competition'}</Text>
                   <Text className="font-poppins text-[10px] uppercase text-ssf-text-muted">
-                    {entry.item_code || 'GN'} · Team entry {entry.entry_chest_number || '—'}
+                    {entry.item_code || 'GN'} · Group / leader {entry.entry_chest_number || '—'}
                   </Text>
                 </View>
               </View>

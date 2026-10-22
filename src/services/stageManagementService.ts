@@ -39,6 +39,7 @@ export type StageVenueRow = {
 export type StageRegistrationRow = {
   entry_kind?: 'participant' | 'general_team';
   entry_chest_number?: string | null;
+  group_leader_participant_id?: string | null;
   members?: { name: string; chest_number: string | null }[];
   id: string;
   schedule_id?: string | null;

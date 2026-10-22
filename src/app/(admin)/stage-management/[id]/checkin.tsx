@@ -747,7 +747,7 @@ export default function CheckIn() {
               {/* Instruction */}
               <View style={{ backgroundColor: '#FEF3C7', borderRadius: 10, padding: 12, width: '100%', marginTop: 16, marginBottom: 20 }}>
                 <Text style={{ color: '#92400E', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
-                  {verifyModal.reg.entry_kind === 'general_team' ? 'Confirm the group chest number, program and team. One representative can check in this entry.' : '⚠️ Compare the photo above with the person standing in front of you before approving.'}
+                  {verifyModal.reg.entry_kind === 'general_team' ? (verifyModal.reg.group_leader_participant_id ? 'Confirm the Team Leader name, chest number, program and team.' : 'Confirm the legacy group entry number, program and team.') : '⚠️ Compare the photo above with the person standing in front of you before approving.'}
                 </Text>
               </View>
 

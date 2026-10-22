@@ -27,6 +27,7 @@ export interface DatabaseProvider {
   getActiveItemCodes(festivalId: string): Promise<ListResult<{ item_code: string }>>;
   getItems<T>(festivalId: string): Promise<ListResult<T>>;
   getSelectableItems<T>(festivalId: string, tenantId: string): Promise<ListResult<T>>;
+  getHiddenCompetitionItemCodes(festivalId: string): Promise<ListResult<string>>;
   applyItemChanges(
     festivalId: string,
     activateCodes: string[],
@@ -34,6 +35,7 @@ export interface DatabaseProvider {
     itemRecords?: any[],
   ): Promise<QueryResult<void>>;
   updateCompetitionItem(params: UpdateCompetitionItemParams): Promise<QueryResult<void>>;
+  deleteInactiveCompetitionItem(festivalId: string, itemId: string): Promise<QueryResult<void>>;
   setActiveItemCodes(
     festivalId: string,
     tenantId: string,

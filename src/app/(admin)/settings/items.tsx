@@ -7,7 +7,7 @@ import { useFestivalCategories } from '../../../core/hooks/useFestivalCategories
 import { useAuthStore } from '../../../core/store/authStore';
 import { HANDBOOK_ITEMS } from '../../../constants/items';
 import { useRouter } from 'expo-router';
-import { Search, CheckCircle, Circle, Pencil } from 'lucide-react-native';
+import { Search, CheckCircle, Circle, Pencil, Trash2 } from 'lucide-react-native';
 import { Card, CardContent } from '../../../components/ui/shadcn/card';
 import { Button } from '../../../components/ui/shadcn/button';
 import { Input } from '../../../components/ui/shadcn/input';
@@ -18,7 +18,7 @@ export default function ItemActivationSettings() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const { useActiveFestival, useActiveItems, useSelectableItems, useApplyItemChanges, useUpdateCompetitionItem } = useFestival();
+  const { useActiveFestival, useActiveItems, useSelectableItems, useHiddenCompetitionItemCodes, useApplyItemChanges, useUpdateCompetitionItem, useDeleteInactiveCompetitionItem } = useFestival();
   const { tenant_id: currentTenantId } = useAuthStore();
   const { data: festival } = useActiveFestival();
   const isCollegeFest = festival?.festival_template === 'college_fest';
@@ -34,8 +34,10 @@ export default function ItemActivationSettings() {
   }, [collegeCategories, festival?.general_category_enabled, isCollegeFest]);
   const { data: activeCodes, isLoading } = useActiveItems(festival?.id);
   const { data: persistedItems = [], isLoading: persistedItemsLoading } = useSelectableItems(festival?.id);
+  const { data: hiddenCodes = [], isLoading: hiddenCodesLoading, error: hiddenCodesError } = useHiddenCompetitionItemCodes(festival?.id);
   const applyItemChanges = useApplyItemChanges(festival?.id);
   const updateCompetitionItem = useUpdateCompetitionItem(festival?.id);
+  const deleteInactiveItem = useDeleteInactiveCompetitionItem(festival?.id);
 
   const [search, setSearch] = useState('');
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
@@ -46,6 +48,8 @@ export default function ItemActivationSettings() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [itemEditError, setItemEditError] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<any | null>(null);
+  const [deleteError, setDeleteError] = useState('');
   const [customForm, setCustomForm] = useState({ code: 'CUST-', name: '', cat: 'GN', type: 'individual', groupSize: '' });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const tenantFilterStorageKey = `items-show-tenant-only:${currentTenantId || 'unknown'}`;
@@ -113,8 +117,9 @@ export default function ItemActivationSettings() {
   }, [activeCodes, festival?.id, draftFestivalId]);
 
   const availableItems = useMemo(() => {
+    const hidden = new Set(hiddenCodes);
     const combined = [
-      ...HANDBOOK_ITEMS,
+      ...HANDBOOK_ITEMS.filter(item => !hidden.has(item.item_code)),
       ...(Array.isArray(persistedItems) ? persistedItems : []),
       ...customItems,
     ];
@@ -125,9 +130,9 @@ export default function ItemActivationSettings() {
       if (!existing || isCurrentTenantItem) unique.set(item.item_code, item);
     });
     return Array.from(unique.values()).filter(item =>
-      !showTenantItemsOnly || item.tenant_id === currentTenantId || item.source === 'custom'
+      !hidden.has(item.item_code) && (!showTenantItemsOnly || item.tenant_id === currentTenantId || item.source === 'custom')
     );
-  }, [currentTenantId, customItems, persistedItems, showTenantItemsOnly]);
+  }, [currentTenantId, customItems, hiddenCodes, persistedItems, showTenantItemsOnly]);
 
   const groupedItems = useMemo(() => {
     const combined = availableItems;
@@ -163,6 +168,22 @@ export default function ItemActivationSettings() {
     if (!item.id || !currentTenantId || item.tenant_id !== currentTenantId) return false;
     if (item.participation_type === 'individual') return true;
     return item.participation_type === 'group' && hasFixedGroupSize(item);
+  };
+
+  const hasPendingSelectionChanges = customItems.length > 0 ||
+    selectedCodes.length !== selectionBase.length || selectedCodes.some(code => !selectionBase.includes(code));
+  const canDeleteItem = (item: any) => !isDraftItem(item) && !!item.id &&
+    item.tenant_id === currentTenantId && item.festival_id === festival?.id &&
+    item.is_active === false && !selectionBase.includes(item.item_code);
+  const confirmDeleteItem = async () => {
+    if (!deletingItem || !canDeleteItem(deletingItem) || hasPendingSelectionChanges) return;
+    setDeleteError('');
+    try {
+      await deleteInactiveItem.mutateAsync(deletingItem.id);
+      setDeletingItem(null);
+    } catch (error: any) {
+      setDeleteError(error?.message || 'Could not delete this competition.');
+    }
   };
 
   const closeItemModal = () => {
@@ -285,12 +306,16 @@ export default function ItemActivationSettings() {
     }
   };
 
-  if (isLoading || persistedItemsLoading) {
+  if (isLoading || persistedItemsLoading || hiddenCodesLoading) {
     return (
       <View className="flex-1 bg-ssf-bg items-center justify-center">
         <Text className="font-poppins text-ui-text-muted">Loading...</Text>
       </View>
     );
+  }
+
+  if (hiddenCodesError) {
+    return <View className="flex-1 items-center justify-center bg-ssf-bg px-4"><Text className="font-poppins text-sm text-red-700">Could not load festival item visibility. Please retry.</Text></View>;
   }
 
   return (
@@ -365,7 +390,7 @@ export default function ItemActivationSettings() {
                 <View className="w-24">
                   <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Type</Text>
                 </View>
-                <View className="w-20">
+                <View className="w-36">
                   <Text className="font-poppins-bold text-[10px] uppercase tracking-wider text-ui-text-muted">Action</Text>
                 </View>
               </View>
@@ -397,9 +422,14 @@ export default function ItemActivationSettings() {
                         <Text className="font-poppins text-xs text-ui-text-muted">{item.participation_type === 'individual' ? 'Individual' : 'Group'}</Text>
                       </View>
                     </TouchableOpacity>
-                    {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="ml-2 h-9 w-20 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
-                      <Pencil size={13} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-[10px] text-ui-text">Edit</Text>
-                    </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="ml-2 w-20 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : <View className="ml-2 w-20" />}
+                    <View className="ml-2 w-36 flex-row items-center justify-end gap-2">
+                      {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="h-10 min-w-16 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white px-2" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
+                        <Pencil size={13} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-[10px] text-ui-text">Edit</Text>
+                      </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="max-w-16 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : null}
+                      {canDeleteItem(item) && <TouchableOpacity onPress={() => { setDeleteError(''); setDeletingItem(item); }} className="h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white" accessibilityRole="button" accessibilityLabel={`Delete ${item.item_name_ml || item.item_code}`}>
+                        <Trash2 size={15} color="#B91C1C" />
+                      </TouchableOpacity>}
+                    </View>
                   </View>
                 );
               })}
@@ -438,9 +468,14 @@ export default function ItemActivationSettings() {
                             </View>
                             {isSelected ? <CheckCircle size={22} color="#0F766E" /> : <Circle size={22} color="#CBD5E1" />}
                           </TouchableOpacity>
-                          {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="ml-2 h-11 min-w-11 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white px-2" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
-                            <Pencil size={14} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-xs text-ui-text">Edit</Text>
-                          </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="ml-2 max-w-16 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : null}
+                           <View className="ml-2 flex-row items-center gap-2">
+                             {editable ? <TouchableOpacity onPress={() => openItemEditor(item)} className="h-11 min-w-11 flex-row items-center justify-center gap-1 rounded-md border border-ui-border bg-white px-2" accessibilityRole="button" accessibilityLabel={`Edit ${item.item_name_ml || item.item_code}`}>
+                               <Pencil size={14} color={ui.colors.textSubtle} /><Text className="font-poppins-bold text-xs text-ui-text">Edit</Text>
+                             </TouchableOpacity> : tenantOwned && unsupportedGroupSize ? <Text className="max-w-16 text-center font-poppins text-[9px] text-ui-text-muted">Set fixed size first</Text> : null}
+                             {canDeleteItem(item) && <TouchableOpacity onPress={() => { setDeleteError(''); setDeletingItem(item); }} className="h-11 w-11 items-center justify-center rounded-md border border-red-200 bg-white" accessibilityRole="button" accessibilityLabel={`Delete ${item.item_name_ml || item.item_code}`}>
+                               <Trash2 size={16} color="#B91C1C" />
+                             </TouchableOpacity>}
+                           </View>
                         </CardContent>
                     </Card>
                   );
@@ -559,6 +594,26 @@ export default function ItemActivationSettings() {
             <View className="gap-3">
               <Button onPress={handleSaveItemDetails} disabled={updateCompetitionItem.isPending}>{editingItem ? 'Save item details' : 'Add to List'}</Button>
               <Button variant="outline" onPress={closeItemModal}>Cancel</Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={!!deletingItem} transparent animationType="fade" onRequestClose={() => !deleteInactiveItem.isPending && setDeletingItem(null)}>
+        <View className="flex-1 items-center justify-center bg-black/50 px-4">
+          <View className="w-full max-w-md rounded-xl bg-white p-5" style={{ maxWidth: 420 }}>
+            <Text className="font-poppins-bold text-lg text-ui-text">Delete competition?</Text>
+            <Text className="mt-2 font-poppins text-sm text-ui-text-muted">
+              {deletingItem?.item_name_ml || deletingItem?.item_code} ({deletingItem?.item_code}) will be removed from this festival. This is allowed only after deselecting and saving, and only when no competition history exists.
+            </Text>
+            {hasPendingSelectionChanges && <Text className="mt-3 font-poppins text-sm text-amber-700">Save or discard your other pending selection changes first.</Text>}
+            {!!deleteError && <Text className="mt-3 font-poppins text-sm text-red-700" accessibilityRole="alert">{deleteError}</Text>}
+            <View className="mt-5 flex-row justify-end gap-2">
+              <TouchableOpacity onPress={() => setDeletingItem(null)} disabled={deleteInactiveItem.isPending} className="min-h-11 justify-center rounded-lg border border-ui-border px-4" accessibilityRole="button">
+                <Text className="font-poppins-bold text-sm text-ui-text">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDeleteItem} disabled={deleteInactiveItem.isPending || hasPendingSelectionChanges} className={`min-h-11 justify-center rounded-lg px-4 ${deleteInactiveItem.isPending || hasPendingSelectionChanges ? 'bg-red-200' : 'bg-red-700'}`} accessibilityRole="button" accessibilityLabel="Confirm delete competition">
+                <Text className="font-poppins-bold text-sm text-white">{deleteInactiveItem.isPending ? 'Deleting…' : 'Delete item'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>

@@ -4,6 +4,8 @@ import { uploadService } from './storage/uploadService';
 import { stageManagementService } from './stageManagementService';
 import { getCollegeFestChestPrefix, isCollegeFestCategory } from '../core/festival/templatePolicy';
 import { supabase } from '../core/config/supabase';
+import { generalEntryService } from './generalEntryService';
+import { isGroupCompetition } from '../core/utils/groupParticipation';
 
 export type ParticipantStatus = 'pending' | 'approved' | 'rejected';
 
@@ -529,6 +531,11 @@ export const participantService = {
 
     if (!validation.isValid) {
       return { errors: validation.errors, warnings: validation.warnings };
+    }
+
+    if (isGroupCompetition(item)) {
+      const entry = await generalEntryService.create(participant.festival_id, item.id, [participant.id]);
+      return { data: { id: entry.registration_id, ...entry } as T, warnings: validation.warnings };
     }
 
     // Create the registration
