@@ -24,6 +24,7 @@ function docker(args, input) {
       'supabase/migrations/20261021060506_fixed_code_letters_and_atomic_swap.sql',
       'supabase/migrations/20261021060510_code_letter_change_notifications.sql',
       'supabase/migrations/20261021060616_code_letter_operational_reads.sql',
+      'supabase/migrations/20261022110200_fix_code_letter_swap_unique_violation.sql',
       'supabase/tests/code_letters_transaction.sql',
     ];
     const sql = files.map(file => readFileSync(resolve(__dirname, '..', file), 'utf8')).join('\n');

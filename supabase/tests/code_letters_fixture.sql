@@ -9,6 +9,8 @@ CREATE TABLE public.schedules(id uuid PRIMARY KEY, tenant_id uuid, festival_id u
   venue_id uuid, start_time timestamptz, end_time timestamptz, is_shuffle_locked boolean DEFAULT false);
 CREATE TABLE public.registrations(id uuid PRIMARY KEY, tenant_id uuid, festival_id uuid, item_id uuid,
   participant_id uuid, organisation_id uuid, status text DEFAULT 'approved', is_verified boolean DEFAULT true, code_letter text);
+CREATE UNIQUE INDEX idx_unique_code_letter ON public.registrations(festival_id, item_id, code_letter)
+  WHERE code_letter IS NOT NULL;
 CREATE TABLE public.participants(id uuid PRIMARY KEY, organisation_id uuid);
 CREATE TABLE public.group_members(registration_id uuid, participant_id uuid);
 CREATE TABLE public.venues(id uuid PRIMARY KEY, tenant_id uuid, festival_id uuid);

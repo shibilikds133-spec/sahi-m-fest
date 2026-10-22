@@ -78,6 +78,9 @@ SELECT test.ok(code_letter_private.conflicts((SELECT s FROM schedules s WHERE id
 SELECT test.ok(code_letter_private.match_entry('second','{"first":["A","B"],"second":["A"]}', '{"A":"first"}', ARRAY[]::text[])='{"A":"second","B":"first"}'::jsonb,'draw matching can move earlier allocations to find a safe complete draw');
 UPDATE registrations SET code_letter=NULL WHERE id='00000000-0000-0000-0000-000000000081';
 SELECT test.ok((SELECT NOT code_letter_fixed FROM registrations WHERE id='00000000-0000-0000-0000-000000000081'),'clearing an assignment clears its fixed flag');
+-- The overlap fixture has served its purpose; release its letter before
+-- reserving all 26 letters for the draw-fallback case below.
+UPDATE registrations SET code_letter=NULL WHERE id='00000000-0000-0000-0000-000000000091';
 INSERT INTO registrations(id,tenant_id,festival_id,item_id,participant_id,organisation_id,code_letter)
 SELECT ('00000000-0000-0000-0000-'||lpad((200+n)::text,12,'0'))::uuid,
   '00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000031',
