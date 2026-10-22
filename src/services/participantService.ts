@@ -42,6 +42,7 @@ export type PublicCandidateProfile = {
     item_id: string | null;
     item_name: string;
     item_name_ml: string;
+    entry_kind?: 'participant' | 'general_team';
     rank: number | null;
     grade: string | null;
     points_awarded: number;

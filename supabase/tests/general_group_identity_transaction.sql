@@ -44,10 +44,19 @@ SET ROLE anon;
 SELECT public.get_public_candidate_profile('amina') AS public_profile \gset
 RESET ROLE;
 SELECT test.ok(jsonb_array_length(:'public_profile'::jsonb->'participated_items')=4, 'candidate profile lists solo and all member-linked General programs');
-SELECT test.ok(jsonb_array_length(:'public_profile'::jsonb->'published_results')=1, 'team result is absent from child individual results');
+SELECT test.ok(jsonb_array_length(:'public_profile'::jsonb->'published_results')=2, 'candidate profile lists solo and published General team results');
+SELECT test.ok((SELECT count(*)=1 FROM jsonb_array_elements(:'public_profile'::jsonb->'published_results') value
+ WHERE value->>'entry_kind'='general_team' AND value->>'rank'='1' AND value->>'points_awarded'='0'), 'General team rank is shown without assigning team points to a child');
 SELECT test.ok((SELECT sum((value->>'points_awarded')::int)=5 FROM jsonb_array_elements(:'public_profile'::jsonb->'published_results')), 'team award of 50 adds zero to child points');
 SELECT test.ok(jsonb_array_length(public.get_public_candidate_profile('hana')->'participated_items')=3
- AND jsonb_array_length(public.get_public_candidate_profile('hana')->'published_results')=0, 'second member also sees every group program with no individual result or points');
+ AND jsonb_array_length(public.get_public_candidate_profile('hana')->'published_results')=1
+ AND (SELECT sum((value->>'points_awarded')::int)=0 FROM jsonb_array_elements(public.get_public_candidate_profile('hana')->'published_results') value), 'second member sees the group result with zero child points');
+SELECT test.ok((SELECT count(*)=0 FROM jsonb_array_elements(public.get_public_candidate_profile('other-team')->'published_results') value
+ WHERE value->>'entry_kind'='general_team'), 'non-member profile does not inherit group results');
+UPDATE results SET public_visible=false WHERE registration_id=test.id(62);
+SELECT test.ok((SELECT count(*)=0 FROM jsonb_array_elements(public.get_public_candidate_profile('amina')->'published_results') value
+ WHERE value->>'entry_kind'='general_team'), 'hidden General result is omitted from Candidate Profile');
+UPDATE results SET public_visible=true WHERE registration_id=test.id(62);
 SELECT test.ok((SELECT count(*)=1 FROM public.get_public_published_results(test.id(1),test.id(11),true) WHERE NOT is_group AND participant_id IS NOT NULL), 'actual public ranking feed retains exactly the solo result');
 SELECT test.ok((SELECT count(*)=0 FROM public.get_public_published_results(test.id(1),test.id(11),true) WHERE registration_id=test.id(62)), 'group result does not enter the individual ranking feed');
 SELECT test.ok((SELECT total_points=55 AND result_count=2 FROM public.get_public_leaderboard(test.id(1),test.id(11)) WHERE organisation_id=test.id(21)), 'actual team leaderboard awards group 50 plus solo 5 once, independent of member count');

@@ -334,6 +334,7 @@ export default function PublicCandidateProfileScreen() {
                         {result.item_name_ml || result.item_name}
                       </Text>
                       <Text style={styles.itemMeta} numberOfLines={1}>
+                        {result.entry_kind === 'general_team' ? 'General team · ' : ''}
                         {formatDate(result.published_at)}{result.grade ? ` · Grade ${result.grade}` : ''}
                       </Text>
                     </View>
