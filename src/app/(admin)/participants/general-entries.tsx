@@ -174,8 +174,6 @@ export default function GeneralEntriesScreen() {
       <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-xl border border-ui-border bg-white" accessibilityRole="button" accessibilityLabel="Go back">
         <ArrowLeft size={18} color="#334155" />
       </TouchableOpacity>
-      <View><Text className="font-poppins-black text-2xl text-ui-text">General Entries</Text>
-        <Text className="font-poppins text-xs text-ui-text-muted">Create a team entry with its own General chest number.</Text></View>
     </View>
 
     <SsfCard>
