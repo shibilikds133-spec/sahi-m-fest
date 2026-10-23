@@ -105,13 +105,21 @@ DO $portal$
 DECLARE definition text;
 BEGIN
   SELECT pg_get_functiondef('public.get_team_leader_published_results()'::regprocedure) INTO definition;
-  IF position('AND r.organisation_id = c.organisation_id' IN definition)=0 THEN RAISE EXCEPTION 'Review team result reader before applying migration.'; END IF;
+  IF position('FROM public.results res' IN definition)=0
+    OR position('JOIN public.registrations r ON r.id=res.registration_id' IN definition)=0
+    OR position('r.organisation_id=c.organisation_id' IN definition)=0
+    OR position('p.organisation_id=c.organisation_id' IN definition)=0
+    OR position('p.tenant_id IN(c.parent_tenant_id,o.tenant_id)' IN definition)=0 THEN
+    RAISE EXCEPTION 'Review team result reader before applying migration.';
+  END IF;
   definition:=replace(definition,'FROM public.results res','FROM public.results res LEFT JOIN public.result_team_awards award ON award.result_id=res.id');
-  -- Transfer may change participant/registration tenant to the subordinate
-  -- team's tenant. Result owner + festival + frozen award still bound access.
-  definition:=replace(definition,'r.tenant_id = c.parent_tenant_id','r.festival_id = c.festival_id');
-  definition:=replace(definition,'p.tenant_id = c.parent_tenant_id','p.festival_id = c.festival_id');
-  EXECUTE replace(definition,'AND r.organisation_id = c.organisation_id','AND COALESCE(award.organisation_id,r.organisation_id) = c.organisation_id');
+  -- Registrations and participants follow a transfer. Keep historical result
+  -- access with its frozen team while joining the current participant through
+  -- the result's registration and its matching tenant.
+  definition:=replace(definition,'r.organisation_id=c.organisation_id','COALESCE(award.organisation_id,r.organisation_id)=c.organisation_id');
+  definition:=replace(definition,'p.organisation_id=c.organisation_id','p.organisation_id=r.organisation_id');
+  definition:=replace(definition,'p.tenant_id IN(c.parent_tenant_id,o.tenant_id)','p.tenant_id=r.tenant_id');
+  EXECUTE definition;
 END $portal$;
 
 CREATE FUNCTION public.edit_participant_profile(

@@ -154,8 +154,10 @@ participant/program/schedule RPCs still contain parent-tenant-only assumptions
 (`get_team_leader_participants`, `get_team_leader_schedule`, and program assignment
 functions). Transfers to an organisation with its own tenant are accepted by the
 existing transfer RPC, but that portal workflow needs a separate scoped review.
-The historical result reader is adjusted within this task's approved award
-ownership scope; the other portal permissions/workflows are not broadened.
+The historical result reader follows the frozen award owner through its
+registration join and joins the participant to that registration's current team
+and tenant. This preserves the reader's team and tenant checks after transfer;
+other portal permissions/workflows are not broadened.
 
 Review an exact target schema and run full Supabase staging integration before
 production release, including existing historical transfers, result corrections,

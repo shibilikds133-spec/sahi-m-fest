@@ -90,6 +90,27 @@ async function main() {
       ['20261021172215_general_group_identity_and_profile.sql','get_public_candidate_profile'],
       ['143_section4_audit_scope_hardening.sql','get_team_leader_published_results'],
     ]) sql(extract('supabase/migrations/'+file,fn));
+    // Match the current target reader's join layout: the team filter lives in
+    // the registration JOIN, while the participant JOIN checks its current team.
+    sql(`CREATE OR REPLACE FUNCTION group_entry_private.chest_number(public.registrations) RETURNS text
+        LANGUAGE sql STABLE AS 'SELECT $1.entry_chest_number';
+      CREATE OR REPLACE FUNCTION public.get_team_leader_published_results()
+      RETURNS TABLE(result_id uuid,item_code text,item_name text,participant_name text,rank int,grade text,points_awarded int,published_at timestamptz)
+      LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp AS $$
+        SELECT DISTINCT res.id,i.item_code,COALESCE(i.item_name_en,i.item_name_ml),
+          CASE WHEN r.entry_kind='general_team' THEN COALESCE(group_entry_private.chest_number(r),o.name,'General team') ELSE p.name END,
+          res.rank,res.grade,res.points_awarded,res.published_at
+        FROM public.results res JOIN public.get_team_leader_context() c
+          ON c.festival_id=res.festival_id AND c.parent_tenant_id=res.tenant_id
+        JOIN public.organisations o ON o.id=c.organisation_id
+        JOIN public.items i ON i.id=res.item_id AND(i.tenant_id IS NULL OR i.tenant_id=c.parent_tenant_id)
+        JOIN public.registrations r ON r.id=res.registration_id AND r.festival_id=c.festival_id AND r.organisation_id=c.organisation_id
+        LEFT JOIN public.participants p ON p.id=r.participant_id AND p.festival_id=c.festival_id
+          AND p.organisation_id=c.organisation_id AND p.tenant_id IN(c.parent_tenant_id,o.tenant_id)
+        WHERE res.published IS TRUE AND res.result_status='published' AND res.public_visible IS TRUE AND o.tenant_id IS NOT NULL
+          AND EXISTS(SELECT 1 FROM public.get_visible_organisations(c.parent_tenant_id) v WHERE v.id=o.id AND v.tenant_id=o.tenant_id)
+        ORDER BY res.published_at DESC NULLS LAST,res.rank NULLS LAST;
+      $$;`);
     const views = read('supabase/migrations/067_public_ai_views.sql');
     sql(views.slice(views.indexOf('CREATE OR REPLACE VIEW public.vw_public_leaderboard'),views.indexOf('-- 3. Public schedule')));
     sql(read('supabase/migrations/20261023120000_atomic_participant_edit_and_award_ownership.sql'));
