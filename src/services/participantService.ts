@@ -84,7 +84,7 @@ const throwIfParticipantDeleteError = (
     error.message.includes('group_members_participant_id_fkey')
   ) {
     throw new Error(
-      'This participant is still listed in a group entry. Open Admin → Programs → Group items and delete the group entry first. Entries with check-in, attendance, code letters, marks, results, or certificates must keep their history and cannot be deleted.',
+      'The linked group entry could not be safely removed, so this participant was kept. The entry may contain check-in, attendance, code letters, marks, results, or certificate history.',
     );
   }
 

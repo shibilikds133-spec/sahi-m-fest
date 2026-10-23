@@ -371,7 +371,7 @@ export default function ParticipantDetails() {
 
   const handleDelete = async () => {
     if (!participantId) return;
-    const msg = 'Are you sure you want to delete this participant?';
+    const msg = 'Delete this participant? Any linked group entry and its teammate memberships will also be removed; teammate participant records remain. Protected history blocks the deletion.';
     setActionModal({
       visible: true,
       type: 'confirm',

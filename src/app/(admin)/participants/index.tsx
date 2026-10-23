@@ -295,7 +295,7 @@ export default function ParticipantsList() {
   const confirmBulkAction = (action: 'delete' | 'approve') => {
     if (selected.size === 0) return;
     const msg = action === 'delete'
-      ? `Delete ${selected.size} selected participant(s)? This cannot be undone.`
+      ? `Delete ${selected.size} selected participant(s)? Any linked group entries and their teammate memberships will also be removed; teammate participant records remain. Protected history blocks the entire operation. This cannot be undone.`
       : `Approve ${selected.size} selected participant(s)?`;
 
     if (Platform.OS === 'web') {

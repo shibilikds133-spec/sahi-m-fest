@@ -298,8 +298,7 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async deleteParticipant(participantId: string): Promise<QueryResult<void>> {
-    const { error } = await supabase.from('participants').delete().eq('id', participantId);
-    return { data: undefined, error: normalizeError(error) };
+    return this.deleteParticipants([participantId]);
   }
 
   async terminateParticipant(participantId: string, reason: string): Promise<QueryResult<void>> {
@@ -318,8 +317,21 @@ export class SupabaseDatabaseProvider implements DatabaseProvider {
   }
 
   async deleteParticipants(participantIds: string[]): Promise<QueryResult<void>> {
-    const { error } = await supabase.from('participants').delete().in('id', participantIds);
-    return { data: undefined, error: normalizeError(error) };
+    const { data, error } = await supabase.rpc('safe_delete_participants', {
+      p_participant_ids: participantIds,
+      p_reason: null,
+    });
+    if (error) return { data: null, error: normalizeError(error) };
+    if (data?.status === 'blocked') {
+      return {
+        data: null,
+        error: { code: 'PARTICIPANT_DELETE_BLOCKED', message: data.message || 'Participant deletion was blocked because linked history exists.' },
+      };
+    }
+    if (data?.status !== 'removed') {
+      return { data: null, error: { code: 'PARTICIPANT_DELETE_FAILED', message: 'Participant deletion did not complete.' } };
+    }
+    return { data: undefined, error: null };
   }
 
   async updateParticipants(
