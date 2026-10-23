@@ -1,6 +1,6 @@
 import { ui } from '@/constants/designSystem';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Switch, useWindowDimensions, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Switch, useWindowDimensions, Image, ActivityIndicator, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useGoBack } from '../../../../core/hooks/useGoBack';
@@ -129,7 +129,8 @@ export default function ParticipantDetails() {
     revokeTermination,
     isTerminating,
     isRevokingTermination,
-    isUpdatingParticipant,
+    editProfile,
+    isSavingProfile,
     uploadProfilePhoto,
     removeProfilePhoto,
     isUploadingProfilePhoto,
@@ -143,6 +144,9 @@ export default function ParticipantDetails() {
     useFestivalCategories(isCollegeFest ? festival?.id : undefined, false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [editSnapshot, setEditSnapshot] = useState<any>(null);
+  const [chestNumber, setChestNumber] = useState('');
+  const beginEdit = () => { setEditSnapshot(participant); setIsEditing(true); };
 
   // Editable fields
   const [name, setName] = useState('');
@@ -195,12 +199,12 @@ export default function ParticipantDetails() {
 
   // Update local state when participant data loads
   useEffect(() => {
-    if (participant) {
+    if (participant && !isEditing) {
       setName(participant.name || '');
       setDob(participant.dob || '');
       setCategoryCode(participant.category_code || '');
       setGender(participant.gender || '');
-      setClassStd(participant.class_std || '');
+      setClassStd(participant.class_std == null ? '' : String(participant.class_std));
       setEducationType(participant.education_type || '');
       setPublicProfileEnabled(participant.public_profile_enabled !== false);
       setShowOrganisationPublic(participant.show_organisation_public !== false);
@@ -208,8 +212,9 @@ export default function ParticipantDetails() {
       setPhotoFile(null);
       setRemoveExistingPhoto(false);
       setSelectedOrgId(participant.organisation_id || '');
+      setChestNumber(participant.chest_number || '');
     }
-  }, [participant]);
+  }, [participant, isEditing]);
 
   useEffect(() => {
     if (validTenantId) {
@@ -257,52 +262,40 @@ export default function ParticipantDetails() {
     setRemoveExistingPhoto(Boolean(participant?.photo_url));
   };
 
-  const handleSave = async () => {
-    if (!name) return Alert.alert('Error', 'Name is required');
+  const handleSave = async (confirmed = false) => {
+    const showError = (message: string) => setActionModal({ visible: true, type: 'alert', title: 'Unable to save', message, action: null });
+    if (!name.trim()) return showError('Name is required');
     if (!participantId) return;
+    if (isSavingProfile || !editSnapshot) return;
+    if (!selectedOrgId) return showError('Select a team.');
+    if (festival?.chest_number_template === 'team' && chestNumber && !/^\d+$/.test(chestNumber)) {
+      return showError('Enter a numeric chest number.');
+    }
     if (isCollegeFest) {
       const selected = collegeCategories.find(category => category.code === categoryCode);
       const unchangedArchived = selected && !selected.is_active && categoryCode === participant.category_code;
       if (!selected || (!selected.is_active && !unchangedArchived)) {
-        return Alert.alert('Error', 'Select an active College Fest category.');
+        return showError('Select an active College Fest category.');
       }
     }
 
     try {
-      const changingTeam = Boolean(selectedOrgId && selectedOrgId !== participant.organisation_id);
-      if (changingTeam) {
-        // Team has changed! We need to confirm and call RPC.
-        const confirm = await new Promise((resolve) => {
-          Alert.alert(
-            "Change Team?",
-            `You are changing the team. All Solo items and their future points will be transferred to the new team. Group items will remain with the old team.${festival?.chest_number_template === 'team' ? ' The participant will receive a new chest number from the destination team.' : ''} Proceed?`,
-            [
-              { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-              { text: "Yes, Change Team", style: "destructive", onPress: () => resolve(true) }
-            ]
-          );
-        });
-
-        if (!confirm) return;
-
-        // Note: Admin Auth usually sets `auth.uid()`, we can pass user.id for audit
-        const { supabase } = await import('@/core/config/supabase');
-        const { useAuthStore } = await import('@/core/store/authStore');
-        const adminId = useAuthStore.getState().user?.id;
-
-        const { error: rpcError } = await supabase.rpc('transfer_participant_team', {
-          p_participant_id: participantId,
-          p_new_org_id: selectedOrgId,
-          p_admin_id: adminId || '00000000-0000-0000-0000-000000000000'
-        });
-
-        if (rpcError) {
-          throw new Error(rpcError.message || 'Failed to transfer team.');
-        }
+      const changingTeam = selectedOrgId !== editSnapshot.organisation_id;
+      const changingNumber = festival?.chest_number_template === 'team' && chestNumber !== (editSnapshot.chest_number || '');
+      if ((changingTeam || changingNumber) && !confirmed) {
+        setActionModal({ visible: true, type: 'confirm', title: 'Save team / chest number?',
+          message: 'Affected chest numbers will shift to keep their order. Existing points stay with their original team; future solo awards go to the new team. Group entries stay with their original team.',
+          action: () => { void handleSave(true); } });
+        return;
       }
 
-      await updateParticipant({ 
-        id: participantId, 
+      await editProfile({
+        id: participantId,
+        organisationId: selectedOrgId,
+        chestNumber: festival?.chest_number_template === 'team' ? chestNumber : '',
+        expectedUpdatedAt: editSnapshot.updated_at ?? null,
+        expectedOrganisationId: editSnapshot.organisation_id ?? null,
+        expectedChestNumber: editSnapshot.chest_number ?? null,
         updates: {
           name, 
           dob: dob || null,
@@ -331,7 +324,7 @@ export default function ParticipantDetails() {
       }
       Alert.alert('Success', 'Participant updated.');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      showError(error?.message || 'Unable to save the participant.');
     }
   };
 
@@ -629,7 +622,7 @@ export default function ParticipantDetails() {
                   {!locked && !isEditing && (
                   <TouchableOpacity
                     className="flex-row items-center rounded-lg bg-ssf-primary px-4 py-2.5"
-                    onPress={() => setIsEditing(true)}
+                    onPress={beginEdit}
                   >
                     <Edit3 size={15} color={ui.colors.surface} />
                     <Text className="ml-1.5 font-poppins-bold text-[11px] text-white">Edit</Text>
@@ -639,30 +632,7 @@ export default function ParticipantDetails() {
               )}
             </View>
 
-            {isEditing ? (
-              <View className="mt-3 border-t border-slate-100 pt-2.5">
-                <Text className="font-poppins text-ssf-text-muted mb-2 text-xs">Organisation (Team) *</Text>
-                {availableOrganisations.length > 0 ? (
-                  <View className="flex-row flex-wrap gap-2">
-                    {availableOrganisations.map((org: any) => (
-                      <TouchableOpacity
-                        key={org.id}
-                        className={`px-3 py-1.5 rounded-lg border ${selectedOrgId === org.id ? 'bg-ssf-primary border-ssf-primary' : 'bg-ssf-surface border-ssf-border'}`}
-                        onPress={() => setSelectedOrgId(org.id)}
-                      >
-                        <Text className={`font-poppins-bold text-xs ${selectedOrgId === org.id ? 'text-white' : 'text-ssf-text'}`}>
-                          {org.name} <Text className="font-poppins font-normal text-[10px] opacity-80">({org.org_type})</Text>
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ) : organisations.length > 0 && (festivalLevel === 'sector' || festivalLevel === 'division') ? (
-                  <Text className="font-poppins text-xs italic text-amber-700">No subordinate organisations are available for this {festivalLevel}.</Text>
-                ) : (
-                  <Text className="font-poppins text-xs italic text-red-500">Loading organisations...</Text>
-                )}
-              </View>
-            ) : participant.organisations && (
+            {participant.organisations && (
               <View className="mt-3 flex-row items-center border-t border-slate-100 pt-2.5">
                 <ShieldCheck size={14} color="#047857" />
                 <Text numberOfLines={1} className="ml-2 flex-1 font-poppins-bold text-[10px] uppercase text-ssf-text">
@@ -690,7 +660,7 @@ export default function ParticipantDetails() {
                 {!locked && !isEditing && (
                   <TouchableOpacity
                     className="h-11 flex-1 flex-row items-center justify-center rounded-xl bg-ssf-primary"
-                    onPress={() => setIsEditing(true)}
+                    onPress={beginEdit}
                   >
                     <Edit3 size={16} color={ui.colors.surface} />
                     <Text className="ml-2 font-poppins-bold text-[11px] text-white">Edit details</Text>
@@ -710,21 +680,21 @@ export default function ParticipantDetails() {
         {isEditing ? (
           <SsfSheet
             visible={isEditing}
-            onClose={() => setIsEditing(false)}
+            onClose={() => { if (!isSavingProfile) setIsEditing(false); }}
             title="Edit profile"
             description="Update participant details and public profile settings. Save when you’re done."
             footer={
               <>
                 <SsfButton
-                  label={isUpdatingParticipant ? 'Saving...' : 'Save changes'}
-                  onPress={handleSave}
-                  disabled={isUpdatingParticipant || (isCollegeFest && categoriesLoading)}
+                  label={isSavingProfile ? 'Saving...' : 'Save changes'}
+                  onPress={() => { void handleSave(); }}
+                  disabled={isSavingProfile || (isCollegeFest && categoriesLoading)}
                 />
                 <SsfButton
                   label="Close"
                   variant="outline"
                   onPress={() => setIsEditing(false)}
-                  disabled={isUpdatingParticipant}
+                  disabled={isSavingProfile}
                 />
               </>
             }
@@ -746,6 +716,21 @@ export default function ParticipantDetails() {
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Name</Text>
               <TextInput className="border border-ssf-border rounded-xl p-3 font-poppins" value={name} onChangeText={setName} />
             </View>
+            <View style={{ zIndex: 60 }}>
+              <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Team</Text>
+              <SsfSelectMenu value={selectedOrgId} onValueChange={(value) => {
+                setSelectedOrgId(value);
+                if (value !== selectedOrgId) setChestNumber('');
+              }} options={availableOrganisations.map((org: any) => ({ label: org.name, value: org.id }))}
+                placeholder="Select team" accessibilityLabel="Select team" />
+            </View>
+            {festival?.chest_number_template === 'team' && <View>
+              <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Chest number</Text>
+              <TextInput accessibilityLabel="Chest number" keyboardType="number-pad" value={chestNumber}
+                onChangeText={setChestNumber} placeholder="First available number" editable={!isSavingProfile}
+                className="h-10 border border-ssf-border rounded-lg px-3 font-poppins" />
+              <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">Enter the required team number, or leave blank for the first available number. Affected numbers shift automatically.</Text>
+            </View>}
             <View className="flex-row gap-x-3" style={{ zIndex: 50 }}>
               <View className="flex-1" style={{ zIndex: 50 }}>
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Category Code</Text>
@@ -1109,6 +1094,7 @@ export default function ParticipantDetails() {
 
       {/* Action Modal */}
       {actionModal.visible && (
+        <Modal transparent visible onRequestClose={closeActionModal} animationType="fade">
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: 20 }}>
           <View style={{ backgroundColor: ui.colors.surface, borderRadius: 16, width: '100%', maxWidth: 400, padding: 24, zIndex: 10000, elevation: 10 }}>
             <Text className="font-poppins-bold text-lg mb-2 text-ssf-text">{actionModal.title}</Text>
@@ -1167,6 +1153,7 @@ export default function ParticipantDetails() {
             </View>
           </View>
         </View>
+        </Modal>
       )}
     </ScrollView>
   );

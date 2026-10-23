@@ -11,7 +11,7 @@ import "../global.css";
 import { ActivityIndicator, Platform, View } from "react-native";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   useFonts,
   Poppins_400Regular,
@@ -28,6 +28,7 @@ import { useProtectedRoute } from "../core/hooks/useProtectedRoute";
 import { useAuthStore } from "../core/store/authStore";
 import { NotificationProvider } from "../core/contexts/NotificationContext";
 import { NotificationToast } from "../components/ui/NotificationToast";
+import { useParticipantProfileUpdates } from "../core/hooks/useParticipantProfileUpdates";
 
 // Removed top-level preventAutoHideAsync, moving it inside component
 
@@ -49,6 +50,12 @@ function AppLoadingScreen() {
 }
 
 function LayoutContent() {
+  const tenantId = useAuthStore((state) => state.tenant_id);
+  // Observe the festival already loaded by admin screens; no extra API read.
+  const { data: activeFestival } = useQuery<{ id: string } | null>({
+    queryKey: ['active-festival', tenantId], enabled: false,
+  });
+  useParticipantProfileUpdates(activeFestival?.id);
   const blockProtectedCoreRoute = useProtectedRoute();
   if (blockProtectedCoreRoute) return <AppLoadingScreen />;
   return <Slot />;

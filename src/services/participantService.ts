@@ -20,6 +20,7 @@ export type OrganisationOption = {
 export type PublicCandidateProfile = {
   profile: {
     id: string;
+    festival_id?: string;
     slug: string;
     name: string;
     photo_url: string | null;
@@ -321,6 +322,23 @@ export const participantService = {
     
     // Let's implement validation inside the hook or service properly
     throw new Error('Not implemented here yet');
+  },
+
+  async editProfile<T>(input: {
+    id: string; updates: Record<string, unknown>; organisationId: string;
+    chestNumber: string; expectedUpdatedAt: string | null;
+    expectedOrganisationId: string | null; expectedChestNumber: string | null;
+  }): Promise<T> {
+    const { data, error } = await supabase.rpc('edit_participant_profile', {
+      p_participant_id: input.id, p_updates: input.updates, p_new_org_id: input.organisationId,
+      p_chest_number: input.chestNumber.trim() || null,
+      p_expected_updated_at: input.expectedUpdatedAt,
+      p_expected_org_id: input.expectedOrganisationId,
+      p_expected_chest_number: input.expectedChestNumber,
+    });
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Participant was not returned after saving.');
+    return data as T;
   },
 
   async updateParticipant<T>(

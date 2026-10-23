@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { leaderboardService } from '../../services/leaderboardService';
 import { LEADERBOARD_QUERY_KEYS } from '../../constants/leaderboard';
+import { useParticipantProfileUpdates } from './useParticipantProfileUpdates';
 
 export const usePublicLeaderboard = (
   tenantId?: string | null,
   festivalId?: string | null,
   enabled = true,
 ) => {
+  useParticipantProfileUpdates(enabled ? festivalId : null);
   return useQuery({
     queryKey: LEADERBOARD_QUERY_KEYS.publicLeaderboard(tenantId, festivalId),
     queryFn: () => leaderboardService.listPublicLeaderboard(tenantId, festivalId),
@@ -23,6 +25,7 @@ export const useLeaderboardPreview = (
   itemLimit?: number | null,
   enabled = true,
 ) => {
+  useParticipantProfileUpdates(enabled ? festivalId : null);
   return useQuery({
     queryKey: ['leaderboard-preview', tenantId, festivalId, rankingMode, itemLimit],
     queryFn: () => leaderboardService.getLeaderboardPreview(tenantId, festivalId, rankingMode, itemLimit, true),
@@ -36,6 +39,7 @@ export const usePublicPublishedResults = (
   enabled = true,
   includeParticipantDetails = true,
 ) => {
+  useParticipantProfileUpdates(enabled ? festivalId : null);
   return useQuery({
     queryKey: LEADERBOARD_QUERY_KEYS.publicPublishedResults(tenantId, festivalId, includeParticipantDetails),
     queryFn: () => leaderboardService.listPublicPublishedResults(tenantId, festivalId, includeParticipantDetails),

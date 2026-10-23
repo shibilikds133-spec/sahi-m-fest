@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { teamLeaderPortalService, TeamLeaderContext } from '@/services/teamLeaderPortalService';
 import { useAuthStore } from '@/core/store/authStore';
+import { useRealtimeUpdates } from '@/core/hooks/useCodeLetterUpdates';
 
 interface TeamLeaderState {
   context: TeamLeaderContext | null;
@@ -52,6 +53,9 @@ export function TeamLeaderProvider({ children }: { children: React.ReactNode }) 
       setLoading(false);
     }
   }, []);
+
+  // Existing local-state portal screens reload when their context is refreshed.
+  useRealtimeUpdates(context?.festival_id ? `participant-profiles:${context.festival_id}` : null, fetchContext);
 
   useEffect(() => {
     if (!initialized || role !== 'team_leader') {

@@ -6,14 +6,19 @@ import { useCodeLetterUpdates } from './useCodeLetterUpdates';
 import { invalidateCodeLetters } from '../utils/invalidateCodeLetters';
 import { isGroupCompetition } from '../utils/groupParticipation';
 import { invalidateGeneralMembership } from '../utils/invalidateGeneralMembership';
+import { invalidateParticipantProfiles } from '../utils/invalidateParticipantProfiles';
+import { useParticipantProfileUpdates } from './useParticipantProfileUpdates';
 
-export const usePublicCandidateProfile = (slug?: string | null) =>
-  useQuery({
+export const usePublicCandidateProfile = (slug?: string | null) => {
+  const query = useQuery({
     queryKey: ['publicCandidateProfile', slug],
     queryFn: () => participantService.getPublicCandidateProfile(slug!),
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
   });
+  useParticipantProfileUpdates(query.data?.profile?.festival_id);
+  return query;
+};
 
 export const useParticipants = (participantId?: string) => {
   const queryClient = useQueryClient();
@@ -142,10 +147,12 @@ export const useParticipants = (participantId?: string) => {
   const updateParticipantMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Record<string, unknown> }) => 
       participantService.updateParticipant<any>(id, updates),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['participants'] });
-      queryClient.invalidateQueries({ queryKey: ['participant', variables.id] });
-    },
+    onSuccess: () => invalidateParticipantProfiles(queryClient),
+  });
+
+  const editProfileMutation = useMutation({
+    mutationFn: (input: Parameters<typeof participantService.editProfile>[0]) => participantService.editProfile<any>(input),
+    onSuccess: (data) => invalidateParticipantProfiles(queryClient, data.festival_id),
   });
 
   const uploadProfilePhotoMutation = useMutation({
@@ -289,6 +296,8 @@ export const useParticipants = (participantId?: string) => {
     
     updateParticipant: updateParticipantMutation.mutateAsync,
     isUpdatingParticipant: updateParticipantMutation.isPending,
+    editProfile: editProfileMutation.mutateAsync,
+    isSavingProfile: editProfileMutation.isPending,
     uploadProfilePhoto: uploadProfilePhotoMutation.mutateAsync,
     removeProfilePhoto: removeProfilePhotoMutation.mutateAsync,
     isUploadingProfilePhoto: uploadProfilePhotoMutation.isPending,

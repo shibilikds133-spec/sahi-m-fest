@@ -34,7 +34,7 @@ function listen(topic: string, listener: () => void) {
   };
 }
 
-export function useCodeLetterUpdates(topic: string | null | undefined, onChange: () => void | Promise<unknown>) {
+export function useRealtimeUpdates(topic: string | null | undefined, onChange: () => void | Promise<unknown>) {
   const callback = useRef(onChange);
   callback.current = onChange;
   useEffect(() => {
@@ -42,7 +42,7 @@ export function useCodeLetterUpdates(topic: string | null | undefined, onChange:
     const refresh = () => { void Promise.resolve().then(() => callback.current()).catch(() => {
       // Fetch paths retain their own error state. Never discard drafts on errors.
     }); };
-    const stop = listen(`code-letters:${topic}`, refresh);
+    const stop = listen(topic, refresh);
     const appState = Platform.OS !== 'web'
       ? AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); }) : undefined;
     const visibility = () => { if (document.visibilityState === 'visible') refresh(); };
@@ -53,4 +53,8 @@ export function useCodeLetterUpdates(topic: string | null | undefined, onChange:
       if (Platform.OS === 'web' && typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility);
     };
   }, [topic]);
+}
+
+export function useCodeLetterUpdates(topic: string | null | undefined, onChange: () => void | Promise<unknown>) {
+  useRealtimeUpdates(topic ? `code-letters:${topic}` : null, onChange);
 }
