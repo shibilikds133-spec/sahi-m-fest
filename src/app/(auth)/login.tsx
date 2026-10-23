@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -16,9 +17,6 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck, Sparkles, Trophy, Us
 import { useAuthStore } from '../../core/store/authStore';
 import { DevConfig } from '../../core/config/dev_config';
 import { authService } from '../../services/authService';
-import { ConsoliumLogo } from '../../components/ui/ConsoliumLogo';
-import { applyPortalPwaMetadata } from '../../core/utils/portalPwaMetadata';
-import { PwaInstallCard } from '../../components/ui/PwaInstallCard';
 
 const palette = {
   ink: '#071827',
@@ -42,7 +40,6 @@ export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 960;
   const isMobile = width < 640;
-  React.useEffect(() => applyPortalPwaMetadata('admin', 'Consolium'), []);
 
   const handleLogin = async () => {
     setErrorMsg('');
@@ -87,10 +84,14 @@ export default function LoginScreen() {
         <View style={[styles.shell, isDesktop && styles.shellDesktop]}>
           <View style={[styles.heroPane, isDesktop && styles.heroPaneDesktop]}>
             <View style={styles.brandRow}>
-              <ConsoliumLogo size={44} style={{ marginRight: 8 }} />
+              <Image
+                source={{ uri: '/logo/image-removebg-preview.png' }}
+                style={{ width: 44, height: 44, marginRight: 8 }}
+                resizeMode="contain"
+              />
               <View>
-                <Text style={styles.brandTitle}>Consolium</Text>
-                <Text style={styles.brandSub}>Festival Management</Text>
+                <Text style={styles.brandTitle}>Kodasseri Sector</Text>
+                <Text style={styles.brandSub}>Sahithyolsav 2026</Text>
               </View>
             </View>
 
@@ -99,7 +100,7 @@ export default function LoginScreen() {
               <Text style={styles.kickerText}>Festival operations portal</Text>
             </View>
 
-            <Text style={[styles.scriptTitle, isMobile && styles.scriptTitleMobile]}>Consolium</Text>
+            <Text style={[styles.scriptTitle, isMobile && styles.scriptTitleMobile]}>Sahityotsav</Text>
             <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>
               Manage results with the same clean public theme.
             </Text>
@@ -138,7 +139,7 @@ export default function LoginScreen() {
                 setEmail(value);
                 setErrorMsg('');
               }}
-              placeholder="e.g., your_user_id"
+              placeholder="e.g., kodasseri_sector"
               icon={UserRound}
               autoCapitalize="none"
             />
@@ -180,7 +181,6 @@ export default function LoginScreen() {
             <TouchableOpacity onPress={() => router.replace('/(public)/leaderboard' as never)} style={styles.linkButton}>
               <Text style={styles.linkButtonText}>Continue to public results</Text>
             </TouchableOpacity>
-            <PwaInstallCard appName="Consolium" />
           </View>
         </View>
       </ScrollView>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { ConsoliumLogo } from './ConsoliumLogo';
 
 interface SsfLogoProps {
  size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -8,18 +7,25 @@ interface SsfLogoProps {
 }
 
 export const SsfLogo: React.FC<SsfLogoProps> = ({ size = 'md', showText = true }) => {
- const sizes = { sm: 28, md: 40, lg: 56, xl: 72 };
+ const sizeClasses = {
+ sm: 'text-2xl',
+ md: 'text-4xl',
+ lg: 'text-6xl',
+ xl: 'text-8xl',
+ };
 
  return (
  <View className="flex-row items-center justify-center">
- <ConsoliumLogo size={sizes[size]} />
+ <Text className={`${sizeClasses[size]} font-cooper text-ssf-primary tracking-tighter`}>
+ SS<Text className="text-ssf-gold">F</Text>
+ </Text>
  {showText && (
  <View className="ml-3 justify-center">
  <Text className="text-ssf-primary font-poppins text-xs uppercase tracking-widest leading-tight">
- Consolium
+ Sahithyolsav
  </Text>
  <Text className="text-ssf-gold font-poppins-black text-[10px] uppercase tracking-widest leading-none">
- Management
+ Festival
  </Text>
  </View>
  )}
