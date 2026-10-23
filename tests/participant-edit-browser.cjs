@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const puppeteer = require('puppeteer-core');
-const root=path.resolve(__dirname,'../output/participant-edit-web');
-const output=path.resolve(__dirname,'../output/participant-edit-validation');
+const root=path.resolve(__dirname,'../output/global-chest-edit-web');
+const output=path.resolve(__dirname,'../output/global-chest-edit-validation');
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const tenant=id(1),festival=id(11),user=id(101),participant=id(201),team=id(21),destination=id(22);
 async function main() {
@@ -28,6 +28,7 @@ async function main() {
       chest_number:'100',category_code:'HS',gender:'boys',status:'approved',is_locked:false,updated_at:'2026-10-23T00:00:00Z',
       public_profile_enabled:true,show_organisation_public:true,organisations:{id:team,name:'Team A',org_type:'unit'}};
     let stale=false;
+    let chestTemplate='team';
     page.on('pageerror',error=>errors.push(error.message));
     page.on('dialog',dialog=>dialog.accept());
     await page.evaluateOnNewDocument(({user})=>{
@@ -47,7 +48,7 @@ async function main() {
       if(endpoint==='profiles')result={role:'admin',tenant_id:tenant,is_superadmin:false};
       else if(endpoint==='user')result={id:user,email:'test@example.invalid',app_metadata:{},user_metadata:{}};
       else if(endpoint==='get_my_access_status')result={access_disabled:false};
-      else if(endpoint==='festival_calendar')result={id:festival,tenant_id:tenant,festival_year:2026,level:'sector',is_active:true,festival_template:'sahithyolsav',chest_number_template:'team',chest_number_category_range:100};
+      else if(endpoint==='festival_calendar')result={id:festival,tenant_id:tenant,festival_year:2026,level:'sector',is_active:true,festival_template:'sahithyolsav',chest_number_template:chestTemplate,chest_number_category_range:100};
       else if(endpoint==='tenants')result={id:tenant,name:'Test Festival',is_active:true};
       else if(endpoint==='participants')result=new URL(request.url()).searchParams.has('id')?current:[current];
       else if(endpoint==='get_visible_organisations'||endpoint==='organisations')result=[
@@ -120,8 +121,26 @@ async function main() {
     await page.waitForFunction(()=>document.body.textContent.includes('Participant changed after opening. Reload before saving.'));
     await click('OK');
     assert.ok(await page.$('input[aria-label="Chest number"]'));
+    await click('Close');
+    stale=false;
+    chestTemplate='category';
+    current={...current,organisation_id:team,chest_number:'100',category_code:'HS'};
+    await page.goto(base+'/participants/'+participant,{waitUntil:'networkidle0'});
+    await click('Edit details');
+    const categoryNumber=await page.$eval('input[aria-label="Chest number"]',el=>el.value);
+    assert.equal(categoryNumber,'100','Category-mode festivals must expose the existing number');
+    await page.click('input[aria-label="Chest number"]');
+    await page.keyboard.down('Control');await page.keyboard.press('A');await page.keyboard.up('Control');
+    await page.type('input[aria-label="Chest number"]','101');
+    await click('Save changes');
+    await page.waitForFunction(()=>document.body.textContent.includes('Save team / chest number?'));
+    await click('Proceed');
+    await page.waitForFunction(()=>!document.querySelector('input[aria-label="Chest number"]'));
+    assert.equal(writes.length,3);
+    assert.equal(writes[2].p_chest_number,'101','Category-mode number reaches the atomic RPC');
+    assert.equal(writes[2].p_new_org_id,team,'Category-mode number edit keeps the selected team');
     assert.deepEqual(errors,[]);
-    console.log('PASS 1440/1024/768/390/320px edit sheet, compact chest control, team picker, accessible confirmation, one atomic save, stale-save draft retained');
+    console.log('PASS 1440/1024/768/390/320px edit sheet, team and category chest fields, atomic team transfer, category number save, stale-save draft retained');
   } finally {if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

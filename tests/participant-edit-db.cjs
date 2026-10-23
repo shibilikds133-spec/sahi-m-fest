@@ -114,6 +114,7 @@ async function main() {
     const views = read('supabase/migrations/067_public_ai_views.sql');
     sql(views.slice(views.indexOf('CREATE OR REPLACE VIEW public.vw_public_leaderboard'),views.indexOf('-- 3. Public schedule')));
     sql(read('supabase/migrations/20261023070526_atomic_participant_edit_and_award_ownership.sql'));
+    sql(read('supabase/migrations/20261023092645_global_chest_number_edit.sql'));
     const original = get(student);
     sql(asActor(command(student,{name:'Renamed'},b,'200')));
     assert.equal(get(student).name,'Renamed'); assert.equal(get(student).chest_number,'200');
@@ -123,6 +124,32 @@ async function main() {
     assert.equal(sql(`SELECT organisation_id FROM registrations WHERE id='${id(403)}'`).stdout.trim(),a,'Group stays with old team');
     assert.equal(sql(`SELECT organisation_id FROM result_team_awards WHERE result_id='${id(601)}'`).stdout.trim(),a);
     console.log('PASS transfer + close source gap + shift destination + rename + preserved group and award');
+
+    // Category-numbered festivals use their existing category blocks. A number
+    // edit closes the source gap, shifts only the occupied run, and moving a
+    // participant to another category allocates inside that category's block.
+    const categoryFestival=id(14), catA=id(211), catB=id(212), catC=id(213), junior=id(214);
+    sql(`INSERT INTO festival_calendar(id,tenant_id,chest_number_template,chest_number_category_range)
+      VALUES('${categoryFestival}','${id(1)}','category',100);
+      INSERT INTO festival_categories(festival_id,code,sort_order) VALUES
+        ('${categoryFestival}','HS',0),('${categoryFestival}','JUNIOR',1);
+      INSERT INTO participants(id,festival_id,tenant_id,organisation_id,chest_number,name,category_code) VALUES
+        ('${catA}','${categoryFestival}','${id(1)}','${a}','120','Category A','HS'),
+        ('${catB}','${categoryFestival}','${id(1)}','${a}','121','Category B','HS'),
+        ('${catC}','${categoryFestival}','${id(1)}','${a}','122','Category C','HS'),
+        ('${junior}','${categoryFestival}','${id(1)}','${b}','200','Junior A','JUNIOR');`);
+    sql(asActor(command(catA,{name:'Category A Edited'},a,'122')));
+    assert.equal(get(catA).chest_number,'122');
+    assert.equal(get(catB).chest_number,'120');
+    assert.equal(get(catC).chest_number,'121');
+    const outOfRange=sql(asActor(command(catA,{name:'Must Roll Back'},a,'99')),false);
+    assert.notEqual(outOfRange.status,0); assert.match(outOfRange.stderr,/selected category range/);
+    assert.equal(get(catA).name,'Category A Edited');
+    sql(asActor(command(catA,{name:'Moved Category',category_code:'JUNIOR'},a,'122')));
+    assert.equal(get(catA).category_code,'JUNIOR'); assert.equal(get(catA).chest_number,'201');
+    assert.equal(get(catB).chest_number,'120'); assert.equal(get(catC).chest_number,'121');
+    assert.equal(get(junior).chest_number,'200');
+    console.log('PASS category-mode edit, range validation, category move, source compaction and destination allocation');
     for (const rpc of [`get_public_leaderboard('${id(1)}','${festival}')`,`get_admin_leaderboard('${id(1)}','${festival}')`,
       `get_leaderboard_preview('${id(1)}','${festival}','ALL',NULL,true)`]) {
       const r=sql(`SELECT set_config('request.jwt.claim.sub','${admin}',false); SELECT total_points FROM ${rpc} WHERE organisation_id='${a}';`);

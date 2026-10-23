@@ -268,8 +268,12 @@ export default function ParticipantDetails() {
     if (!participantId) return;
     if (isSavingProfile || !editSnapshot) return;
     if (!selectedOrgId) return showError('Select a team.');
-    if (festival?.chest_number_template === 'team' && chestNumber && !/^\d+$/.test(chestNumber)) {
+    const changingNumber = chestNumber !== (editSnapshot.chest_number || '');
+    if (chestNumber && !/^\d+$/.test(chestNumber)) {
       return showError('Enter a numeric chest number.');
+    }
+    if (festival?.chest_number_template !== 'team' && changingNumber && !chestNumber.trim()) {
+      return showError('Enter a chest number for this category.');
     }
     if (isCollegeFest) {
       const selected = collegeCategories.find(category => category.code === categoryCode);
@@ -281,7 +285,6 @@ export default function ParticipantDetails() {
 
     try {
       const changingTeam = selectedOrgId !== editSnapshot.organisation_id;
-      const changingNumber = festival?.chest_number_template === 'team' && chestNumber !== (editSnapshot.chest_number || '');
       if ((changingTeam || changingNumber) && !confirmed) {
         setActionModal({ visible: true, type: 'confirm', title: 'Save team / chest number?',
           message: 'Affected chest numbers will shift to keep their order. Existing points stay with their original team; future solo awards go to the new team. Group entries stay with their original team.',
@@ -292,7 +295,7 @@ export default function ParticipantDetails() {
       await editProfile({
         id: participantId,
         organisationId: selectedOrgId,
-        chestNumber: festival?.chest_number_template === 'team' ? chestNumber : '',
+        chestNumber,
         expectedUpdatedAt: editSnapshot.updated_at ?? null,
         expectedOrganisationId: editSnapshot.organisation_id ?? null,
         expectedChestNumber: editSnapshot.chest_number ?? null,
@@ -720,17 +723,19 @@ export default function ParticipantDetails() {
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Team</Text>
               <SsfSelectMenu value={selectedOrgId} onValueChange={(value) => {
                 setSelectedOrgId(value);
-                if (value !== selectedOrgId) setChestNumber('');
+                if (festival?.chest_number_template === 'team' && value !== selectedOrgId) setChestNumber('');
               }} options={availableOrganisations.map((org: any) => ({ label: org.name, value: org.id }))}
                 placeholder="Select team" accessibilityLabel="Select team" />
             </View>
-            {festival?.chest_number_template === 'team' && <View>
+            <View>
               <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Chest number</Text>
               <TextInput accessibilityLabel="Chest number" keyboardType="number-pad" value={chestNumber}
-                onChangeText={setChestNumber} placeholder="First available number" editable={!isSavingProfile}
+                onChangeText={setChestNumber} placeholder={festival?.chest_number_template === 'team' ? 'First available number' : 'Required chest number'} editable={!isSavingProfile}
                 className="h-10 border border-ssf-border rounded-lg px-3 font-poppins" />
-              <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">Enter the required team number, or leave blank for the first available number. Affected numbers shift automatically.</Text>
-            </View>}
+              <Text className="mt-1 font-poppins text-xs text-ssf-text-muted">{festival?.chest_number_template === 'team'
+                ? 'Enter a team number, or leave blank for the first available number. Affected numbers shift automatically.'
+                : 'Enter a number in this category’s range. Affected numbers in the category shift automatically.'}</Text>
+            </View>
             <View className="flex-row gap-x-3" style={{ zIndex: 50 }}>
               <View className="flex-1" style={{ zIndex: 50 }}>
                 <Text className="text-sm font-poppins text-ssf-text-muted mb-1">Category Code</Text>
