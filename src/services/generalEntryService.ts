@@ -8,7 +8,7 @@ export type GeneralTeamEntry = {
   leader: { id: string; name: string; chest_number: string | null; profile_slug?: string | null } | null;
   organisation_id: string;
   organisation: { name: string } | null;
-  item: { id: string; item_code: string; item_name_en: string; item_name_ml: string | null; category_codes: string[]; group_min_members: number | null; group_max_members: number | null; gender: string | null } | null;
+  item: { id: string; item_code: string; item_name_en: string; item_name_ml: string | null; category_codes: string[]; group_min_members: number | null; group_max_members: number | null; gender: string | null; is_active: boolean } | null;
   members: { participant_id: string; participant: { id: string; name: string; chest_number: string | null } | null }[];
 };
 
@@ -16,7 +16,7 @@ export const generalEntryService = {
   async list(festivalId: string): Promise<GeneralTeamEntry[]> {
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, entry_chest_number, group_leader_participant_id, leader:participants!registrations_group_leader_participant_id_fkey(id, name, chest_number, profile_slug), organisation_id, organisation:organisations(name), item:items(id, item_code, item_name_en, item_name_ml, category_codes, group_min_members, group_max_members, gender), members:group_members(participant_id, participant:participants(id, name, chest_number))')
+      .select('id, entry_chest_number, group_leader_participant_id, leader:participants!registrations_group_leader_participant_id_fkey(id, name, chest_number, profile_slug), organisation_id, organisation:organisations(name), item:items(id, item_code, item_name_en, item_name_ml, category_codes, group_min_members, group_max_members, gender, is_active), members:group_members(participant_id, participant:participants(id, name, chest_number))')
       .eq('festival_id', festivalId)
       .eq('entry_kind', 'general_team')
       .order('created_at', { ascending: false });
@@ -44,5 +44,14 @@ export const generalEntryService = {
     });
     if (error) throw new Error(error.message);
     return data as { registration_id: string; entry_chest_number: string; member_count: number; changed: boolean };
+  },
+
+  async remove(registrationId: string, reason?: string | null) {
+    const { data, error } = await supabase.rpc('safe_delete_general_team_entry', {
+      p_registration_id: registrationId,
+      p_reason: reason ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return data as { status: 'removed' | 'blocked' | 'not_found'; message?: string; registration_id: string };
   },
 };

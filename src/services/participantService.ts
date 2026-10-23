@@ -79,6 +79,15 @@ const throwIfParticipantDeleteError = (
     );
   }
 
+  if (
+    error?.code === '23503' &&
+    error.message.includes('group_members_participant_id_fkey')
+  ) {
+    throw new Error(
+      'This participant is still listed in a group entry. Open Admin → Programs → Group items and delete the group entry first. Entries with check-in, attendance, code letters, marks, results, or certificates must keep their history and cannot be deleted.',
+    );
+  }
+
   throwIfError(error);
 };
 

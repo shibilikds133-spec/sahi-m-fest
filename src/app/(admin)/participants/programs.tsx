@@ -63,6 +63,7 @@ export default function ProgramsScreen() {
   const [deactivating, setDeactivating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDeselect, setConfirmDeselect] = useState(false);
+  const [groupEntryToDelete, setGroupEntryToDelete] = useState<{ id: string; label: string; participantIds: string[] } | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -106,6 +107,7 @@ export default function ProgramsScreen() {
       && (!activeCard?.item.gender || activeCard.item.gender === 'both' || activeCard.item.gender === person.gender)
   ), [participants, festival?.id, visibleOrganisationIds, activeCard?.category, activeCard?.kind, activeCard?.item.gender]);
   const currentRegistrations = entries.data ?? [];
+  const inactiveGroupEntries = currentRegistrations.filter(entry => entry.item?.is_active !== true);
   const participantById = useMemo(() => new Map((participants as any[]).map(person => [person.id, person])), [participants]);
   const activeAssignedRegistrations = useMemo(() => festivalRegistrations.filter((row: any) =>
     activeCard?.kind === 'participant' && row.item_id === activeCard.item.id && row.participant_id && row.status !== 'rejected'
@@ -200,6 +202,27 @@ export default function ProgramsScreen() {
   const openCard = (card: typeof programCards[number], mode: 'details' | 'assign') => {
     setActiveCard(card); setCardModalMode(mode); setSelectedIds([]); setConfirmDeselect(false); setSearch(''); setParticipantCategoryFilter('All categories'); setError(''); setNotice('');
   };
+  const deleteGeneralTeamEntry = async () => {
+    if (!festival || !groupEntryToDelete || saving) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const result = await generalEntryService.remove(groupEntryToDelete.id, 'Deleted from Programs page');
+      if (result.status === 'blocked') throw new Error(result.message || 'This group entry has competition history and cannot be deleted.');
+      if (result.status !== 'removed') throw new Error('This group entry was not found. Refresh the page and try again.');
+      const participantIds = groupEntryToDelete.participantIds;
+      setGroupEntryToDelete(null);
+      setNotice('Group entry deleted. Team and participant records were kept.');
+      await invalidateGeneralMembership(queryClient, festival.id, participantIds);
+      await queryClient.invalidateQueries({ queryKey: ['festivalRegistrations', festival.id] });
+      await queryClient.invalidateQueries({ queryKey: ['participantRegistrations'] });
+      await queryClient.invalidateQueries({ queryKey: ['program-intake-statuses', festival.id] });
+      await queryClient.invalidateQueries({ queryKey: ['scheduleRegistrations'] });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete this group entry.');
+    } finally {
+      setSaving(false);
+    }
+  };
   const visibleParticipants = (cardModalMode === 'details'
     ? activeAssignedParticipants
     : [...activeAssignedParticipants, ...eligibleParticipants.filter(person => !activeAssignedIds.has(person.id))])
@@ -274,6 +297,7 @@ export default function ProgramsScreen() {
       <SsfCard><View className="flex-row items-center justify-between"><Text className="font-poppins-bold text-sm text-ui-text">{doneCount} of {sectionCards.length} {sectionLabel.toLowerCase()} programs complete</Text><Text className="font-poppins-bold text-xs text-emerald-700">{sectionCards.length ? Math.round(doneCount / sectionCards.length * 100) : 0}%</Text></View><View className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><View className="h-full rounded-full bg-emerald-600" style={{ width: `${sectionCards.length ? doneCount / sectionCards.length * 100 : 0}%` }} /></View></SsfCard>
       {statuses.error && <SsfCard><Text className="font-poppins text-sm text-red-700">{statuses.error.message}</Text></SsfCard>}
       {section === 'group' && entries.error && <SsfCard><Text className="font-poppins text-sm text-red-700">Could not load group entries: {entries.error.message}</Text></SsfCard>}
+      {!groupEntryToDelete && !activeCard && !!notice && <SsfCard><Text className="font-poppins text-sm text-emerald-800">{notice}</Text></SsfCard>}
       {visibleOrganisations.error && <SsfCard><Text className="font-poppins text-sm text-red-700">Could not load the organisations available to this account: {visibleOrganisations.error.message}</Text></SsfCard>}
       {!visibilityTenantId && <SsfCard><Text className="font-poppins text-sm text-red-700">Could not determine the organisation scope for participant assignment.</Text></SsfCard>}
       {section === 'group' && <Text className="mb-2 mt-4 font-poppins text-xs text-ui-text-muted">Check in each group using its Team Leader. Points remain attached to the team.</Text>}
@@ -288,6 +312,18 @@ export default function ProgramsScreen() {
           <TouchableOpacity onPress={() => openCard(card, 'assign')} className="mt-2 items-center rounded-md bg-emerald-800 px-2 py-2.5"><Text className="font-poppins-bold text-[11px] text-white">Assign participants</Text></TouchableOpacity>
         </View>;
       })}</View>}
+      {section === 'group' && inactiveGroupEntries.length > 0 && <View className="mt-5">
+        <Text className="mb-1 font-poppins-bold text-sm text-ui-text">Inactive program group entries</Text>
+        <Text className="mb-3 font-poppins text-xs text-ui-text-muted">These entries remain linked to participants after their program was deactivated. Entries with competition history are preserved.</Text>
+        {inactiveGroupEntries.map(entry => <View key={entry.id} className="mb-2 flex-row items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <View className="flex-1">
+            <Text className="font-poppins-bold text-sm text-ui-text">{entry.item?.item_name_en || entry.item?.item_code || 'Program unavailable'} · {entry.organisation?.name || 'Team unavailable'}</Text>
+            <Text className="mt-1 font-poppins text-xs text-ui-text-muted">{entry.members.length} member(s){entry.entry_chest_number ? ` · Entry chest ${entry.entry_chest_number}` : ''}</Text>
+            {entry.members.map((member, index) => <Text key={`${entry.id}:${index}`} className="mt-1 font-poppins text-xs text-ui-text-muted">{member.participant?.name || 'Participant'}{member.participant?.chest_number ? ` · ${member.participant.chest_number}` : ''}</Text>)}
+          </View>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Delete inactive group entry" disabled={saving} onPress={() => setGroupEntryToDelete({ id: entry.id, label: `${entry.item?.item_name_en || entry.item?.item_code || 'Program unavailable'} · ${entry.organisation?.name || 'Team'}`, participantIds: entry.members.map(member => member.participant_id).filter(Boolean) })} className="flex-row items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1.5"><Trash2 size={13} color="#B91C1C"/><Text className="font-poppins-bold text-[11px] text-red-700">Delete entry</Text></TouchableOpacity>
+        </View>)}
+      </View>}
     </ScrollView>
 
     <Modal visible={!!filterPicker} transparent animationType="fade" onRequestClose={() => setFilterPicker(null)}>
@@ -347,6 +383,19 @@ export default function ProgramsScreen() {
             {activeCard?.kind === 'general_team' && selectedIds.length > 0 && (orgIds.size !== 1 || !generalSizeValid) && <Text className="mt-2 font-poppins text-xs text-amber-700">Select members from one organisation.</Text>}
             <View className="mt-3 flex-row flex-wrap gap-2"><SsfButton label={saving ? 'Adding…' : activeCard?.kind === 'general_team' ? 'Create team entry' : `Add selected (${selectedIds.length})`} onPress={addSelected} disabled={saving || !selectedIds.length || (activeCard?.kind === 'general_team' && (orgIds.size !== 1 || !generalSizeValid))}/><SsfButton label={saving ? 'Saving…' : cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || '') ? 'Reopen program' : 'Mark fully complete'} onPress={() => setComplete(!cardComplete(activeCard?.item.id || '', activeCard?.category || '', activeCard?.kind || ''))} disabled={saving}/></View>
           </>}
+        </View>
+      </View>
+    </Modal>
+    <Modal visible={!!groupEntryToDelete} transparent animationType="fade" onRequestClose={() => !saving && setGroupEntryToDelete(null)}>
+      <View className="flex-1 items-center justify-center bg-black/40 p-4">
+        <View className="w-full max-w-md rounded-xl bg-white p-5">
+          <Text className="font-poppins-bold text-base text-ui-text">Delete this group entry?</Text>
+          <Text className="mt-2 font-poppins text-sm text-ui-text-muted">{groupEntryToDelete?.label} will be removed from this competition. Team and participant records remain. The server blocks deletion if check-in, attendance, code letters, marks, results, or certificates exist.</Text>
+          {!!error && <Text className="mt-2 font-poppins text-xs text-red-700">{error}</Text>}
+          <View className="mt-4 flex-row justify-end gap-2">
+            <TouchableOpacity disabled={saving} onPress={() => { setGroupEntryToDelete(null); setError(''); }} className="rounded-lg border border-ui-border px-3 py-2"><Text className="font-poppins-bold text-xs text-ui-text">Cancel</Text></TouchableOpacity>
+            <TouchableOpacity disabled={saving} onPress={deleteGeneralTeamEntry} className={`flex-row items-center gap-1 rounded-lg px-3 py-2 ${saving ? 'bg-red-300' : 'bg-red-700'}`}><Trash2 size={13} color="white"/><Text className="font-poppins-bold text-xs text-white">{saving ? 'Deleting…' : 'Delete entry'}</Text></TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
