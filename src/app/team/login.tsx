@@ -14,6 +14,8 @@ import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/shadcn/button';
 import { Label } from '@/components/ui/shadcn/label';
 import { Card } from '@/components/ui/shadcn/card';
+import { ConsoliumLogo } from '@/components/ui/ConsoliumLogo';
+import { applyPortalPwaMetadata } from '@/core/utils/portalPwaMetadata';
 
 export default function TeamLeaderLogin() {
   const [username, setUsername] = useState('');
@@ -25,6 +27,7 @@ export default function TeamLeaderLogin() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 640;
+  React.useEffect(() => applyPortalPwaMetadata('team'), []);
 
   const handleLogin = async () => {
     setErrorMsg('');
@@ -75,9 +78,8 @@ export default function TeamLeaderLogin() {
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 12,
-              opacity: 0.1,
             }}>
-              <UserRound size={28} color="hsl(var(--primary))" style={{ opacity: 1 }} />
+              <ConsoliumLogo size={56} borderRadius={28} />
             </View>
             <Text style={{
               fontSize: 20,

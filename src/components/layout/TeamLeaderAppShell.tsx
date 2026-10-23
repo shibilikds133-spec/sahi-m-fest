@@ -27,6 +27,9 @@ import {
 } from "lucide-react-native";
 import { useAuthStore } from "@/core/store/authStore";
 import { useTeamLeaderContext } from "@/core/contexts/TeamLeaderContext";
+import { ConsoliumLogo } from "@/components/ui/ConsoliumLogo";
+import { applyPortalPwaMetadata } from "@/core/utils/portalPwaMetadata";
+import { PwaInstallCard } from "@/components/ui/PwaInstallCard";
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -116,10 +119,7 @@ export function TeamLeaderAppShell({
   }, [user, pathname, router]);
   const teamPrimary = context?.portal_primary_color || "#0F766E";
   const teamAccent = context?.portal_accent_color || "#14B8A6";
-  const teamInitial = (context?.team_name || "T")
-    .trim()
-    .charAt(0)
-    .toUpperCase();
+  React.useEffect(() => applyPortalPwaMetadata('team', context?.team_name, context?.festival_team_id), [context?.team_name, context?.festival_team_id]);
 
   const isDesktop = width >= 768;
 
@@ -164,26 +164,7 @@ export function TeamLeaderAppShell({
                       gap: 9,
                     }}
                   >
-                    <View
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 10,
-                        backgroundColor: teamAccent,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: teamPrimary,
-                          fontSize: 15,
-                          fontWeight: "800",
-                        }}
-                      >
-                        {teamInitial}
-                      </Text>
-                    </View>
+                    <ConsoliumLogo size={30} borderRadius={10} />
                     <View>
                       <Text
                         style={{
@@ -220,26 +201,7 @@ export function TeamLeaderAppShell({
                 hitSlop={8}
                 style={{ alignItems: "center" }}
               >
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
-                    backgroundColor: teamAccent,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: teamPrimary,
-                      fontSize: 15,
-                      fontWeight: "800",
-                    }}
-                  >
-                    {teamInitial}
-                  </Text>
-                </View>
+                <ConsoliumLogo size={32} borderRadius={10} />
                 <PanelLeftOpen
                   size={15}
                   color="rgba(255,255,255,0.65)"
@@ -407,11 +369,7 @@ export function TeamLeaderAppShell({
                   justifyContent: "center",
                 }}
               >
-                <Text
-                  style={{ color: ui.colors.surface, fontSize: 13, fontWeight: "800" }}
-                >
-                  {teamInitial}
-                </Text>
+                <ConsoliumLogo size={24} borderRadius={7} />
               </TouchableOpacity>
             </View>
           </View>
@@ -420,6 +378,7 @@ export function TeamLeaderAppShell({
             style={{ flex: 1, backgroundColor: "#F7F9FA" }}
             contentContainerStyle={{ padding: 20 }}
           >
+            {pathname === '/team/dashboard' ? <View style={{ marginBottom: 14 }}><PwaInstallCard appName={context?.team_name || 'Team Portal'} /></View> : null}
             {children}
           </ScrollView>
         </View>
@@ -468,9 +427,7 @@ export function TeamLeaderAppShell({
             justifyContent: "center",
           }}
         >
-          <Text style={{ color: ui.colors.surface, fontSize: 12, fontWeight: "800" }}>
-            {teamInitial}
-          </Text>
+          <ConsoliumLogo size={22} borderRadius={6} />
         </TouchableOpacity>
       </View>
 
@@ -600,6 +557,7 @@ export function TeamLeaderAppShell({
 
       {/* Content */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
+        {pathname === '/team/dashboard' ? <View style={{ marginBottom: 14 }}><PwaInstallCard appName={context?.team_name || 'Team Portal'} /></View> : null}
         {children}
       </ScrollView>
 

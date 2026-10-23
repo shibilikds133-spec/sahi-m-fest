@@ -29,10 +29,8 @@ import {
   PanelsTopLeft,
   Scale,
   Settings,
-  ShieldCheck,
   Trophy,
   UserCheck,
-  UserCircle,
   Users,
   X,
   Radio,
@@ -44,6 +42,8 @@ import { FEATURE_FLAGS } from "@/core/config/features";
 import { ui } from "@/constants/designSystem";
 import { JudgeApprovalToast } from "../ui/JudgeApprovalToast";
 import { useJudgeApprovalStore } from "@/core/store/judgeApprovalStore";
+import { ConsoliumLogo } from "@/components/ui/ConsoliumLogo";
+import { applyPortalPwaMetadata } from "@/core/utils/portalPwaMetadata";
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -265,11 +265,7 @@ function DesktopSidebar({
       <View>
         <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
           <View style={styles.brandMark}>
-            <ShieldCheck
-              size={23}
-              color={ui.colors.surface}
-              strokeWidth={2.4}
-            />
+            <ConsoliumLogo size={42} borderRadius={13} />
           </View>
           {!collapsed && (
             <View style={{ flex: 1 }}>
@@ -412,7 +408,7 @@ function DesktopSidebar({
         ]}
       >
         <View style={styles.avatar}>
-          <UserCircle size={26} color={ui.colors.primary} />
+          <ConsoliumLogo size={36} borderRadius={18} />
         </View>
         {!collapsed && (
           <>
@@ -575,9 +571,7 @@ function MobileMenuSheet({
 
           <View style={styles.sheetProfile}>
             <View style={styles.sheetAvatar}>
-              <Text style={styles.sheetAvatarText}>
-                {(user?.email?.[0] || "A").toUpperCase()}
-              </Text>
+              <ConsoliumLogo size={36} borderRadius={18} />
             </View>
             <View style={{ flex: 1 }}>
               <Text numberOfLines={1} style={styles.sheetProfileName}>
@@ -668,7 +662,9 @@ export function AdminAppShell({ children }: { children: React.ReactNode }) {
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname]);
   const { useActiveFestival } = useFestival();
   const { data: activeFestival } = useActiveFestival();
-  const festivalName = activeFestival?.custom_name?.trim() || "Sahithyolsav";
+  const festivalName = activeFestival?.custom_name?.trim() || "Consolium";
+
+  React.useEffect(() => applyPortalPwaMetadata('admin', 'Consolium'), []);
 
   if (pathname.includes("/settings/leaderboard/poster-studio")) {
     return (

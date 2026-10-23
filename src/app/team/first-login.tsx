@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound, CheckCircle2 } from 'lucide-react-native';
+import { Eye, EyeOff, LockKeyhole, UserRound, CheckCircle2 } from 'lucide-react-native';
 import { useAuthStore } from '@/core/store/authStore';
 import { supabase } from '@/core/config/supabase';
 import { Button } from '@/components/ui/shadcn/button';
@@ -16,6 +16,8 @@ import { Label } from '@/components/ui/shadcn/label';
 import { Card } from '@/components/ui/shadcn/card';
 import { teamLeaderPortalService } from '@/services/teamLeaderPortalService';
 import { authService } from '@/services/authService';
+import { ConsoliumLogo } from '@/components/ui/ConsoliumLogo';
+import { applyPortalPwaMetadata } from '@/core/utils/portalPwaMetadata';
 
 export default function TeamLeaderFirstLogin() {
   const user = useAuthStore((state) => state.user);
@@ -23,6 +25,7 @@ export default function TeamLeaderFirstLogin() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 640;
+  React.useEffect(() => applyPortalPwaMetadata('team'), []);
 
   const currentUsername = user?.user_metadata?.username || user?.user_metadata?.team_leader_code || '';
   const [newUsername, setNewUsername] = useState(currentUsername);
@@ -112,7 +115,7 @@ export default function TeamLeaderFirstLogin() {
               justifyContent: 'center',
               marginBottom: 12,
             }}>
-              <ShieldCheck size={28} color="#0F766E" />
+              <ConsoliumLogo size={56} borderRadius={28} />
             </View>
             <Text style={{
               fontSize: 20,
@@ -124,7 +127,7 @@ export default function TeamLeaderFirstLogin() {
               Set Up Your Private Credentials
             </Text>
             <Text style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', marginTop: 6, textAlign: 'center' }}>
-              Welcome to Alviora Team Portal! For team security, please set your personal username and a private password.
+              Welcome to the Team Portal. For team security, please set your personal username and a private password.
             </Text>
           </View>
 
