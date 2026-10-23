@@ -74,7 +74,7 @@ old snapshot fails instead of shifting numbers again.
 
 ## Database and points history
 
-Migration: `supabase/migrations/20261023120000_atomic_participant_edit_and_award_ownership.sql`.
+Migration: `supabase/migrations/20261023070526_atomic_participant_edit_and_award_ownership.sql`.
 
 `result_team_awards` is the private source of truth for award team attribution,
 keyed by result ID. Backfill freezes currently observable team attribution for
@@ -101,8 +101,11 @@ predicates to avoid the original ambiguous `tenant_id` output-variable reference
 under PostgreSQL's default conflict policy; the predicate itself is unchanged.
 
 The migration takes write-blocking table locks during backfill/installation;
-plan deployment for that short maintenance window. Review and apply only to the
-explicitly approved target database after its actual schema is verified.
+plan deployment for that short maintenance window. It was applied to the
+designated Supabase target `negkevoetuvuqqlecdno` on 2026-10-23 and recorded as
+remote migration version `20261023070526`. Post-apply checks confirmed the
+ledger, trigger, portal reader patch and role grants. At verification the target
+had zero result rows, so the legacy award backfill inserted zero rows.
 
 ## Live refresh and draft safety
 
@@ -137,7 +140,7 @@ refetched data; its original snapshot remains the save concurrency guard.
   repaired by this task.
 - Browser validation uses an Expo export with synthetic credentials and every
   external request intercepted. It cannot establish real Realtime delivery,
-  deployed RLS, remote migration state or production behavior.
+  real multi-device Realtime delivery or production behavior.
 - Full-project typecheck currently includes unrelated errors from nested copies,
   old files and Deno edge functions. Treat focused changed-file results and the
   whole-project result separately.

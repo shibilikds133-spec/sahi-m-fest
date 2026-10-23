@@ -113,7 +113,7 @@ async function main() {
       $$;`);
     const views = read('supabase/migrations/067_public_ai_views.sql');
     sql(views.slice(views.indexOf('CREATE OR REPLACE VIEW public.vw_public_leaderboard'),views.indexOf('-- 3. Public schedule')));
-    sql(read('supabase/migrations/20261023120000_atomic_participant_edit_and_award_ownership.sql'));
+    sql(read('supabase/migrations/20261023070526_atomic_participant_edit_and_award_ownership.sql'));
     const original = get(student);
     sql(asActor(command(student,{name:'Renamed'},b,'200')));
     assert.equal(get(student).name,'Renamed'); assert.equal(get(student).chest_number,'200');
