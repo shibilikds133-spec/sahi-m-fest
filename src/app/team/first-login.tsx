@@ -16,12 +16,16 @@ import { Label } from '@/components/ui/shadcn/label';
 import { Card } from '@/components/ui/shadcn/card';
 import { teamLeaderPortalService } from '@/services/teamLeaderPortalService';
 import { authService } from '@/services/authService';
+import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
+import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 
 export default function TeamLeaderFirstLogin() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { context } = useTeamLeaderContext();
+  const teamPalette = getTeamLeaderPalette(context);
   const isDesktop = width >= 640;
 
   const currentUsername = user?.user_metadata?.username || user?.user_metadata?.team_leader_code || '';
@@ -88,7 +92,7 @@ export default function TeamLeaderFirstLogin() {
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'hsl(var(--background))' }}>
+    <View style={{ flex: 1, backgroundColor: teamPalette.surface }}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -105,14 +109,14 @@ export default function TeamLeaderFirstLogin() {
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: '#0F766E15',
+              backgroundColor: teamPalette.surfaceSoft,
               borderWidth: 1,
-              borderColor: '#0F766E40',
+              borderColor: teamPalette.border,
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 12,
             }}>
-              <ShieldCheck size={28} color="#0F766E" />
+              <ShieldCheck size={28} color={teamPalette.primary} />
             </View>
             <Text style={{
               fontSize: 20,
@@ -274,13 +278,14 @@ export default function TeamLeaderFirstLogin() {
             {/* Submit Button */}
             <Button
               onPress={handleUpdate}
+              brandPalette={teamPalette}
               disabled={loading || !newUsername || !newPassword || !confirmPassword}
               style={{
                 width: '100%',
                 height: 44,
                 borderRadius: 10,
                 marginTop: 4,
-                backgroundColor: '#0F766E',
+                backgroundColor: teamPalette.primary,
               }}
             >
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>

@@ -27,6 +27,7 @@ import {
 } from "lucide-react-native";
 import { useAuthStore } from "@/core/store/authStore";
 import { useTeamLeaderContext } from "@/core/contexts/TeamLeaderContext";
+import { getTeamLeaderPalette } from "@/core/utils/teamLeaderBranding";
 
 type IconType = React.ComponentType<{
   color?: string;
@@ -114,8 +115,9 @@ export function TeamLeaderAppShell({
       router.replace("/team/first-login");
     }
   }, [user, pathname, router]);
-  const teamPrimary = context?.portal_primary_color || "#0F766E";
-  const teamAccent = context?.portal_accent_color || "#14B8A6";
+  const teamPalette = getTeamLeaderPalette(context);
+  const teamPrimary = teamPalette.primary;
+  const teamAccent = teamPalette.accent;
   const teamInitial = (context?.team_name || "T")
     .trim()
     .charAt(0)
@@ -274,7 +276,7 @@ export function TeamLeaderAppShell({
                 >
                   <Icon
                     size={18}
-                    color={active ? teamAccent : "hsl(215, 20.2%, 65.1%)"}
+                    color={active ? ui.colors.surface : "hsl(215, 20.2%, 65.1%)"}
                   />
                   {sidebarOpen && (
                     <Text
@@ -325,12 +327,12 @@ export function TeamLeaderAppShell({
         </View>
 
         {/* Main content */}
-        <View style={{ flex: 1, backgroundColor: "hsl(var(--background))" }}>
+        <View style={{ flex: 1, backgroundColor: teamPalette.surface }}>
           {/* Top bar */}
           <View
             style={{
               height: 64,
-              backgroundColor: "hsl(var(--card))",
+              backgroundColor: teamPalette.surface,
               borderBottomWidth: 1,
               borderBottomColor: teamAccent,
               flexDirection: "row",
@@ -417,7 +419,7 @@ export function TeamLeaderAppShell({
           </View>
 
           <ScrollView
-            style={{ flex: 1, backgroundColor: "#F7F9FA" }}
+            style={{ flex: 1, backgroundColor: teamPalette.surface }}
             contentContainerStyle={{ padding: 20 }}
           >
             {children}
@@ -429,12 +431,12 @@ export function TeamLeaderAppShell({
 
   // Mobile layout
   return (
-    <View style={{ flex: 1, backgroundColor: "hsl(var(--background))" }}>
+    <View style={{ flex: 1, backgroundColor: teamPalette.surface }}>
       {/* Mobile top bar */}
       <View
         style={{
           height: 48,
-          backgroundColor: "hsl(var(--card))",
+          backgroundColor: teamPalette.surface,
           borderBottomWidth: 1,
           borderBottomColor: "hsl(var(--border))",
           flexDirection: "row",
@@ -548,7 +550,7 @@ export function TeamLeaderAppShell({
                 >
                   <Icon
                     size={18}
-                    color={active ? teamAccent : "hsl(215, 20.2%, 65.1%)"}
+                    color={active ? ui.colors.surface : "hsl(215, 20.2%, 65.1%)"}
                   />
                   <Text
                     style={{
@@ -607,7 +609,7 @@ export function TeamLeaderAppShell({
       <View
         style={{
           flexDirection: "row",
-          backgroundColor: "hsl(var(--card))",
+          backgroundColor: teamPalette.surface,
           borderTopWidth: 1,
           borderTopColor: "hsl(var(--border))",
           paddingBottom: Platform.OS === "ios" ? 20 : 8,
@@ -668,7 +670,7 @@ export function TeamLeaderAppShell({
             bottom: 74,
             zIndex: 60,
             borderRadius: 16,
-            backgroundColor: "hsl(var(--card))",
+            backgroundColor: teamPalette.surface,
             borderWidth: 1,
             borderColor: "hsl(var(--border))",
             padding: 8,

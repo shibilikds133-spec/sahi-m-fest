@@ -35,10 +35,11 @@ export interface ButtonProps {
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
+  brandPalette?: { primary: string; surface: string; surfaceSoft: string; border: string };
 }
 
 const Button = React.forwardRef<React.ElementRef<typeof TouchableOpacity>, ButtonProps>(
-  ({ className, variant = "default", size = "default", children, onPress, disabled, loading, ...props }, ref) => {
+  ({ className, variant = "default", size = "default", children, onPress, disabled, loading, brandPalette, ...props }, ref) => {
     return (
       <TouchableOpacity
         ref={ref}
@@ -52,12 +53,16 @@ const Button = React.forwardRef<React.ElementRef<typeof TouchableOpacity>, Butto
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.7}
+        style={brandPalette ? {
+          backgroundColor: variant === 'default' ? brandPalette.primary : variant === 'outline' || variant === 'secondary' ? brandPalette.surfaceSoft : undefined,
+          borderColor: variant === 'outline' ? brandPalette.border : undefined,
+        } : undefined}
         {...props}
       >
         {loading ? (
           <ActivityIndicator size="small" color={variant === "default" ? "white" : "#0F766E"} />
         ) : (
-          <Text className={cn("text-sm font-medium", textVariantStyles[variant])}>
+          <Text className={cn("text-sm font-medium", textVariantStyles[variant])} style={brandPalette && (variant === 'outline' || variant === 'secondary') ? { color: brandPalette.primary } : undefined}>
             {children}
           </Text>
         )}

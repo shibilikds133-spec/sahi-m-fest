@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
+import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderPublishedResult } from '@/services/teamLeaderPortalService';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
@@ -11,6 +12,7 @@ import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 export default function ResultsScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
+  const teamPalette = getTeamLeaderPalette(context);
   const [results, setResults] = useState<TeamLeaderPublishedResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -44,8 +46,8 @@ export default function ResultsScreen() {
     if (filter === 'medal') return r.rank != null && r.rank <= 3;
     return true;
   });
-  const teamPrimary = context?.portal_primary_color || '#0F766E';
-  const teamAccent = context?.portal_accent_color || '#14B8A6';
+  const teamPrimary = teamPalette.primary;
+  const teamAccent = teamPalette.accent;
 
   return (
     <TeamLeaderAppShell>
@@ -58,7 +60,7 @@ export default function ResultsScreen() {
           </Text>
         </View>
 
-        <Tabs value={filter} onValueChange={setFilter}>
+        <Tabs value={filter} onValueChange={setFilter} brandPalette={teamPalette}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="medal">Medal Positions</TabsTrigger>

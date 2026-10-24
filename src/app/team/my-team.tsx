@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
+import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderStanding } from '@/services/teamLeaderPortalService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
@@ -8,6 +9,7 @@ import { Skeleton } from '@/components/ui/shadcn/skeleton';
 
 export default function MyTeamScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
+  const teamPalette = getTeamLeaderPalette(context);
   const [standings, setStandings] = useState<TeamLeaderStanding[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,8 +36,8 @@ export default function MyTeamScreen() {
   const ownRank = ownTeam?.rank ?? 0;
   const totalPoints = ownTeam?.total_points ?? 0;
   const pointsBehind = standings.length > 0 ? standings[0].total_points - totalPoints : 0;
-  const teamPrimary = context?.portal_primary_color || '#0F766E';
-  const teamAccent = context?.portal_accent_color || '#14B8A6';
+  const teamPrimary = teamPalette.primary;
+  const teamAccent = teamPalette.accent;
 
   return (
     <TeamLeaderAppShell>

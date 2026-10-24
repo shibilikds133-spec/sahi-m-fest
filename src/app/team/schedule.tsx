@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
+import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderScheduleRow } from '@/services/teamLeaderPortalService';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
@@ -14,6 +15,7 @@ import { TeamLeaderDataError } from '@/components/team/TeamLeaderDataError';
 
 export default function ScheduleScreen() {
   const { context, loading: contextLoading } = useTeamLeaderContext();
+  const teamPalette = getTeamLeaderPalette(context);
   const [schedule, setSchedule] = useState<TeamLeaderScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -46,8 +48,8 @@ export default function ScheduleScreen() {
   if (loadError) return <TeamLeaderAppShell><TeamLeaderDataError message={loadError} onRetry={() => setReloadKey((key) => key + 1)} /></TeamLeaderAppShell>;
 
   const filtered = filter === 'all' ? schedule : schedule.filter((s) => s.event_status === filter);
-  const teamPrimary = context?.portal_primary_color || '#0F766E';
-  const teamAccent = context?.portal_accent_color || '#14B8A6';
+  const teamPrimary = teamPalette.primary;
+  const teamAccent = teamPalette.accent;
 
   const exportMyTeamSchedule = async () => {
     if (!context || !filtered.length) return;
@@ -74,16 +76,16 @@ export default function ScheduleScreen() {
             </Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <Button variant="outline" size="sm" onPress={() => router.push('/team/schedule/full')}>
+            <Button variant="outline" size="sm" brandPalette={teamPalette} onPress={() => router.push('/team/schedule/full')}>
               Full Schedule
             </Button>
-            <Button variant="default" size="sm" disabled={isExporting || !filtered.length} onPress={exportMyTeamSchedule}>
+            <Button variant="default" size="sm" brandPalette={teamPalette} disabled={isExporting || !filtered.length} onPress={exportMyTeamSchedule}>
               {isExporting ? 'Preparing…' : 'Download My Team PDF'}
             </Button>
           </View>
         </View>
 
-        <Tabs value={filter} onValueChange={setFilter}>
+        <Tabs value={filter} onValueChange={setFilter} brandPalette={teamPalette}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="scheduled">Upcoming</TabsTrigger>

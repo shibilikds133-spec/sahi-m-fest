@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
+import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 import { TeamLeaderAppShell } from '@/components/layout/TeamLeaderAppShell';
 import { teamLeaderPortalService, TeamLeaderParticipant } from '@/services/teamLeaderPortalService';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
@@ -12,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/shadcn
 export default function ParticipantsScreen() {
   const router = useRouter();
   const { context, loading: contextLoading } = useTeamLeaderContext();
+  const teamPalette = getTeamLeaderPalette(context);
   const [participants, setParticipants] = useState<TeamLeaderParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -83,8 +85,8 @@ export default function ParticipantsScreen() {
     if (filter === 'inactive') return p.status !== 'active' && p.status !== 'registered';
     return true;
   });
-  const teamPrimary = context?.portal_primary_color || '#0F766E';
-  const teamAccent = context?.portal_accent_color || '#14B8A6';
+  const teamPrimary = teamPalette.primary;
+  const teamAccent = teamPalette.accent;
 
   return (
     <TeamLeaderAppShell>
@@ -97,7 +99,7 @@ export default function ParticipantsScreen() {
           </Text>
         </View>
 
-        <Tabs value={filter} onValueChange={setFilter}>
+        <Tabs value={filter} onValueChange={setFilter} brandPalette={teamPalette}>
           <TabsList>
             <TabsTrigger value="all">All ({participants.length})</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
