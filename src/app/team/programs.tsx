@@ -42,6 +42,12 @@ export default function TeamProgramsScreen() {
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [programKind, setProgramKind] = useState<'participant' | 'general_team'>('participant');
   const [activeGeneralProgram, setActiveGeneralProgram] = useState<TeamLeaderProgramOption | null>(null);
+  const [activeBulkProgram, setActiveBulkProgram] = useState<TeamLeaderProgramOption | null>(null);
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const [bulkError, setBulkError] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [removeRegistrationId, setRemoveRegistrationId] = useState<string | null>(null);
   const [selectedGeneralParticipantIds, setSelectedGeneralParticipantIds] = useState<string[]>([]);
   const [generalSelectionError, setGeneralSelectionError] = useState('');
   const [generalMemberSearch, setGeneralMemberSearch] = useState('');
@@ -87,6 +93,13 @@ export default function TeamProgramsScreen() {
     enabled: !!context && !!selectedParticipantId,
     queryFn: () => teamLeaderPortalService.getProgramsForParticipant(selectedParticipantId!),
   });
+  const bulkCandidatesQuery = useQuery({
+    queryKey: ['team-leader-program-candidates', context?.festival_id, activeBulkProgram?.item_id, bulkCategory],
+    enabled: !!activeBulkProgram && !!bulkCategory && !!context,
+    queryFn: () => teamLeaderPortalService.getProgramCandidates(activeBulkProgram!.item_id, bulkCategory),
+  });
+  const bulkCandidates = bulkCandidatesQuery.data ?? [];
+  const bulkAvailable = bulkCandidates.filter(person => person.is_eligible && !person.registration_id);
 
   const visiblePrograms = useMemo(() => (programsQuery.data ?? []).filter((program) =>
     program.entry_kind === programKind && (program.is_eligible || program.is_assigned),
@@ -179,6 +192,53 @@ export default function TeamProgramsScreen() {
     }
   };
 
+  const openBulkPicker = (program: TeamLeaderProgramOption) => {
+    setActiveBulkProgram(program);
+    setBulkCategory(program.category_codes?.[0] ?? '');
+    setBulkSelectedIds([]);
+    setBulkError('');
+    setRemoveRegistrationId(null);
+  };
+
+  const saveBulk = async () => {
+    if (!activeBulkProgram || !bulkSelectedIds.length || bulkSaving) return;
+    setBulkSaving(true);
+    setBulkError('');
+    try {
+      const result = await teamLeaderPortalService.bulkAssignProgram(activeBulkProgram.item_id, bulkCategory, bulkSelectedIds);
+      setBulkSelectedIds([]);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['team-leader-program-candidates', context?.festival_id, activeBulkProgram.item_id, bulkCategory] }),
+        queryClient.invalidateQueries({ queryKey: ['team-leader-programs', context?.festival_id] }),
+      ]);
+      setNotice({ kind: 'success', text: `${result.added_count} students added to ${activeBulkProgram.item_name_en || activeBulkProgram.item_name_ml || 'the program'}.` });
+    } catch (error: any) {
+      setBulkError(error?.message || 'Could not assign the selected students. No changes were saved.');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const removeBulkAssignment = async (registrationId: string) => {
+    if (!activeBulkProgram || bulkSaving) return;
+    setBulkSaving(true);
+    setBulkError('');
+    try {
+      const result = await teamLeaderPortalService.unassignProgram(registrationId);
+      if (result.status !== 'removed') throw new Error(result.message || 'This assignment cannot be removed.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['team-leader-program-candidates', context?.festival_id, activeBulkProgram.item_id, bulkCategory] }),
+        queryClient.invalidateQueries({ queryKey: ['team-leader-programs', context?.festival_id] }),
+      ]);
+      setRemoveRegistrationId(null);
+      setNotice({ kind: 'success', text: 'Assignment removed.' });
+    } catch (error: any) {
+      setBulkError(error?.message || 'Could not remove this assignment.');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const personButton = (person: TeamLeaderParticipant) => {
     const selected = person.id === selectedParticipantId;
     return (
@@ -242,6 +302,7 @@ export default function TeamProgramsScreen() {
           <Text numberOfLines={1} style={{ color: muted, fontSize: 11, marginTop: 5 }}>
             {detail}
           </Text>
+          {!isGeneral ? <Pressable accessibilityRole="button" onPress={() => openBulkPicker(program)} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}><Text style={{ color: teamPrimary, fontSize: 11, fontWeight: '700' }}>Assign category</Text></Pressable> : null}
         </View>
         <Pressable
           accessibilityRole="button"
@@ -339,6 +400,42 @@ export default function TeamProgramsScreen() {
     </Modal>
   );
 
+  const bulkPicker = (
+    <Modal visible={!!activeBulkProgram} transparent animationType="slide" onRequestClose={() => setActiveBulkProgram(null)}>
+      <View style={{ flex: 1, justifyContent: isDesktop ? 'center' : 'flex-end', backgroundColor: '#0F172A66', paddingHorizontal: isDesktop ? 20 : 0 }}>
+        <View style={{ width: '100%', maxWidth: 680, maxHeight: '88%', alignSelf: 'center', padding: 16, borderRadius: 20, backgroundColor: teamPalette.surface }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flex: 1 }}><Text style={{ color: '#0F172A', fontSize: 17, fontWeight: '800' }}>Assign category</Text><Text style={{ color: muted, fontSize: 12 }}>{activeBulkProgram?.item_name_en || activeBulkProgram?.item_name_ml || activeBulkProgram?.item_code}</Text></View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close category assignment" onPress={() => setActiveBulkProgram(null)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><X size={20} color={muted} /></Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 10 }} contentContainerStyle={{ gap: 7 }}>
+            {(activeBulkProgram?.category_codes ?? []).map(code => <Pressable key={code} accessibilityRole="button" accessibilityState={{ selected: code === bulkCategory }} onPress={() => { setBulkCategory(code); setBulkSelectedIds([]); setBulkError(''); setRemoveRegistrationId(null); }} style={{ paddingHorizontal: 12, minHeight: 40, borderRadius: 9, borderWidth: 1, borderColor: teamPalette.border, justifyContent: 'center', backgroundColor: code === bulkCategory ? teamPrimary : teamPalette.surface }}><Text style={{ color: code === bulkCategory ? '#FFFFFF' : teamPrimary, fontSize: 12, fontWeight: '700' }}>{code}</Text></Pressable>)}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: 14, marginTop: 10, marginBottom: 8 }}>
+            <Pressable accessibilityRole="button" disabled={!bulkAvailable.length || bulkSaving} onPress={() => setBulkSelectedIds(bulkAvailable.map(person => person.participant_id))} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: teamPrimary, fontSize: 12, fontWeight: '700' }}>Select all eligible ({bulkAvailable.length})</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => setBulkSelectedIds([])} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: muted, fontSize: 12, fontWeight: '700' }}>Clear</Text></Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" style={{ flexGrow: 0, minHeight: 130, maxHeight: isDesktop ? 420 : 330 }} contentContainerStyle={{ gap: 7 }}>
+            {bulkCandidatesQuery.isLoading ? <ActivityIndicator color={teamPrimary} /> : null}
+            {bulkCandidatesQuery.isError ? <Text style={{ color: '#B91C1C', fontSize: 12 }}>{(bulkCandidatesQuery.error as Error).message}</Text> : null}
+            {bulkCandidates.map(person => {
+              const assigned = !!person.registration_id;
+              const selected = bulkSelectedIds.includes(person.participant_id);
+              return <View key={person.participant_id} style={{ borderWidth: 1, borderColor: selected ? teamPalette.border : border, borderRadius: 10, backgroundColor: selected ? teamPalette.selected : teamPalette.surface, paddingHorizontal: 10, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected, disabled: assigned || !person.is_eligible }} disabled={assigned || !person.is_eligible || bulkSaving} onPress={() => setBulkSelectedIds(ids => selected ? ids.filter(id => id !== person.participant_id) : [...ids, person.participant_id])} style={{ flex: 1, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 9 }}><View style={{ width: 21, height: 21, borderWidth: 1, borderColor: teamPrimary, borderRadius: 5, backgroundColor: selected ? teamPrimary : teamPalette.surface, alignItems: 'center', justifyContent: 'center' }}>{selected ? <Check size={14} color="#FFFFFF" /> : null}</View><View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: '#0F172A', fontWeight: '700', fontSize: 12 }}>{person.name}</Text><Text style={{ color: muted, fontSize: 11 }}>{person.chest_number || 'No chest'} · {assigned ? 'Assigned' : person.is_eligible ? 'Eligible' : 'Not eligible'}</Text></View></Pressable>
+                {assigned ? <Pressable accessibilityRole="button" disabled={bulkSaving} onPress={() => setRemoveRegistrationId(person.registration_id)} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: '#B91C1C', fontSize: 11, fontWeight: '700' }}>Remove</Text></Pressable> : null}
+              </View>;
+            })}
+            {!bulkCandidatesQuery.isLoading && !bulkCandidatesQuery.isError && !bulkCandidates.length ? <Text style={{ color: muted, fontSize: 12, paddingVertical: 15 }}>No students in this category.</Text> : null}
+          </ScrollView>
+          {bulkError ? <Text style={{ color: '#B91C1C', fontSize: 12, marginTop: 8 }}>{bulkError}</Text> : null}
+          {removeRegistrationId ? <View style={{ padding: 10, marginTop: 8, borderRadius: 9, backgroundColor: '#FEF2F2', gap: 7 }}><Text style={{ color: '#7F1D1D', fontSize: 12 }}>Remove this assignment? Competition history may prevent removal.</Text><View style={{ flexDirection: 'row', gap: 12 }}><Pressable accessibilityRole="button" onPress={() => setRemoveRegistrationId(null)}><Text style={{ color: muted, fontSize: 12 }}>Cancel</Text></Pressable><Pressable accessibilityRole="button" disabled={bulkSaving} onPress={() => removeBulkAssignment(removeRegistrationId)}><Text style={{ color: '#B91C1C', fontWeight: '700', fontSize: 12 }}>Confirm removal</Text></Pressable></View></View> : null}
+          <Pressable accessibilityRole="button" disabled={!bulkSelectedIds.length || bulkSaving} onPress={saveBulk} style={{ minHeight: 44, marginTop: 12, borderRadius: 9, backgroundColor: teamPrimary, alignItems: 'center', justifyContent: 'center', opacity: !bulkSelectedIds.length || bulkSaving ? 0.55 : 1 }}>{bulkSaving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Add selected ({bulkSelectedIds.length})</Text>}</Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (contextLoading || participantsLoading) {
     return <TeamLeaderAppShell><View style={{ flex: 1, minHeight: 220, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={teamPrimary} /></View></TeamLeaderAppShell>;
   }
@@ -404,6 +501,7 @@ export default function TeamProgramsScreen() {
       </View>
       {studentPicker}
       {generalEntryPicker}
+      {bulkPicker}
     </TeamLeaderAppShell>
   );
 }

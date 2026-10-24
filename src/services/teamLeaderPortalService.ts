@@ -81,6 +81,15 @@ export interface TeamLeaderProgramOption {
   team_entry_count: number;
 }
 
+export interface TeamLeaderProgramCandidate {
+  participant_id: string;
+  name: string;
+  chest_number: string | null;
+  category_code: string | null;
+  is_eligible: boolean;
+  registration_id: string | null;
+}
+
 async function readRpc<T>(name: string): Promise<T[]> {
   const { data, error } = await supabase.rpc(name);
   if (error) throw error;
@@ -135,6 +144,27 @@ export const teamLeaderPortalService = {
     });
     if (error) throw error;
     return data as { registration_id: string; status: string };
+  },
+  getProgramCandidates: async (itemId: string, categoryCode: string) => {
+    const { data, error } = await supabase.rpc('get_team_leader_program_candidates', {
+      p_item_id: itemId, p_category_code: categoryCode,
+    });
+    if (error) throw error;
+    return (data ?? []) as TeamLeaderProgramCandidate[];
+  },
+  bulkAssignProgram: async (itemId: string, categoryCode: string, participantIds: string[]) => {
+    const { data, error } = await supabase.rpc('team_leader_bulk_assign_program', {
+      p_item_id: itemId, p_category_code: categoryCode, p_participant_ids: participantIds,
+    });
+    if (error) throw error;
+    return data as { added_count: number };
+  },
+  unassignProgram: async (registrationId: string) => {
+    const { data, error } = await supabase.rpc('team_leader_unassign_program', {
+      p_registration_id: registrationId,
+    });
+    if (error) throw error;
+    return data as { status: string; message?: string };
   },
   createGeneralEntry: async (itemId: string, participantIds: string[]) => {
     const { data, error } = await supabase.rpc('team_leader_create_general_entry', {
