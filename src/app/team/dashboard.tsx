@@ -92,7 +92,7 @@ export default function TeamLeaderDashboard() {
   const teamName = context.team_name || 'Your Team';
   const teamPalette = getTeamLeaderPalette(context);
   const teamPrimary = teamPalette.primary;
-  const heroTeamShade = darkenHex(teamPrimary, 0.55);
+  const heroTeamShade = darkenHex(teamPrimary, 0.32);
   const todayKey = new Date().toDateString();
   const todaysEvents = schedule.filter((event) => event.start_time && new Date(event.start_time).toDateString() === todayKey);
   const upcomingEvents = schedule.filter((event) => !event.start_time || new Date(event.start_time).getTime() >= Date.now()).slice(0, 5);
