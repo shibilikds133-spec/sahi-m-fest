@@ -1,6 +1,7 @@
 import { ui } from '@/constants/designSystem';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, CalendarDays, Megaphone, Radio, Trophy, Users } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTeamLeaderContext } from '@/core/contexts/TeamLeaderContext';
@@ -49,6 +50,12 @@ function SectionHeader({ icon: Icon, title, description, action, onPress, primar
   );
 }
 
+function darkenHex(hex: string, amount: number) {
+  const channels = hex.slice(1).match(/.{2}/g)?.map((part) => parseInt(part, 16));
+  if (!channels || channels.length !== 3) return '#211E1D';
+  return `#${channels.map((channel) => Math.round(channel * (1 - amount)).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
 export default function TeamLeaderDashboard() {
   const { context, loading: contextLoading, error: contextError } = useTeamLeaderContext();
   const router = useRouter();
@@ -85,6 +92,7 @@ export default function TeamLeaderDashboard() {
   const teamName = context.team_name || 'Your Team';
   const teamPalette = getTeamLeaderPalette(context);
   const teamPrimary = teamPalette.primary;
+  const heroTeamShade = darkenHex(teamPrimary, 0.55);
   const todayKey = new Date().toDateString();
   const todaysEvents = schedule.filter((event) => event.start_time && new Date(event.start_time).toDateString() === todayKey);
   const upcomingEvents = schedule.filter((event) => !event.start_time || new Date(event.start_time).getTime() >= Date.now()).slice(0, 5);
@@ -97,7 +105,7 @@ export default function TeamLeaderDashboard() {
   return (
     <TeamLeaderAppShell>
       <View style={{ gap: 20, maxWidth: 1280, width: '100%', alignSelf: 'center' }}>
-        <View style={{ minHeight: 190, padding: 26, borderRadius: 22, backgroundColor: teamPrimary, overflow: 'hidden', position: 'relative' }}>
+        <LinearGradient colors={[heroTeamShade, '#211E1D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ minHeight: 190, padding: 26, borderRadius: 22, overflow: 'hidden', position: 'relative' }}>
           <View style={{ position: 'absolute', right: 0, top: 8, width: 255, height: 190, borderRadius: 130, borderWidth: 1, borderColor: `${teamPalette.accent}20`, transform: [{ rotate: '-20deg' }] }} />
           <View style={{ position: 'absolute', right: 76, top: 40, width: 108, height: 108, borderRadius: 54, borderWidth: 1, borderColor: `${teamPalette.accent}1A` }} />
           <View style={{ position: 'absolute', right: 78, top: 51, opacity: 0.2 }}><Trophy size={100} color={teamPalette.accent} strokeWidth={1.3} /></View>
@@ -107,7 +115,7 @@ export default function TeamLeaderDashboard() {
           <Pressable onPress={() => goTo('/team/my-team')} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 19, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 11, backgroundColor: teamPalette.surface, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Radio size={15} color={teamPrimary} /><Text style={{ color: teamPrimary, fontSize: 11, fontWeight: '800' }}>LIVE TEAM SPACE</Text>
           </Pressable>
-        </View>
+        </LinearGradient>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           <View style={{ width: statWidth }}><StatCard icon={Trophy} label="Current Rank" value={ownStanding?.rank ? `#${ownStanding.rank}` : '—'} helper="Keep pushing!" tone={teamPrimary} iconBg={teamPalette.surfaceSoft} primary={teamPrimary} /></View>

@@ -404,13 +404,20 @@ export function TeamLeaderAppShell({
                   width: 32,
                   height: 32,
                   borderRadius: 10,
-                  backgroundColor: teamPrimary,
+                  backgroundColor: `${teamPrimary}18`,
+                  borderWidth: 1,
+                  borderColor: `${teamPrimary}55`,
                   alignItems: "center",
                   justifyContent: "center",
+                  shadowColor: teamPrimary,
+                  shadowOpacity: 0.12,
+                  shadowRadius: 6,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
                 }}
               >
                 <Text
-                  style={{ color: ui.colors.surface, fontSize: 13, fontWeight: "800" }}
+                  style={{ color: teamPrimary, fontSize: 13, fontWeight: "800" }}
                 >
                   {teamInitial}
                 </Text>
