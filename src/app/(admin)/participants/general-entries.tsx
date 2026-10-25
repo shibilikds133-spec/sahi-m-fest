@@ -10,6 +10,7 @@ import { useFestival } from '../../../core/hooks/useFestival';
 import { useParticipants } from '../../../core/hooks/useParticipants';
 import { generalEntryService, type GeneralTeamEntry } from '../../../services/generalEntryService';
 import { invalidateGeneralMembership } from '../../../core/utils/invalidateGeneralMembership';
+import { isGeneralCategoryCode } from '../../../core/utils/participantCompetitionFilter';
 import { matchesCompetitionCategory } from '../../../core/utils/groupParticipation';
 
 type GeneralItem = {
@@ -59,7 +60,7 @@ export default function GeneralEntriesScreen() {
 
   const generalItems = useMemo(() => (allItems as GeneralItem[]).filter(item => {
     const categories = (item.category_codes ?? []).map(code => code.trim().toUpperCase());
-    return item.is_active === true && categories.length === 1 && (!['GN', 'GENERAL'].includes(categories[0]) || festival?.general_category_enabled === true)
+    return item.is_active === true && categories.length === 1 && (!isGeneralCategoryCode(categories[0]) || festival?.general_category_enabled === true)
       && item.participation_type?.toLowerCase() === 'group';
   }), [allItems, festival?.general_category_enabled]);
   const selectedItem = generalItems.find(item => item.id === itemId) ?? null;

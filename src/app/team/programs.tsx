@@ -17,11 +17,14 @@ import { getTeamLeaderPalette } from '@/core/utils/teamLeaderBranding';
 import { TeamLeaderParticipant, TeamLeaderProgramOption, teamLeaderPortalService } from '@/services/teamLeaderPortalService';
 import { invalidateGeneralMembership } from '@/core/utils/invalidateGeneralMembership';
 import { matchesCompetitionCategory } from '@/core/utils/groupParticipation';
+import { isGeneralCategoryCode } from '@/core/utils/participantCompetitionFilter';
 
 const muted = '#64748B';
 
 function categoryLabel(codes: string[] | null) {
-  return Array.isArray(codes) && codes.length ? codes.join(', ') : 'All categories';
+  return Array.isArray(codes) && codes.length
+    ? codes.map(code => isGeneralCategoryCode(code) ? 'General' : code.toUpperCase()).join(', ')
+    : 'All categories';
 }
 
 export default function TeamProgramsScreen() {
@@ -39,6 +42,7 @@ export default function TeamProgramsScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [participantSearch, setParticipantSearch] = useState('');
   const [programSearch, setProgramSearch] = useState('');
+  const [programCategoryFilter, setProgramCategoryFilter] = useState('all');
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [programKind, setProgramKind] = useState<'participant' | 'general_team'>('participant');
   const [activeGeneralProgram, setActiveGeneralProgram] = useState<TeamLeaderProgramOption | null>(null);
@@ -101,12 +105,32 @@ export default function TeamProgramsScreen() {
   const bulkCandidates = bulkCandidatesQuery.data ?? [];
   const bulkAvailable = bulkCandidates.filter(person => person.is_eligible && !person.registration_id);
 
+  const programCategoryOptions = useMemo(() => {
+    const values = new Set<string>();
+    for (const program of programsQuery.data ?? []) {
+      if (program.entry_kind !== programKind) continue;
+      for (const code of program.category_codes ?? []) {
+        values.add(isGeneralCategoryCode(code) ? 'general' : code.trim().toLowerCase());
+      }
+    }
+    return ['all', ...Array.from(values).sort((left, right) => left.localeCompare(right))];
+  }, [programsQuery.data, programKind]);
+
+  useEffect(() => {
+    if (!programCategoryOptions.includes(programCategoryFilter)) setProgramCategoryFilter('all');
+  }, [programCategoryOptions, programCategoryFilter]);
+
   const visiblePrograms = useMemo(() => (programsQuery.data ?? []).filter((program) =>
     program.entry_kind === programKind && (program.is_eligible || program.is_assigned),
   ).filter((program) =>
-    !programSearch.trim() || `${program.item_code ?? ''} ${program.item_name_en ?? ''} ${program.item_name_ml ?? ''} ${categoryLabel(program.category_codes)}`
-      .toLowerCase().includes(programSearch.trim().toLowerCase()),
-  ), [programsQuery.data, programSearch, programKind]);
+    (programCategoryFilter === 'all' || (program.category_codes ?? []).some(code =>
+      isGeneralCategoryCode(programCategoryFilter)
+        ? isGeneralCategoryCode(code)
+        : code.trim().toLowerCase() === programCategoryFilter,
+    ))
+      && (!programSearch.trim() || `${program.item_code ?? ''} ${program.item_name_en ?? ''} ${program.item_name_ml ?? ''} ${categoryLabel(program.category_codes)}`
+        .toLowerCase().includes(programSearch.trim().toLowerCase())),
+  ), [programsQuery.data, programSearch, programKind, programCategoryFilter]);
 
   const visibleParticipants = participants.filter((person) =>
     `${person.name} ${person.chest_number ?? ''} ${person.category_code ?? ''}`
@@ -172,6 +196,7 @@ export default function TeamProgramsScreen() {
   const setKind = (kind: 'participant' | 'general_team') => {
     setProgramKind(kind);
     setProgramSearch('');
+    setProgramCategoryFilter('all');
     setNotice(null);
   };
 
@@ -487,6 +512,16 @@ export default function TeamProgramsScreen() {
                   <TextInput value={programSearch} onChangeText={setProgramSearch} placeholder="Search programs" placeholderTextColor="#94A3B8" style={{ flex: 1, minHeight: 38, color: '#0F172A', fontSize: 12 }} />
                 </View>
               </View>
+
+              {programCategoryOptions.length > 1 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 7, paddingVertical: 2 }} accessibilityRole="tablist">
+                {programCategoryOptions.map(category => {
+                  const selected = programCategoryFilter === category;
+                  const label = category === 'all' ? 'All categories' : isGeneralCategoryCode(category) ? 'General' : category.toUpperCase();
+                  return <Pressable key={category} accessibilityRole="tab" accessibilityState={{ selected }} onPress={() => setProgramCategoryFilter(category)} style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: selected ? teamPrimary : border, backgroundColor: selected ? teamPalette.surfaceSoft : teamPalette.surface, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: selected ? teamPrimary : muted, fontSize: 11, fontWeight: '700' }}>{label}</Text>
+                  </Pressable>;
+                })}
+              </ScrollView> : null}
 
               {notice ? <View style={{ paddingHorizontal: 11, paddingVertical: 9, borderRadius: 9, backgroundColor: notice.kind === 'success' ? teamPalette.surfaceSoft : '#FEF2F2', borderWidth: 1, borderColor: notice.kind === 'success' ? teamPalette.border : '#FECACA' }}><Text style={{ color: notice.kind === 'success' ? teamPrimary : '#B91C1C', fontSize: 12 }}>{notice.text}</Text></View> : null}
               {programsQuery.isLoading ? <View style={{ minHeight: 160, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={teamPrimary} /></View> : null}

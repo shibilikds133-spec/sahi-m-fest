@@ -12,6 +12,7 @@ import { supabase } from '../../../core/config/supabase';
 import { generalEntryService } from '../../../services/generalEntryService';
 import { invalidateGeneralMembership } from '../../../core/utils/invalidateGeneralMembership';
 import { isGroupCompetition, matchesCompetitionCategory, programIntakeComplete } from '../../../core/utils/groupParticipation';
+import { isGeneralCategoryCode } from '../../../core/utils/participantCompetitionFilter';
 
 type ProgramItem = { id: string; item_code: string; item_name_en?: string; item_name_ml?: string; category_codes?: string[] | string | null; participation_type?: string; item_type?: string | null; gender?: string | null; is_active?: boolean; group_min_members?: number | null; group_max_members?: number | null };
 type IntakeStatus = { item_id: string; category_code: string; entry_kind: 'participant' | 'general_team'; is_complete: boolean };
@@ -91,13 +92,17 @@ export default function ProgramsScreen() {
   const filterOptions = useMemo(() => ({
     type: ['All types', ...Array.from(new Set(sectionCards.map(card => card.item.participation_type).filter(Boolean).map(value => String(value).toLowerCase()))).sort()],
     stage: ['All stages', ...Array.from(new Set(sectionCards.map(card => card.item.item_type).filter(Boolean).map(value => String(value)))).sort()],
-    category: ['All categories', ...Array.from(new Set(sectionCards.map(card => card.category))).sort()],
+    category: ['All categories', ...Array.from(new Set(sectionCards.map(card =>
+      isGeneralCategoryCode(card.category) ? 'GENERAL' : card.category,
+    ))).sort()],
   }), [sectionCards]);
   const programCards = useMemo(() => sectionCards.filter(card =>
     (!search.trim() || `${card.item.item_name_en ?? ''} ${card.item.item_name_ml ?? ''} ${card.item.item_code}`.toLowerCase().includes(search.trim().toLowerCase()))
       && (typeFilter === 'All types' || card.item.participation_type?.toLowerCase() === typeFilter)
       && (stageFilter === 'All stages' || card.item.item_type === stageFilter)
-      && (categoryFilter === 'All categories' || card.category === categoryFilter)
+      && (categoryFilter === 'All categories' || (isGeneralCategoryCode(categoryFilter)
+        ? isGeneralCategoryCode(card.category)
+        : card.category === categoryFilter))
   ), [sectionCards, search, typeFilter, stageFilter, categoryFilter]);
 
   const doneCount = sectionCards.filter(card => programIntakeComplete(statuses.data ?? [], card.item.id, card.category, card.kind)).length;
@@ -292,7 +297,7 @@ export default function ProgramsScreen() {
           <Search size={16} color="#64748B"/><TextInput value={search} onChangeText={setSearch} placeholder="Search by program name or code..." className="ml-2 flex-1 font-poppins text-sm outline-none" />
           {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel="Clear search"><X size={15} color="#64748B"/></TouchableOpacity>}
         </View>
-        {([['type', typeFilter], ['stage', stageFilter], ['category', categoryFilter]] as const).map(([key, value]) => <TouchableOpacity key={key} onPress={() => setFilterPicker(key)} className="h-10 min-w-[112px] flex-row items-center justify-between gap-2 rounded-lg border border-ui-border bg-white px-3" accessibilityRole="button"><Text className="font-poppins text-xs text-ui-text" numberOfLines={1}>{value}</Text><ChevronDown size={14} color="#64748B"/></TouchableOpacity>)}
+        {([['type', typeFilter], ['stage', stageFilter], ['category', categoryFilter]] as const).map(([key, value]) => <TouchableOpacity key={key} onPress={() => setFilterPicker(key)} className="h-10 min-w-[112px] flex-row items-center justify-between gap-2 rounded-lg border border-ui-border bg-white px-3" accessibilityRole="button"><Text className="font-poppins text-xs text-ui-text" numberOfLines={1}>{key === 'category' && isGeneralCategoryCode(value) ? 'General' : value}</Text><ChevronDown size={14} color="#64748B"/></TouchableOpacity>)}
       </View>
       <SsfCard><View className="flex-row items-center justify-between"><Text className="font-poppins-bold text-sm text-ui-text">{doneCount} of {sectionCards.length} {sectionLabel.toLowerCase()} programs complete</Text><Text className="font-poppins-bold text-xs text-emerald-700">{sectionCards.length ? Math.round(doneCount / sectionCards.length * 100) : 0}%</Text></View><View className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><View className="h-full rounded-full bg-emerald-600" style={{ width: `${sectionCards.length ? doneCount / sectionCards.length * 100 : 0}%` }} /></View></SsfCard>
       {statuses.error && <SsfCard><Text className="font-poppins text-sm text-red-700">{statuses.error.message}</Text></SsfCard>}
@@ -327,7 +332,7 @@ export default function ProgramsScreen() {
     </ScrollView>
 
     <Modal visible={!!filterPicker} transparent animationType="fade" onRequestClose={() => setFilterPicker(null)}>
-      <View className="flex-1 justify-center bg-black/40 p-4"><View className="max-h-[75%] rounded-xl bg-white p-4"><View className="mb-3 flex-row items-center justify-between"><Text className="font-poppins-bold text-base text-ui-text">Filter programs</Text><TouchableOpacity onPress={() => setFilterPicker(null)} accessibilityLabel="Close filter"><X size={19} color="#475569"/></TouchableOpacity></View><ScrollView>{pickerOptions.map(option => <TouchableOpacity key={option} onPress={() => setPickerValue(option)} className="border-b border-ui-border py-3"><Text className={`font-poppins text-sm ${pickerValue === option ? 'font-poppins-bold text-emerald-800' : 'text-ui-text'}`}>{option}</Text></TouchableOpacity>)}</ScrollView></View></View>
+      <View className="flex-1 justify-center bg-black/40 p-4"><View className="max-h-[75%] rounded-xl bg-white p-4"><View className="mb-3 flex-row items-center justify-between"><Text className="font-poppins-bold text-base text-ui-text">Filter programs</Text><TouchableOpacity onPress={() => setFilterPicker(null)} accessibilityLabel="Close filter"><X size={19} color="#475569"/></TouchableOpacity></View><ScrollView>{pickerOptions.map(option => <TouchableOpacity key={option} onPress={() => setPickerValue(option)} className="border-b border-ui-border py-3"><Text className={`font-poppins text-sm ${pickerValue === option ? 'font-poppins-bold text-emerald-800' : 'text-ui-text'}`}>{filterPicker === 'category' && isGeneralCategoryCode(option) ? 'General' : option}</Text></TouchableOpacity>)}</ScrollView></View></View>
     </Modal>
 
     <Modal visible={!!itemToDeactivate} transparent animationType="fade" onRequestClose={() => !deactivating && setItemToDeactivate(null)}>
